@@ -50,7 +50,7 @@
                         android:id="@+id/tvInvoiceBranch"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="VietTable Hoàn Kiếm"
+                        android:text=""
                         android:textColor="@color/text_primary"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -110,7 +110,7 @@
                             android:id="@+id/tvInvoiceSubtotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="540.000 đ"
+                            android:text=""
                             android:textColor="@color/text_primary"
                             android:textSize="14sp" />
                     </LinearLayout>

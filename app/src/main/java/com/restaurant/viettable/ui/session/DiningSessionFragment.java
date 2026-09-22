@@ -23,6 +23,7 @@ import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.network.RealtimeEventPolicy;
 import com.restaurant.viettable.network.SignalRManager;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.ui.order.CurrentOrdersFragment;
 import com.restaurant.viettable.ui.order.OrderDetailFragment;
 import com.restaurant.viettable.ui.order.OrderTrackingFragment;
@@ -192,7 +193,7 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
             binding.sessionContent.setVisibility(View.VISIBLE);
             binding.tvSessionTable.setText(session.getTableId());
             binding.tvSessionBranch.setText(session.getBranchName());
-            binding.tvSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + session.getStartTime());
+            binding.tvSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + DisplayFormatters.dateTime(session.getStartTime()));
 
             binding.tvSessionStatusBadge.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
             if (session.getStatus() == DiningSession.Status.PAYMENT_REQUESTED) {

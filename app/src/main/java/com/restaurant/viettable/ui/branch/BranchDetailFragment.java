@@ -1,6 +1,7 @@
 package com.restaurant.viettable.ui.branch;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,28 +49,40 @@ public class BranchDetailFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (branch == null && !appStateManager.getBranches().isEmpty()) {
-            branch = appStateManager.getBranches().get(0);
-        }
-
         binding.btnBack.setOnClickListener(v -> navigateBack());
+
+        if (branch == null) {
+            showToast("Không tìm thấy thông tin chi nhánh.");
+            navigateBack();
+            return;
+        }
 
         if (branch != null) {
             ImageLoader.getInstance().load(branch, binding.ivBranchHero);
             binding.tvBranchName.setText(branch.getName());
             binding.tvAddress.setText(branch.getAddress());
             binding.tvPhone.setText(branch.getPhone());
+            binding.tvPhone.setVisibility(TextUtils.isEmpty(branch.getPhone()) ? View.GONE : View.VISIBLE);
             binding.tvHours.setText("Giờ mở cửa: " + branch.getOpeningHours());
+            binding.tvHours.setVisibility(TextUtils.isEmpty(branch.getOpeningHours()) ? View.GONE : View.VISIBLE);
             binding.tvRatingReviews.setText(branch.getRating() + " • " + branch.getReviewCount() + " đánh giá");
+            boolean hasRating = branch.getRating() > 0 && branch.getReviewCount() > 0;
+            binding.layoutRating.setVisibility(hasRating ? View.VISIBLE : View.GONE);
             binding.tvDistanceDetail.setText("• Cách bạn " + branch.getDistanceKm() + " km");
+            binding.tvDistanceDetail.setVisibility(branch.getDistanceKm() > 0 ? View.VISIBLE : View.GONE);
             binding.tvDescription.setText(branch.getDescription());
+            boolean hasDescription = !TextUtils.isEmpty(branch.getDescription());
+            binding.tvDescriptionHeading.setVisibility(hasDescription ? View.VISIBLE : View.GONE);
+            binding.tvDescription.setVisibility(hasDescription ? View.VISIBLE : View.GONE);
 
-            if (branch.isOpen()) {
+            boolean hasOpeningData = !TextUtils.isEmpty(branch.getOpeningHours());
+            binding.tvOpenBadge.setVisibility(hasOpeningData ? View.VISIBLE : View.GONE);
+            if (hasOpeningData && branch.isOpen()) {
                 binding.tvOpenBadge.setText("Đang mở cửa");
                 binding.tvOpenBadge.setBackgroundResource(R.drawable.bg_status_badge);
                 binding.tvOpenBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
                 binding.tvOpenBadge.setTextColor(0xFF2E7D5B);
-            } else {
+            } else if (hasOpeningData) {
                 binding.tvOpenBadge.setText("Đã đóng cửa");
                 binding.tvOpenBadge.setBackgroundResource(R.drawable.bg_status_badge);
                 binding.tvOpenBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
@@ -85,6 +98,9 @@ public class BranchDetailFragment extends BaseFragment {
                     binding.chipGroupFacilities.addView(chip);
                 }
             }
+            boolean hasFacilities = binding.chipGroupFacilities.getChildCount() > 0;
+            binding.tvFacilitiesHeading.setVisibility(hasFacilities ? View.VISIBLE : View.GONE);
+            binding.chipGroupFacilities.setVisibility(hasFacilities ? View.VISIBLE : View.GONE);
 
             binding.btnSelectAndStart.setOnClickListener(v -> {
                 appStateManager.setSelectedBranch(branch);
@@ -93,7 +109,7 @@ public class BranchDetailFragment extends BaseFragment {
                 switchTab(R.id.nav_home);
             });
 
-            binding.btnViewOnMap.setOnClickListener(v -> navigateTo(new BranchMapFragment()));
+            binding.btnViewOnMap.setVisibility(View.GONE);
         }
     }
 

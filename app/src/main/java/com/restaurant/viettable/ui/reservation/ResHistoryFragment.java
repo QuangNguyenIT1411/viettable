@@ -55,15 +55,10 @@ public class ResHistoryFragment extends BaseFragment {
 
         binding.rvResHistory.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.rvResHistory.setAdapter(adapter);
+        binding.btnRetryReservations.setOnClickListener(v -> loadReservations());
 
         filterByTab(0);
-
-        MobileRepository.getInstance().loadReservations(new MobileRepository.Callback<List<Reservation>>() {
-            @Override public void onSuccess(List<Reservation> value) {
-                if (binding != null) filterByTab(binding.tabLayoutResHistory.getSelectedTabPosition());
-            }
-            @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
-        });
+        loadReservations();
 
         binding.tabLayoutResHistory.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -72,6 +67,18 @@ public class ResHistoryFragment extends BaseFragment {
             }
             @Override public void onTabUnselected(TabLayout.Tab tab) {}
             @Override public void onTabReselected(TabLayout.Tab tab) {}
+        });
+    }
+
+    private void loadReservations() {
+        renderState(true, null);
+        MobileRepository.getInstance().loadReservations(new MobileRepository.Callback<List<Reservation>>() {
+            @Override public void onSuccess(List<Reservation> value) {
+                if (binding != null) filterByTab(binding.tabLayoutResHistory.getSelectedTabPosition());
+            }
+            @Override public void onError(ApiException error) {
+                if (binding != null) renderState(false, apiError(error));
+            }
         });
     }
 
@@ -96,6 +103,19 @@ public class ResHistoryFragment extends BaseFragment {
         }
 
         adapter.notifyDataSetChanged();
+        renderState(false, null);
+    }
+
+    private void renderState(boolean loading, @Nullable String error) {
+        if (binding == null) return;
+        boolean hasContent = !filteredList.isEmpty();
+        binding.rvResHistory.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        binding.progressReservations.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.tvReservationState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.btnRetryReservations.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        if (!loading && !hasContent) {
+            binding.tvReservationState.setText(error != null ? error : getString(com.restaurant.viettable.R.string.state_no_reservations));
+        }
     }
 
     @Override

@@ -24,10 +24,11 @@
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
 
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/a11y_back"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_back"
                 app:tint="@color/primary" />
@@ -111,8 +112,9 @@
 
                 <ImageButton
                     android:id="@+id/btnChangeMinusGuest"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/a11y_decrease"
                     android:background="@drawable/bg_badge"
                     android:src="@drawable/ic_remove"
                     app:tint="@color/primary" />
@@ -129,8 +131,9 @@
 
                 <ImageButton
                     android:id="@+id/btnChangePlusGuest"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/a11y_increase"
                     android:background="@drawable/bg_badge"
                     android:src="@drawable/ic_add"
                     app:tint="@color/primary" />

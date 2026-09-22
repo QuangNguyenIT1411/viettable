@@ -21,9 +21,10 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/a11y_back"
             android:src="@drawable/ic_back"
             app:tint="@color/primary" />
 
@@ -39,10 +40,12 @@
 
         <ImageButton
             android:id="@+id/btnOpenMap"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Xem bản đồ chi nhánh"
             android:src="@drawable/ic_location"
+            android:visibility="gone"
             app:tint="@color/accent_gold" />
     </LinearLayout>
 
@@ -61,6 +64,7 @@
         <ImageView
             android:layout_width="20dp"
             android:layout_height="20dp"
+            android:contentDescription="@null"
             android:src="@drawable/ic_search"
             app:tint="@color/text_tertiary" />
 
@@ -71,18 +75,58 @@
             android:layout_marginStart="8dp"
             android:background="@null"
             android:hint="Tìm chi nhánh theo tên, quận..."
+            android:imeOptions="actionSearch"
+            android:inputType="text"
             android:textColor="@color/text_primary"
             android:textColorHint="@color/text_hint"
             android:textSize="14sp" />
     </LinearLayout>
 
     <!-- Branch List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvBranches"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:tag="safe_bottom"
-        android:paddingBottom="24dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvBranches"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="24dp"
+            android:tag="safe_bottom" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressBranches"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvBranchState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetryBranches"
+                style="@style/Widget.VietTable.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/state_retry"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
 
 </LinearLayout>

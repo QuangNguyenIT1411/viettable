@@ -143,7 +143,7 @@
                             android:id="@+id/tvSuccessBranch"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Bàn B12 • Hoàn Kiếm"
+                            android:text=""
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
                     </LinearLayout>

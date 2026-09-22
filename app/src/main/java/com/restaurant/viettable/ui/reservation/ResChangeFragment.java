@@ -62,11 +62,13 @@ public class ResChangeFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (reservation == null && !appStateManager.getReservations().isEmpty()) {
-            reservation = appStateManager.getReservations().get(0);
-        }
-
         binding.btnBack.setOnClickListener(v -> navigateBack());
+
+        if (reservation == null) {
+            showToast("Không tìm thấy thông tin đặt bàn.");
+            navigateBack();
+            return;
+        }
 
         if (reservation != null) {
             binding.tvResChangeId.setText("Mã đặt bàn: #" + reservation.getId());

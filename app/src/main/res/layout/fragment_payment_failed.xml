@@ -91,7 +91,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="Phiên phục vụ tại bàn B12 của quý khách vẫn đang hoạt động. Quý khách có thể thử lại hoặc chuyển sang thanh toán bằng tiền mặt/quẹt thẻ."
+                        android:text=""
                         android:textColor="@color/colorTextSecondary"
                         android:textSize="13sp" />
                 </LinearLayout>

@@ -1,6 +1,7 @@
 package com.restaurant.viettable.adapter;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -8,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.restaurant.viettable.databinding.ItemVoucherCardBinding;
 import com.restaurant.viettable.model.Voucher;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
 
@@ -56,11 +58,12 @@ public class VoucherCardAdapter extends RecyclerView.Adapter<VoucherCardAdapter.
             binding.tvCardVoucherTitle.setText(voucher.getTitle());
             binding.tvCardVoucherDesc.setText(voucher.getDescription());
             binding.tvCardVoucherCode.setText("Mã: " + voucher.getCode());
-            binding.tvCardVoucherExpiry.setText("HSD: " + voucher.getExpiryDate());
+            binding.tvCardVoucherExpiry.setText("HSD: " + DisplayFormatters.date(voucher.getExpiryDate()));
 
             binding.btnUseVoucherNow.setOnClickListener(v -> {
                 if (listener != null) listener.onUseVoucher(voucher);
             });
+            binding.btnUseVoucherNow.setVisibility(listener == null ? View.GONE : View.VISIBLE);
         }
     }
 }

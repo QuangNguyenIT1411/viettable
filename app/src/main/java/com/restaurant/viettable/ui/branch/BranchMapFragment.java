@@ -8,15 +8,12 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentBranchMapBinding;
-import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.ui.base.BaseFragment;
 
 public class BranchMapFragment extends BaseFragment {
 
     private FragmentBranchMapBinding binding;
-    private Branch selectedNearest;
 
     @Nullable
     @Override
@@ -30,37 +27,10 @@ public class BranchMapFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
-
-        if (!appStateManager.getBranches().isEmpty()) {
-            selectedNearest = appStateManager.getBranches().get(0);
-            updateSelectedBranchView(selectedNearest);
-        }
-
-        binding.markerHoanKiem.setOnClickListener(v -> {
-            selectedNearest = appStateManager.getBranches().get(0);
-            updateSelectedBranchView(selectedNearest);
-        });
-
-        binding.markerBaDinh.setOnClickListener(v -> {
-            if (appStateManager.getBranches().size() > 1) {
-                selectedNearest = appStateManager.getBranches().get(1);
-                updateSelectedBranchView(selectedNearest);
-            }
-        });
-
-        binding.btnChooseMapBranch.setOnClickListener(v -> {
-            if (selectedNearest != null) {
-                appStateManager.setSelectedBranch(selectedNearest);
-                showToast("Đã chọn: " + selectedNearest.getName());
-                setBottomNavVisible(true);
-                switchTab(R.id.nav_home);
-            }
-        });
-    }
-
-    private void updateSelectedBranchView(Branch branch) {
-        binding.tvMapBranchName.setText(branch.getName());
-        binding.tvMapBranchAddress.setText(branch.getAddress() + " • " + branch.getDistanceKm() + " km");
+        binding.mapCanvas.setVisibility(View.GONE);
+        binding.tvMapBranchName.setText("Bản đồ chi nhánh chưa khả dụng");
+        binding.tvMapBranchAddress.setText("VietTable chưa có dữ liệu tọa độ chi nhánh. Vui lòng chọn chi nhánh từ danh sách.");
+        binding.btnChooseMapBranch.setVisibility(View.GONE);
     }
 
     @Override

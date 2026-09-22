@@ -89,7 +89,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:lineSpacingExtra="2dp"
-                            android:text="Nhân viên sẽ mang hóa đơn và thiết bị thanh toán đến tận bàn B12"
+                            android:text=""
                             android:textColor="@color/colorTextSecondary"
                             android:textSize="13sp" />
                     </LinearLayout>

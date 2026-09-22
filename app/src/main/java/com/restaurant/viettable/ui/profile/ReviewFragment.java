@@ -68,6 +68,7 @@ public final class ReviewFragment extends BaseFragment {
         String comment = ReviewInputPolicy.normalizeComment(binding.etReviewComment.getText() == null ? null : binding.etReviewComment.getText().toString());
         if (!ReviewInputPolicy.isCommentValid(comment)) { binding.tilReviewComment.setError("Nội dung tối đa 2.000 ký tự."); return; }
         binding.tilReviewComment.setError(null); submitting = true; binding.btnSubmitReview.setEnabled(false);
+        binding.btnSubmitReview.setText("Đang gửi…");
         MobileRepository.Callback<Review> callback = new MobileRepository.Callback<Review>() {
             @Override public void onSuccess(Review value) {
                 if (binding == null) return;
@@ -76,7 +77,11 @@ public final class ReviewFragment extends BaseFragment {
             }
             @Override public void onError(ApiException error) {
                 submitting = false;
-                if (binding != null) { binding.btnSubmitReview.setEnabled(true); showToast(apiError(error)); }
+                if (binding != null) {
+                    binding.btnSubmitReview.setEnabled(true);
+                    binding.btnSubmitReview.setText(editingReview == null ? "Gửi đánh giá" : "Lưu thay đổi");
+                    showToast(apiError(error));
+                }
             }
         };
         if (editingReview == null) MobileRepository.getInstance().createReview(invoiceId, selectedRating, comment, callback);
@@ -86,11 +91,18 @@ public final class ReviewFragment extends BaseFragment {
     private ImageView[] stars() { return new ImageView[]{binding.star1, binding.star2, binding.star3, binding.star4, binding.star5}; }
     private void setupStars() {
         ImageView[] stars = stars();
-        for (int i = 0; i < stars.length; i++) { final int rating = i + 1; stars[i].setOnClickListener(v -> setRating(rating, stars)); }
+        for (int i = 0; i < stars.length; i++) {
+            final int rating = i + 1;
+            stars[i].setContentDescription(getString(R.string.a11y_rating_value, rating));
+            stars[i].setOnClickListener(v -> setRating(rating, stars));
+        }
     }
     private void setRating(int rating, ImageView[] stars) {
         selectedRating = Math.max(1, Math.min(5, rating));
-        for (int i = 0; i < stars.length; i++) stars[i].setColorFilter(ContextCompat.getColor(requireContext(), i < selectedRating ? R.color.colorSecondary : R.color.colorDivider));
+        for (int i = 0; i < stars.length; i++) {
+            stars[i].setColorFilter(ContextCompat.getColor(requireContext(), i < selectedRating ? R.color.colorSecondary : R.color.colorDivider));
+            stars[i].setSelected(i + 1 == selectedRating);
+        }
         binding.tvRatingPrompt.setText(selectedRating == 5 ? "Tuyệt vời! (5/5)" : selectedRating == 4 ? "Rất hài lòng! (4/5)" : "Đánh giá " + selectedRating + "/5");
     }
 

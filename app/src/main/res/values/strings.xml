@@ -41,7 +41,7 @@
     <string name="auth_reset_pwd_sub">Nhập email hoặc số điện thoại để nhận mã khôi phục.</string>
     <string name="auth_new_password">Mật khẩu mới</string>
     <string name="auth_confirm_new_password">Nhập lại mật khẩu mới</string>
-    <string name="auth_password_rules">Mật khẩu cần có ít nhất 8 ký tự, bao gồm chữ và số.</string>
+    <string name="auth_password_rules">Mật khẩu cần có ít nhất 6 ký tự.</string>
 
     <!-- Branch -->
     <string name="branch_title">Danh sách chi nhánh</string>
@@ -123,7 +123,7 @@
     <string name="qr_checkin_confirm_title">Xác nhận Check-in</string>
     <string name="qr_checkin_confirm_btn">Bắt đầu dùng bữa</string>
     <string name="qr_mismatch_title">Bàn không khớp đặt bàn</string>
-    <string name="qr_mismatch_desc">Bạn đã đặt bàn B12 nhưng đang quét mã tại bàn B15. Vui lòng kiểm tra lại hoặc liên hệ nhân viên.</string>
+    <string name="qr_mismatch_desc">Mã QR không khớp với bàn trong đặt chỗ của bạn. Vui lòng kiểm tra lại hoặc liên hệ nhân viên.</string>
     <string name="qr_walkin_title">Chào mừng quý khách (Walk-in)</string>
     <string name="qr_walkin_desc">Bạn đang ngồi tại bàn này mà không có lịch đặt trước. Bấm bên dưới để bắt đầu phiên dùng bữa.</string>
 
@@ -220,4 +220,29 @@
     <string name="auth_google_success_state">Đăng nhập thành công</string>
     <string name="auth_google_not_configured">Google Sign-In chưa được cấu hình cho bản build này. Bạn vẫn có thể đăng nhập bằng mật khẩu.</string>
     <string name="auth_google_success">Đăng nhập Google thành công!</string>
+    <string name="auth_logging_in">Đang đăng nhập…</string>
+    <string name="auth_registering">Đang tạo tài khoản…</string>
+    <string name="auth_register_intro">Tạo tài khoản để đặt bàn, gọi món và tích điểm thành viên.</string>
+    <string name="a11y_back">Quay lại</string>
+    <string name="a11y_add_favorite">Thêm vào yêu thích</string>
+    <string name="a11y_remove_favorite">Xóa khỏi yêu thích</string>
+    <string name="a11y_rating_value">Chọn %1$d trên 5 sao</string>
+    <string name="a11y_search">Tìm kiếm</string>
+    <string name="a11y_notifications">Thông báo</string>
+    <string name="a11y_clear">Xóa nội dung</string>
+    <string name="a11y_edit_profile">Chỉnh sửa hồ sơ</string>
+    <string name="a11y_increase">Tăng số lượng</string>
+    <string name="a11y_decrease">Giảm số lượng</string>
+    <string name="a11y_rating_1">Đánh giá 1 sao</string>
+    <string name="a11y_rating_2">Đánh giá 2 sao</string>
+    <string name="a11y_rating_3">Đánh giá 3 sao</string>
+    <string name="a11y_rating_4">Đánh giá 4 sao</string>
+    <string name="a11y_rating_5">Đánh giá 5 sao</string>
+    <string name="state_loading">Đang tải dữ liệu…</string>
+    <string name="state_retry">Thử lại</string>
+    <string name="state_no_branches">Không tìm thấy chi nhánh phù hợp.</string>
+    <string name="state_no_favorites">Bạn chưa có món ăn yêu thích nào.</string>
+    <string name="state_no_notifications">Bạn chưa có thông báo nào trong mục này.</string>
+    <string name="state_no_reservations">Bạn chưa có lịch đặt bàn trong mục này.</string>
+    <string name="state_no_active_session">Bạn chưa có phiên dùng bữa đang hoạt động.</string>
 </resources>

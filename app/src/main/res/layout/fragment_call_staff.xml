@@ -67,7 +67,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Yêu cầu từ: Bàn B12 • VietTable Hoàn Kiếm"
+                    android:text=""
                     android:textColor="@color/colorPrimary"
                     android:textSize="14sp" />
             </LinearLayout>

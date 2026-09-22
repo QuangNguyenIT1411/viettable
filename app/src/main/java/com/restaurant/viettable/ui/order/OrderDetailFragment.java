@@ -13,6 +13,7 @@ import com.restaurant.viettable.adapter.TrackedItemAdapter;
 import com.restaurant.viettable.databinding.FragmentOrderDetailBinding;
 import com.restaurant.viettable.model.Order;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.ui.profile.ReviewHistoryFragment;
 
 public class OrderDetailFragment extends BaseFragment {
@@ -54,7 +55,7 @@ public class OrderDetailFragment extends BaseFragment {
         if (order != null) {
             binding.tvOrderDetailId.setText("Mã đơn: #" + order.getId());
             binding.tvOrderDetailStatus.setText(order.getStatusDisplayText().toUpperCase());
-            binding.tvOrderDetailMeta.setText(order.getTableNumber() + " • Gọi lúc: " + order.getCreatedAt() + " • " + order.getBranchName());
+            binding.tvOrderDetailMeta.setText(order.getTableNumber() + " • Gọi lúc: " + DisplayFormatters.dateTime(order.getCreatedAt()) + " • " + order.getBranchName());
             binding.tvOrderSubtotalPrice.setText(order.getFormattedTotalAmount());
 
             TrackedItemAdapter adapter = new TrackedItemAdapter(order.getItems(), item -> {

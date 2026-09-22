@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/bg_cream">
 
-    <!-- Mock Map Canvas -->
+    <!-- Legacy map canvas remains hidden until the API provides real coordinates. -->
     <FrameLayout
         android:id="@+id/mapCanvas"
         android:layout_width="0dp"
@@ -36,7 +36,7 @@
             android:layout_marginTop="320dp"
             android:background="#D0DCD5" />
 
-        <!-- Mock Current Location Pin -->
+        <!-- Decorative legacy location pin. -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -85,7 +85,7 @@
                 android:background="@drawable/bg_badge"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
-                android:text="VietTable Hoàn Kiếm (0.8km)"
+                android:text=""
                 android:textColor="@color/primary_dark"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -113,7 +113,7 @@
                 android:background="@drawable/bg_badge"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
-                android:text="VietTable Ba Đình (2.5km)"
+                android:text=""
                 android:textColor="@color/primary_dark"
                 android:textSize="10sp" />
         </LinearLayout>
@@ -134,9 +134,10 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="@drawable/bg_badge"
+            android:contentDescription="@string/a11y_back"
             android:src="@drawable/ic_back"
             app:tint="@color/primary_dark" />
 
@@ -181,7 +182,7 @@
                 android:id="@+id/tvMapBranchName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="VietTable Hoàn Kiếm (Gần nhất)"
+                android:text=""
                 android:textColor="@color/primary"
                 android:textSize="17sp"
                 android:textStyle="bold" />
@@ -191,7 +192,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="34 Lý Thường Kiệt, Hoàn Kiếm • 0.8 km"
+                android:text=""
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 

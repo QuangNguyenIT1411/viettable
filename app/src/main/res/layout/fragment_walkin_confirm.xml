@@ -81,7 +81,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Bàn 08 (T-08)"
+                            android:text=""
                             android:textColor="@color/colorPrimary"
                             android:textSize="18sp" />
 

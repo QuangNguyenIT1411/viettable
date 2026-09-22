@@ -80,6 +80,7 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
         binding.btnTrackItemsProgress.setOnClickListener(v -> {
             navigateTo(OrderTrackingFragment.newInstance());
         });
+        binding.btnRetryCurrentOrders.setOnClickListener(v -> refreshOrders());
 
         loadOrders();
         refreshOrders();
@@ -88,6 +89,7 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
     private void refreshOrders() {
         if (binding == null || refreshing) return;
         refreshing = true;
+        renderState(appStateManager.getActiveDiningSession() == null, null);
         handler.removeCallbacks(fallbackRefresh);
         MobileRepository.getInstance().loadOrders("active", new MobileRepository.Callback<List<Order>>() {
             @Override public void onSuccess(List<Order> value) {
@@ -96,7 +98,10 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
             }
             @Override public void onError(ApiException error) {
                 refreshing = false;
-                if (binding != null) scheduleFallbackPolling();
+                if (binding != null) {
+                    renderState(false, apiError(error));
+                    scheduleFallbackPolling();
+                }
             }
         });
     }
@@ -116,6 +121,9 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
     private void loadOrders() {
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
+            binding.contentCurrentOrders.setVisibility(View.VISIBLE);
+            binding.bottomActions.setVisibility(View.VISIBLE);
+            binding.layoutCurrentOrdersState.setVisibility(View.GONE);
             binding.tvCurrentOrdersTable.setText(session.getTableId() + " • " + session.getBranchName());
 
             int totalItems = 0;
@@ -132,7 +140,21 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
             });
             binding.rvCurrentOrders.setLayoutManager(new LinearLayoutManager(requireContext()));
             binding.rvCurrentOrders.setAdapter(adapter);
+        } else {
+            renderState(false, null);
         }
+    }
+
+    private void renderState(boolean loading, @Nullable String error) {
+        if (binding == null || appStateManager.getActiveDiningSession() != null) return;
+        binding.contentCurrentOrders.setVisibility(View.GONE);
+        binding.bottomActions.setVisibility(View.GONE);
+        binding.layoutCurrentOrdersState.setVisibility(View.VISIBLE);
+        binding.progressCurrentOrders.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.tvCurrentOrdersState.setVisibility(loading ? View.GONE : View.VISIBLE);
+        binding.btnRetryCurrentOrders.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        if (!loading) binding.tvCurrentOrdersState.setText(error != null
+                ? error : getString(com.restaurant.viettable.R.string.state_no_active_session));
     }
 
     @Override

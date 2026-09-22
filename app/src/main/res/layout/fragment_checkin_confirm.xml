@@ -93,7 +93,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Bàn 04 (T-04)"
+                                android:text=""
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="18sp" />
 
@@ -190,7 +190,7 @@
                             android:id="@+id/tvCheckinCustomer"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Nguyễn Văn A (0912 345 678)"
+                            android:text=""
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
                     </LinearLayout>

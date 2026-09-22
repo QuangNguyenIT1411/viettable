@@ -19,6 +19,7 @@ import com.restaurant.viettable.model.SplitBill;
 import com.restaurant.viettable.model.PaymentInfo;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class PaymentProcessingFragment extends BaseFragment {
 
@@ -96,7 +97,7 @@ public class PaymentProcessingFragment extends BaseFragment {
         binding.tvProcessingMethod.setText(provider == null ? "Phương thức: " + method : "Cổng thanh toán: " + provider);
         binding.tvProviderReference.setText(payment.getProviderReference() == null ? "" : "Mã tham chiếu: " + payment.getProviderReference());
         binding.tvProviderReference.setVisibility(payment.getProviderReference() == null ? View.GONE : View.VISIBLE);
-        binding.tvProviderExpiry.setText(payment.getProviderExpiresAtUtc() == null ? "" : "Hiệu lực đến: " + payment.getProviderExpiresAtUtc());
+        binding.tvProviderExpiry.setText(payment.getProviderExpiresAtUtc() == null ? "" : "Hiệu lực đến: " + DisplayFormatters.dateTime(payment.getProviderExpiresAtUtc()));
         binding.tvProviderExpiry.setVisibility(payment.getProviderExpiresAtUtc() == null ? View.GONE : View.VISIBLE);
         binding.btnOpenProvider.setVisibility(payment.hasPaymentUrl() ? View.VISIBLE : View.GONE);
     }

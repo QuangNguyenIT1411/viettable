@@ -8,18 +8,12 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-
-import com.google.android.material.tabs.TabLayout;
-import com.restaurant.viettable.adapter.BranchAdapter;
 import com.restaurant.viettable.adapter.FoodAdapter;
 import com.restaurant.viettable.databinding.FragmentFavoritesBinding;
 import com.restaurant.viettable.data.MobileRepository;
-import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.model.FoodItem;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
-import com.restaurant.viettable.ui.branch.BranchDetailFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +22,7 @@ public class FavoritesFragment extends BaseFragment {
 
     private FragmentFavoritesBinding binding;
     private final List<FoodItem> favFoods = new ArrayList<>();
-    private final List<Branch> favBranches = new ArrayList<>();
+    private FoodAdapter adapter;
 
     @Nullable
     @Override
@@ -44,29 +38,38 @@ public class FavoritesFragment extends BaseFragment {
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
 
-        binding.tabLayoutFavorites.addTab(binding.tabLayoutFavorites.newTab().setText("Món yêu thích"));
-        binding.tabLayoutFavorites.addTab(binding.tabLayoutFavorites.newTab().setText("Chi nhánh yêu thích"));
-
-        showFavoriteFoods();
-
-        if (MobileRepository.getInstance().hasSession()) {
-            MobileRepository.getInstance().loadFavorites(new MobileRepository.Callback<Void>() {
-                @Override public void onSuccess(Void value) { if (binding != null) showFavoriteFoods(); }
-                @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
-            });
-        }
-
-        binding.tabLayoutFavorites.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                if (tab.getPosition() == 0) {
-                    showFavoriteFoods();
-                } else {
-                    showFavoriteBranches();
-                }
+        binding.tabLayoutFavorites.setVisibility(View.GONE);
+        binding.rvFavorites.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        adapter = new FoodAdapter(favFoods, new FoodAdapter.OnFoodActionListener() {
+            @Override public void onFoodClicked(FoodItem food) {
+                navigateTo(FoodDetailFragment.newInstance(food));
             }
-            @Override public void onTabUnselected(TabLayout.Tab tab) {}
-            @Override public void onTabReselected(TabLayout.Tab tab) {}
+            @Override public void onAddToCart(FoodItem food) {
+                appStateManager.addToCart(food, 1, "Tiêu chuẩn", new ArrayList<>(), 0, "");
+                showToast("Đã thêm " + food.getName() + " vào giỏ!");
+            }
+            @Override public void onToggleFavorite(FoodItem food) {
+                persistFavorite(food);
+                if (!food.isFavorite()) showFavoriteFoods();
+            }
+        });
+        binding.rvFavorites.setAdapter(adapter);
+        binding.btnRetryFavorites.setOnClickListener(v -> loadFavorites());
+        showFavoriteFoods();
+        loadFavorites();
+    }
+
+    private void loadFavorites() {
+        if (!MobileRepository.getInstance().hasSession()) {
+            renderState(false, null);
+            return;
+        }
+        renderState(true, null);
+        MobileRepository.getInstance().loadFavorites(new MobileRepository.Callback<Void>() {
+            @Override public void onSuccess(Void value) { if (binding != null) showFavoriteFoods(); }
+            @Override public void onError(ApiException error) {
+                if (binding != null) renderState(false, apiError(error));
+            }
         });
     }
 
@@ -75,44 +78,20 @@ public class FavoritesFragment extends BaseFragment {
         for (FoodItem fi : appStateManager.getFoodItems()) {
             if (fi.isFavorite()) favFoods.add(fi);
         }
-        binding.rvFavorites.setLayoutManager(new GridLayoutManager(getContext(), 2));
-        binding.rvFavorites.setAdapter(new FoodAdapter(favFoods, new FoodAdapter.OnFoodActionListener() {
-            @Override
-            public void onFoodClicked(FoodItem food) {
-                navigateTo(FoodDetailFragment.newInstance(food));
-            }
-
-            @Override
-            public void onAddToCart(FoodItem food) {
-                appStateManager.addToCart(food, 1, "Tiêu chuẩn", new ArrayList<>(), 0, "");
-                showToast("Đã thêm " + food.getName() + " vào giỏ!");
-            }
-
-            @Override
-            public void onToggleFavorite(FoodItem food) {
-                persistFavorite(food);
-                if (!food.isFavorite()) showFavoriteFoods();
-            }
-        }));
+        adapter.notifyDataSetChanged();
+        renderState(false, null);
     }
 
-    private void showFavoriteBranches() {
-        favBranches.clear();
-
-        binding.rvFavorites.setLayoutManager(new LinearLayoutManager(getContext()));
-        binding.rvFavorites.setAdapter(new BranchAdapter(favBranches, new BranchAdapter.OnBranchActionListener() {
-            @Override
-            public void onSelectBranch(Branch branch) {
-                appStateManager.setSelectedBranch(branch);
-                showToast("Đã chọn chi nhánh: " + branch.getName());
-                navigateBack();
-            }
-
-            @Override
-            public void onViewDetail(Branch branch) {
-                navigateTo(BranchDetailFragment.newInstance(branch));
-            }
-        }));
+    private void renderState(boolean loading, @Nullable String error) {
+        if (binding == null) return;
+        boolean hasContent = !favFoods.isEmpty();
+        binding.rvFavorites.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        binding.progressFavorites.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.tvFavoriteState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.btnRetryFavorites.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        if (!loading && !hasContent) {
+            binding.tvFavoriteState.setText(error != null ? error : getString(com.restaurant.viettable.R.string.state_no_favorites));
+        }
     }
 
     @Override

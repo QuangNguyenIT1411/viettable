@@ -78,10 +78,11 @@
                 android:orientation="horizontal"
                 android:paddingHorizontal="6dp">
 
-                <ImageButton
-                    android:id="@+id/btnMinusCart"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+            <ImageButton
+                android:id="@+id/btnMinusCart"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/a11y_decrease"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_remove"
                     app:tint="@color/primary" />
@@ -96,10 +97,11 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
-                <ImageButton
-                    android:id="@+id/btnPlusCart"
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+            <ImageButton
+                android:id="@+id/btnPlusCart"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/a11y_increase"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_add"
                     app:tint="@color/primary" />

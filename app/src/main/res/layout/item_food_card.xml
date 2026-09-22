@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardFood"
     style="@style/Widget.VietTable.Card"
     android:layout_width="@dimen/food_card_width"
@@ -36,19 +37,21 @@
 
             <ImageView
                 android:id="@+id/btnFavorite"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:contentDescription="@string/a11y_add_favorite"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:layout_gravity="top|end"
                 android:layout_margin="8dp"
                 android:background="@drawable/bg_round_floating_btn"
                 android:clickable="true"
                 android:focusable="true"
-                android:padding="6dp"
+                android:padding="12dp"
                 android:src="@drawable/ic_favorite_border"
                 app:tint="@color/semantic_error" />
 
             <!-- Rating badge -->
             <LinearLayout
+                android:id="@+id/layoutFoodRating"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|start"
@@ -63,6 +66,7 @@
                 <ImageView
                     android:layout_width="11dp"
                     android:layout_height="11dp"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_star"
                     app:tint="@color/accent_gold" />
 
@@ -72,9 +76,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="3dp"
                     android:fontFamily="sans-serif-bold"
-                    android:text="4.9"
                     android:textColor="@color/white"
-                    android:textSize="11sp" />
+                    android:textSize="11sp"
+                    tools:text="4.9" />
             </LinearLayout>
         </FrameLayout>
 
@@ -92,9 +96,9 @@
                 android:ellipsize="end"
                 android:fontFamily="sans-serif-bold"
                 android:maxLines="2"
-                android:text="Phở bò tái lăn"
                 android:textColor="@color/text_primary"
-                android:textSize="13sp" />
+                android:textSize="13sp"
+                tools:text="Phở bò tái lăn" />
 
             <TextView
                 android:id="@+id/tvFoodPrice"
@@ -102,9 +106,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:fontFamily="sans-serif-black"
-                android:text="89.000đ"
                 android:textColor="@color/primary"
-                android:textSize="15sp" />
+                android:textSize="15sp"
+                tools:text="89.000đ" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddFood"

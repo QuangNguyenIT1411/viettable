@@ -16,6 +16,7 @@ import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.Invoice;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ public class PaymentCheckoutFragment extends BaseFragment {
         List<String> unfinishedNames = new ArrayList<>();
         if (session != null) {
             binding.tvCheckoutTable.setText(session.getTableId() + " - " + session.getBranchName());
-            binding.tvCheckoutSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + session.getStartTime());
+            binding.tvCheckoutSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + DisplayFormatters.dateTime(session.getStartTime()));
             binding.tvCheckoutOrderCount.setText(session.getOrders().size() + " đợt");
 
             int totalDishes = 0;

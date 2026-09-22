@@ -1,6 +1,7 @@
 package com.restaurant.viettable.adapter;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -61,12 +62,14 @@ public class FoodAdapter extends RecyclerView.Adapter<FoodAdapter.FoodViewHolder
             binding.tvFoodName.setText(item.getName());
             binding.tvFoodPrice.setText(item.getFormattedPrice());
             binding.tvFoodRating.setText(String.valueOf(item.getRating()));
+            binding.layoutFoodRating.setVisibility(item.getRating() > 0 ? View.VISIBLE : View.GONE);
 
             if (item.isFavorite()) {
                 binding.btnFavorite.setImageResource(R.drawable.ic_favorite);
             } else {
                 binding.btnFavorite.setImageResource(R.drawable.ic_favorite_border);
             }
+            updateFavoriteDescription(item);
 
             binding.cardFood.setOnClickListener(v -> {
                 if (listener != null) listener.onFoodClicked(item);
@@ -83,8 +86,14 @@ public class FoodAdapter extends RecyclerView.Adapter<FoodAdapter.FoodViewHolder
                 } else {
                     binding.btnFavorite.setImageResource(R.drawable.ic_favorite_border);
                 }
+                updateFavoriteDescription(item);
                 if (listener != null) listener.onToggleFavorite(item);
             });
+        }
+
+        private void updateFavoriteDescription(FoodItem item) {
+            binding.btnFavorite.setContentDescription(binding.getRoot().getContext().getString(
+                    item.isFavorite() ? R.string.a11y_remove_favorite : R.string.a11y_add_favorite));
         }
     }
 }

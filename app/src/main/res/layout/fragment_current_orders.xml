@@ -22,6 +22,7 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/contentCurrentOrders"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingBottom="96dp"
@@ -50,7 +51,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-bold"
-                        android:text="Bàn B12 • VietTable Hoàn Kiếm"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
@@ -79,7 +79,6 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="sans-serif-bold"
-                                android:text="6 món"
                                 android:textColor="@color/text_primary"
                                 android:textSize="18sp" />
                         </LinearLayout>
@@ -103,7 +102,6 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:fontFamily="sans-serif-black"
-                                android:text="540.000 đ"
                                 android:textColor="@color/primary"
                                 android:textSize="18sp" />
                         </LinearLayout>
@@ -130,8 +128,42 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <LinearLayout
+        android:id="@+id/layoutCurrentOrdersState"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progressCurrentOrders"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvCurrentOrdersState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRetryCurrentOrders"
+            style="@style/Widget.VietTable.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/state_retry"
+            android:visibility="gone" />
+    </LinearLayout>
+
     <!-- Bottom Actions -->
     <LinearLayout
+        android:id="@+id/bottomActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"

@@ -20,6 +20,7 @@ import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.Locale;
 
@@ -87,7 +88,7 @@ public class InvoiceFragment extends BaseFragment {
         }
 
         binding.tvInvoiceBranch.setText(session.getBranchName());
-        binding.tvInvoiceSessionInfo.setText(session.getTableId() + " • Phiên #" + session.getId() + " • " + session.getStartTime());
+        binding.tvInvoiceSessionInfo.setText(session.getTableId() + " • Phiên #" + session.getId() + " • " + DisplayFormatters.dateTime(session.getStartTime()));
 
         subtotal = serverQuote.getSubtotal();
         serviceFee = serverQuote.getServiceFee();

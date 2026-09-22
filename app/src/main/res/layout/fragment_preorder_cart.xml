@@ -19,10 +19,11 @@
         android:orientation="horizontal"
         android:paddingHorizontal="16dp">
 
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/a11y_back"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
             app:tint="@color/primary" />
@@ -56,7 +57,7 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="8dp"
         android:padding="10dp"
-        android:text="Gắn với lịch đặt: #RES-8899 • Bàn B12 • VietTable Hoàn Kiếm"
+        android:text=""
         android:textColor="@color/primary_dark"
         android:textSize="12sp"
         android:textStyle="bold" />

@@ -84,7 +84,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Bàn B12 • Gọi lúc: 19:05 • VietTable Hoàn Kiếm"
+                        android:text=""
                         android:textColor="@color/colorTextSecondary"
                         android:textSize="13sp" />
                 </LinearLayout>

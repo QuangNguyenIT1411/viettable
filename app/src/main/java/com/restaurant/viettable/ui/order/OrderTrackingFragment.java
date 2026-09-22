@@ -63,6 +63,7 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
         });
 
         binding.tvRefreshOrderStatus.setOnClickListener(v -> refreshOrders());
+        binding.btnRetryOrderTracking.setOnClickListener(v -> refreshOrders());
 
         loadTrackedData();
         refreshOrders();
@@ -90,6 +91,7 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
             binding.rvTrackedItems.setLayoutManager(new LinearLayoutManager(requireContext()));
             binding.rvTrackedItems.setAdapter(adapter);
         }
+        renderState(false, null);
     }
 
     private void updateStepperState(Order.Status status) {
@@ -127,6 +129,7 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
     private void refreshOrders() {
         if (!isAdded() || isRefreshing) return;
         isRefreshing = true;
+        renderState(true, null);
         handler.removeCallbacks(refreshRunnable);
         MobileRepository.getInstance().loadOrders("active", new MobileRepository.Callback<List<Order>>() {
             @Override public void onSuccess(List<Order> value) {
@@ -135,9 +138,24 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
             }
             @Override public void onError(ApiException error) {
                 isRefreshing = false;
-                if (binding != null) scheduleFallbackPolling();
+                if (binding != null) {
+                    renderState(false, apiError(error));
+                    scheduleFallbackPolling();
+                }
             }
         });
+    }
+
+    private void renderState(boolean loading, @Nullable String error) {
+        if (binding == null) return;
+        boolean hasContent = !allTrackedItems.isEmpty();
+        binding.contentOrderTracking.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        binding.layoutOrderTrackingState.setVisibility(hasContent ? View.GONE : View.VISIBLE);
+        binding.progressOrderTracking.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.tvOrderTrackingState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.btnRetryOrderTracking.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        if (!loading && !hasContent) binding.tvOrderTrackingState.setText(error != null ? error
+                : "Chưa có món ăn nào để theo dõi trong phiên này.");
     }
 
     private void scheduleFallbackPolling() {

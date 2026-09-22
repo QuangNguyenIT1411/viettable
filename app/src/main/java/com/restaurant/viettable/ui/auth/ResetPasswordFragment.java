@@ -42,23 +42,35 @@ public class ResetPasswordFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
+        binding.etConfirmNewPassword.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                binding.btnSubmitReset.performClick();
+                return true;
+            }
+            return false;
+        });
         binding.btnSubmitReset.setOnClickListener(v -> {
             String p1 = binding.etNewPassword.getText() != null ? binding.etNewPassword.getText().toString().trim() : "";
             String p2 = binding.etConfirmNewPassword.getText() != null ? binding.etConfirmNewPassword.getText().toString().trim() : "";
 
+            binding.tilNewPassword.setError(null);
+            binding.tilConfirmNewPassword.setError(null);
             if (TextUtils.isEmpty(p1) || p1.length() < 6) {
-                showToast("Mật khẩu phải có ít nhất 6 ký tự.");
+                binding.tilNewPassword.setError("Mật khẩu phải có ít nhất 6 ký tự.");
+                binding.etNewPassword.requestFocus();
                 return;
             }
             if (!p1.equals(p2)) {
-                showToast("Mật khẩu xác nhận không khớp.");
+                binding.tilConfirmNewPassword.setError("Mật khẩu xác nhận không khớp.");
+                binding.etConfirmNewPassword.requestFocus();
                 return;
             }
             if (TextUtils.isEmpty(resetToken)) { showToast("Mã đặt lại mật khẩu không hợp lệ."); return; }
             binding.btnSubmitReset.setEnabled(false);
+            binding.btnSubmitReset.setText("Đang cập nhật…");
             MobileRepository.getInstance().resetPassword(resetToken, p1, new MobileRepository.Callback<Void>() {
                 @Override public void onSuccess(Void value) { showToast("Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại."); navigateTo(new LoginFragment()); }
-                @Override public void onError(ApiException error) { if (binding != null) { binding.btnSubmitReset.setEnabled(true); showToast(apiError(error)); } }
+                @Override public void onError(ApiException error) { if (binding != null) { binding.btnSubmitReset.setEnabled(true); binding.btnSubmitReset.setText("Xác nhận đổi mật khẩu"); binding.tilNewPassword.setError(apiError(error)); } }
             });
         });
     }

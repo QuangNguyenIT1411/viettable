@@ -83,7 +83,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Tại bàn B12"
+                            android:text=""
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
                     </LinearLayout>

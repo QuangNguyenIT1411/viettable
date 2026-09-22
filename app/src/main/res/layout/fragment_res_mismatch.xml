@@ -88,7 +88,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Bàn T-02"
+                                android:text=""
                                 android:textColor="@color/colorError"
                                 android:textSize="18sp" />
                         </LinearLayout>
@@ -120,7 +120,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
                                 android:fontFamily="sans-serif-medium"
-                                android:text="Bàn T-04"
+                                android:text=""
                                 android:textColor="@color/colorPrimary"
                                 android:textSize="18sp" />
                         </LinearLayout>
@@ -160,7 +160,7 @@
             style="@style/Widget.VietTable.Button.Primary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Quét lại mã đúng bàn (Bàn T-04)" />
+            android:text="Quét lại mã đúng bàn" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSwitchToCurrentTable"
@@ -168,7 +168,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Chuyển sang ngồi bàn này (T-02)" />
+            android:text="Chuyển sang bàn vừa quét" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAskStaff"

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemNotificationBinding;
 import com.restaurant.viettable.model.NotificationItem;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
 
@@ -57,7 +58,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         public void bind(NotificationItem item, OnNotificationClickListener listener) {
             binding.tvNotifTitle.setText(item.getTitle());
             binding.tvNotifMessage.setText(item.getMessage());
-            binding.tvNotifTimestamp.setText(item.getTimestamp());
+            binding.tvNotifTimestamp.setText(DisplayFormatters.dateTime(item.getTimestamp()));
             binding.viewUnreadDot.setVisibility(item.isRead() ? View.GONE : View.VISIBLE);
 
             if (item.getType() == NotificationItem.Type.RESERVATION) {

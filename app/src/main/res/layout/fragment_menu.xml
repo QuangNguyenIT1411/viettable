@@ -24,8 +24,9 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/a11y_back"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
             app:tint="@color/primary" />
@@ -49,15 +50,16 @@
                 android:id="@+id/tvMenuBranch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="VietTable Hoàn Kiếm"
+                android:text=""
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>
 
         <ImageButton
             android:id="@+id/btnSearchMenu"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/a11y_search"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_search"
             app:tint="@color/primary" />

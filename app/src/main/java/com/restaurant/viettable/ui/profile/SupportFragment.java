@@ -43,14 +43,6 @@ public class SupportFragment extends BaseFragment {
         binding.btnRetryFaq.setOnClickListener(v -> loadFaqs());
         loadFaqs();
 
-        binding.cardCallHotline.setOnClickListener(v -> {
-            showToast("Đang kết nối tổng đài chăm sóc khách hàng 1900 8822...");
-        });
-
-        binding.cardLiveChat.setOnClickListener(v -> {
-            showToast("Đang kết nối chuyên viên hỗ trợ trực tuyến...");
-        });
-
         binding.btnSendFeedback.setOnClickListener(v -> {
             String feedback = binding.etFeedback.getText() != null ? binding.etFeedback.getText().toString().trim() : "";
             if (TextUtils.isEmpty(feedback)) {

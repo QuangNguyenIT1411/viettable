@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardBranch"
     style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
@@ -23,9 +24,9 @@
                 android:id="@+id/ivBranchImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:contentDescription="@string/app_name"
+                android:contentDescription="@null"
                 android:scaleType="centerCrop"
-                android:src="@drawable/branch_hoan_kiem" />
+                tools:src="@drawable/branch_hoan_kiem" />
 
             <View
                 android:layout_width="match_parent"
@@ -43,7 +44,7 @@
                 android:fontFamily="sans-serif-bold"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
-                android:text="Đang mở cửa"
+                tools:text="Đang mở cửa"
                 android:textColor="@color/primary"
                 android:textSize="11sp" />
 
@@ -58,7 +59,7 @@
                 android:fontFamily="sans-serif-bold"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
-                android:text="0.8 km"
+                tools:text="0.8 km"
                 android:textColor="@color/white"
                 android:textSize="11sp" />
         </FrameLayout>
@@ -82,25 +83,34 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:fontFamily="sans-serif-bold"
-                    android:text="VietTable Hoàn Kiếm"
+                    tools:text="VietTable Hoàn Kiếm"
                     android:textColor="@color/text_primary"
                     android:textSize="17sp" />
 
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_star"
-                    app:tint="@color/accent_gold" />
-
-                <TextView
-                    android:id="@+id/tvRating"
+                <LinearLayout
+                    android:id="@+id/layoutRating"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:fontFamily="sans-serif-bold"
-                    android:text="4.8 (380)"
-                    android:textColor="@color/text_primary"
-                    android:textSize="13sp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_star"
+                        app:tint="@color/accent_gold" />
+
+                    <TextView
+                        android:id="@+id/tvRating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:fontFamily="sans-serif-bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        tools:text="4.8 (380)" />
+                </LinearLayout>
             </LinearLayout>
 
             <TextView
@@ -111,7 +121,7 @@
                 android:drawableStart="@drawable/ic_location"
                 android:drawablePadding="8dp"
                 android:drawableTint="@color/text_tertiary"
-                android:text="34 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội"
+                tools:text="34 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
@@ -123,7 +133,7 @@
                 android:drawableStart="@drawable/ic_clock"
                 android:drawablePadding="8dp"
                 android:drawableTint="@color/text_tertiary"
-                android:text="10:00 - 22:30"
+                tools:text="10:00 - 22:30"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 

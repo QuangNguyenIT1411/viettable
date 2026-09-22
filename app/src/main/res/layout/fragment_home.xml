@@ -68,7 +68,7 @@
                         android:id="@+id/tvHeaderBranchName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="VietTable Hoàn Kiếm"
+                        android:text=""
                         android:textColor="@color/text_primary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -83,10 +83,11 @@
             </LinearLayout>
 
             <!-- Search Action Icon (also triggers search) -->
-            <ImageButton
-                android:id="@+id/btnHeaderSearch"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                <ImageButton
+                    android:id="@+id/btnHeaderSearch"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/a11y_search"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_search"
                 app:tint="@color/text_primary" />
@@ -94,8 +95,9 @@
             <!-- Notification Action with Badge -->
             <FrameLayout
                 android:id="@+id/btnHeaderNotification"
-                android:layout_width="40dp"
-                android:layout_height="40dp">
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/a11y_notifications">
 
                 <ImageView
                     android:layout_width="22dp"
@@ -151,6 +153,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="14dp"
+            android:visibility="gone"
             app:cardBackgroundColor="@color/accent_gold_container"
             app:cardElevation="1dp"
             app:strokeColor="@color/accent_gold"
@@ -172,7 +175,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Ưu đãi tháng 9"
+                        android:text=""
                         android:textColor="@color/accent_gold_dark"
                         android:textSize="11sp"
                         android:textStyle="bold" />
@@ -181,7 +184,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Giảm 20% khi đặt bàn trước"
+                        android:text=""
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -190,7 +193,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Mã VIETTABLE20 cho hóa đơn từ 300k"
+                        android:text=""
                         android:textColor="@color/text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -257,7 +260,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="19:00, Ngày mai • 4 khách • Bàn B12"
+                    android:text=""
                     android:textColor="@color/primary"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -267,7 +270,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="VietTable Hoàn Kiếm (34 Lý Thường Kiệt)"
+                    android:text=""
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
 

@@ -43,7 +43,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Giảm 50.000 đ"
+                    android:text=""
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="15sp" />
 
@@ -52,7 +52,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Cho hóa đơn từ 400.000đ tại toàn hệ thống"
+                    android:text=""
                     android:textColor="@color/colorTextSecondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -85,7 +85,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
-                android:text="Mã: VT50K"
+                android:text=""
                 android:textColor="@color/colorPrimary"
                 android:textSize="12sp" />
 
@@ -93,7 +93,7 @@
                 android:id="@+id/tvCardVoucherExpiry"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="HSD: 30/09/2026"
+                android:text=""
                 android:textColor="@color/colorTextSecondary"
                 android:textSize="12sp" />
         </LinearLayout>

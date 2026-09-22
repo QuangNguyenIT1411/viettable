@@ -15,6 +15,7 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.preorder.PreorderDetailFragment;
 import com.restaurant.viettable.ui.preorder.PreorderMenuFragment;
 import com.restaurant.viettable.ui.session.QrScanFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class ResDetailFragment extends BaseFragment {
 
@@ -50,16 +51,18 @@ public class ResDetailFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (reservation == null && !appStateManager.getReservations().isEmpty()) {
-            reservation = appStateManager.getReservations().get(0);
-        }
-
         binding.btnBack.setOnClickListener(v -> navigateBack());
+
+        if (reservation == null) {
+            showToast("Không tìm thấy thông tin đặt bàn.");
+            navigateBack();
+            return;
+        }
 
         if (reservation != null) {
             binding.tvDetailResId.setText("#" + reservation.getId());
             binding.tvDetailBranch.setText(reservation.getBranchName());
-            binding.tvDetailDateTime.setText(reservation.getTimeSlot() + " • " + reservation.getDate());
+            binding.tvDetailDateTime.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));
             binding.tvDetailTable.setText("Bàn " + reservation.getTableId() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
             binding.tvDetailStatusBadge.setText(reservation.getStatusDisplayText());
             binding.tvDetailStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);

@@ -17,6 +17,7 @@ import com.restaurant.viettable.model.CartItem;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
 
@@ -58,7 +59,7 @@ public class PreorderDetailFragment extends BaseFragment {
         binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
 
         if (reservation != null) {
-            binding.tvResInfo.setText("Mã: #" + reservation.getId() + " • Bàn " + reservation.getTableId() + " • " + reservation.getTimeSlot() + " - " + reservation.getDate());
+            binding.tvResInfo.setText("Mã: #" + reservation.getId() + " • Bàn " + reservation.getTableId() + " • " + reservation.getTimeSlot() + " - " + DisplayFormatters.date(reservation.getDate()));
         }
 
         setupRecyclerView();

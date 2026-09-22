@@ -35,7 +35,7 @@
                     android:id="@+id/tvTableContext"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bàn B12 • Đang phục vụ"
+                    android:text=""
                     android:textColor="@color/colorPrimary"
                     android:textSize="12sp" />
             </LinearLayout>

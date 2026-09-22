@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.inputmethod.EditorInfo;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +16,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ExperimentalGetImage;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
@@ -87,6 +90,13 @@ public class QrScanFragment extends BaseFragment {
 
         binding.btnCameraPermission.setOnClickListener(v -> handleCameraPermissionAction());
         binding.btnSubmitTableCode.setOnClickListener(v -> submitManualCode());
+        binding.etTableCode.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                submitManualCode();
+                return true;
+            }
+            return false;
+        });
         ensureCameraPermission();
     }
 
@@ -209,6 +219,7 @@ public class QrScanFragment extends BaseFragment {
         }, ContextCompat.getMainExecutor(requireContext()));
     }
 
+    @OptIn(markerClass = ExperimentalGetImage.class)
     private void analyzeImage(@NonNull ImageProxy imageProxy) {
         if (qrConsumed.get() || barcodeScanner == null || !frameInFlight.compareAndSet(false, true)) {
             imageProxy.close();

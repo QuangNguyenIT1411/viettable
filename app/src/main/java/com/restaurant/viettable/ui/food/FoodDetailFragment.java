@@ -1,6 +1,7 @@
 package com.restaurant.viettable.ui.food;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -82,21 +83,32 @@ public class FoodDetailFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (foodItem == null && !appStateManager.getFoodItems().isEmpty()) {
-            foodItem = appStateManager.getFoodItems().get(0);
-        }
-
         binding.btnBack.setOnClickListener(v -> navigateBack());
+
+        if (foodItem == null) {
+            showToast("Không tìm thấy thông tin món ăn.");
+            navigateBack();
+            return;
+        }
 
         if (foodItem != null) {
             ImageLoader.getInstance().load(foodItem, binding.ivFoodHero);
             binding.tvFoodName.setText(foodItem.getName());
             binding.tvFoodPrice.setText(foodItem.getFormattedPrice());
             binding.tvFoodRating.setText(foodItem.getRating() + " (" + foodItem.getSoldCount() + " đã bán)");
+            binding.layoutFoodRating.setVisibility(foodItem.getRating() > 0 ? View.VISIBLE : View.GONE);
             binding.tvDescription.setText(foodItem.getDescription());
+            binding.tvDescription.setVisibility(TextUtils.isEmpty(foodItem.getDescription()) ? View.GONE : View.VISIBLE);
             binding.tvIngredients.setText("Thành phần: " + foodItem.getIngredients());
+            binding.tvIngredients.setVisibility(TextUtils.isEmpty(foodItem.getIngredients()) ? View.GONE : View.VISIBLE);
             binding.tvAllergy.setText("Dị ứng: " + foodItem.getAllergyInfo());
+            binding.tvAllergy.setVisibility(TextUtils.isEmpty(foodItem.getAllergyInfo()) ? View.GONE : View.VISIBLE);
             binding.tvNutrition.setText("Dinh dưỡng: " + foodItem.getNutrition());
+            binding.tvNutrition.setVisibility(TextUtils.isEmpty(foodItem.getNutrition()) ? View.GONE : View.VISIBLE);
+            boolean hasDietaryInfo = binding.tvIngredients.getVisibility() == View.VISIBLE
+                    || binding.tvAllergy.getVisibility() == View.VISIBLE
+                    || binding.tvNutrition.getVisibility() == View.VISIBLE;
+            binding.layoutDietaryInfo.setVisibility(hasDietaryInfo ? View.VISIBLE : View.GONE);
 
             updateFavoriteIcon();
             binding.btnFavorite.setOnClickListener(v -> {
@@ -126,6 +138,9 @@ public class FoodDetailFragment extends BaseFragment {
                     binding.chipGroupSizes.addView(chip);
                 }
             }
+            boolean hasSizes = binding.chipGroupSizes.getChildCount() > 0;
+            binding.tvSizeHeading.setVisibility(hasSizes ? View.VISIBLE : View.GONE);
+            binding.chipGroupSizes.setVisibility(hasSizes ? View.VISIBLE : View.GONE);
 
             // Populate Toppings
             binding.chipGroupToppings.removeAllViews();
@@ -145,6 +160,9 @@ public class FoodDetailFragment extends BaseFragment {
                     binding.chipGroupToppings.addView(chip);
                 }
             }
+            boolean hasToppings = binding.chipGroupToppings.getChildCount() > 0;
+            binding.tvToppingHeading.setVisibility(hasToppings ? View.VISIBLE : View.GONE);
+            binding.chipGroupToppings.setVisibility(hasToppings ? View.VISIBLE : View.GONE);
 
             // Spicy levels
             binding.chipGroupSpicy.removeAllViews();
@@ -193,6 +211,9 @@ public class FoodDetailFragment extends BaseFragment {
         } else {
             binding.btnFavorite.setImageResource(R.drawable.ic_favorite_border);
         }
+        binding.btnFavorite.setContentDescription(getString(
+                foodItem != null && foodItem.isFavorite()
+                        ? R.string.a11y_remove_favorite : R.string.a11y_add_favorite));
     }
 
     private void updatePriceButton() {

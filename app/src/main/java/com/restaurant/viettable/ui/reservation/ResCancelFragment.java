@@ -13,6 +13,7 @@ import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class ResCancelFragment extends BaseFragment {
 
@@ -48,16 +49,18 @@ public class ResCancelFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (reservation == null && !appStateManager.getReservations().isEmpty()) {
-            reservation = appStateManager.getReservations().get(0);
-        }
-
         binding.btnBack.setOnClickListener(v -> navigateBack());
         binding.btnKeepReservation.setOnClickListener(v -> navigateBack());
 
+        if (reservation == null) {
+            showToast("Không tìm thấy thông tin đặt bàn.");
+            navigateBack();
+            return;
+        }
+
         if (reservation != null) {
             binding.tvCancelResCode.setText("Mã đặt bàn: #" + reservation.getId());
-            binding.tvCancelResSummary.setText(reservation.getBranchName() + " • " + reservation.getTimeSlot() + ", " + reservation.getDate() + " • Bàn " + reservation.getTableId());
+            binding.tvCancelResSummary.setText(reservation.getBranchName() + " • " + reservation.getTimeSlot() + ", " + DisplayFormatters.date(reservation.getDate()) + " • Bàn " + reservation.getTableId());
 
             if (reservation.getDepositAmount() > 0) {
                 binding.tvRefundDetails.setText("Tiền cọc " + String.format(java.util.Locale.GERMANY, "%,dđ", reservation.getDepositAmount()) + " sẽ được hoàn trả về tài khoản ban đầu trong 1-3 ngày làm việc theo chính sách hoàn cọc.");

@@ -30,7 +30,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-bold"
-                android:text="Bàn B12 • VietTable Hoàn Kiếm"
+                android:text=""
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
 
@@ -54,7 +54,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="2 Order đang xử lý • Bắt đầu lúc 18:45"
+            android:text=""
             android:textColor="@color/text_secondary"
             android:textSize="13sp" />
 
@@ -70,7 +70,7 @@
                 android:id="@+id/btnDiningOrderMore"
                 style="@style/Widget.VietTable.Button.Primary"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
@@ -87,7 +87,7 @@
                 android:id="@+id/btnDiningTrack"
                 style="@style/Widget.VietTable.Button.OutlinedLight"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
@@ -104,7 +104,7 @@
                 android:id="@+id/btnDiningPay"
                 style="@style/Widget.VietTable.Button.Gold"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"

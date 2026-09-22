@@ -2,6 +2,7 @@
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_cream"
@@ -21,9 +22,9 @@
                 android:id="@+id/ivBranchHero"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:contentDescription="@string/app_name"
+                android:contentDescription="@null"
                 android:scaleType="centerCrop"
-                android:src="@drawable/branch_hoan_kiem" />
+                tools:src="@drawable/branch_hoan_kiem" />
 
             <View
                 android:layout_width="match_parent"
@@ -42,6 +43,7 @@
                     android:layout_width="44dp"
                     android:layout_height="44dp"
                     android:background="@drawable/bg_round_floating_btn"
+                    android:contentDescription="@string/a11y_back"
                     android:src="@drawable/ic_back"
                     app:tint="@color/primary_dark" />
             </LinearLayout>
@@ -56,7 +58,7 @@
                 android:backgroundTint="#E8F5E9"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
-                android:text="Đang mở cửa"
+                tools:text="Đang mở cửa"
                 android:textColor="@color/primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -74,12 +76,13 @@
                 android:id="@+id/tvBranchName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="VietTable Hoàn Kiếm"
+                tools:text="VietTable Hoàn Kiếm"
                 android:textColor="@color/primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
             <LinearLayout
+                android:id="@+id/layoutRating"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -89,6 +92,7 @@
                 <ImageView
                     android:layout_width="18dp"
                     android:layout_height="18dp"
+                    android:contentDescription="@null"
                     android:src="@drawable/ic_star" />
 
                 <TextView
@@ -96,7 +100,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="4.8 • 380 lượt đánh giá"
+                    tools:text="4.8 • 380 lượt đánh giá"
                     android:textColor="@color/text_primary"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -106,7 +110,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
-                    android:text="• Cách bạn 0.8 km"
+                    tools:text="• Cách bạn 0.8 km"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
             </LinearLayout>
@@ -125,7 +129,7 @@
                 android:drawableStart="@drawable/ic_location"
                 android:drawablePadding="10dp"
                 android:drawableTint="@color/primary"
-                android:text="34 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội"
+                tools:text="34 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -137,7 +141,7 @@
                 android:drawableStart="@drawable/ic_phone"
                 android:drawablePadding="10dp"
                 android:drawableTint="@color/primary"
-                android:text="024 3938 1234"
+                tools:text="024 3938 1234"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -149,7 +153,7 @@
                 android:drawableStart="@drawable/ic_clock"
                 android:drawablePadding="10dp"
                 android:drawableTint="@color/primary"
-                android:text="Giờ mở cửa: 10:00 - 22:30 (Thứ 2 - Chủ Nhật)"
+                tools:text="Giờ mở cửa: 10:00 - 22:30 (Thứ 2 - Chủ Nhật)"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
@@ -161,6 +165,7 @@
 
             <!-- Description -->
             <TextView
+                android:id="@+id/tvDescriptionHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Giới thiệu không gian"
@@ -174,12 +179,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:lineSpacingExtra="4dp"
-                android:text="Không gian cổ kính ven hồ, phục vụ các món ăn truyền thống chuẩn vị Hà Thành..."
+                tools:text="Không gian cổ kính ven hồ, phục vụ các món ăn truyền thống chuẩn vị Hà Thành..."
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
             <!-- Facilities -->
             <TextView
+                android:id="@+id/tvFacilitiesHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"

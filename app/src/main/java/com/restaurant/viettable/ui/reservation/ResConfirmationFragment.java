@@ -12,6 +12,7 @@ import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentResConfirmationBinding;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class ResConfirmationFragment extends BaseFragment {
 
@@ -47,14 +48,17 @@ public class ResConfirmationFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        if (reservation == null && !appStateManager.getReservations().isEmpty()) {
-            reservation = appStateManager.getReservations().get(0);
+        if (reservation == null) {
+            showToast("Không tìm thấy thông tin đặt bàn.");
+            setBottomNavVisible(true);
+            switchTab(R.id.nav_home);
+            return;
         }
 
         if (reservation != null) {
             binding.tvConfirmCode.setText("#" + reservation.getId());
             binding.tvConfirmBranch.setText(reservation.getBranchName() + " (" + reservation.getBranchAddress() + ")");
-            binding.tvConfirmTimeDate.setText(reservation.getTimeSlot() + " • " + reservation.getDate());
+            binding.tvConfirmTimeDate.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));
             binding.tvConfirmTableArea.setText("Bàn " + reservation.getTableId() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
 
             if (reservation.getDepositAmount() > 0) {

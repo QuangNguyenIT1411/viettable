@@ -21,8 +21,9 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/a11y_back"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
             app:tint="@color/primary" />
@@ -68,7 +69,7 @@
                 android:id="@+id/tvBranchHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Chi nhánh: VietTable Hoàn Kiếm"
+                android:text=""
                 android:textColor="@color/accent_gold_dark"
                 android:textSize="13sp"
                 android:textStyle="bold" />

@@ -39,14 +39,29 @@ public class LoginFragment extends BaseFragment {
         binding.btnGoRegister.setOnClickListener(v -> navigateTo(new RegisterFragment()));
         binding.btnForgotPassword.setOnClickListener(v -> navigateTo(new ForgotPasswordFragment()));
         binding.btnGoogleSignIn.setOnClickListener(v -> startGoogleSignIn());
+        binding.etPassword.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                binding.btnSubmitLogin.performClick();
+                return true;
+            }
+            return false;
+        });
 
         binding.btnSubmitLogin.setOnClickListener(v -> {
             String email = binding.etEmail.getText() != null ? binding.etEmail.getText().toString().trim() : "";
             String pass = binding.etPassword.getText() != null ? binding.etPassword.getText().toString().trim() : "";
 
-            if (TextUtils.isEmpty(email) || TextUtils.isEmpty(pass)) {
-                binding.tvError.setVisibility(View.VISIBLE);
-                binding.tvError.setText("Vui lòng nhập đầy đủ email/số điện thoại và mật khẩu.");
+            binding.tilEmail.setError(null);
+            binding.tilPassword.setError(null);
+            binding.tvError.setVisibility(View.GONE);
+            if (TextUtils.isEmpty(email)) {
+                binding.tilEmail.setError("Vui lòng nhập email hoặc số điện thoại.");
+                binding.etEmail.requestFocus();
+                return;
+            }
+            if (TextUtils.isEmpty(pass)) {
+                binding.tilPassword.setError("Vui lòng nhập mật khẩu.");
+                binding.etPassword.requestFocus();
                 return;
             }
 
@@ -118,6 +133,9 @@ public class LoginFragment extends BaseFragment {
         binding.btnGoRegister.setEnabled(!value);
         binding.btnForgotPassword.setEnabled(!value);
         binding.btnGoogleSignIn.setText(googleButtonText);
+        binding.btnSubmitLogin.setText(value
+                ? com.restaurant.viettable.R.string.auth_logging_in
+                : com.restaurant.viettable.R.string.auth_login);
     }
 
     private void showError(String message) {

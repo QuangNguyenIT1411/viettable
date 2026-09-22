@@ -52,7 +52,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="VietTable Hoàn Kiếm"
+            android:text=""
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -71,7 +71,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="Bàn B12 • 4 khách • Khu gần cửa sổ"
+            android:text=""
             android:textColor="@color/text_tertiary"
             android:textSize="12sp" />
 

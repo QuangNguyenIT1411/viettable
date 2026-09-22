@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.util.LruCache;
 import android.widget.ImageView;
 
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.model.FoodItem;
 
@@ -59,6 +60,9 @@ public class ImageLoader {
 
     public void load(String url, int fallbackResId, ImageView imageView) {
         if (imageView == null) return;
+        imageView.setTag(null);
+        imageView.setImageDrawable(null);
+        imageView.setBackgroundResource(R.drawable.bg_food_hero);
 
         if (url == null || url.trim().isEmpty()) {
             if (fallbackResId != 0) {

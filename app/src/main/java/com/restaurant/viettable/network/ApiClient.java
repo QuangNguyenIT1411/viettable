@@ -126,7 +126,7 @@ public final class ApiClient {
                 mainHandler.post(() -> callback.onError(error));
             } catch (Exception error) {
                 ApiException wrapped = new ApiException(0, "network_error",
-                        "Không thể kết nối máy chủ. Hãy kiểm tra Docker và địa chỉ API.", null);
+                        "Không thể kết nối đến VietTable. Vui lòng kiểm tra mạng và thử lại.", null);
                 mainHandler.post(() -> callback.onError(wrapped));
             }
         });

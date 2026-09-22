@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemSessionOrderBinding;
 import com.restaurant.viettable.model.Order;
+import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.model.OrderItem;
 
 import java.util.List;
@@ -55,7 +56,7 @@ public class SessionOrderAdapter extends RecyclerView.Adapter<SessionOrderAdapte
         }
 
         public void bind(Order order, OnOrderClickListener listener) {
-            binding.tvOrderTitle.setText("Đơn #" + order.getId() + " • " + order.getCreatedAt());
+            binding.tvOrderTitle.setText("Đơn #" + order.getId() + " • " + DisplayFormatters.dateTime(order.getCreatedAt()));
 
             StringBuilder sb = new StringBuilder();
             int itemCount = 0;

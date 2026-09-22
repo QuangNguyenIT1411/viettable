@@ -21,8 +21,9 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/a11y_back"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
             app:tint="@color/primary" />
@@ -70,7 +71,7 @@
                         android:id="@+id/tvResSummaryHeader"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="VietTable Hoàn Kiếm • Bàn B12"
+                        android:text=""
                         android:textColor="@color/primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -141,7 +142,7 @@
                     android:id="@+id/etContactName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Nguyễn Văn An" />
+                    android:text="" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -156,7 +157,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="phone"
-                    android:text="0912 345 678" />
+                    android:text="" />
             </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>

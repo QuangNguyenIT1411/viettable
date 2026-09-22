@@ -1,6 +1,7 @@
 package com.restaurant.viettable.adapter;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -60,22 +61,29 @@ public class BranchAdapter extends RecyclerView.Adapter<BranchAdapter.BranchView
             binding.tvBranchName.setText(branch.getName());
             binding.tvBranchAddress.setText(branch.getAddress());
             binding.tvOpeningHours.setText(branch.getOpeningHours());
-            binding.tvDistance.setText(branch.getDistanceKm() + " km");
-            binding.tvRating.setText(branch.getRating() + " (" + branch.getReviewCount() + ")");
+            binding.tvOpeningHours.setVisibility(isBlank(branch.getOpeningHours()) ? View.GONE : View.VISIBLE);
+            boolean hasDistance = branch.getDistanceKm() > 0;
+            binding.tvDistance.setVisibility(hasDistance ? View.VISIBLE : View.GONE);
+            if (hasDistance) binding.tvDistance.setText(branch.getDistanceKm() + " km");
+            boolean hasRating = branch.getRating() > 0 && branch.getReviewCount() > 0;
+            binding.layoutRating.setVisibility(hasRating ? View.VISIBLE : View.GONE);
+            if (hasRating) binding.tvRating.setText(branch.getRating() + " (" + branch.getReviewCount() + ")");
 
-            if (branch.isOpen()) {
+            boolean hasOpeningData = !isBlank(branch.getOpeningHours());
+            binding.tvOpenStatus.setVisibility(hasOpeningData ? View.VISIBLE : View.GONE);
+            if (hasOpeningData && branch.isOpen()) {
                 binding.tvOpenStatus.setText("Đang mở cửa");
                 binding.tvOpenStatus.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
                 binding.tvOpenStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
                 binding.tvOpenStatus.setTextColor(0xFF2E7D5B);
                 binding.btnSelectBranch.setEnabled(true);
-            } else {
+            } else if (hasOpeningData) {
                 binding.tvOpenStatus.setText("Đã đóng cửa");
                 binding.tvOpenStatus.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
                 binding.tvOpenStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
                 binding.tvOpenStatus.setTextColor(0xFFD32F2F);
-                binding.btnSelectBranch.setEnabled(false);
             }
+            binding.btnSelectBranch.setEnabled(true);
 
             binding.btnSelectBranch.setOnClickListener(v -> {
                 if (listener != null) listener.onSelectBranch(branch);
@@ -88,6 +96,10 @@ public class BranchAdapter extends RecyclerView.Adapter<BranchAdapter.BranchView
             binding.cardBranch.setOnClickListener(v -> {
                 if (listener != null) listener.onViewDetail(branch);
             });
+        }
+
+        private static boolean isBlank(String value) {
+            return value == null || value.trim().isEmpty();
         }
     }
 }

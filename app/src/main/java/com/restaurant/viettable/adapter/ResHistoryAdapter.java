@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemResHistoryBinding;
 import com.restaurant.viettable.model.Reservation;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
 
@@ -56,7 +57,7 @@ public class ResHistoryAdapter extends RecyclerView.Adapter<ResHistoryAdapter.Re
         public void bind(Reservation r, OnResHistoryClickListener listener) {
             binding.tvHistResId.setText("#" + r.getId());
             binding.tvHistBranch.setText(r.getBranchName());
-            binding.tvHistDateTime.setText(r.getTimeSlot() + " • " + r.getDate());
+            binding.tvHistDateTime.setText(r.getTimeSlot() + " • " + DisplayFormatters.date(r.getDate()));
             binding.tvHistDetails.setText("Bàn " + r.getTableId() + " • " + r.getGuestCount() + " khách • " + r.getAreaName());
             binding.tvHistStatusBadge.setText(r.getStatusDisplayText());
             binding.tvHistStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);

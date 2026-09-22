@@ -14,6 +14,7 @@ import com.restaurant.viettable.model.DiningSession;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class CheckinConfirmFragment extends BaseFragment {
 
@@ -67,7 +68,7 @@ public class CheckinConfirmFragment extends BaseFragment {
             binding.tvTableTitle.setText("Bàn " + res.getTableId());
             binding.tvTableSubtitle.setText(res.getAreaName() + " • " + res.getGuestCount() + " người • " + res.getBranchName());
             binding.tvCheckinResCode.setText("#" + res.getId());
-            binding.tvCheckinTime.setText(res.getTimeSlot() + " - " + res.getDate());
+            binding.tvCheckinTime.setText(res.getTimeSlot() + " - " + DisplayFormatters.date(res.getDate()));
             binding.tvCheckinCustomer.setText(res.getContactName() + " (" + res.getContactPhone() + ")");
 
             if (res.hasPreOrder() || !appStateManager.getCartItems().isEmpty()) {

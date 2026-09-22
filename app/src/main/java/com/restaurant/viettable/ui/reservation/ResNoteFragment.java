@@ -16,6 +16,7 @@ import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +68,7 @@ public class ResNoteFragment extends BaseFragment {
         if (draft.getBranch() != null) {
             binding.tvResSummaryHeader.setText(draft.getBranch().getName() + " • Bàn " + draft.getTableId());
         }
-        binding.tvResSummaryDetails.setText(draft.getTimeSlot() + ", " + draft.getDate() + " • " + draft.getGuestCount() + " khách • " + draft.getAreaName());
+        binding.tvResSummaryDetails.setText(draft.getTimeSlot() + ", " + DisplayFormatters.date(draft.getDate()) + " • " + draft.getGuestCount() + " khách • " + draft.getAreaName());
 
         if (draft.isNeedsDeposit()) {
             binding.btnContinueOrConfirm.setText("Tiếp tục đặt cọc (100.000đ)");

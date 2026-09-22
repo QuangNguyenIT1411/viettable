@@ -21,9 +21,10 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/a11y_back"
             android:src="@drawable/ic_back"
             app:tint="@color/primary" />
 
@@ -60,11 +61,44 @@
         app:tabTextColor="@color/text_secondary" />
 
     <!-- Recycler List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvNotifications"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingVertical="8dp" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvNotifications"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingVertical="8dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp">
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressNotifications"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/tvNotificationState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetryNotifications"
+                style="@style/Widget.VietTable.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/state_retry"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
 
 </LinearLayout>

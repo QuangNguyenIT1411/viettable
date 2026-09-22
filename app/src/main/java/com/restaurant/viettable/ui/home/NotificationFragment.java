@@ -68,15 +68,10 @@ public class NotificationFragment extends BaseFragment {
 
         binding.rvNotifications.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.rvNotifications.setAdapter(adapter);
+        binding.btnRetryNotifications.setOnClickListener(v -> loadNotifications());
 
         filterNotifications(0);
-
-        MobileRepository.getInstance().loadNotifications(new MobileRepository.Callback<List<NotificationItem>>() {
-            @Override public void onSuccess(List<NotificationItem> value) {
-                if (binding != null) filterNotifications(binding.tabLayoutNotif.getSelectedTabPosition());
-            }
-            @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
-        });
+        loadNotifications();
 
         binding.tabLayoutNotif.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -98,6 +93,18 @@ public class NotificationFragment extends BaseFragment {
         });
     }
 
+    private void loadNotifications() {
+        renderState(true, null);
+        MobileRepository.getInstance().loadNotifications(new MobileRepository.Callback<List<NotificationItem>>() {
+            @Override public void onSuccess(List<NotificationItem> value) {
+                if (binding != null) filterNotifications(binding.tabLayoutNotif.getSelectedTabPosition());
+            }
+            @Override public void onError(ApiException error) {
+                if (binding != null) renderState(false, apiError(error));
+            }
+        });
+    }
+
     private void filterNotifications(int tabIndex) {
         filteredList.clear();
         List<NotificationItem> all = appStateManager.getNotifications();
@@ -113,6 +120,20 @@ public class NotificationFragment extends BaseFragment {
             for (NotificationItem ni : all) if (ni.getType() == NotificationItem.Type.PROMOTION) filteredList.add(ni);
         }
         adapter.notifyDataSetChanged();
+        renderState(false, null);
+    }
+
+    private void renderState(boolean loading, @Nullable String error) {
+        if (binding == null) return;
+        boolean hasContent = !filteredList.isEmpty();
+        binding.rvNotifications.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        binding.progressNotifications.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.tvNotificationState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.btnRetryNotifications.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        binding.btnMarkAllRead.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        if (!loading && !hasContent) {
+            binding.tvNotificationState.setText(error != null ? error : getString(R.string.state_no_notifications));
+        }
     }
 
     @Override

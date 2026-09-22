@@ -5,6 +5,7 @@ import android.view.View;
 import com.restaurant.viettable.databinding.ViewActiveDiningCardBinding;
 import com.restaurant.viettable.model.DiningSession;
 import com.restaurant.viettable.navigation.NavigationCoordinator;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class ActiveDiningCardBinder {
 
@@ -45,8 +46,8 @@ public class ActiveDiningCardBinder {
         }
 
         int activeOrders = session.getActiveOrdersCount();
-        String summary = (activeOrders > 0 ? activeOrders + " Order đang xử lý" : "Chưa có Order mới")
-                + " • Bắt đầu lúc " + session.getStartTime();
+        String summary = (activeOrders > 0 ? activeOrders + " đợt gọi món đang xử lý" : "Chưa có đợt gọi món mới")
+                + " • Bắt đầu lúc " + DisplayFormatters.dateTime(session.getStartTime());
         binding.tvDiningOrdersSummary.setText(summary);
 
         binding.getRoot().setOnClickListener(v -> {

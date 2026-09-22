@@ -58,18 +58,21 @@ public class CustomerVoucherFragment extends BaseFragment {
             public void onTabReselected(TabLayout.Tab tab) {}
         });
 
-        adapter = new VoucherCardAdapter(displayedVouchers, voucher -> {
-            showToast("Đã sao chép mã " + voucher.getCode() + " và áp dụng cho lần đặt bàn tiếp theo!");
-            switchTab(R.id.nav_reservation);
-        });
+        adapter = new VoucherCardAdapter(displayedVouchers, null);
 
         binding.rvCustomerVouchers.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvCustomerVouchers.setAdapter(adapter);
+        binding.btnRetryVouchers.setOnClickListener(v -> loadVouchers());
 
         filterVouchers(0);
+        loadVouchers();
+    }
+
+    private void loadVouchers() {
+        renderState(true, null);
         MobileRepository.getInstance().loadVouchers(new MobileRepository.Callback<List<Voucher>>() {
             @Override public void onSuccess(List<Voucher> value) { if (binding != null) filterVouchers(binding.tabLayoutMyVouchers.getSelectedTabPosition()); }
-            @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
+            @Override public void onError(ApiException error) { if (binding != null) renderState(false, apiError(error)); }
         });
     }
 
@@ -83,6 +86,18 @@ public class CustomerVoucherFragment extends BaseFragment {
             }
         }
         adapter.notifyDataSetChanged();
+        renderState(false, null);
+    }
+
+    private void renderState(boolean loading, @Nullable String error) {
+        if (binding == null) return;
+        boolean hasContent = !displayedVouchers.isEmpty();
+        binding.rvCustomerVouchers.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        binding.progressVouchers.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.tvVoucherState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.btnRetryVouchers.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        if (!loading && !hasContent) binding.tvVoucherState.setText(error != null
+                ? error : "Bạn chưa có ưu đãi nào trong mục này.");
     }
 
     @Override

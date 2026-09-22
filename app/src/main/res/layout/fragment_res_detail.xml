@@ -24,10 +24,11 @@
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
 
-            <ImageButton
-                android:id="@+id/btnBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/a11y_back"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_back"
                 app:tint="@color/primary" />
@@ -96,7 +97,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="VietTable Hoàn Kiếm"
+                        android:text=""
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -115,7 +116,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Bàn B12 • Khu gần cửa sổ • 4 khách"
+                        android:text=""
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 
@@ -200,7 +201,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
                         android:lineSpacingExtra="3dp"
-                        android:text="Vui lòng đến bàn B12 và quét mã QR gắn trên bàn để Check-in tự động và kích hoạt phiên dùng bữa."
+                        android:text=""
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp" />
 

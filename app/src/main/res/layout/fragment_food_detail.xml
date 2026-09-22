@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_cream">
@@ -42,10 +43,11 @@
                 <!-- Floating Round Back Button -->
                 <ImageButton
                     android:id="@+id/btnBack"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_margin="16dp"
                     android:background="@drawable/bg_round_floating_btn"
+                    android:contentDescription="@string/a11y_back"
                     android:elevation="3dp"
                     android:src="@drawable/ic_back"
                     app:tint="@color/text_primary" />
@@ -53,8 +55,9 @@
                 <!-- Floating Round Favorite Button -->
                 <ImageButton
                     android:id="@+id/btnFavorite"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
+                    android:contentDescription="@string/a11y_add_favorite"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:layout_gravity="top|end"
                     android:layout_margin="16dp"
                     android:background="@drawable/bg_round_floating_btn"
@@ -83,24 +86,25 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Phở bò tái lăn"
                         android:textColor="@color/text_primary"
                         android:textSize="22sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        tools:text="Phở bò tái lăn" />
 
                     <TextView
                         android:id="@+id/tvFoodPrice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
-                        android:text="89.000đ"
                         android:textColor="@color/primary"
                         android:textSize="22sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        tools:text="89.000đ" />
                 </LinearLayout>
 
                 <!-- Rating and Sales Count -->
                 <LinearLayout
+                    android:id="@+id/layoutFoodRating"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
@@ -110,6 +114,7 @@
                     <ImageView
                         android:layout_width="16dp"
                         android:layout_height="16dp"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_star" />
 
                     <TextView
@@ -117,10 +122,10 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
-                        android:text="4.9 (1.250 đã bán)"
                         android:textColor="@color/text_secondary"
                         android:textSize="13sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        tools:text="4.9 (1.250 đã bán)" />
                 </LinearLayout>
 
                 <!-- Description -->
@@ -130,12 +135,13 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:lineSpacingExtra="4dp"
-                    android:text="Thịt bò mềm xào lăn thơm phức tỏi đập dập, nước dùng ninh từ xương tủy bò trong 18 tiếng ngọt thanh đậm đà."
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:textSize="14sp"
+                    tools:text="Mô tả món ăn từ hệ thống." />
 
                 <!-- Dietary & Nutrition info strip -->
                 <LinearLayout
+                    android:id="@+id/layoutDietaryInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
@@ -147,31 +153,32 @@
                         android:id="@+id/tvIngredients"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Thành phần: Thịt bò Úc, bánh phở tươi, tỏi, gừng, hành hoa."
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="12sp"
+                        tools:text="Thành phần: nguyên liệu từ hệ thống." />
 
                     <TextView
                         android:id="@+id/tvAllergy"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Dị ứng: Có thể chứa gluten từ quẩy."
                         android:textColor="@color/semantic_error"
-                        android:textSize="12sp" />
+                        android:textSize="12sp"
+                        tools:text="Dị ứng: thông tin từ hệ thống." />
 
                     <TextView
                         android:id="@+id/tvNutrition"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Dinh dưỡng: 520 kcal | Đạm: 38g"
                         android:textColor="@color/text_tertiary"
-                        android:textSize="12sp" />
+                        android:textSize="12sp"
+                        tools:text="Dinh dưỡng: thông tin từ hệ thống." />
                 </LinearLayout>
 
                 <!-- Size Selection -->
                 <TextView
+                    android:id="@+id/tvSizeHeading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
@@ -189,6 +196,7 @@
 
                 <!-- Topping Selection -->
                 <TextView
+                    android:id="@+id/tvToppingHeading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
@@ -266,9 +274,10 @@
 
             <ImageButton
                 android:id="@+id/btnMinus"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Giảm số lượng"
                 android:src="@drawable/ic_remove"
                 app:tint="@color/primary" />
 
@@ -284,9 +293,10 @@
 
             <ImageButton
                 android:id="@+id/btnPlus"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Tăng số lượng"
                 android:src="@drawable/ic_add"
                 app:tint="@color/primary" />
         </LinearLayout>
@@ -299,7 +309,7 @@
             android:layout_height="@dimen/btn_height_primary"
             android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:text="Thêm vào giỏ • 89.000đ"
+            tools:text="Thêm vào giỏ • 89.000đ"
             android:textSize="14sp" />
     </LinearLayout>
 

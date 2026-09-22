@@ -15,6 +15,7 @@ import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.ServiceRequest;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class OrderItemDetailFragment extends BaseFragment {
 
@@ -58,7 +59,7 @@ public class OrderItemDetailFragment extends BaseFragment {
             binding.tvItemDetailStatusBadge.setText("TRẠNG THÁI: " + item.getStatus().name());
             binding.tvItemDetailQuantity.setText(item.getQuantity() + " phần");
             binding.tvItemDetailOptions.setText(item.getOptionsSummary());
-            binding.tvItemDetailCreatedAt.setText(item.getCreatedAt());
+            binding.tvItemDetailCreatedAt.setText(DisplayFormatters.dateTime(item.getCreatedAt()));
         }
 
         binding.btnRemindKitchen.setOnClickListener(v -> {

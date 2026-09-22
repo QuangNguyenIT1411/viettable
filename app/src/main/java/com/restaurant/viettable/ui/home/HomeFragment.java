@@ -28,6 +28,7 @@ import com.restaurant.viettable.ui.payment.PaymentCheckoutFragment;
 import com.restaurant.viettable.ui.preorder.PreorderMenuFragment;
 import com.restaurant.viettable.ui.reservation.ResDetailFragment;
 import com.restaurant.viettable.ui.session.DineinMenuFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,7 +105,7 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         if (upcomingRes != null) {
             binding.cardUpcomingReservation.setVisibility(View.VISIBLE);
             binding.tvResCode.setText("#" + upcomingRes.getId());
-            binding.tvResDateTime.setText(upcomingRes.getDate() + " • " + upcomingRes.getGuestCount() + " khách • Bàn " + upcomingRes.getTableId());
+            binding.tvResDateTime.setText(DisplayFormatters.date(upcomingRes.getDate()) + " • " + upcomingRes.getGuestCount() + " khách • Bàn " + upcomingRes.getTableId());
             binding.tvResBranchName.setText(upcomingRes.getBranchName());
 
             final Reservation resToOpen = upcomingRes;
@@ -120,7 +121,8 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         binding.btnQuickMenu.setOnClickListener(v -> navigateTo(new MenuFragment()));
         binding.btnQuickOrders.setOnClickListener(v -> switchTab(R.id.nav_orders));
         binding.btnSeeAllMenu.setOnClickListener(v -> navigateTo(new MenuFragment()));
-        binding.btnCollectVoucher.setOnClickListener(v -> showToast("Đã lưu mã VIETTABLE20 vào kho voucher của bạn!"));
+        // Promotions are hidden until they are supplied by a real backend source.
+        binding.bannerPromo.setVisibility(View.GONE);
 
         // 5. Category Chips
         setupCategories();

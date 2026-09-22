@@ -12,6 +12,7 @@ import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentResGuestCountBinding;
 import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 public class ResGuestCountFragment extends BaseFragment {
 
@@ -56,7 +57,7 @@ public class ResGuestCountFragment extends BaseFragment {
         binding.wizardProgress.tvWizardStepFraction.setText("3/6");
         binding.wizardProgress.progressWizard.setProgress(50);
 
-        binding.tvDateTimeSummary.setText("Thời gian: " + draft.getTimeSlot() + " • " + draft.getDate());
+        binding.tvDateTimeSummary.setText("Thời gian: " + draft.getTimeSlot() + " • " + DisplayFormatters.date(draft.getDate()));
 
         binding.btnMinusAdult.setOnClickListener(v -> {
             if (adults > 1) {

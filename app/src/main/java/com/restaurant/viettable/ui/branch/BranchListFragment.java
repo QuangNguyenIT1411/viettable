@@ -22,6 +22,7 @@ import com.restaurant.viettable.ui.home.HomeFragment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class BranchListFragment extends BaseFragment {
 
@@ -41,7 +42,7 @@ public class BranchListFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
-        binding.btnOpenMap.setOnClickListener(v -> navigateTo(new BranchMapFragment()));
+        binding.btnOpenMap.setVisibility(View.GONE);
 
         displayedBranches.clear();
         displayedBranches.addAll(appStateManager.getBranches());
@@ -68,16 +69,9 @@ public class BranchListFragment extends BaseFragment {
 
         binding.rvBranches.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.rvBranches.setAdapter(adapter);
-
-        MobileRepository.getInstance().loadBranches(new MobileRepository.Callback<List<Branch>>() {
-            @Override public void onSuccess(List<Branch> value) {
-                if (binding == null) return;
-                displayedBranches.clear();
-                displayedBranches.addAll(value);
-                adapter.notifyDataSetChanged();
-            }
-            @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
-        });
+        binding.btnRetryBranches.setOnClickListener(v -> loadBranches());
+        renderBranchState(displayedBranches.isEmpty(), false, null);
+        loadBranches();
 
         binding.etSearchBranch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -93,15 +87,46 @@ public class BranchListFragment extends BaseFragment {
         });
     }
 
+    private void loadBranches() {
+        if (binding == null) return;
+        renderBranchState(displayedBranches.isEmpty(), true, null);
+        MobileRepository.getInstance().loadBranches(new MobileRepository.Callback<List<Branch>>() {
+            @Override public void onSuccess(List<Branch> value) {
+                if (binding == null) return;
+                filterBranches(binding.etSearchBranch.getText() == null
+                        ? "" : binding.etSearchBranch.getText().toString());
+            }
+            @Override public void onError(ApiException error) {
+                if (binding == null) return;
+                renderBranchState(displayedBranches.isEmpty(), false, apiError(error));
+            }
+        });
+    }
+
     private void filterBranches(String query) {
         displayedBranches.clear();
+        String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         for (Branch b : appStateManager.getBranches()) {
-            if (b.getName().toLowerCase().contains(query.toLowerCase()) ||
-                    b.getAddress().toLowerCase().contains(query.toLowerCase())) {
+            String name = b.getName() == null ? "" : b.getName().toLowerCase(Locale.ROOT);
+            String address = b.getAddress() == null ? "" : b.getAddress().toLowerCase(Locale.ROOT);
+            if (name.contains(normalizedQuery) || address.contains(normalizedQuery)) {
                 displayedBranches.add(b);
             }
         }
         adapter.notifyDataSetChanged();
+        if (binding != null) renderBranchState(displayedBranches.isEmpty(), false, null);
+    }
+
+    private void renderBranchState(boolean empty, boolean loading, @Nullable String error) {
+        if (binding == null) return;
+        boolean hasContent = !displayedBranches.isEmpty();
+        binding.rvBranches.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        binding.progressBranches.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.tvBranchState.setVisibility(!loading && empty ? View.VISIBLE : View.GONE);
+        binding.btnRetryBranches.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        if (!loading && empty) {
+            binding.tvBranchState.setText(error != null ? error : getString(R.string.state_no_branches));
+        }
     }
 
     @Override

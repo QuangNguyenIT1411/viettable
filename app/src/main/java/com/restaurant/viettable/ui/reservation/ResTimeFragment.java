@@ -13,6 +13,7 @@ import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentResTimeBinding;
 import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.Arrays;
 import java.util.List;
@@ -62,7 +63,7 @@ public class ResTimeFragment extends BaseFragment {
         binding.wizardProgress.tvWizardStepFraction.setText("2/6");
         binding.wizardProgress.progressWizard.setProgress(33);
 
-        binding.tvDateSelectedDisplay.setText("Ngày đã chọn: " + draft.getDate());
+        binding.tvDateSelectedDisplay.setText("Ngày đã chọn: " + DisplayFormatters.date(draft.getDate()));
 
         // Lunch chips
         binding.chipGroupLunch.removeAllViews();

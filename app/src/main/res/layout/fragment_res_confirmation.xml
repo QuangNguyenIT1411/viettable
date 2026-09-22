@@ -94,7 +94,7 @@
                     android:id="@+id/tvConfirmBranch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="VietTable Hoàn Kiếm (34 Lý Thường Kiệt)"
+                    android:text=""
                     android:textColor="@color/text_primary"
                     android:textSize="15sp"
                     android:textStyle="bold" />
@@ -113,7 +113,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Bàn B12 • Khu gần cửa sổ • 4 khách"
+                    android:text=""
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
 

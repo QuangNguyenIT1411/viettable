@@ -55,6 +55,7 @@ public class ServiceStatusFragment extends BaseFragment implements AppStateManag
 
         setupList();
         refreshRequests();
+        binding.btnRetryServiceRequests.setOnClickListener(v -> refreshRequests());
 
         binding.btnNewServiceRequest.setOnClickListener(v -> {
             navigateTo(CallStaffFragment.newInstance());
@@ -66,8 +67,13 @@ public class ServiceStatusFragment extends BaseFragment implements AppStateManag
     }
 
     private void refreshRequests() {
-        if (binding == null || refreshing || appStateManager.getActiveDiningSession() == null) return;
+        if (binding == null || refreshing) return;
+        if (appStateManager.getActiveDiningSession() == null) {
+            renderState(false, null);
+            return;
+        }
         refreshing = true;
+        renderState(true, null);
         handler.removeCallbacks(fallbackRefresh);
         MobileRepository.getInstance().loadServiceRequests(new MobileRepository.Callback<List<ServiceRequest>>() {
             @Override public void onSuccess(List<ServiceRequest> value) {
@@ -76,7 +82,10 @@ public class ServiceStatusFragment extends BaseFragment implements AppStateManag
             }
             @Override public void onError(ApiException error) {
                 refreshing = false;
-                if (binding != null) scheduleFallbackPolling();
+                if (binding != null) {
+                    renderState(false, apiError(error));
+                    scheduleFallbackPolling();
+                }
             }
         });
     }
@@ -106,6 +115,23 @@ public class ServiceStatusFragment extends BaseFragment implements AppStateManag
                         }));
         binding.rvServiceRequests.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.rvServiceRequests.setAdapter(adapter);
+        renderState(false, null);
+    }
+
+    private void renderState(boolean loading, @Nullable String error) {
+        if (binding == null) return;
+        DiningSession session = appStateManager.getActiveDiningSession();
+        boolean hasContent = session != null && !session.getServiceRequests().isEmpty();
+        binding.rvServiceRequests.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+        binding.progressServiceRequests.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.tvServiceRequestState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
+        binding.btnRetryServiceRequests.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        binding.btnNewServiceRequest.setEnabled(session != null);
+        if (!loading && !hasContent) {
+            binding.tvServiceRequestState.setText(error != null ? error : session == null
+                    ? getString(com.restaurant.viettable.R.string.state_no_active_session)
+                    : "Bạn chưa gửi yêu cầu hỗ trợ nào trong bữa ăn này.");
+        }
     }
 
     @Override

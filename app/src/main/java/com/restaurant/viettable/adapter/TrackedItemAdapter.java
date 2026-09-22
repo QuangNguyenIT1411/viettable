@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemTrackedFoodBinding;
 import com.restaurant.viettable.model.OrderItem;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
 
@@ -57,7 +58,7 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
         public void bind(OrderItem item, OnTrackedItemClickListener listener) {
             binding.tvTrackedFoodName.setText(item.getFoodName());
             binding.tvTrackedFoodOptions.setText("SL: " + item.getQuantity() + " • " + item.getOptionsSummary());
-            binding.tvTrackedFoodTime.setText("Gọi lúc " + item.getCreatedAt());
+            binding.tvTrackedFoodTime.setText("Gọi lúc " + DisplayFormatters.dateTime(item.getCreatedAt()));
 
             switch (item.getStatus()) {
                 case PENDING:
