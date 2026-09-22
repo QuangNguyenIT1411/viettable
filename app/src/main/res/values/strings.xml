@@ -1,0 +1,223 @@
+<resources>
+    <string name="app_name">VietTable</string>
+    <string name="app_tagline">Tinh hoa ẩm thực Việt</string>
+
+    <!-- Bottom Navigation (5 tabs) -->
+    <string name="nav_home">Home</string>
+    <string name="nav_reservation">Đặt bàn</string>
+    <string name="nav_qr">Scan QR</string>
+    <string name="nav_orders">Đơn hàng</string>
+    <string name="nav_profile">Tôi</string>
+
+    <!-- Common Actions -->
+    <string name="btn_continue">Tiếp tục</string>
+    <string name="btn_confirm">Xác nhận</string>
+    <string name="btn_cancel">Hủy</string>
+    <string name="btn_save">Lưu thay đổi</string>
+    <string name="btn_close">Đóng</string>
+    <string name="btn_back">Quay lại</string>
+    <string name="btn_retry">Thử lại</string>
+    <string name="btn_done">Hoàn thành</string>
+    <string name="btn_apply">Áp dụng</string>
+    <string name="btn_remove">Xóa</string>
+    <string name="btn_view_detail">Xem chi tiết</string>
+
+    <!-- Auth -->
+    <string name="auth_welcome_title">Chào mừng bạn đến với VietTable</string>
+    <string name="auth_welcome_sub">Thưởng thức hương vị ẩm thực truyền thống trong không gian hiện đại và ấm cúng.</string>
+    <string name="auth_login">Đăng nhập</string>
+    <string name="auth_register">Đăng ký</string>
+    <string name="auth_email_or_phone">Email hoặc số điện thoại</string>
+    <string name="auth_password">Mật khẩu</string>
+    <string name="auth_forgot_password">Quên mật khẩu?</string>
+    <string name="auth_no_account">Chưa có tài khoản? Đăng ký ngay</string>
+    <string name="auth_have_account">Đã có tài khoản? Đăng nhập</string>
+    <string name="auth_full_name">Họ và tên</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_phone">Số điện thoại</string>
+    <string name="auth_confirm_password">Xác nhận mật khẩu</string>
+    <string name="auth_terms_agree">Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật</string>
+    <string name="auth_reset_pwd_title">Đặt lại mật khẩu</string>
+    <string name="auth_reset_pwd_sub">Nhập email hoặc số điện thoại để nhận mã khôi phục.</string>
+    <string name="auth_new_password">Mật khẩu mới</string>
+    <string name="auth_confirm_new_password">Nhập lại mật khẩu mới</string>
+    <string name="auth_password_rules">Mật khẩu cần có ít nhất 8 ký tự, bao gồm chữ và số.</string>
+
+    <!-- Branch -->
+    <string name="branch_title">Danh sách chi nhánh</string>
+    <string name="branch_choose">Chọn chi nhánh</string>
+    <string name="branch_current">Chi nhánh đang chọn</string>
+    <string name="branch_change">Đổi chi nhánh</string>
+    <string name="branch_nearby">Chi nhánh gần bạn</string>
+    <string name="branch_status_open">Đang mở cửa</string>
+    <string name="branch_status_closing_soon">Sắp đóng cửa</string>
+    <string name="branch_status_closed">Đã đóng cửa</string>
+    <string name="branch_change_cart_warning">Đổi chi nhánh sẽ xóa các món hiện tại trong giỏ hàng. Bạn có chắc muốn đổi không?</string>
+
+    <!-- Home -->
+    <string name="home_search_hint">Tìm món ăn, đồ uống, combo...</string>
+    <string name="home_quick_reservation">Đặt bàn</string>
+    <string name="home_quick_qr">Scan QR</string>
+    <string name="home_quick_menu">Thực đơn</string>
+    <string name="home_quick_orders">Đơn hiện tại</string>
+    <string name="home_category_title">Danh mục món</string>
+    <string name="home_featured_title">Món nổi bật</string>
+    <string name="home_best_seller_title">Bán chạy nhất</string>
+    <string name="home_new_dishes_title">Món mới ra mắt</string>
+    <string name="home_recommendation_title">Gợi ý dành cho bạn</string>
+    <string name="home_upcoming_res">Đặt bàn sắp tới</string>
+
+    <!-- Active Dining Session Card -->
+    <string name="active_dining_badge">Đang dùng bữa</string>
+    <string name="active_dining_title">Phiên dùng bữa đang diễn ra</string>
+    <string name="active_dining_action_order">Gọi món</string>
+    <string name="active_dining_action_track">Theo dõi</string>
+    <string name="active_dining_action_pay">Thanh toán</string>
+
+    <!-- Food & Menu -->
+    <string name="food_menu_title">Thực đơn</string>
+    <string name="food_add_to_cart">Thêm vào giỏ</string>
+    <string name="food_sold_out">Hết món</string>
+    <string name="food_size">Kích cỡ</string>
+    <string name="food_topping">Món ăn kèm / Topping</string>
+    <string name="food_spicy_level">Mức độ cay</string>
+    <string name="food_note">Ghi chú cho bếp</string>
+    <string name="food_nutrition">Dinh dưỡng</string>
+    <string name="food_allergy">Cảnh báo dị ứng</string>
+    <string name="food_ingredients">Thành phần chính</string>
+    <string name="food_favorites_title">Mục yêu thích</string>
+    <string name="food_fav_dishes">Món yêu thích</string>
+    <string name="food_fav_branches">Chi nhánh yêu thích</string>
+
+    <!-- Reservation -->
+    <string name="res_wizard_step1">1. Chọn ngày</string>
+    <string name="res_wizard_step2">2. Chọn giờ</string>
+    <string name="res_wizard_step3">3. Số lượng khách</string>
+    <string name="res_wizard_step4">4. Chọn khu vực</string>
+    <string name="res_wizard_step5">5. Chọn bàn</string>
+    <string name="res_wizard_step6">6. Ghi chú</string>
+    <string name="res_wizard_step7">7. Đặt cọc</string>
+    <string name="res_confirm_title">Xác nhận đặt bàn thành công</string>
+    <string name="res_code">Mã đặt bàn</string>
+    <string name="res_detail_title">Chi tiết đặt bàn</string>
+    <string name="res_preorder_cta">Đặt món trước (Pre-order)</string>
+    <string name="res_change_cta">Đổi đặt bàn</string>
+    <string name="res_cancel_cta">Hủy đặt bàn</string>
+    <string name="res_no_table_title">Rất tiếc, đã hết bàn phù hợp</string>
+    <string name="res_no_table_desc">Vui lòng chọn khung giờ khác hoặc chi nhánh lân cận còn chỗ.</string>
+    <string name="res_status_confirmed">Đã xác nhận</string>
+    <string name="res_status_checked_in">Đã check-in</string>
+    <string name="res_status_completed">Hoàn thành</string>
+    <string name="res_status_cancelled">Đã hủy</string>
+
+    <!-- Pre-order -->
+    <string name="preorder_title">Đặt món trước</string>
+    <string name="preorder_cart_title">Giỏ hàng đặt trước</string>
+    <string name="preorder_confirm_cta">Xác nhận đặt món trước</string>
+    <string name="preorder_note">Món sẽ được chuẩn bị sẵn khi bạn đến nhà hàng.</string>
+
+    <!-- QR & Check-in -->
+    <string name="qr_scan_title">Quét mã QR tại bàn</string>
+    <string name="qr_scan_guide">Hướng camera về phía mã QR gắn trên bàn của bạn</string>
+    <string name="qr_validating">Đang xác thực thông tin bàn...</string>
+    <string name="qr_checkin_confirm_title">Xác nhận Check-in</string>
+    <string name="qr_checkin_confirm_btn">Bắt đầu dùng bữa</string>
+    <string name="qr_mismatch_title">Bàn không khớp đặt bàn</string>
+    <string name="qr_mismatch_desc">Bạn đã đặt bàn B12 nhưng đang quét mã tại bàn B15. Vui lòng kiểm tra lại hoặc liên hệ nhân viên.</string>
+    <string name="qr_walkin_title">Chào mừng quý khách (Walk-in)</string>
+    <string name="qr_walkin_desc">Bạn đang ngồi tại bàn này mà không có lịch đặt trước. Bấm bên dưới để bắt đầu phiên dùng bữa.</string>
+
+    <!-- Dining Session -->
+    <string name="dining_title">Phiên dùng bữa</string>
+    <string name="dining_table">Bàn</string>
+    <string name="dining_status_active">Đang diễn ra</string>
+    <string name="dining_status_pay_req">Đang yêu cầu thanh toán</string>
+    <string name="dining_call_staff">Gọi nhân viên</string>
+    <string name="dining_order_more">Gọi thêm món</string>
+    <string name="dining_btn_checkout">Yêu cầu thanh toán</string>
+    <string name="dining_send_order">Gửi Order</string>
+    <string name="dining_order_success">Đã gửi Order thành công!</string>
+
+    <!-- Call Staff -->
+    <string name="call_staff_title">Yêu cầu hỗ trợ tại bàn</string>
+    <string name="call_staff_type_general">Gọi phục vụ</string>
+    <string name="call_staff_type_cutlery">Thêm dụng cụ ăn</string>
+    <string name="call_staff_type_water">Xin thêm nước</string>
+    <string name="call_staff_type_food_support">Hỗ trợ về món ăn</string>
+    <string name="call_staff_type_cancel_item">Yêu cầu hủy món</string>
+    <string name="call_staff_type_bill">Yêu cầu thanh toán</string>
+    <string name="call_staff_type_other">Yêu cầu khác</string>
+    <string name="call_staff_status_requested">Đã gửi yêu cầu</string>
+    <string name="call_staff_status_accepted">Nhân viên đang đến</string>
+    <string name="call_staff_status_completed">Đã hoàn thành</string>
+
+    <!-- Order Tracking -->
+    <string name="order_tracking_title">Theo dõi đơn món</string>
+    <string name="order_current_title">Các Order trong phiên</string>
+    <string name="order_status_placed">Đã đặt</string>
+    <string name="order_status_confirmed">Nhà hàng xác nhận</string>
+    <string name="order_status_in_progress">Đang xử lý</string>
+    <string name="order_status_completed">Hoàn thành</string>
+    <string name="order_status_cancelled">Đã hủy</string>
+
+    <!-- Order Item Status -->
+    <string name="item_status_pending">Đã gửi</string>
+    <string name="item_status_confirmed">Đã nhận</string>
+    <string name="item_status_preparing">Đang nấu</string>
+    <string name="item_status_ready">Đã sẵn sàng</string>
+    <string name="item_status_served">Đã phục vụ</string>
+    <string name="item_status_cancelled">Đã hủy</string>
+
+    <!-- Payment -->
+    <string name="payment_checkout_title">Tổng quan thanh toán</string>
+    <string name="payment_uncompleted_warning">Một số món trong đơn vẫn đang được xử lý. Bạn có muốn tiếp tục yêu cầu thanh toán không?</string>
+    <string name="payment_btn_continue_dining">Tiếp tục dùng bữa</string>
+    <string name="payment_btn_force_checkout">Vẫn yêu cầu thanh toán</string>
+    <string name="payment_invoice_title">Hóa đơn bàn</string>
+    <string name="payment_subtotal">Tạm tính</string>
+    <string name="payment_service_fee">Phí phục vụ (5%)</string>
+    <string name="payment_vat">Thuế VAT (8%)</string>
+    <string name="payment_voucher_discount">Giảm giá voucher</string>
+    <string name="payment_loyalty_discount">Trừ điểm Loyalty</string>
+    <string name="payment_total">Tổng thanh toán</string>
+    <string name="payment_voucher_title">Chọn mã ưu đãi</string>
+    <string name="payment_loyalty_title">Dùng điểm thưởng VietTable</string>
+    <string name="payment_type_title">Hình thức thanh toán</string>
+    <string name="payment_type_online">Thanh toán online</string>
+    <string name="payment_type_onsite">Thanh toán tại nhà hàng</string>
+    <string name="payment_online_qr">QR Payment (VietQR / Chuyển khoản)</string>
+    <string name="payment_online_wallet">Ví điện tử (MoMo / ZaloPay)</string>
+    <string name="payment_online_card">Thẻ ATM / Visa / MasterCard</string>
+    <string name="payment_onsite_cash">Tiền mặt</string>
+    <string name="payment_onsite_card">Quẹt thẻ POS</string>
+    <string name="payment_onsite_transfer">QR chuyển khoản</string>
+    <string name="payment_location_table">Thanh toán tại bàn</string>
+    <string name="payment_location_counter">Thanh toán tại quầy</string>
+    <string name="payment_processing_title">Đang xử lý thanh toán...</string>
+    <string name="payment_success_title">Thanh toán thành công!</string>
+    <string name="payment_failed_title">Thanh toán thất bại</string>
+    <string name="payment_split_bill_title">Chia hóa đơn</string>
+
+    <!-- Customer -->
+    <string name="profile_title">Hồ sơ cá nhân</string>
+    <string name="profile_edit">Chỉnh sửa hồ sơ</string>
+    <string name="profile_loyalty_tier">Hạng thành viên</string>
+    <string name="profile_points">Điểm tích lũy</string>
+    <string name="profile_menu_reservations">Lịch đặt bàn</string>
+    <string name="profile_menu_orders">Lịch sử đơn hàng</string>
+    <string name="profile_menu_vouchers">Kho voucher</string>
+    <string name="profile_menu_favorites">Mục yêu thích</string>
+    <string name="profile_menu_reviews">Đánh giá của tôi</string>
+    <string name="profile_menu_settings">Cài đặt</string>
+    <string name="profile_menu_support">Hỗ trợ &amp; Trợ giúp</string>
+    <string name="profile_menu_logout">Đăng xuất</string>
+    <string name="review_title">Đánh giá trải nghiệm</string>
+    <string name="support_hotline">Hotline chăm sóc khách hàng: 1900 8899</string>
+    <string name="auth_or">hoặc</string>
+    <string name="auth_continue_with_google">Tiếp tục với Google</string>
+    <string name="auth_google_launching">Đang mở Google…</string>
+    <string name="auth_google_authenticating">Đang xác thực…</string>
+    <string name="auth_google_success_state">Đăng nhập thành công</string>
+    <string name="auth_google_not_configured">Google Sign-In chưa được cấu hình cho bản build này. Bạn vẫn có thể đăng nhập bằng mật khẩu.</string>
+    <string name="auth_google_success">Đăng nhập Google thành công!</string>
+</resources>

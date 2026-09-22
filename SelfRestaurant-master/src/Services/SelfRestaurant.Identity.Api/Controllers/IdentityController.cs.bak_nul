@@ -1,0 +1,1257 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using SelfRestaurant.Database;
+using SelfRestaurant.Database.Entities;
+using SelfRestaurant.Identity.Api.Infrastructure;
+using SelfRestaurant.Identity.Api.Security;
+using System.Security.Cryptography;
+
+namespace SelfRestaurant.Identity.Api.Controllers;
+
+[ApiController]
+[Route("api/identity")]
+public sealed class IdentityController : ControllerBase
+{
+    private readonly RestaurantDbContext _db;
+    private readonly ILogger<IdentityController> _logger;
+    private readonly PasswordResetEmailSender _passwordResetEmailSender;
+    private readonly IHostEnvironment _environment;
+
+    public IdentityController(
+        RestaurantDbContext db,
+        ILogger<IdentityController> logger,
+        PasswordResetEmailSender passwordResetEmailSender,
+        IHostEnvironment environment)
+    {
+        _db = db;
+        _logger = logger;
+        _passwordResetEmailSender = passwordResetEmailSender;
+        _environment = environment;
+    }
+
+    [HttpPost("login")]
+    [EnableRateLimiting("identity-auth")]
+    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return BadRequest(new { message = "Username and password are required." });
+        }
+
+        if (request.Password.Trim().Length < 6)
+        {
+            return BadRequest(new { message = "Password must be at least 6 characters." });
+        }
+
+        var username = request.Username.Trim();
+        var customer = await _db.Customers
+            .FirstOrDefaultAsync(
+                c =>
+                    (c.IsActive ?? false) == true
+                    && (c.Username == username || c.Email == username || c.PhoneNumber == username),
+                cancellationToken);
+
+        if (customer is null || !PasswordHashing.Verify(customer.Password, request.Password, out var needsUpgrade))
+        {
+            _logger.LogWarning("Customer login failed for key={Key}", username);
+            return Unauthorized(new { message = "Invalid credentials." });
+        }
+
+        if (needsUpgrade)
+        {
+            customer.Password = PasswordHashing.HashPassword(request.Password);
+        }
+
+        customer.UpdatedAt = DateTime.Now;
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Customer login succeeded. customerId={CustomerId}", customer.CustomerID);
+
+        return Ok(new LoginResponse(
+            CustomerId: customer.CustomerID,
+            Username: customer.Username,
+            Name: customer.Name,
+            PhoneNumber: customer.PhoneNumber,
+            Email: customer.Email,
+            LoyaltyPoints: customer.LoyaltyPoints ?? 0));
+    }
+
+    [HttpPost("register")]
+    [EnableRateLimiting("identity-auth")]
+    public async Task<ActionResult<RegisterResponse>> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return BadRequest(new { message = "Username and password are required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.PhoneNumber))
+        {
+            return BadRequest(new { message = "Name and phone number are required." });
+        }
+
+        if (request.Password.Trim().Length < 6)
+        {
+            return BadRequest(new { message = "Password must be at least 6 characters." });
+        }
+
+        var username = request.Username.Trim();
+        if (await _db.Customers.AnyAsync(c => c.Username == username, cancellationToken))
+        {
+            _logger.LogWarning("Customer register conflict by username={Username}", username);
+            return Conflict(new { message = "Username already exists." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+        {
+            var email = request.Email.Trim();
+            if (await _db.Customers.AnyAsync(c => c.Email == email, cancellationToken))
+            {
+                _logger.LogWarning("Customer register conflict by email={Email}", email);
+                return Conflict(new { message = "Email already exists." });
+            }
+        }
+
+        var customer = new SelfRestaurant.Database.Entities.Customers
+        {
+            Name = request.Name.Trim(),
+            Username = username,
+            Password = PasswordHashing.HashPassword(request.Password),
+            PhoneNumber = request.PhoneNumber.Trim(),
+            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
+            Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
+            Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
+            DateOfBirth = request.DateOfBirth,
+            LoyaltyPoints = 0,
+            CreditPoints = 0,
+            IsActive = true,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now,
+        };
+
+        _db.Customers.Add(customer);
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Customer registered. customerId={CustomerId}", customer.CustomerID);
+
+        return Ok(new RegisterResponse(customer.CustomerID));
+    }
+
+    [HttpPost("password/change")]
+    [EnableRateLimiting("identity-auth")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (request.CustomerId <= 0)
+        {
+            return BadRequest(new { message = "CustomerId is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "CurrentPassword and NewPassword are required." });
+        }
+
+        if (request.NewPassword.Trim().Length < 6)
+        {
+            return BadRequest(new { message = "New password must be at least 6 characters." });
+        }
+
+        var customer = await _db.Customers.FirstOrDefaultAsync(
+            c => c.CustomerID == request.CustomerId && (c.IsActive ?? false) == true,
+            cancellationToken);
+
+        if (customer is null)
+        {
+            return NotFound(new { message = "Customer not found." });
+        }
+
+        if (!PasswordHashing.Verify(customer.Password, request.CurrentPassword, out _))
+        {
+            return BadRequest(new { message = "Current password is incorrect." });
+        }
+
+        customer.Password = PasswordHashing.HashPassword(request.NewPassword);
+        customer.UpdatedAt = DateTime.Now;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Customer password changed. customerId={CustomerId}", customer.CustomerID);
+
+        return Ok(new { message = "Changed." });
+    }
+
+    [HttpPost("password/forgot")]
+    [EnableRateLimiting("identity-auth")]
+    public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.UsernameOrEmailOrPhone))
+        {
+            return BadRequest(new { message = "UsernameOrEmailOrPhone is required." });
+        }
+
+        var key = request.UsernameOrEmailOrPhone.Trim();
+        var customer = await _db.Customers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                c => (c.IsActive ?? false) == true
+                     && (c.Username == key || c.Email == key || c.PhoneNumber == key),
+                cancellationToken);
+
+        // Do not reveal whether customer exists.
+        if (customer is null)
+        {
+            _logger.LogInformation("Forgot-password requested for non-existing key={Key}", key);
+            return Ok(new ForgotPasswordResponse(
+                Message: "Nếu tài khoản tồn tại, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu.",
+                ResetToken: null,
+                ExpiresAt: null));
+        }
+
+        var token = GenerateResetToken();
+        var now = DateTime.UtcNow;
+        var expiresAt = now.AddMinutes(30);
+
+        _db.PasswordResetTokens.Add(new PasswordResetTokens
+        {
+            CustomerID = customer.CustomerID,
+            Token = token,
+            ExpiryDate = expiresAt,
+            IsUsed = false,
+            CreatedAt = now,
+        });
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Forgot-password token issued. customerId={CustomerId}", customer.CustomerID);
+
+        var smtpEnabled = _passwordResetEmailSender.IsEnabled;
+        var emailSent = false;
+        if (!string.IsNullOrWhiteSpace(customer.Email))
+        {
+            emailSent = await _passwordResetEmailSender.TrySendAsync(
+                customer.Email,
+                customer.Name,
+                token,
+                cancellationToken);
+        }
+
+        var message = emailSent
+            ? "Nếu tài khoản tồn tại, hệ thống đã gửi email đặt lại mật khẩu."
+            : (smtpEnabled
+                ? "Không thể gửi email lúc này. Vui lòng thử lại sau ít phút."
+                : "Hệ thống chưa cấu hình gửi email. Vui lòng liên hệ quản trị viên.");
+
+        var exposeTokenForDevelopment = _environment.IsDevelopment();
+
+        return Ok(new ForgotPasswordResponse(
+            Message: message,
+            ResetToken: exposeTokenForDevelopment ? token : null,
+            ExpiresAt: exposeTokenForDevelopment ? expiresAt : null));
+    }
+
+    [HttpPost("password/reset")]
+    [EnableRateLimiting("identity-auth")]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Token))
+        {
+            return BadRequest(new { message = "Token is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "NewPassword is required." });
+        }
+
+        if (request.NewPassword.Trim().Length < 6)
+        {
+            return BadRequest(new { message = "New password must be at least 6 characters." });
+        }
+
+        var now = DateTime.UtcNow;
+
+        var token = await _db.PasswordResetTokens
+            .Include(t => t.Customer)
+            .FirstOrDefaultAsync(t => t.Token == request.Token.Trim(), cancellationToken);
+
+        if (token is null)
+        {
+            return BadRequest(new { message = "Token is invalid." });
+        }
+
+        if (token.IsUsed)
+        {
+            return BadRequest(new { message = "Token was already used." });
+        }
+
+        if (token.ExpiryDate <= now)
+        {
+            return BadRequest(new { message = "Token has expired." });
+        }
+
+        if ((token.Customer.IsActive ?? false) != true)
+        {
+            return BadRequest(new { message = "Customer is inactive." });
+        }
+
+        token.Customer.Password = PasswordHashing.HashPassword(request.NewPassword);
+        token.Customer.UpdatedAt = DateTime.Now;
+        token.IsUsed = true;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Customer password reset. customerId={CustomerId}", token.CustomerID);
+        return Ok(new { message = "Password has been reset." });
+    }
+
+    [HttpPost("staff/login")]
+    [EnableRateLimiting("identity-auth")]
+    public async Task<ActionResult<StaffLoginResponse>> StaffLogin([FromBody] StaffLoginRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return BadRequest(new { message = "Username and password are required." });
+        }
+
+        var username = request.Username.Trim();
+        var employee = await _db.Employees
+            .Include(e => e.Role)
+            .Include(e => e.Branch)
+            .FirstOrDefaultAsync(
+                e =>
+                    (e.IsActive ?? false) == true
+                    && (e.Username == username || e.Email == username || e.Phone == username),
+                cancellationToken);
+
+        if (employee is null || !PasswordHashing.Verify(employee.Password, request.Password, out var needsUpgrade))
+        {
+            _logger.LogWarning("Staff login failed for key={Key}", username);
+            return Unauthorized(new { message = "Invalid credentials." });
+        }
+
+        if (needsUpgrade)
+        {
+            employee.Password = PasswordHashing.HashPassword(request.Password);
+        }
+
+        employee.UpdatedAt = DateTime.Now;
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Staff login succeeded. employeeId={EmployeeId}", employee.EmployeeID);
+
+        return Ok(new StaffLoginResponse(
+            EmployeeId: employee.EmployeeID,
+            Username: employee.Username,
+            Name: employee.Name,
+            Phone: employee.Phone,
+            Email: employee.Email,
+            RoleId: employee.RoleID,
+            RoleCode: employee.Role.RoleCode,
+            RoleName: employee.Role.RoleName,
+            BranchId: employee.BranchID,
+            BranchName: employee.Branch.Name));
+    }
+
+    [HttpPost("staff/password/change")]
+    [EnableRateLimiting("identity-auth")]
+    public async Task<IActionResult> StaffChangePassword([FromBody] StaffChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (request.EmployeeId <= 0)
+        {
+            return BadRequest(new { message = "EmployeeId is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "CurrentPassword and NewPassword are required." });
+        }
+
+        if (request.NewPassword.Trim().Length < 6)
+        {
+            return BadRequest(new { message = "New password must be at least 6 characters." });
+        }
+
+        var employee = await _db.Employees.FirstOrDefaultAsync(
+            e => e.EmployeeID == request.EmployeeId && (e.IsActive ?? false) == true,
+            cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound(new { message = "Employee not found." });
+        }
+
+        if (!PasswordHashing.Verify(employee.Password, request.CurrentPassword, out _))
+        {
+            return BadRequest(new { message = "Current password is incorrect." });
+        }
+
+        employee.Password = PasswordHashing.HashPassword(request.NewPassword);
+        employee.UpdatedAt = DateTime.Now;
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Staff password changed. employeeId={EmployeeId}", employee.EmployeeID);
+
+        return Ok(new { message = "Changed." });
+    }
+
+    [HttpPut("staff/{employeeId:int}")]
+    public async Task<ActionResult<StaffProfileResponse>> UpdateStaffProfile(
+        int employeeId,
+        [FromBody] UpdateStaffProfileRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (employeeId <= 0)
+        {
+            return BadRequest(new { message = "EmployeeId is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Phone))
+        {
+            return BadRequest(new { message = "Name and Phone are required." });
+        }
+
+        var employee = await _db.Employees
+            .Include(e => e.Role)
+            .Include(e => e.Branch)
+            .FirstOrDefaultAsync(e => e.EmployeeID == employeeId && (e.IsActive ?? false) == true, cancellationToken);
+
+        if (employee is null)
+        {
+            return NotFound(new { message = "Employee not found." });
+        }
+
+        employee.Name = request.Name.Trim();
+        employee.Phone = request.Phone.Trim();
+        employee.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+        employee.UpdatedAt = DateTime.Now;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Staff profile updated. employeeId={EmployeeId}", employee.EmployeeID);
+
+        return Ok(new StaffProfileResponse(
+            employee.EmployeeID,
+            employee.Username,
+            employee.Name,
+            employee.Phone,
+            employee.Email,
+            employee.Role.RoleCode,
+            employee.Role.RoleName,
+            employee.BranchID,
+            employee.Branch.Name));
+    }
+
+    [HttpGet("admin/stats")]
+    public async Task<ActionResult<AdminStatsResponse>> GetAdminStats(CancellationToken cancellationToken)
+    {
+        var totalEmployees = await _db.Employees.CountAsync(cancellationToken);
+        var activeEmployees = await _db.Employees.CountAsync(e => (e.IsActive ?? false) == true, cancellationToken);
+        var branchCount = await _db.Branches.CountAsync(b => (b.IsActive ?? false) == true, cancellationToken);
+
+        return Ok(new AdminStatsResponse(
+            TotalEmployees: totalEmployees,
+            ActiveEmployees: activeEmployees,
+            BranchCount: branchCount));
+    }
+
+    [HttpGet("admin/roles")]
+    public async Task<ActionResult<IReadOnlyList<AdminRoleResponse>>> GetAdminRoles(CancellationToken cancellationToken = default)
+    {
+        var roles = await _db.EmployeeRoles
+            .AsNoTracking()
+            .OrderBy(r => r.RoleName)
+            .Select(r => new AdminRoleResponse(
+                r.RoleID,
+                r.RoleCode,
+                r.RoleName))
+            .ToListAsync(cancellationToken);
+
+        return Ok(roles);
+    }
+
+    [HttpGet("admin/employees")]
+    public async Task<ActionResult<IReadOnlyList<AdminEmployeeResponse>>> GetAdminEmployees(
+        [FromQuery] string? search,
+        [FromQuery] int? branchId,
+        [FromQuery] int? roleId,
+        [FromQuery] bool includeInactive = true,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Employees
+            .AsNoTracking()
+            .Include(e => e.Role)
+            .Include(e => e.Branch)
+            .AsQueryable();
+
+        if (!includeInactive)
+        {
+            query = query.Where(e => (e.IsActive ?? false) == true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var key = search.Trim();
+            query = query.Where(e =>
+                e.Name.Contains(key) ||
+                e.Username.Contains(key) ||
+                (e.Phone != null && e.Phone.Contains(key)) ||
+                (e.Email != null && e.Email.Contains(key)));
+        }
+
+        if (branchId.HasValue && branchId.Value > 0)
+        {
+            query = query.Where(e => e.BranchID == branchId.Value);
+        }
+
+        if (roleId.HasValue && roleId.Value > 0)
+        {
+            query = query.Where(e => e.RoleID == roleId.Value);
+        }
+
+        var items = await query
+            .OrderByDescending(e => e.CreatedAt ?? e.UpdatedAt ?? DateTime.MinValue)
+            .ThenBy(e => e.Name)
+            .Select(e => new AdminEmployeeResponse(
+                e.EmployeeID,
+                e.Name,
+                e.Username,
+                e.Phone,
+                e.Email,
+                e.Salary,
+                e.Shift,
+                e.IsActive ?? false,
+                e.BranchID,
+                e.Branch.Name,
+                e.RoleID,
+                e.Role.RoleCode,
+                e.Role.RoleName,
+                e.CreatedAt,
+                e.UpdatedAt))
+            .ToListAsync(cancellationToken);
+
+        return Ok(items);
+    }
+
+    [HttpPost("admin/employees")]
+    public async Task<ActionResult<AdminEmployeeResponse>> CreateAdminEmployee(
+        [FromBody] CreateAdminEmployeeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var validation = await ValidateAdminEmployeeAsync(
+            request.Username,
+            request.Password,
+            request.BranchId,
+            request.RoleId,
+            currentId: null,
+            cancellationToken);
+        if (validation is not null)
+        {
+            return validation;
+        }
+
+        var entity = new Employees
+        {
+            Name = request.Name.Trim(),
+            Username = request.Username.Trim(),
+            Password = PasswordHashing.HashPassword(request.Password.Trim()),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
+            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
+            Salary = request.Salary,
+            Shift = string.IsNullOrWhiteSpace(request.Shift) ? null : request.Shift.Trim(),
+            IsActive = request.IsActive,
+            BranchID = request.BranchId,
+            RoleID = request.RoleId,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now,
+        };
+
+        _db.Employees.Add(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var response = await _db.Employees
+            .AsNoTracking()
+            .Include(e => e.Role)
+            .Include(e => e.Branch)
+            .Where(e => e.EmployeeID == entity.EmployeeID)
+            .Select(e => new AdminEmployeeResponse(
+                e.EmployeeID,
+                e.Name,
+                e.Username,
+                e.Phone,
+                e.Email,
+                e.Salary,
+                e.Shift,
+                e.IsActive ?? false,
+                e.BranchID,
+                e.Branch.Name,
+                e.RoleID,
+                e.Role.RoleCode,
+                e.Role.RoleName,
+                e.CreatedAt,
+                e.UpdatedAt))
+            .FirstAsync(cancellationToken);
+
+        return Ok(response);
+    }
+
+    [HttpPut("admin/employees/{employeeId:int}")]
+    public async Task<ActionResult<AdminEmployeeResponse>> UpdateAdminEmployee(
+        int employeeId,
+        [FromBody] UpdateAdminEmployeeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.Employees
+            .Include(e => e.Role)
+            .Include(e => e.Branch)
+            .FirstOrDefaultAsync(e => e.EmployeeID == employeeId, cancellationToken);
+        if (entity is null)
+        {
+            return NotFound(new { message = "Không tìm thấy nhân viên." });
+        }
+
+        var validation = await ValidateAdminEmployeeAsync(
+            request.Username,
+            request.Password,
+            request.BranchId,
+            request.RoleId,
+            currentId: employeeId,
+            cancellationToken);
+        if (validation is not null)
+        {
+            return validation;
+        }
+
+        entity.Name = request.Name.Trim();
+        entity.Username = request.Username.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            entity.Password = PasswordHashing.HashPassword(request.Password.Trim());
+        }
+
+        entity.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
+        entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+        entity.Salary = request.Salary;
+        entity.Shift = string.IsNullOrWhiteSpace(request.Shift) ? null : request.Shift.Trim();
+        entity.IsActive = request.IsActive;
+        entity.BranchID = request.BranchId;
+        entity.RoleID = request.RoleId;
+        entity.UpdatedAt = DateTime.Now;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        await _db.Entry(entity).Reference(e => e.Role).LoadAsync(cancellationToken);
+        await _db.Entry(entity).Reference(e => e.Branch).LoadAsync(cancellationToken);
+
+        return Ok(new AdminEmployeeResponse(
+            entity.EmployeeID,
+            entity.Name,
+            entity.Username,
+            entity.Phone,
+            entity.Email,
+            entity.Salary,
+            entity.Shift,
+            entity.IsActive ?? false,
+            entity.BranchID,
+            entity.Branch.Name,
+            entity.RoleID,
+            entity.Role.RoleCode,
+            entity.Role.RoleName,
+            entity.CreatedAt,
+            entity.UpdatedAt));
+    }
+
+    [HttpPost("admin/employees/{employeeId:int}/deactivate")]
+    public async Task<IActionResult> DeactivateAdminEmployee(int employeeId, CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.Employees.FirstOrDefaultAsync(e => e.EmployeeID == employeeId, cancellationToken);
+        if (entity is null)
+        {
+            return NotFound(new { message = "Không tìm thấy nhân viên." });
+        }
+
+        entity.IsActive = false;
+        entity.UpdatedAt = DateTime.Now;
+        await _db.SaveChangesAsync(cancellationToken);
+        return Ok(new { message = "Đã vô hiệu hóa nhân viên." });
+    }
+
+    [HttpGet("admin/employees/{employeeId:int}/history")]
+    public async Task<ActionResult<AdminEmployeeHistoryResponse>> GetAdminEmployeeHistory(
+        int employeeId,
+        [FromQuery] int days = 90,
+        [FromQuery] int take = 200,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await _db.Employees
+            .AsNoTracking()
+            .Include(e => e.Role)
+            .Include(e => e.Branch)
+            .FirstOrDefaultAsync(e => e.EmployeeID == employeeId, cancellationToken);
+        if (employee is null)
+        {
+            return NotFound(new { message = "Không tìm thấy nhân viên." });
+        }
+
+        days = Math.Clamp(days, 1, 365);
+        take = Math.Clamp(take, 1, 500);
+        var fromDate = DateTime.Today.AddDays(-days);
+
+        var chefHistory = new List<AdminChefHistoryItem>();
+        var cashierHistory = new List<AdminCashierHistoryItem>();
+        var roleCode = employee.Role.RoleCode;
+
+        if (roleCode is "CHEF" or "KITCHEN_STAFF")
+        {
+            var orders = await _db.Orders
+                .AsNoTracking()
+                .Include(o => o.Table)
+                    .ThenInclude(t => t!.Branch)
+                .Include(o => o.Status)
+                .Where(o => (o.IsActive ?? false) == true && o.OrderTime >= fromDate)
+                .Where(o => employee.BranchID <= 0 || (o.Table != null && o.Table.BranchID == employee.BranchID))
+                .OrderByDescending(o => o.CompletedTime ?? o.OrderTime)
+                .Take(take)
+                .Select(o => new
+                {
+                    o.OrderID,
+                    o.OrderCode,
+                    o.OrderTime,
+                    o.CompletedTime,
+                    TableName = o.Table != null ? (o.Table.QRCode ?? ("Bàn " + o.Table.TableID)) : null,
+                    BranchName = o.Table != null && o.Table.Branch != null ? o.Table.Branch.Name : null,
+                    StatusCode = o.Status.StatusCode,
+                    StatusName = o.Status.StatusName,
+                })
+                .ToListAsync(cancellationToken);
+
+            var orderIds = orders.Select(o => o.OrderID).ToList();
+            var orderItems = await _db.OrderItems
+                .AsNoTracking()
+                .Include(oi => oi.Dish)
+                .Where(oi => orderIds.Contains(oi.OrderID))
+                .Select(oi => new
+                {
+                    oi.OrderID,
+                    oi.Quantity,
+                    DishName = oi.Dish.Name
+                })
+                .ToListAsync(cancellationToken);
+
+            var itemsByOrder = orderItems
+                .GroupBy(x => x.OrderID)
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.Join(", ", g.Select(x => $"{x.Quantity}x {x.DishName}")));
+
+            chefHistory = orders
+                .Select(o => new AdminChefHistoryItem(
+                    o.OrderID,
+                    o.OrderCode,
+                    o.OrderTime,
+                    o.CompletedTime,
+                    o.TableName,
+                    o.BranchName,
+                    o.StatusCode,
+                    o.StatusName,
+                    itemsByOrder.TryGetValue(o.OrderID, out var summary) ? summary : string.Empty))
+                .ToList();
+        }
+
+        if (roleCode == "CASHIER")
+        {
+            cashierHistory = await _db.Bills
+                .AsNoTracking()
+                .Include(b => b.Order)
+                    .ThenInclude(o => o.Table)
+                .Include(b => b.Customer)
+                .Where(b => b.IsActive && b.EmployeeID == employeeId && b.BillTime >= fromDate)
+                .OrderByDescending(b => b.BillTime)
+                .Take(take)
+                .Select(b => new AdminCashierHistoryItem(
+                    b.BillID,
+                    b.BillCode,
+                    b.BillTime,
+                    b.Order != null ? b.Order.OrderCode : null,
+                    b.Order != null && b.Order.Table != null ? (b.Order.Table.QRCode ?? ("Bàn " + b.Order.Table.TableID)) : null,
+                    b.Customer != null ? b.Customer.Name : null,
+                    b.Subtotal,
+                    b.Discount,
+                    b.PointsDiscount,
+                    b.PointsUsed,
+                    b.TotalAmount,
+                    b.PaymentMethod,
+                    b.PaymentAmount,
+                    b.ChangeAmount))
+                .ToListAsync(cancellationToken);
+        }
+
+        return Ok(new AdminEmployeeHistoryResponse(
+            new AdminEmployeeHistoryMeta(
+                employee.EmployeeID,
+                employee.Name,
+                employee.Role.RoleCode,
+                employee.Role.RoleName,
+                employee.BranchID,
+                employee.Branch.Name),
+            chefHistory,
+            cashierHistory));
+    }
+
+    private async Task<ActionResult?> ValidateAdminEmployeeAsync(
+        string? username,
+        string? password,
+        int branchId,
+        int roleId,
+        int? currentId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return BadRequest(new { message = "Vui lòng nhập tên đăng nhập." });
+        }
+
+        if (!currentId.HasValue && string.IsNullOrWhiteSpace(password))
+        {
+            return BadRequest(new { message = "Vui lòng nhập mật khẩu." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(password) && password.Trim().Length < 6)
+        {
+            return BadRequest(new { message = "Mật khẩu phải có ít nhất 6 ký tự." });
+        }
+
+        if (branchId <= 0)
+        {
+            return BadRequest(new { message = "Vui lòng chọn chi nhánh." });
+        }
+
+        var branchExists = await _db.Branches.AnyAsync(b => b.BranchID == branchId && (b.IsActive ?? false) == true, cancellationToken);
+        if (!branchExists)
+        {
+            return BadRequest(new { message = "Chi nhánh không hợp lệ." });
+        }
+
+        if (roleId <= 0)
+        {
+            return BadRequest(new { message = "Vui lòng chọn vai trò." });
+        }
+
+        var roleExists = await _db.EmployeeRoles.AnyAsync(r => r.RoleID == roleId, cancellationToken);
+        if (!roleExists)
+        {
+            return BadRequest(new { message = "Vai trò không hợp lệ." });
+        }
+
+        var normalized = username.Trim();
+        var duplicated = await _db.Employees.AnyAsync(
+            e => e.EmployeeID != currentId && e.Username == normalized,
+            cancellationToken);
+        if (duplicated)
+        {
+            return Conflict(new { message = "Tên đăng nhập đã tồn tại." });
+        }
+
+        return null;
+    }
+
+    [HttpGet("admin/customers")]
+    public async Task<ActionResult<IReadOnlyList<AdminCustomerResponse>>> GetAdminCustomers(
+        [FromQuery] string? search,
+        [FromQuery] bool includeInactive = true,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.Customers.AsNoTracking().AsQueryable();
+        if (!includeInactive)
+        {
+            query = query.Where(c => (c.IsActive ?? false) == true);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var key = search.Trim();
+            query = query.Where(c =>
+                c.Name.Contains(key) ||
+                c.Username.Contains(key) ||
+                (c.PhoneNumber != null && c.PhoneNumber.Contains(key)) ||
+                (c.Email != null && c.Email.Contains(key)));
+        }
+
+        var items = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .ThenBy(c => c.Name)
+            .Select(c => new AdminCustomerResponse(
+                c.CustomerID,
+                c.Name,
+                c.Username,
+                c.PhoneNumber,
+                c.Email,
+                c.Address,
+                c.Gender,
+                c.DateOfBirth,
+                c.LoyaltyPoints ?? 0,
+                c.IsActive ?? false,
+                c.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        return Ok(items);
+    }
+
+    [HttpPost("admin/customers")]
+    public async Task<ActionResult<AdminCustomerResponse>> CreateAdminCustomer(
+        [FromBody] CreateAdminCustomerRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var validation = await ValidateAdminCustomerAsync(
+            request.Username,
+            request.Password,
+            request.Name,
+            request.PhoneNumber,
+            request.Email,
+            currentId: null,
+            cancellationToken);
+        if (validation is not null)
+        {
+            return validation;
+        }
+
+        var entity = new Customers
+        {
+            Name = request.Name.Trim(),
+            Username = request.Username.Trim(),
+            Password = PasswordHashing.HashPassword(request.Password.Trim()),
+            PhoneNumber = request.PhoneNumber.Trim(),
+            Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
+            Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim(),
+            Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
+            DateOfBirth = request.DateOfBirth,
+            LoyaltyPoints = Math.Max(0, request.LoyaltyPoints),
+            CreditPoints = 0,
+            IsActive = request.IsActive,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now,
+        };
+
+        _db.Customers.Add(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Ok(new AdminCustomerResponse(
+            entity.CustomerID,
+            entity.Name,
+            entity.Username,
+            entity.PhoneNumber,
+            entity.Email,
+            entity.Address,
+            entity.Gender,
+            entity.DateOfBirth,
+            entity.LoyaltyPoints ?? 0,
+            entity.IsActive ?? false,
+            entity.CreatedAt));
+    }
+
+    [HttpPut("admin/customers/{customerId:int}")]
+    public async Task<ActionResult<AdminCustomerResponse>> UpdateAdminCustomer(
+        int customerId,
+        [FromBody] UpdateAdminCustomerRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.Customers.FirstOrDefaultAsync(c => c.CustomerID == customerId, cancellationToken);
+        if (entity is null)
+        {
+            return NotFound(new { message = "Không tìm thấy khách hàng." });
+        }
+
+        var validation = await ValidateAdminCustomerAsync(
+            request.Username,
+            request.Password,
+            request.Name,
+            request.PhoneNumber,
+            request.Email,
+            currentId: customerId,
+            cancellationToken);
+        if (validation is not null)
+        {
+            return validation;
+        }
+
+        entity.Name = request.Name.Trim();
+        entity.Username = request.Username.Trim();
+        if (!string.IsNullOrWhiteSpace(request.Password))
+        {
+            entity.Password = PasswordHashing.HashPassword(request.Password.Trim());
+        }
+
+        entity.PhoneNumber = request.PhoneNumber.Trim();
+        entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
+        entity.Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
+        entity.Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim();
+        entity.DateOfBirth = request.DateOfBirth;
+        entity.LoyaltyPoints = Math.Max(0, request.LoyaltyPoints);
+        entity.IsActive = request.IsActive;
+        entity.UpdatedAt = DateTime.Now;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Ok(new AdminCustomerResponse(
+            entity.CustomerID,
+            entity.Name,
+            entity.Username,
+            entity.PhoneNumber,
+            entity.Email,
+            entity.Address,
+            entity.Gender,
+            entity.DateOfBirth,
+            entity.LoyaltyPoints ?? 0,
+            entity.IsActive ?? false,
+            entity.CreatedAt));
+    }
+
+    [HttpPost("admin/customers/{customerId:int}/deactivate")]
+    public async Task<IActionResult> DeactivateAdminCustomer(int customerId, CancellationToken cancellationToken = default)
+    {
+        var entity = await _db.Customers.FirstOrDefaultAsync(c => c.CustomerID == customerId, cancellationToken);
+        if (entity is null)
+        {
+            return NotFound(new { message = "Không tìm thấy khách hàng." });
+        }
+
+        entity.IsActive = false;
+        entity.UpdatedAt = DateTime.Now;
+        await _db.SaveChangesAsync(cancellationToken);
+        return Ok(new { message = "Đã vô hiệu hóa khách hàng." });
+    }
+
+    private async Task<ActionResult?> ValidateAdminCustomerAsync(
+        string? username,
+        string? password,
+        string? name,
+        string? phoneNumber,
+        string? email,
+        int? currentId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return BadRequest(new { message = "Vui lòng nhập tên đăng nhập." });
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return BadRequest(new { message = "Vui lòng nhập họ tên khách hàng." });
+        }
+
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            return BadRequest(new { message = "Vui lòng nhập số điện thoại." });
+        }
+
+        if (!currentId.HasValue && string.IsNullOrWhiteSpace(password))
+        {
+            return BadRequest(new { message = "Vui lòng nhập mật khẩu." });
+        }
+
+        if (!string.IsNullOrWhiteSpace(password) && password.Trim().Length < 6)
+        {
+            return BadRequest(new { message = "Mật khẩu phải có ít nhất 6 ký tự." });
+        }
+
+        var normalizedUsername = username.Trim();
+        var duplicatedUsername = await _db.Customers.AnyAsync(
+            c => c.CustomerID != currentId && c.Username == normalizedUsername,
+            cancellationToken);
+        if (duplicatedUsername)
+        {
+            return Conflict(new { message = "Tên đăng nhập đã tồn tại." });
+        }
+
+        var normalizedEmail = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            var duplicatedEmail = await _db.Customers.AnyAsync(
+                c => c.CustomerID != currentId && c.Email == normalizedEmail,
+                cancellationToken);
+            if (duplicatedEmail)
+            {
+                return Conflict(new { message = "Email đã tồn tại." });
+            }
+        }
+
+        return null;
+    }
+
+    public sealed record LoginRequest(string Username, string Password);
+
+    public sealed record LoginResponse(
+        int CustomerId,
+        string Username,
+        string Name,
+        string PhoneNumber,
+        string? Email,
+        int LoyaltyPoints);
+
+    public sealed record RegisterRequest(
+        string Name,
+        string Username,
+        string Password,
+        string PhoneNumber,
+        string? Email = null,
+        string? Gender = null,
+        DateOnly? DateOfBirth = null,
+        string? Address = null);
+
+    public sealed record RegisterResponse(int CustomerId);
+
+    public sealed record ChangePasswordRequest(int CustomerId, string CurrentPassword, string NewPassword);
+
+    public sealed record ForgotPasswordRequest(string UsernameOrEmailOrPhone);
+
+    public sealed record ForgotPasswordResponse(string Message, string? ResetToken, DateTime? ExpiresAt);
+
+    public sealed record ResetPasswordRequest(string Token, string NewPassword);
+
+    public sealed record StaffLoginRequest(string Username, string Password);
+
+    public sealed record StaffLoginResponse(
+        int EmployeeId,
+        string Username,
+        string Name,
+        string? Phone,
+        string? Email,
+        int RoleId,
+        string RoleCode,
+        string RoleName,
+        int BranchId,
+        string BranchName);
+
+    public sealed record StaffChangePasswordRequest(int EmployeeId, string CurrentPassword, string NewPassword);
+
+    public sealed record UpdateStaffProfileRequest(string Name, string Phone, string? Email = null);
+
+    public sealed record StaffProfileResponse(
+        int EmployeeId,
+        string Username,
+        string Name,
+        string? Phone,
+        string? Email,
+        string RoleCode,
+        string RoleName,
+        int BranchId,
+        string BranchName);
+
+    public sealed record AdminStatsResponse(int TotalEmployees, int ActiveEmployees, int BranchCount);
+
+    public sealed record AdminRoleResponse(int RoleId, string RoleCode, string RoleName);
+
+    public sealed record AdminEmployeeResponse(
+        int EmployeeId,
+        string Name,
+        string Username,
+        string? Phone,
+        string? Email,
+        decimal? Salary,
+        string? Shift,
+        bool IsActive,
+        int BranchId,
+        string BranchName,
+        int RoleId,
+        string RoleCode,
+        string RoleName,
+        DateTime? CreatedAt,
+        DateTime? UpdatedAt);
+
+    public sealed record CreateAdminEmployeeRequest(
+        string Name,
+        string Username,
+        string Password,
+        string? Phone,
+        string? Email,
+        decimal? Salary,
+        string? Shift,
+        bool IsActive,
+        int BranchId,
+        int RoleId);
+
+    public sealed record UpdateAdminEmployeeRequest(
+        string Name,
+        string Username,
+        string? Password,
+        string? Phone,
+        string? Email,
+        decimal? Salary,
+        string? Shift,
+        bool IsActive,
+        int BranchId,
+        int RoleId);
+
+    public sealed record AdminEmployeeHistoryMeta(
+        int EmployeeId,
+        string EmployeeName,
+        string RoleCode,
+        string RoleName,
+        int BranchId,
+        string BranchName);
+
+    public sealed record AdminChefHistoryItem(
+        int OrderId,
+        string? OrderCode,
+        DateTime OrderTime,
+        DateTime? CompletedTime,
+        string? TableName,
+        string? BranchName,
+        string StatusCode,
+        string StatusName,
+        string DishesSummary);
+
+    public sealed record AdminCashierHistoryItem(
+        int BillId,
+        string BillCode,
+        DateTime BillTime,
+        string? OrderCode,
+        string? TableName,
+        string? CustomerName,
+        decimal Subtotal,
+        decimal Discount,
+        decimal PointsDiscount,
+        int? PointsUsed,
+        decimal TotalAmount,
+        string PaymentMethod,
+        decimal? PaymentAmount,
+        decimal? ChangeAmount);
+
+    public sealed record AdminEmployeeHistoryResponse(
+        AdminEmployeeHistoryMeta Employee,
+        IReadOnlyList<AdminChefHistoryItem> ChefHistory,
+        IReadOnlyList<AdminCashierHistoryItem> CashierHistory);
+
+    public sealed record AdminCustomerResponse(
+        int CustomerId,
+        string Name,
+        string Username,
+        string? PhoneNumber,
+        string? Email,
+        string? Address,
+        string? Gender,
+        DateOnly? DateOfBirth,
+        int LoyaltyPoints,
+        bool IsActive,
+        DateTime? CreatedAt);
+
+    public sealed record CreateAdminCustomerRequest(
+        string Name,
+        string Username,
+        string Password,
+        string PhoneNumber,
+        string? Email = null,
+        string? Address = null,
+        string? Gender = null,
+        DateOnly? DateOfBirth = null,
+        int LoyaltyPoints = 0,
+        bool IsActive = true);
+
+    public sealed record UpdateAdminCustomerRequest(
+        string Name,
+        string Username,
+        string? Password,
+        string PhoneNumber,
+        string? Email = null,
+        string? Address = null,
+        string? Gender = null,
+        DateOnly? DateOfBirth = null,
+        int LoyaltyPoints = 0,
+                                                                                                                                                                                                                                                                                           

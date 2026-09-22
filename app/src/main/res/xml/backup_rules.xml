@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Legacy backup transport: retain ordinary app backup, never transfer authentication. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="viettable_secure_session.xml" />
+    <exclude domain="sharedpref" path="viettable_session.xml" />
+</full-backup-content>

@@ -1,0 +1,43 @@
+# Keep source and configuration files stable across Windows, Linux, and Docker.
+* text=auto
+
+# Source code
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# Config, docs, scripts, and SQL
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.env text eol=lf
+.env.example text eol=lf
+Dockerfile text eol=lf
+docker/* text eol=lf
+*.sh text eol=lf
+*.ps1 text eol=lf
+*.cmd text eol=lf
+*.sql text eol=lf
+
+# Binary/generated artifacts should never be normalized as text.
+*.dll binary
+*.exe binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.zip binary

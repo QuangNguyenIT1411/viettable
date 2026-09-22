@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: exclude both token stores from cloud backup and device transfer. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="viettable_secure_session.xml" />
+        <exclude domain="sharedpref" path="viettable_session.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="viettable_secure_session.xml" />
+        <exclude domain="sharedpref" path="viettable_session.xml" />
+    </device-transfer>
+</data-extraction-rules>

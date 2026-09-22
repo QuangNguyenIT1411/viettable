@@ -1,0 +1,30 @@
+# Visual Studio / IDE
+.vs/
+.vscode/
+.codex
+.codex/
+*.user
+*.suo
+
+# Local config / secrets
+.env
+.env.*
+!.env.example
+
+# Logs / temp / test output
+.runlogs/
+.tmp/
+test-results/
+artifacts/
+*.log
+
+# .NET build output
+**/bin/
+**/obj/
+
+# Frontend dependencies/build output
+**/node_modules/
+**/dist/
+
+# Runtime app data
+**/App_Data/integration-events/*.jsonl

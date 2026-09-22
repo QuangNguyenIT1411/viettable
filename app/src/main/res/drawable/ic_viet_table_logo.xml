@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Circle Background -->
+    <path
+        android:fillColor="@color/primary"
+        android:pathData="M24,4C12.95,4 4,12.95 4,24s8.95,20 20,20 20,-8.95 20,-20S35.05,4 24,4z"/>
+    <!-- Stylized Lotus / Bowl in Muted Gold -->
+    <path
+        android:fillColor="@color/accent_gold"
+        android:pathData="M24,14c-1.5,4 -4.5,7 -8,8 3,3 8,4 8,8 0,-4 5,-5 8,-8 -3.5,-1 -6.5,-4 -8,-8z"/>
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M14,32h20c-1,4 -5,7 -10,7s-9,-3 -10,-7z"/>
+</vector>

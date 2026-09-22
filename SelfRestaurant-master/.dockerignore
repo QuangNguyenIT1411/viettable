@@ -1,0 +1,23 @@
+.git
+.vs
+**/.vs
+**/bin
+**/obj
+packages
+SelfRestaurant/.vs
+SelfRestaurant/bin
+SelfRestaurant/obj
+
+# Legacy ASP.NET MVC project (not used in microservices containers)
+SelfRestaurant
+Areas
+
+# Large/unneeded artifacts
+UpgradeLog*.htm
+*.user
+*.cache
+
+# SQL scripts except the one used for container init
+*.sql
+!sql/localdb.sql
+

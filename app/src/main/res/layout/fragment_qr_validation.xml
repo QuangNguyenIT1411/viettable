@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:tag="safe_all">
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressValidation"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:indeterminate="true"
+        app:indicatorColor="@color/colorPrimary"
+        app:indicatorSize="64dp"
+        app:trackColor="@color/colorDivider"
+        app:trackThickness="6dp" />
+
+    <TextView
+        android:id="@+id/tvValidationTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="Đang xác thực mã bàn..."
+        android:textColor="@color/colorTextPrimary"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/tvValidationSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:text="Hệ thống đang kiểm tra trạng thái bàn và đồng bộ thông tin đặt bàn của quý khách."
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/tvScannedCodeDisplay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_badge"
+        android:backgroundTint="#E8F5E9"
+        android:fontFamily="sans-serif-medium"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:text=""
+        android:textColor="@color/colorPrimary"
+        android:textSize="14sp" />
+
+</LinearLayout>

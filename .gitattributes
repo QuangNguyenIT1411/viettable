@@ -1,0 +1,18 @@
+# Let Git detect text while preserving platform-appropriate working tree endings.
+* text=auto
+
+# Executable scripts must remain usable in their native environments.
+gradlew text eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets and authored documents are never line-ending normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.docx binary

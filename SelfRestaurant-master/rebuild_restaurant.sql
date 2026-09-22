@@ -1,0 +1,19 @@
+USE [master]
+GO
+IF DB_ID('RESTAURANT') IS NOT NULL
+BEGIN
+    ALTER DATABASE [RESTAURANT] SET EMERGENCY;
+    ALTER DATABASE [RESTAURANT] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [RESTAURANT];
+END
+GO
+:r C:\Users\Quang\Downloads\SINH_VIEN\SINH_VIEN\SelfRestaurant-main\sqlchuan_utf8.sql
+GO
+ALTER DATABASE [RESTAURANT] SET MULTI_USER;
+GO
+SELECT name, state_desc, user_access_desc, is_auto_close_on FROM sys.databases WHERE name = 'RESTAURANT';
+GO
+USE [RESTAURANT]
+GO
+SELECT COUNT(*) AS BranchCount FROM dbo.Branches;
+GO

@@ -1,0 +1,86 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+def configuredApiUrl = providers.gradleProperty('VIETTABLE_API_BASE_URL').orElse('')
+def releaseApiUrl = configuredApiUrl.get()
+def validateReleaseApiUrl = tasks.register('validateReleaseApiUrl') {
+    inputs.property('apiUrl', releaseApiUrl)
+    doLast {
+        URI uri
+        try { uri = new URI(inputs.properties.apiUrl.toString()) }
+        catch (Exception ignored) { throw new GradleException('Release requires a valid VIETTABLE_API_BASE_URL HTTPS origin.') }
+        def host = uri.host?.toLowerCase(Locale.ROOT)?.replaceAll(/\.$/, '')
+        if (uri.scheme != 'https' || !host || uri.userInfo || uri.query || uri.fragment ||
+                !(uri.path in ['', '/']) || host == 'localhost' || host.endsWith('.localhost') ||
+                host == '10.0.2.2' || host.startsWith('127.') || host.contains(':') ||
+                host == '0.0.0.0' || host == 'ip6-localhost') {
+            throw new GradleException('Release requires VIETTABLE_API_BASE_URL=https://<real-gateway-host>; HTTP and local endpoints are forbidden.')
+        }
+    }
+}
+tasks.configureEach {
+    if (name == 'preReleaseBuild') dependsOn(validateReleaseApiUrl)
+}
+
+android {
+    namespace 'com.restaurant.viettable'
+    compileSdk {
+        version = release(37)
+    }
+
+    defaultConfig {
+        applicationId "com.restaurant.viettable"
+        minSdk 24
+        targetSdk 37
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        def googleWebClientId = project.findProperty("VIETTABLE_GOOGLE_WEB_CLIENT_ID") ?: "703089463102-cbuu53j035vbrp8ea1hespobcqpbtll7.apps.googleusercontent.com"
+        buildConfigField "String", "GOOGLE_WEB_CLIENT_ID", "\"${googleWebClientId}\""
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField 'String', 'API_BASE_URL', groovy.json.JsonOutput.toJson(configuredApiUrl.get() ?: 'http://10.0.2.2:5100')
+        }
+        release {
+            debuggable false
+            buildConfigField 'String', 'API_BASE_URL', groovy.json.JsonOutput.toJson(releaseApiUrl)
+            optimization {
+                enable false
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+}
+
+dependencies {
+    implementation libs.activity.ktx
+    implementation libs.appcompat
+    implementation libs.constraintlayout
+    implementation libs.material
+    implementation libs.recyclerview
+    implementation libs.navigation.fragment
+    implementation libs.navigation.ui
+    implementation libs.camera.camera2
+    implementation libs.camera.lifecycle
+    implementation libs.camera.view
+    implementation libs.mlkit.barcode.scanning
+    implementation libs.microsoft.signalr
+    implementation libs.credentials
+    implementation libs.credentials.play.services.auth
+    implementation libs.google.id
+    testImplementation libs.junit
+    androidTestImplementation libs.espresso.core
+    androidTestImplementation libs.ext.junit
+    androidTestImplementation libs.test.core
+}

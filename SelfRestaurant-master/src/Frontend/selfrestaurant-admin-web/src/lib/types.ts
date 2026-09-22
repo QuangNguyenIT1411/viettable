@@ -1,0 +1,65 @@
+export type ApiError = { success: false; code: string; message: string; details?: unknown };
+
+export type StaffSessionUserDto = {
+  employeeId: number;
+  username: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  roleId: number;
+  roleCode: string;
+  roleName: string;
+  branchId: number;
+  branchName: string;
+};
+
+export type StaffSessionDto = { authenticated: boolean; staff?: StaffSessionUserDto | null; loginPath?: string | null };
+export type BranchDto = { branchId: number; name: string; location?: string | null };
+export type CategoryDto = { categoryId: number; name: string; description?: string | null; displayOrder: number; isActive: boolean };
+export type TableStatusDto = { statusId: number; statusCode: string; statusName: string };
+export type EmployeeRoleDto = { roleId: number; roleCode: string; roleName: string };
+export type AdminDashboardStatsDto = { totalEmployees: number; activeEmployees: number; branchCount: number; todayOrders: number; pendingOrders: number; todayRevenue: number };
+export type AdminSettingsDto = { employeeId: number; name: string; username: string; phone?: string | null; email?: string | null; branchName: string; roleName: string };
+export type AdminEmployeeDto = { employeeId: number; name: string; username: string; password?: string | null; phone?: string | null; email?: string | null; salary?: number | null; shift?: string | null; isActive: boolean; branchId: number; branchName: string; roleId: number; roleCode: string; roleName: string };
+export type AdminCustomerDto = { customerId: number; name: string; username: string; password?: string | null; phoneNumber?: string | null; email?: string | null; gender?: string | null; dateOfBirth?: string | null; address?: string | null; loyaltyPoints: number; isActive: boolean };
+export type AdminDishDto = { dishId: number; name: string; price: number; categoryId: number; categoryName: string; description?: string | null; unit?: string | null; image?: string | null; isVegetarian: boolean; isDailySpecial: boolean; available: boolean; isActive: boolean; ingredientsSummary?: string | null };
+export type AdminDishIngredientLineDto = { ingredientId: number; name: string; unit: string; currentStock: number; isActive: boolean; selected: boolean; quantityPerDish: number };
+export type AdminDishIngredientsDto = { dishId: number; dishName: string; ingredients: AdminDishIngredientLineDto[] };
+export type AdminRelatedIngredientDishDto = { dishId: number; name: string; categoryName?: string | null; quantityPerDish: number; unit: string; available: boolean; isActive: boolean };
+export type AdminIngredientDto = { ingredientId: number; name: string; unit: string; currentStock: number; reorderLevel: number; isActive: boolean; totalBatchStock: number; usableBatchStock: number; nearestExpiryDate?: string | null; expiredBatchCount: number; nearExpiryBatchCount: number };
+export type AdminIngredientBatchDto = { batchId: number; ingredientId: number; batchCode?: string | null; quantityInitial: number; quantityRemaining: number; unit: string; expiryDate: string; receivedDate: string; supplierName?: string | null; isActive: boolean; createdAt: string; updatedAt?: string | null; status: string };
+export type CreateIngredientBatchRequest = { batchCode?: string | null; quantityInitial?: number | null; quantityRemaining?: number | null; unit?: string | null; expiryDate?: string | null; receivedDate?: string | null; supplierName?: string | null };
+export type UpdateIngredientBatchRequest = { batchCode?: string | null; expiryDate?: string | null; receivedDate?: string | null; supplierName?: string | null; isActive?: boolean | null };
+export type IngredientStockMovementDto = { movementId: number; ingredientId: number; batchId?: number | null; quantityChange: number; movementType: string; referenceType?: string | null; referenceId?: number | null; orderId?: number | null; orderItemId?: number | null; dishId?: number | null; createdAt: string; note?: string | null };
+export type InventorySummaryDto = { totalActiveIngredients: number; expiredBatchCount: number; nearExpiryBatchCount: number; totalBatchesWithStock: number; totalUsableBatchStock: number; lowStockIngredientCount: number; nearExpiryDays: number };
+export type InventoryBatchDto = { batchId: number; ingredientId: number; ingredientName: string; batchCode?: string | null; quantityInitial: number; quantityRemaining: number; unit: string; receivedDate: string; expiryDate: string; supplierName?: string | null; isActive: boolean; status: string; daysUntilExpiry: number };
+export type InventoryStockInRequest = { ingredientId: number; quantity?: number | null; receivedDate?: string | null; expiryDate?: string | null; batchCode?: string | null; supplierName?: string | null; note?: string | null };
+export type InventoryStockOutRequest = { ingredientId: number; quantity?: number | null; batchId?: number | null; reason?: string | null; note?: string | null };
+export type InventoryMovementDto = { movementId: number; ingredientId: number; ingredientName: string; unit: string; batchId?: number | null; batchCode?: string | null; expiryDate?: string | null; supplierName?: string | null; quantityChange: number; movementType: string; referenceType?: string | null; referenceId?: number | null; orderId?: number | null; orderItemId?: number | null; dishId?: number | null; createdAt: string; note?: string | null };
+export type AdminUnitDto = { unitId: number; name: string; description?: string | null; displayOrder: number; isActive: boolean; dishCount: number; ingredientCount: number };
+export type AdminTableDto = { tableId: number; tableNumber: number; branchId: number; branchName: string; numberOfSeats: number; qrCode?: string | null; statusId: number; statusCode: string; statusName: string; isActive: boolean };
+export type AdminRevenueReportRowDto = { date: string; branchId: number; branchName: string; totalOrders: number; totalRevenue: number };
+export type AdminTopDishReportItemDto = { dishId: number; dishName: string; categoryName: string; totalQuantity: number; totalRevenue: number };
+export type AdminChefActivityLogItemDto = { auditId: number; timestampUtc: string; actionType: string; dishId?: number | null; actorName?: string | null; afterState?: string | null };
+export type AdminStaffActivityLogItemDto = { auditId: number; timestampUtc: string; actionType: string; entityType: string; entityId: string; actorName?: string | null; actorRoleCode?: string | null; ipAddress?: string | null; userAgent?: string | null; notes?: string | null; beforeState?: string | null; afterState?: string | null };
+export type AdminChefCookingHistoryItemDto = { orderId: number; orderCode?: string | null; orderTime: string; completedTime?: string | null; tableName?: string | null; branchName?: string | null; statusCode: string; statusName: string; dishesSummary: string; notes?: string | null };
+export type AdminCustomerOrderHistoryItemDto = { orderId: number; orderCode?: string | null; orderTime: string; completedTime?: string | null; tableName?: string | null; statusCode: string; statusName: string; totalAmount: number; itemCount: number; dishesSummary: string };
+export type AdminCashierHistoryItemDto = { billId: number; billCode: string; billTime: string; orderCode?: string | null; tableName?: string | null; customerName?: string | null; subtotal: number; discount: number; pointsDiscount: number; pointsUsed?: number | null; totalAmount: number; paymentMethod: string; paymentAmount?: number | null; changeAmount?: number | null };
+export type AdminEmployeeHistoryResponse = { 
+  employee: { employeeId: number; employeeName: string; roleCode: string; roleName: string; branchId: number; branchName: string }; 
+  chefActivityLogs: { page: number; pageSize: number; totalItems: number; totalPages: number; logs: AdminChefActivityLogItemDto[] }; 
+  chefItemCompletions: { page: number; pageSize: number; totalItems: number; totalPages: number; logs: AdminChefActivityLogItemDto[] }; 
+  staffActivityLogs: { page: number; pageSize: number; totalItems: number; totalPages: number; logs: AdminStaffActivityLogItemDto[] };
+  chefCookingHistory: { page: number; pageSize: number; totalItems: number; totalPages: number; items: AdminChefCookingHistoryItemDto[] };
+  cashierHistory: { page: number; pageSize: number; totalItems: number; totalPages: number; items: AdminCashierHistoryItemDto[] } 
+};
+export type Paged<T> = { page: number; pageSize: number; totalItems: number; totalPages: number; items: T[] };
+export type AdminDashboardDto = { staff: StaffSessionUserDto; stats: AdminDashboardStatsDto; latestEmployees: AdminEmployeeDto[]; branches: BranchDto[]; roles: EmployeeRoleDto[]; categories: CategoryDto[]; tableStatuses: TableStatusDto[]; settings: AdminSettingsDto };
+export type AdminCategoriesScreenDto = { categories: CategoryDto[]; units: { unit: string; dishCount: number }[] };
+export type AdminDishesScreenDto = { dishes: Paged<AdminDishDto>; categories: CategoryDto[] };
+export type AdminIngredientsScreenDto = { ingredients: Paged<AdminIngredientDto> };
+export type AdminUnitsScreenDto = Paged<AdminUnitDto>;
+export type AdminTablesScreenDto = { tables: Paged<AdminTableDto>; branches: BranchDto[]; tableStatuses: TableStatusDto[] };
+export type AdminEmployeesScreenDto = { employees: Paged<AdminEmployeeDto>; branches: BranchDto[]; roles: EmployeeRoleDto[] };
+export type AdminCustomersScreenDto = { customers: Paged<AdminCustomerDto> };
+export type AdminReportsScreenDto = { revenueDays: number; topDishDays: number; topDishTake: number; revenue: { totalRevenue: number; revenueByBranchDate: AdminRevenueReportRowDto[] }; topDishes: { items: AdminTopDishReportItemDto[] } };

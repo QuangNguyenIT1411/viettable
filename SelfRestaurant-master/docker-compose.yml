@@ -1,0 +1,193 @@
+﻿services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: selfrestaurant-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: selfrestaurant-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+
+  db-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    container_name: selfrestaurant-db-init
+    depends_on:
+      - db
+    environment:
+      MSSQL_HOST: db
+      MSSQL_PORT: "1433"
+      MSSQL_USER: sa
+      MSSQL_PASSWORD: ${MSSQL_SA_PASSWORD}
+      DB_NAME: RESTAURANT
+      SERVICE_DATABASES: RESTAURANT_CATALOG,RESTAURANT_ORDERS,RESTAURANT_CUSTOMERS,RESTAURANT_IDENTITY,RESTAURANT_BILLING
+      SCHEMA_SCRIPT: /scripts/sqlchuan.cleaned.sql
+    volumes:
+      - ./docker/db-init.sh:/docker/db-init.sh:ro
+      - ./sql/sqlchuan.cleaned.sql:/scripts/sqlchuan.cleaned.sql:ro
+      - ./sql/catalog-owned-tables.sql:/scripts/catalog-owned-tables.sql:ro
+      - ./sql/identity-owned-tables.sql:/scripts/identity-owned-tables.sql:ro
+      - ./sql/orders-owned-tables.sql:/scripts/orders-owned-tables.sql:ro
+    entrypoint: ["/bin/bash", "/docker/db-init.sh"]
+    restart: "no"
+
+  catalog:
+    container_name: selfrestaurant-catalog
+    build:
+      context: .
+      dockerfile: src/Services/SelfRestaurant.Catalog.Api/Dockerfile
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      HttpsRedirection__Enabled: "false"
+      ConnectionStrings__CatalogDb: Server=db,1433;Database=RESTAURANT_CATALOG;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      ConnectionStrings__RestaurantDb: Server=db,1433;Database=RESTAURANT_CATALOG;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+    ports:
+      - "5101:8080"
+
+  orders:
+    container_name: selfrestaurant-orders
+    build:
+      context: .
+      dockerfile: src/Services/SelfRestaurant.Orders.Api/Dockerfile
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      HttpsRedirection__Enabled: "false"
+      ConnectionStrings__RestaurantDb: Server=db,1433;Database=RESTAURANT_ORDERS;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      Services__Catalog: http://catalog:8080
+      Services__Identity: http://identity:8080
+      Services__Billing: http://billing:8080
+      RabbitMq__Enabled: "true"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: "5672"
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+    ports:
+      - "5102:8080"
+
+  customers:
+    container_name: selfrestaurant-customers
+    build:
+      context: .
+      dockerfile: src/Services/SelfRestaurant.Customers.Api/Dockerfile
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      HttpsRedirection__Enabled: "false"
+      ConnectionStrings__RestaurantDb: Server=db,1433;Database=RESTAURANT_CUSTOMERS;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      Services__Orders: http://orders:8080
+    ports:
+      - "5103:8080"
+
+  identity:
+    container_name: selfrestaurant-identity
+    build:
+      context: .
+      dockerfile: src/Services/SelfRestaurant.Identity.Api/Dockerfile
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      HttpsRedirection__Enabled: "false"
+      ConnectionStrings__IdentityDb: Server=db,1433;Database=RESTAURANT_IDENTITY;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      ConnectionStrings__RestaurantDb: Server=db,1433;Database=RESTAURANT_IDENTITY;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      Services__Catalog: http://catalog:8080
+      Services__Orders: http://orders:8080
+      Services__Billing: http://billing:8080
+      MobileJwt__Issuer: SelfRestaurant.Identity
+      MobileJwt__Audience: SelfRestaurant.Mobile
+      MobileJwt__SigningKey: ${MOBILE_JWT_SIGNING_KEY:-selfrestaurant-local-development-mobile-jwt-key-change-me-2026}
+    ports:
+      - "5104:8080"
+
+  billing:
+    container_name: selfrestaurant-billing
+    build:
+      context: .
+      dockerfile: src/Services/SelfRestaurant.Billing.Api/Dockerfile
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      HttpsRedirection__Enabled: "false"
+      ConnectionStrings__RestaurantDb: Server=db,1433;Database=RESTAURANT_BILLING;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      Services__Identity: http://identity:8080
+      Services__Orders: http://orders:8080
+      RabbitMq__Enabled: "true"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: "5672"
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+      Payments__VnPay__Enabled: ${VNPAY_ENABLED:-false}
+      Payments__VnPay__TmnCode: ${VNPAY_TMN_CODE:-}
+      Payments__VnPay__HashSecret: ${VNPAY_HASH_SECRET:-}
+      Payments__VnPay__PaymentUrl: ${VNPAY_PAYMENT_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+      Payments__VnPay__ReturnUrl: ${VNPAY_RETURN_URL:-https://your-public-host.example/api/payments/providers/vnpay/return}
+      Payments__VnPay__ExpiryMinutes: ${VNPAY_EXPIRY_MINUTES:-15}
+    ports:
+      - "5105:8080"
+
+  gateway:
+    container_name: selfrestaurant-gateway
+    build:
+      context: .
+      dockerfile: src/Gateway/SelfRestaurant.Gateway.Api/Dockerfile
+    depends_on:
+      - catalog
+      - orders
+      - customers
+      - identity
+      - billing
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      HttpsRedirection__Enabled: "false"
+      Services__Catalog: http://catalog:8080
+      Services__Orders: http://orders:8080
+      Services__Customers: http://customers:8080
+      Services__Identity: http://identity:8080
+      Services__Billing: http://billing:8080
+      MobileJwt__Issuer: SelfRestaurant.Identity
+      MobileJwt__Audience: SelfRestaurant.Mobile
+      MobileJwt__SigningKey: ${MOBILE_JWT_SIGNING_KEY:-selfrestaurant-local-development-mobile-jwt-key-change-me-2026}
+      Frontend__CustomerDistPath: /app/wwwroot/customer-app
+      Frontend__ChefDistPath: /app/wwwroot/chef-app
+      Frontend__CashierDistPath: /app/wwwroot/cashier-app
+      Frontend__AdminDistPath: /app/wwwroot/admin-app
+    ports:
+      - "5100:8080"
+    volumes:
+      - gateway-uploads:/app/wwwroot/Images/uploads
+
+volumes:
+  mssql-data:
+  gateway-uploads:

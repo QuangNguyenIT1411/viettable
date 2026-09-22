@@ -1,0 +1,31 @@
+[
+  {
+    "Name": "Run Gateway + APIs",
+    "Projects": [
+      {
+        "Path": "src\\Services\\SelfRestaurant.Catalog.Api\\SelfRestaurant.Catalog.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Services\\SelfRestaurant.Orders.Api\\SelfRestaurant.Orders.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Services\\SelfRestaurant.Customers.Api\\SelfRestaurant.Customers.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Services\\SelfRestaurant.Identity.Api\\SelfRestaurant.Identity.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Services\\SelfRestaurant.Billing.Api\\SelfRestaurant.Billing.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Gateway\\SelfRestaurant.Gateway.Api\\SelfRestaurant.Gateway.Api.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

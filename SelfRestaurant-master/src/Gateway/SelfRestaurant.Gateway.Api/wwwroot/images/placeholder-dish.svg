@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="Dish placeholder">
+  <rect width="320" height="220" fill="#f6efe4"/>
+  <circle cx="160" cy="110" r="72" fill="#fff8ef" stroke="#c98f52" stroke-width="8"/>
+  <circle cx="160" cy="110" r="42" fill="#ffd9a8"/>
+  <path d="M112 84c24 30 72 30 96 0" fill="none" stroke="#8a4b1f" stroke-width="8" stroke-linecap="round"/>
+  <path d="M126 138h68" fill="none" stroke="#8a4b1f" stroke-width="8" stroke-linecap="round"/>
+  <text x="160" y="198" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#7d5a3d">SelfRestaurant Dish</text>
+</svg>

@@ -1,0 +1,239 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{C8E42992-5E42-0C2B-DBFE-AA848D06431C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfRestaurant.Catalog.Api", "src\Services\SelfRestaurant.Catalog.Api\SelfRestaurant.Catalog.Api.csproj", "{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfRestaurant.Orders.Api", "src\Services\SelfRestaurant.Orders.Api\SelfRestaurant.Orders.Api.csproj", "{B6FF257D-AB11-4CC9-A46D-749694A13C8F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfRestaurant.Customers.Api", "src\Services\SelfRestaurant.Customers.Api\SelfRestaurant.Customers.Api.csproj", "{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfRestaurant.Identity.Api", "src\Services\SelfRestaurant.Identity.Api\SelfRestaurant.Identity.Api.csproj", "{24E27785-7CCA-4243-A443-3F5DBA9FAD33}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{984BB9B3-3FA3-BE33-9484-CAC21695A33C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfRestaurant.Billing.Api", "src\Services\SelfRestaurant.Billing.Api\SelfRestaurant.Billing.Api.csproj", "{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Gateway", "Gateway", "{6306A8FB-679E-111F-6585-8F70E0EE6013}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfRestaurant.Gateway.Api", "src\Gateway\SelfRestaurant.Gateway.Api\SelfRestaurant.Gateway.Api.csproj", "{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3BFF7C62-2D4A-4E77-8EA9-B70312E343D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelfRestaurant.Backend.ContractTests", "tests\SelfRestaurant.Backend.ContractTests\SelfRestaurant.Backend.ContractTests.csproj", "{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Frontend", "Frontend", "{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C101}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "selfrestaurant-customer-web", "selfrestaurant-customer-web", "{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C102}"
+	ProjectSection(SolutionItems) = preProject
+		src\Frontend\selfrestaurant-customer-web\index.html = src\Frontend\selfrestaurant-customer-web\index.html
+		src\Frontend\selfrestaurant-customer-web\package-lock.json = src\Frontend\selfrestaurant-customer-web\package-lock.json
+		src\Frontend\selfrestaurant-customer-web\package.json = src\Frontend\selfrestaurant-customer-web\package.json
+		src\Frontend\selfrestaurant-customer-web\src\App.tsx = src\Frontend\selfrestaurant-customer-web\src\App.tsx
+		src\Frontend\selfrestaurant-customer-web\src\components\Layout.tsx = src\Frontend\selfrestaurant-customer-web\src\components\Layout.tsx
+		src\Frontend\selfrestaurant-customer-web\src\components\RequireAuth.tsx = src\Frontend\selfrestaurant-customer-web\src\components\RequireAuth.tsx
+		src\Frontend\selfrestaurant-customer-web\src\lib\api.ts = src\Frontend\selfrestaurant-customer-web\src\lib\api.ts
+		src\Frontend\selfrestaurant-customer-web\src\lib\types.ts = src\Frontend\selfrestaurant-customer-web\src\lib\types.ts
+		src\Frontend\selfrestaurant-customer-web\src\main.tsx = src\Frontend\selfrestaurant-customer-web\src\main.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\DashboardPage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\DashboardPage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\ForgotPasswordPage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\ForgotPasswordPage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\HomePage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\HomePage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\LoginPage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\LoginPage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\MenuPage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\MenuPage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\OrderPage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\OrderPage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\RegisterPage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\RegisterPage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\pages\ResetPasswordPage.tsx = src\Frontend\selfrestaurant-customer-web\src\pages\ResetPasswordPage.tsx
+		src\Frontend\selfrestaurant-customer-web\src\styles.css = src\Frontend\selfrestaurant-customer-web\src\styles.css
+		src\Frontend\selfrestaurant-customer-web\tsconfig.app.json = src\Frontend\selfrestaurant-customer-web\tsconfig.app.json
+		src\Frontend\selfrestaurant-customer-web\tsconfig.json = src\Frontend\selfrestaurant-customer-web\tsconfig.json
+		src\Frontend\selfrestaurant-customer-web\tsconfig.node.json = src\Frontend\selfrestaurant-customer-web\tsconfig.node.json
+		src\Frontend\selfrestaurant-customer-web\vite.config.d.ts = src\Frontend\selfrestaurant-customer-web\vite.config.d.ts
+		src\Frontend\selfrestaurant-customer-web\vite.config.js = src\Frontend\selfrestaurant-customer-web\vite.config.js
+		src\Frontend\selfrestaurant-customer-web\vite.config.ts = src\Frontend\selfrestaurant-customer-web\vite.config.ts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "selfrestaurant-chef-web", "selfrestaurant-chef-web", "{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C103}"
+	ProjectSection(SolutionItems) = preProject
+		src\Frontend\selfrestaurant-chef-web\index.html = src\Frontend\selfrestaurant-chef-web\index.html
+		src\Frontend\selfrestaurant-chef-web\package-lock.json = src\Frontend\selfrestaurant-chef-web\package-lock.json
+		src\Frontend\selfrestaurant-chef-web\package.json = src\Frontend\selfrestaurant-chef-web\package.json
+		src\Frontend\selfrestaurant-chef-web\src\App.tsx = src\Frontend\selfrestaurant-chef-web\src\App.tsx
+		src\Frontend\selfrestaurant-chef-web\src\components\RequireChef.tsx = src\Frontend\selfrestaurant-chef-web\src\components\RequireChef.tsx
+		src\Frontend\selfrestaurant-chef-web\src\lib\api.ts = src\Frontend\selfrestaurant-chef-web\src\lib\api.ts
+		src\Frontend\selfrestaurant-chef-web\src\lib\types.ts = src\Frontend\selfrestaurant-chef-web\src\lib\types.ts
+		src\Frontend\selfrestaurant-chef-web\src\main.tsx = src\Frontend\selfrestaurant-chef-web\src\main.tsx
+		src\Frontend\selfrestaurant-chef-web\src\pages\DashboardPage.tsx = src\Frontend\selfrestaurant-chef-web\src\pages\DashboardPage.tsx
+		src\Frontend\selfrestaurant-chef-web\src\pages\LoginPage.tsx = src\Frontend\selfrestaurant-chef-web\src\pages\LoginPage.tsx
+		src\Frontend\selfrestaurant-chef-web\src\styles.css = src\Frontend\selfrestaurant-chef-web\src\styles.css
+		src\Frontend\selfrestaurant-chef-web\tsconfig.app.json = src\Frontend\selfrestaurant-chef-web\tsconfig.app.json
+		src\Frontend\selfrestaurant-chef-web\tsconfig.json = src\Frontend\selfrestaurant-chef-web\tsconfig.json
+		src\Frontend\selfrestaurant-chef-web\tsconfig.node.json = src\Frontend\selfrestaurant-chef-web\tsconfig.node.json
+		src\Frontend\selfrestaurant-chef-web\vite.config.d.ts = src\Frontend\selfrestaurant-chef-web\vite.config.d.ts
+		src\Frontend\selfrestaurant-chef-web\vite.config.js = src\Frontend\selfrestaurant-chef-web\vite.config.js
+		src\Frontend\selfrestaurant-chef-web\vite.config.ts = src\Frontend\selfrestaurant-chef-web\vite.config.ts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "selfrestaurant-cashier-web", "selfrestaurant-cashier-web", "{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C104}"
+	ProjectSection(SolutionItems) = preProject
+		src\Frontend\selfrestaurant-cashier-web\index.html = src\Frontend\selfrestaurant-cashier-web\index.html
+		src\Frontend\selfrestaurant-cashier-web\package-lock.json = src\Frontend\selfrestaurant-cashier-web\package-lock.json
+		src\Frontend\selfrestaurant-cashier-web\package.json = src\Frontend\selfrestaurant-cashier-web\package.json
+		src\Frontend\selfrestaurant-cashier-web\src\App.tsx = src\Frontend\selfrestaurant-cashier-web\src\App.tsx
+		src\Frontend\selfrestaurant-cashier-web\src\components\RequireCashier.tsx = src\Frontend\selfrestaurant-cashier-web\src\components\RequireCashier.tsx
+		src\Frontend\selfrestaurant-cashier-web\src\lib\api.ts = src\Frontend\selfrestaurant-cashier-web\src\lib\api.ts
+		src\Frontend\selfrestaurant-cashier-web\src\lib\types.ts = src\Frontend\selfrestaurant-cashier-web\src\lib\types.ts
+		src\Frontend\selfrestaurant-cashier-web\src\main.tsx = src\Frontend\selfrestaurant-cashier-web\src\main.tsx
+		src\Frontend\selfrestaurant-cashier-web\src\pages\DashboardPage.tsx = src\Frontend\selfrestaurant-cashier-web\src\pages\DashboardPage.tsx
+		src\Frontend\selfrestaurant-cashier-web\src\pages\LoginPage.tsx = src\Frontend\selfrestaurant-cashier-web\src\pages\LoginPage.tsx
+		src\Frontend\selfrestaurant-cashier-web\src\styles.css = src\Frontend\selfrestaurant-cashier-web\src\styles.css
+		src\Frontend\selfrestaurant-cashier-web\tsconfig.app.json = src\Frontend\selfrestaurant-cashier-web\tsconfig.app.json
+		src\Frontend\selfrestaurant-cashier-web\tsconfig.json = src\Frontend\selfrestaurant-cashier-web\tsconfig.json
+		src\Frontend\selfrestaurant-cashier-web\tsconfig.node.json = src\Frontend\selfrestaurant-cashier-web\tsconfig.node.json
+		src\Frontend\selfrestaurant-cashier-web\vite.config.d.ts = src\Frontend\selfrestaurant-cashier-web\vite.config.d.ts
+		src\Frontend\selfrestaurant-cashier-web\vite.config.js = src\Frontend\selfrestaurant-cashier-web\vite.config.js
+		src\Frontend\selfrestaurant-cashier-web\vite.config.ts = src\Frontend\selfrestaurant-cashier-web\vite.config.ts
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "selfrestaurant-admin-web", "selfrestaurant-admin-web", "{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C105}"
+	ProjectSection(SolutionItems) = preProject
+		src\Frontend\selfrestaurant-admin-web\index.html = src\Frontend\selfrestaurant-admin-web\index.html
+		src\Frontend\selfrestaurant-admin-web\package-lock.json = src\Frontend\selfrestaurant-admin-web\package-lock.json
+		src\Frontend\selfrestaurant-admin-web\package.json = src\Frontend\selfrestaurant-admin-web\package.json
+		src\Frontend\selfrestaurant-admin-web\src\App.tsx = src\Frontend\selfrestaurant-admin-web\src\App.tsx
+		src\Frontend\selfrestaurant-admin-web\src\components\RequireAdmin.tsx = src\Frontend\selfrestaurant-admin-web\src\components\RequireAdmin.tsx
+		src\Frontend\selfrestaurant-admin-web\src\lib\api.ts = src\Frontend\selfrestaurant-admin-web\src\lib\api.ts
+		src\Frontend\selfrestaurant-admin-web\src\lib\types.ts = src\Frontend\selfrestaurant-admin-web\src\lib\types.ts
+		src\Frontend\selfrestaurant-admin-web\src\main.tsx = src\Frontend\selfrestaurant-admin-web\src\main.tsx
+		src\Frontend\selfrestaurant-admin-web\src\pages\DashboardPage.tsx = src\Frontend\selfrestaurant-admin-web\src\pages\DashboardPage.tsx
+		src\Frontend\selfrestaurant-admin-web\src\pages\LoginPage.tsx = src\Frontend\selfrestaurant-admin-web\src\pages\LoginPage.tsx
+		src\Frontend\selfrestaurant-admin-web\src\styles.css = src\Frontend\selfrestaurant-admin-web\src\styles.css
+		src\Frontend\selfrestaurant-admin-web\tsconfig.app.json = src\Frontend\selfrestaurant-admin-web\tsconfig.app.json
+		src\Frontend\selfrestaurant-admin-web\tsconfig.json = src\Frontend\selfrestaurant-admin-web\tsconfig.json
+		src\Frontend\selfrestaurant-admin-web\tsconfig.node.json = src\Frontend\selfrestaurant-admin-web\tsconfig.node.json
+		src\Frontend\selfrestaurant-admin-web\vite.config.d.ts = src\Frontend\selfrestaurant-admin-web\vite.config.d.ts
+		src\Frontend\selfrestaurant-admin-web\vite.config.js = src\Frontend\selfrestaurant-admin-web\vite.config.js
+		src\Frontend\selfrestaurant-admin-web\vite.config.ts = src\Frontend\selfrestaurant-admin-web\vite.config.ts
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Debug|x64.Build.0 = Debug|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Debug|x86.Build.0 = Debug|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Release|x64.ActiveCfg = Release|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Release|x64.Build.0 = Release|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Release|x86.ActiveCfg = Release|Any CPU
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F}.Release|x86.Build.0 = Release|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Debug|x64.Build.0 = Debug|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Debug|x86.Build.0 = Debug|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Release|x64.ActiveCfg = Release|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Release|x64.Build.0 = Release|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Release|x86.ActiveCfg = Release|Any CPU
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F}.Release|x86.Build.0 = Release|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Debug|x64.Build.0 = Debug|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Debug|x86.Build.0 = Debug|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Release|x64.ActiveCfg = Release|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Release|x64.Build.0 = Release|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Release|x86.ActiveCfg = Release|Any CPU
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6}.Release|x86.Build.0 = Release|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Debug|x64.Build.0 = Debug|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Debug|x86.Build.0 = Debug|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Release|x64.ActiveCfg = Release|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Release|x64.Build.0 = Release|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Release|x86.ActiveCfg = Release|Any CPU
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33}.Release|x86.Build.0 = Release|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Debug|x64.Build.0 = Debug|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Debug|x86.Build.0 = Debug|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Release|x64.ActiveCfg = Release|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Release|x64.Build.0 = Release|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Release|x86.ActiveCfg = Release|Any CPU
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2}.Release|x86.Build.0 = Release|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Debug|x64.Build.0 = Debug|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Debug|x86.Build.0 = Debug|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Release|x64.ActiveCfg = Release|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Release|x64.Build.0 = Release|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Release|x86.ActiveCfg = Release|Any CPU
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E}.Release|x86.Build.0 = Release|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Debug|x64.Build.0 = Debug|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Debug|x86.Build.0 = Debug|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Release|x64.ActiveCfg = Release|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Release|x64.Build.0 = Release|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Release|x86.ActiveCfg = Release|Any CPU
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C8E42992-5E42-0C2B-DBFE-AA848D06431C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{B776E0F4-F3D6-4B5B-8E3A-7B0FD0D8616F} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
+		{B6FF257D-AB11-4CC9-A46D-749694A13C8F} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
+		{2744FFF1-31DE-42D8-8D32-28A4203D8ED6} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
+		{24E27785-7CCA-4243-A443-3F5DBA9FAD33} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
+		{984BB9B3-3FA3-BE33-9484-CAC21695A33C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{C1DC584C-4477-41F2-9CCA-D52370E4C3B2} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
+		{6306A8FB-679E-111F-6585-8F70E0EE6013} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{141F4E4C-9C7E-4E0C-AA0C-6D9978B78E7E} = {6306A8FB-679E-111F-6585-8F70E0EE6013}
+		{D4B1A2C3-94CF-4A64-874E-C22DC3EC54B8} = {3BFF7C62-2D4A-4E77-8EA9-B70312E343D0}
+	
+		{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C101} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C102} = {E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C101}
+		{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C103} = {E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C101}
+		{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C104} = {E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C101}
+		{E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C105} = {E1D4A2A0-4B9F-4C86-9C9A-6F5C8D62C101}
+EndGlobalSection
+EndGlobal

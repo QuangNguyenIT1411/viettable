@@ -1,0 +1,47 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.VietTable" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Brand Colors -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+
+        <item name="colorSecondary">@color/accent_gold</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/accent_gold_container</item>
+        <item name="colorOnSecondaryContainer">@color/accent_gold_dark</item>
+
+        <item name="android:colorBackground">@color/bg_cream</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+
+        <item name="colorError">@color/semantic_error</item>
+        <item name="colorOnError">@color/white</item>
+
+        <!-- Status Bar & Navigation Bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Material Components default style overrides -->
+        <item name="colorAccent">@color/primary</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.VietTable.Dialog.Alert</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.VietTable.MaterialAlertDialog</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.VietTable.Dialog.Button.Positive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.VietTable.Dialog.Button.Negative</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.VietTable.Dialog.Button.Neutral</item>
+        <item name="materialButtonStyle">@style/Widget.VietTable.Button.Primary</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.VietTable.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.VietTable.Button.Text</item>
+        <item name="materialCardViewStyle">@style/Widget.VietTable.Card</item>
+        <item name="textInputStyle">@style/Widget.VietTable.TextInputLayout</item>
+        <item name="toolbarStyle">@style/Widget.VietTable.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.VietTable.BottomNavigationView</item>
+    </style>
+
+    <style name="Theme.VietTable" parent="Base.Theme.VietTable" />
+</resources>

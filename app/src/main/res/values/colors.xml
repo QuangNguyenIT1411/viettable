@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand Primary: Fresh Botanical Emerald Green (Light & Airy) -->
+    <color name="primary">#2E7D5B</color>
+    <color name="primary_dark">#24654A</color>
+    <color name="primary_light">#5FA885</color>
+    <color name="primary_container">#EEF7F2</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_primary_container">#1B4E38</color>
+
+    <!-- Brand Accent: Luminous Champagne Gold -->
+    <color name="accent_gold">#CCA862</color>
+    <color name="accent_gold_light">#EBD9A8</color>
+    <color name="accent_gold_dark">#9E7D33</color>
+    <color name="accent_gold_container">#FAF5EB</color>
+    <color name="on_accent_gold">#FFFFFF</color>
+
+    <!-- Background: Clean & Luminous Ivory Off-White -->
+    <color name="bg_cream">#FAFCFA</color>
+    <color name="bg_white">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#F3F7F5</color>
+    <color name="surface_secondary">#F5F8F6</color>
+    <color name="surface_container_highest">#EAEFEA</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="divider">#E9EFEB</color>
+
+    <!-- Typography & Neutrals -->
+    <color name="text_primary">#222D27</color>
+    <color name="text_secondary">#68766E</color>
+    <color name="text_tertiary">#929F98</color>
+    <color name="text_hint">#AAB5AE</color>
+    <color name="text_white">#FFFFFF</color>
+
+    <!-- Semantic Status Colors -->
+    <color name="semantic_success">#2E7D32</color>
+    <color name="semantic_success_bg">#E8F5E9</color>
+    <color name="semantic_warning">#ED6C02</color>
+    <color name="semantic_warning_bg">#FFF3E0</color>
+    <color name="semantic_error">#D32F2F</color>
+    <color name="semantic_error_bg">#FFEBEE</color>
+    <color name="semantic_info">#0288D1</color>
+    <color name="semantic_info_bg">#E1F5FE</color>
+
+    <!-- Status Specific -->
+    <color name="status_placed">#0288D1</color>
+    <color name="status_placed_bg">#E1F5FE</color>
+    <color name="status_confirmed">#7B1FA2</color>
+    <color name="status_confirmed_bg">#F3E5F5</color>
+    <color name="status_in_progress">#ED6C02</color>
+    <color name="status_in_progress_bg">#FFF3E0</color>
+    <color name="status_completed">#2E7D32</color>
+    <color name="status_completed_bg">#E8F5E9</color>
+    <color name="status_cancelled">#D32F2F</color>
+    <color name="status_cancelled_bg">#FFEBEE</color>
+
+    <!-- Item Status Specific -->
+    <color name="item_pending">#757575</color>
+    <color name="item_pending_bg">#EEEEEE</color>
+    <color name="item_preparing">#ED6C02</color>
+    <color name="item_preparing_bg">#FFF3E0</color>
+    <color name="item_ready">#0288D1</color>
+    <color name="item_ready_bg">#E1F5FE</color>
+    <color name="item_served">#2E7D32</color>
+    <color name="item_served_bg">#E8F5E9</color>
+
+    <!-- Basic -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="transparent">#00000000</color>
+    <color name="overlay_dim">#66000000</color>
+
+    <!-- Material Theme & Alias Colors -->
+    <color name="colorPrimary">#2E7D5B</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorSecondary">#CCA862</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorBackground">#FAFCFA</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorSurfaceVariant">#F3F7F5</color>
+    <color name="colorTextPrimary">#222D27</color>
+    <color name="colorTextSecondary">#68766E</color>
+    <color name="colorDivider">#E9EFEB</color>
+    <color name="colorSuccess">#2E7D32</color>
+    <color name="colorError">#D32F2F</color>
+    <color name="colorWarning">#ED6C02</color>
+    <color name="colorInfo">#0288D1</color>
+
+    <!-- Semantic Standard Colors -->
+    <color name="color_primary">#2E7D5B</color>
+    <color name="color_on_primary">#FFFFFF</color>
+    <color name="color_secondary">#CCA862</color>
+    <color name="color_on_secondary">#FFFFFF</color>
+    <color name="color_background">#FAFCFA</color>
+    <color name="color_on_background">#222D27</color>
+    <color name="color_surface">#FFFFFF</color>
+    <color name="color_on_surface">#222D27</color>
+    <color name="color_success">#2E7D32</color>
+    <color name="color_warning">#ED6C02</color>
+    <color name="color_error">#D32F2F</color>
+    <color name="color_text_primary">#222D27</color>
+    <color name="color_text_secondary">#68766E</color>
+    <color name="color_disabled">#9E9E9E</color>
+    <color name="btn_disabled_bg">#E0E0E0</color>
+    <color name="btn_disabled_text">#757575</color>
+    <color name="gold_btn_text">#3C2E12</color>
+</resources>
