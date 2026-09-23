@@ -44,7 +44,81 @@ public static class CatalogDbBootstrapper
         await SeedReferenceDataAsync(db, logger, cancellationToken);
         await EnsureLogicalRecipeDataAsync(db, cancellationToken);
         await EnsureRecommendationMenuDataAsync(db, cancellationToken);
+        await EnsureDishImagePathsAsync(db, cancellationToken);
         await EnsureIngredientIssueMethodSchemaAsync(db, cancellationToken);
+    }
+
+    // Repair only known legacy demo paths. Admin-uploaded/custom images are never replaced.
+    private static async Task EnsureDishImagePathsAsync(CatalogDbContext db, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            DECLARE @images TABLE (OldPath NVARCHAR(500) PRIMARY KEY, NewPath NVARCHAR(500) NOT NULL);
+            INSERT INTO @images (OldPath, NewPath) VALUES
+            (N'/images/banh-mi-op-la.jpg', N'/images/dishes/banh-mi-op-la.jpg'),
+            (N'/images/bo-ne.jpg', N'/images/dishes/bo-ne.png'),
+            (N'/images/bun-bo-hue.jpg', N'/images/dishes/bun-bo-hue-ai.webp'),
+            (N'/images/bun-cha-ha-noi.jpg', N'/images/dishes/bun-cha-ha-noi-ai.webp'),
+            (N'/images/ca-phe-sua-da.jpg', N'/images/dishes/ca-phe-sua-da-ai.webp'),
+            (N'/images/canh-cai-thit-bam.jpg', N'/images/dishes/canh-cai-thit-bam.jpg'),
+            (N'/images/canh-chua-ca.jpg', N'/images/dishes/canh-chua-ca.jpg'),
+            (N'/images/com-bo-luc-lac.jpg', N'/images/dishes/com-bo-luc-lac-ai.webp'),
+            (N'/images/com-ca-kho-to.jpg', N'/images/dishes/com-ca-kho-to-ai.webp'),
+            (N'/images/com-chien-hai-san.jpg', N'/images/dishes/com-chien-hai-san.jpg'),
+            (N'/images/com-suon-nuong.jpg', N'/images/dishes/com-suon-nuong-ai.webp'),
+            (N'/images/com-ga-xoi-mo.jpg', N'/images/dishes/com-ga-xoi-mo-ai.webp'),
+            (N'/images/com-suon-bi-cha.jpg', N'/images/dishes/com-suon-bi-cha-ai.webp'),
+            (N'/images/ga-nuong-muoi-ot.jpg', N'/images/dishes/ga-nuong-muoi-ot-ai.webp'),
+            (N'/images/goi-cuon.jpg', N'/images/dishes/goi-cuon-ai.webp'),
+            (N'/images/hu-tieu-nam-vang.jpg', N'/images/dishes/hu-tieu-nam-vang-ai.webp'),
+            (N'/images/mi-xao-bo.jpg', N'/images/dishes/mi-xao-bo-ai.webp'),
+            (N'/images/nem-ran.jpg', N'/images/dishes/nem-ran-ai.webp'),
+            (N'/images/nuoc-cam-vat.jpg', N'/images/dishes/nuoc-cam-vat-ai.webp'),
+            (N'/images/pho-bo-dac-biet.jpg', N'/images/dishes/pho-bo-dac-biet.jpg'),
+            (N'/images/chao-ga.jpg', N'/images/dishes/chao-ga.jpg'),
+            (N'/images/pho-ga.jpg', N'/images/dishes/pho-ga-ai.webp'),
+            (N'/images/cha-ca.jpg', N'/images/dishes/cha-ca.jpg'),
+            (N'/images/bo-xao-rau-cu.jpg', N'/images/dishes/bo-xao-rau-cu.jpg'),
+            (N'/images/muc-xao-chua-ngot.jpg', N'/images/dishes/muc-xao-chua-ngot-ai.webp'),
+            (N'/images/banh-flan.jpg', N'/images/ban-flan.jpg'),
+            (N'/images/che-dau-xanh.jpg', N'/images/dishes/che-dau-xanh.jpg'),
+            (N'/images/che-thai.jpg', N'/images/dishes/che-thai-ai.webp'),
+            (N'/images/tra-dao.jpg', N'/images/dishes/tra-dao.png'),
+            (N'/images/tra-da.jpg', N'/images/dishes/tra-da-ai.webp'),
+            (N'/images/tra-tac.jpg', N'/images/dishes/tra-tac.png'),
+            (N'/images/cha-gio-hai-san.jpg', N'/images/dishes/cha-gio-hai-san.jpg'),
+            (N'/images/goi-ngo-sen-tom-thit.jpg', N'/images/dishes/goi-ngo-sen-tom-thit.jpg'),
+            (N'/images/khoai-tay-chien.jpg', N'/images/dishes/khoai-tay-chien-ai.webp'),
+            (N'/images/sup-cua.jpg', N'/images/dishes/sup-cua.png'),
+            (N'/images/lau-ga-la-e.jpg', N'/images/dishes/lau-ga-la-e.jpg'),
+            (N'/images/lau-thai-hai-san.jpg', N'/images/dishes/lau-thai-hai-san-ai.webp'),
+            (N'/images/cai-thia-xao-dau-hao.jpg', N'/images/dishes/cai-thia-xao-dau-hao.png'),
+            (N'/images/rau-muong-xao-toi.jpg', N'/images/dishes/rau-muong-xao-toi.png'),
+            (N'/images/salad-rau-cu.jpg', N'/images/dishes/salad-rau-cu-ai.webp'),
+            (N'/images/them-banh-pho.jpg', N'/images/dishes/them-banh-pho.jpg'),
+            (N'/images/them-bun.jpg', N'/images/dishes/them-bun.png'),
+            (N'/images/them-com.jpg', N'/images/dishes/them-com-ai.webp'),
+            (N'/images/them-do-chua.jpg', N'/images/dishes/them-do-chua.jpg'),
+            (N'/images/them-dua-leo.jpg', N'/images/dishes/them-dua-leo.webp'),
+            (N'/images/them-mi.jpg', N'/images/dishes/them-mi.jpg'),
+            (N'/images/them-nuoc-cham.jpg', N'/images/dishes/them-nuoc-cham-ai.webp'),
+            (N'/images/them-nuoc-dung.jpg', N'/images/dishes/them-nuoc-dung-ai.webp'),
+            (N'/images/them-rau.jpg', N'/images/dishes/them-rau.jpg'),
+            (N'/images/them-trung.jpg', N'/images/dishes/them-trung-ai.webp'),
+            (N'/images/dishes/com-suon-nuong.jpg', N'/images/dishes/com-suon-nuong-ai.webp'),
+            (N'/images/dishes/ga-nuong-muoi-ot.jpg', N'/images/dishes/ga-nuong-muoi-ot-ai.webp'),
+            (N'/images/dishes/pho-ga.jpg', N'/images/dishes/pho-ga-ai.webp'),
+            (N'/images/dishes/muc-xao-chua-ngot.jpg', N'/images/dishes/muc-xao-chua-ngot-ai.webp'),
+            (N'/images/dishes/khoai-tay-chien.jpg', N'/images/dishes/khoai-tay-chien-ai.webp'),
+            (N'/images/dishes/lau-thai-hai-san.jpg', N'/images/dishes/lau-thai-hai-san-ai.webp'),
+            (N'/images/dishes/them-com.jpg', N'/images/dishes/them-com-ai.webp');
+
+            UPDATE dishes
+            SET Image = images.NewPath, UpdatedAt = GETDATE()
+            FROM dbo.Dishes AS dishes
+            JOIN @images AS images ON dishes.Image = images.OldPath
+            WHERE dishes.Image <> images.NewPath;
+            """;
+        await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
     }
 
     private static async Task WaitForDatabaseAsync(CatalogDbContext db, ILogger logger, CancellationToken cancellationToken)
