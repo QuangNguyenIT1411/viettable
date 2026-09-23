@@ -2,7 +2,7 @@
 
 Evidence date: 2026-09-23. This document distinguishes proven behavior from external or manual acceptance work.
 
-**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01. [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md) and [Orders ownership cleanup](ORDERS_OWNERSHIP_CLEANUP.md) close those scoped dependencies. The [full database ownership audit](DATABASE_OWNERSHIP_AUDIT.md) remains the baseline inventory; Customers still has 30 cross-DB aliases. External acceptance and production release prerequisites also remain. [Original audit](FINAL_RELEASE_AUDIT.md) is historical evidence.
+**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01. [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md), [Orders ownership cleanup](ORDERS_OWNERSHIP_CLEANUP.md) and [Customers ownership cleanup](CUSTOMERS_OWNERSHIP_CLEANUP.md) close scoped internal database isolation. The [full database ownership audit](DATABASE_OWNERSHIP_AUDIT.md) retains its historical inventory and later PASS addendum. External acceptance and production release prerequisites remain. [Original audit](FINAL_RELEASE_AUDIT.md) is historical evidence.
 
 | Area | Status | Evidence / remaining condition |
 |---|---|---|
@@ -10,7 +10,7 @@ Evidence date: 2026-09-23. This document distinguishes proven behavior from exte
 | Android debug build | PASS | `:app:assembleDebug` completed successfully. |
 | Unit tests | PASS | `:app:testDebugUnitTest` completed successfully, including display formatting regression tests. |
 | Android lint | PASS | `:app:lintDebug` completed with no errors. Remaining warnings are classified in `ANDROID_UI_AUDIT.md`. |
-| Instrumentation tests | PASS | ONSITE follow-up Tier All: 10 pass, 1 opt-in skip, 0 fail; dedicated non-split and split UI acceptance also passed. Previous audit separately passed existing-session security. Unit suite: 31 pass. |
+| Instrumentation tests | PASS | Post-Customers Tier All on Samsung: 10 pass, 1 existing-session opt-in skip, 0 fail (`OK (11 tests)`). Earlier dedicated non-split and split UI acceptance also passed. |
 | Token security | PASS | Device tests covered Keystore migration, rotation, corruption handling, logout, concurrent 401 refresh, and relogin. |
 | HTTPS enforcement | PASS | Release Gradle validation requires a non-local HTTPS origin; merged release manifest has `usesCleartextTraffic=false`. |
 | Login/password | PASS | Real Gateway login success/failure/logout passed instrumentation; forms now expose field-local errors and guarded submits. |
@@ -35,17 +35,17 @@ Evidence date: 2026-09-23. This document distinguishes proven behavior from exte
 | Release build | PASS | `:app:assembleRelease :app:lintRelease` passed using a non-committed HTTPS validation origin. APK is unsigned, as expected without release signing material. |
 | Release signing | BLOCKED_EXTERNAL | Production keystore/signing policy has not been supplied. |
 | Production API | BLOCKED_EXTERNAL | A real HTTPS Gateway domain and trusted certificate are not yet supplied. |
-| Database ownership | FAILED | Catalog, Orders, Identity, Billing and Gateway pass scoped checks. Customers still has 30 aliases to shared `RESTAURANT`, recreated by fresh setup; global physical isolation still fails. See matrix below. |
-| Backend regression | PASS_SCOPED | Docker .NET suite 108/108; B4/B5/B6/split/B7, internal provider and legacy cashier regression passed after Billing cutover. B2/B3 remain earlier audit evidence. External provider acceptance remains blocked. |
+| Database ownership | PASS | All five service DBs now have 0 synonyms and 0 cross-DB SQL objects; Gateway has no DB. Global guard exits 0. Least-privilege SQL credentials and legacy DB retirement are separate work. |
+| Backend regression | PASS_SCOPED | Docker .NET suite 108/108 from earlier audit; after Customers cutover, B3/B4/B6/split/B7, ONSITE paid invoice and internal signed provider passed. B5 remains Orders-cutover evidence. External provider acceptance remains blocked. |
 | Git baseline | PASS | Baseline `20a32b9` remains in history; this task is committed separately and no remote is configured/pushed. |
 
-## Database ownership matrix (read-only audit, 2026-09-23)
+## Database ownership matrix (post-cutover, 2026-09-23)
 
 | Service | Status | Evidence |
 |---|---|---|
 | Catalog | PASS | Own DB, 0 synonyms, 0 SQL cross-DB dependencies. |
 | Orders | PASS | 26 unused aliases retired, 0 SQL cross-DB dependencies; cold restart, fresh `db-init` rerun and B4/B5/payment regressions passed. |
-| Customers | FAILED | Own DB for active entities, but 30 aliases to `RESTAURANT.dbo` remain. No active alias consumer identified. |
+| Customers | PASS | 30 unused aliases retired; 0 SQL cross-DB dependencies, cold restart, two `db-init` reruns and B3/B4/B7/paid-invoice regression passed. |
 | Identity | PASS | Own DB, 0 synonyms, 0 SQL cross-DB dependencies. |
 | Billing | PASS | Local `billing.Bills`, 0 synonyms, 0 SQL cross-DB dependencies. |
 | Gateway | PASS | HTTP orchestration; no business DB context/connection. |

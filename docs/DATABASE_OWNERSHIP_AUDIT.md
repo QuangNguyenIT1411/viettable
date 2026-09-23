@@ -70,3 +70,7 @@ Run `powershell -ExecutionPolicy Bypass -File .\scripts\test-database-ownership.
 ## Orders follow-up (2026-09-23; original inventory above retained)
 
 [Orders ownership cleanup](ORDERS_OWNERSHIP_CLEANUP.md) removed the 26 unused Orders aliases after exact target/consumer verification and changed fresh bootstrap so they are not recreated. Orders cold start, B4/B5, B6/split, ONSITE non-split/split, internal signed-provider and B7 regressions passed. Post-cutover: Orders 0 synonyms and 0 cross-DB SQL dependencies; Customers unchanged at 30. The global guard now exits 1 **only for Customers**. The baseline matrix and inventory in this audit remain the pre-cleanup snapshot, not a current Orders failure. No evidence of active use of the retired aliases emerged from those runtime flows.
+
+## Customers follow-up (2026-09-23; earlier inventories retained)
+
+[Customers ownership cleanup](CUSTOMERS_OWNERSHIP_CLEANUP.md) retired the 30 unused Customers aliases and closed both Docker and LocalDB bootstrap recreation paths. Cold-start, B3/B4, full B7, paid-invoice/ONSITE, Android and signed local-provider regression passed. The global guard now exits **0**: Catalog, Orders, Customers, Identity and Billing each have 0 synonyms and 0 cross-DB SQL objects; Gateway has no DB. Shared `RESTAURANT` remains ONLINE with its legacy data, and least-privilege credentials remain a separate concern. All earlier FAILED matrices above are historical snapshots.

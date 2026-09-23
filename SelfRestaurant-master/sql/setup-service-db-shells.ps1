@@ -52,6 +52,7 @@ $identityOwnershipScript = Join-Path $PSScriptRoot "identity-owned-tables.sql"
 $ordersOwnershipScript = Join-Path $PSScriptRoot "orders-owned-tables.sql"
 $catalogShellAllowList = @()
 $identityShellAllowList = @()
+$ownedShellAllowList = @()
 
 $createDatabasesSql = @(
     "IF DB_ID('$MasterDatabase') IS NULL THROW 50000, 'Master database $MasterDatabase does not exist.', 1;"
@@ -127,6 +128,9 @@ foreach ($db in $serviceDatabases) {
     $allowList = switch ($db) {
         "RESTAURANT_CATALOG" { $catalogShellAllowList }
         "RESTAURANT_IDENTITY" { $identityShellAllowList }
+        "RESTAURANT_ORDERS" { $ownedShellAllowList }
+        "RESTAURANT_CUSTOMERS" { $ownedShellAllowList }
+        "RESTAURANT_BILLING" { $ownedShellAllowList }
         default { @(
             "ActiveOrders","Bills","Branches","BranchRevenue","Categories","CategoryDish","CustomerLoyalty","Customers",
             "DiningTables","DishDetails","Dishes","DishIngredients","EmployeeRoles","Employees","Ingredients","LoyaltyCards",

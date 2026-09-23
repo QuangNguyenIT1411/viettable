@@ -91,7 +91,7 @@ for service_db in "${SERVICE_DATABASE_ARRAY[@]}"; do
   fi
 
   case "$service_db" in
-    RESTAURANT_BILLING|RESTAURANT_ORDERS)
+    RESTAURANT_BILLING|RESTAURANT_ORDERS|RESTAURANT_CUSTOMERS)
       # These services use physical owned tables; never recreate legacy aliases.
       continue
       ;;
