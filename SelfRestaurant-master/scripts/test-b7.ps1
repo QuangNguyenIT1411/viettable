@@ -12,7 +12,7 @@ function Assert-Error([int]$Status,[string]$Code,[scriptblock]$Action){try{&$Act
 function Register([int]$i){Invoke-Json Post "$gateway/api/mobile/v1/auth/register" @{name="B7 Test $i";username=$users[$i];password="Pass123!";phoneNumber="0$($i+7)$tail";email="$($users[$i])@example.test"}}
 try{
     foreach($attempt in 1..40){try{Invoke-RestMethod "$gateway/readyz" -TimeoutSec 2|Out-Null;break}catch{if($attempt-eq40){throw};Start-Sleep -Milliseconds 500}}
-    $accounts=@((Register 0);(Register 1));$branch=(Invoke-Json Get "$gateway/api/mobile/v1/branches")[0];$menu=Invoke-Json Get "$gateway/api/mobile/v1/branches/$($branch.branchId)/menu";$dish=$menu.categories.dishes|Where-Object{$_.available}|Select-Object -First 1
+    $accounts=@((Register 0);(Register 1));$branches=Invoke-Json Get "$gateway/api/mobile/v1/branches";$branch=$branches[0];$menu=Invoke-Json Get "$gateway/api/mobile/v1/branches/$($branch.branchId)/menu";$dish=$menu.categories.dishes|Where-Object{$_.available}|Select-Object -First 1
 
     $favorite=Invoke-Json Post "$gateway/api/mobile/v1/me/favorites/dishes/$($dish.dishId)" @{} $accounts[0].accessToken
     $favoriteReplay=Invoke-Json Post "$gateway/api/mobile/v1/me/favorites/dishes/$($dish.dishId)" @{} $accounts[0].accessToken
@@ -32,11 +32,17 @@ try{
     Write-Output "PASS public FAQ and idempotent customer support request"
 
     Assert-Error 409 "review_not_eligible" {Invoke-Json Post "$gateway/api/mobile/v1/reviews" @{invoiceId=999999999;overallRating=5;foodRating=5;serviceRating=5;spaceRating=5;comment="Too early"} $accounts[0].accessToken "early-review"}
-    $layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables";$table=$null;$session=$null
+    $table=$null;$session=$null
+    foreach($candidateBranch in $branches){
+    $branch=$candidateBranch
+    $layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
     foreach($candidate in @($layout.tables|Where-Object{$_.isAvailable-and-not[string]::IsNullOrWhiteSpace($_.qrCode)})){
         try{$session=Invoke-Json Post "$gateway/api/mobile/v1/check-ins/walk-in" @{qrCode=$candidate.qrCode} $accounts[0].accessToken "walkin-$($candidate.tableId)";$table=$candidate;break}catch{if($null-eq$_.Exception.Response-or$_.Exception.Response.StatusCode.value__-ne409){throw}}
     }
+    if($null-ne$session){break}
+    }
     if($null-eq$table-or$null-eq$session){throw "No runtime-available QR table."};$tableId=$table.tableId
+    $menu=Invoke-Json Get "$gateway/api/mobile/v1/branches/$($branch.branchId)/menu";$dish=$menu.categories.dishes|Where-Object{$_.available}|Select-Object -First 1
     $order=Invoke-Json Post "$gateway/api/mobile/v1/dining-sessions/$($session.diningSessionId)/orders" @{items=@(@{dishId=$dish.dishId;quantity=1})} $accounts[0].accessToken "food"
     Invoke-RestMethod -Method Post -Uri "$orders/api/orders/$($order.orderId)/chef/start"|Out-Null
     Invoke-RestMethod -Method Post -Uri "$orders/api/orders/$($order.orderId)/items/$($order.items[0].itemId)/chef/ready"|Out-Null

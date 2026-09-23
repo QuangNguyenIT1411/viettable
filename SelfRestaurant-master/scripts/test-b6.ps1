@@ -21,10 +21,14 @@ function Assert-Error([int]$Status,[string]$Code,[scriptblock]$Action){try{&$Act
 try {
     foreach($attempt in 1..40){try{Invoke-RestMethod "$gateway/readyz" -TimeoutSec 2|Out-Null;break}catch{if($attempt-eq40){throw};Start-Sleep -Milliseconds 500}}
     $account=Invoke-Json Post "$gateway/api/mobile/v1/auth/register" @{name="B6 Test";username=$username;password="Pass123!";phoneNumber="09$tail";email="$username@example.test"}
-    $branch=(Invoke-Json Get "$gateway/api/mobile/v1/branches")[0];$layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
+    $branches=Invoke-Json Get "$gateway/api/mobile/v1/branches"
     $table=$null;$session=$null
+    foreach($branch in $branches){
+    $layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
     foreach($candidate in @($layout.tables|Where-Object{$_.isAvailable-and-not[string]::IsNullOrWhiteSpace($_.qrCode)})){
         try{$session=Invoke-Json Post "$gateway/api/mobile/v1/check-ins/walk-in" @{qrCode=$candidate.qrCode} $account.accessToken "walkin-$($candidate.tableId)";$table=$candidate;break}catch{if($null-eq$_.Exception.Response-or$_.Exception.Response.StatusCode.value__-ne409){throw}}
+    }
+    if($null-ne$session){break}
     }
     if($null-eq$table-or$null-eq$session){throw "No runtime-available QR table."};$tableId=$table.tableId
     $menu=Invoke-Json Get "$gateway/api/mobile/v1/branches/$($branch.branchId)/menu";$dish=$menu.categories.dishes|Where-Object{$_.available}|Select-Object -First 1

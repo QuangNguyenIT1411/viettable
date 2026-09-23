@@ -31,10 +31,15 @@ try {
         $branch=$branches|Where-Object branchId -eq $cashierLogin.session.staff.branchId|Select-Object -First 1
         if (!$branch) { throw 'Cashier branch is not available.' }
     }
-    $layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
     $table=$null;$session=$null
+    $candidateBranches=if($MixedOnsite){@($branch)}else{@($branches)}
+    foreach($candidateBranch in $candidateBranches){
+    $branch=$candidateBranch
+    $layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
     foreach($candidate in @($layout.tables|Where-Object{$_.isAvailable-and-not[string]::IsNullOrWhiteSpace($_.qrCode)})){
         try{$session=Invoke-Json Post "$gateway/api/mobile/v1/check-ins/walk-in" @{qrCode=$candidate.qrCode} $account.accessToken "walkin-$($candidate.tableId)";$table=$candidate;break}catch{if($null-eq$_.Exception.Response-or$_.Exception.Response.StatusCode.value__-ne409){throw}}
+    }
+    if($null-ne$session){break}
     }
     if($null-eq$table-or$null-eq$session){throw "No runtime-available QR table."};$tableId=$table.tableId
     $menu=Invoke-Json Get "$gateway/api/mobile/v1/branches/$($branch.branchId)/menu";$dish=$menu.categories.dishes|Where-Object{$_.available}|Select-Object -First 1

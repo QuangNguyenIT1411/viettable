@@ -91,8 +91,8 @@ for service_db in "${SERVICE_DATABASE_ARRAY[@]}"; do
   fi
 
   case "$service_db" in
-    RESTAURANT_BILLING)
-      # Explicit migration removes aliases only after application cutover verification.
+    RESTAURANT_BILLING|RESTAURANT_ORDERS)
+      # These services use physical owned tables; never recreate legacy aliases.
       continue
       ;;
     RESTAURANT_CATALOG|RESTAURANT_IDENTITY)

@@ -61,16 +61,34 @@ try {
     Assert-HttpError 401 "unauthorized" { Invoke-Json "Get" "$gateway/api/mobile/v1/dining-sessions/active" }
     $accounts = @((Register 0); (Register 1); (Register 2))
     $branches = Invoke-Json "Get" "$gateway/api/mobile/v1/branches"
-    $branchId = $branches[0].branchId
-    $catalogTables = Invoke-Json "Get" "$catalog/api/branches/$branchId/tables"
     # Read-only local fixture discovery: Catalog availability can lag Orders sessions,
     # including an empty walk-in that has no order yet. Never reset/delete an old fixture.
-    $occupiedRows = docker exec selfrestaurant-db /bin/bash -lc '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -d RESTAURANT_ORDERS -h -1 -W -Q "SET NOCOUNT ON; SELECT TableId FROM dbo.DiningSessions WHERE EndedAtUtc IS NULL UNION SELECT TableID FROM dbo.Orders WHERE IsActive=1;"'
+    $occupiedRows = @'
+SET NOCOUNT ON;
+SELECT TableId FROM dbo.DiningSessions WHERE EndedAtUtc IS NULL
+UNION SELECT TableID FROM dbo.Orders WHERE IsActive=1;
+'@ | docker exec -i selfrestaurant-db sh -c 'SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -d RESTAURANT_ORDERS -h -1 -W'
     if ($LASTEXITCODE -ne 0) { throw 'Could not read Orders fixture availability.' }
     $occupied = @($occupiedRows | Where-Object { $_.Trim() -match '^\d+$' } | ForEach-Object { [int]$_.Trim() })
-    $tables = @($catalogTables.tables | Where-Object { $_.isAvailable -and $_.tableId -notin $occupied -and -not [string]::IsNullOrWhiteSpace($_.qrCode) } | Select-Object -First 2)
+    $reservedRows = @'
+SET NOCOUNT ON;
+SELECT TableId FROM dbo.Reservations WHERE TableId IS NOT NULL
+AND Status NOT IN ('Cancelled','NoShow','CheckedIn','Completed')
+AND ReservedAt < DATEADD(minute,140,SYSUTCDATETIME())
+AND DATEADD(minute,120,ReservedAt) > DATEADD(minute,20,SYSUTCDATETIME());
+'@ | docker exec -i selfrestaurant-db sh -c 'SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -d RESTAURANT_CUSTOMERS -h -1 -W'
+    if ($LASTEXITCODE -ne 0) { throw 'Could not read Customers reservation fixture availability.' }
+    $occupied += @($reservedRows | Where-Object { $_.Trim() -match '^\d+$' } | ForEach-Object { [int]$_.Trim() })
+    $tables = @()
+    $branchId = $null
+    foreach ($branch in $branches) {
+        $candidateTables = Invoke-Json "Get" "$catalog/api/branches/$($branch.branchId)/tables"
+        $available = @($candidateTables.tables | Where-Object { $_.isAvailable -and $_.tableId -notin $occupied -and -not [string]::IsNullOrWhiteSpace($_.qrCode) } | Select-Object -First 2)
+        if ($available.Count -ge 2) { $branchId = $branch.branchId; $tables = $available; break }
+    }
     if ($tables.Count -lt 2) { throw "B4 needs two available tables with QR codes." }
     $tableIds = @($tables[0].tableId, $tables[1].tableId)
+    Write-Output "B4 fixture branch=$branchId tables=$($tableIds -join ',')"
 
     Assert-HttpError 404 "qr_not_found" {
         Invoke-Json "Post" "$gateway/api/mobile/v1/check-ins/qr/validate" @{ qrCode="missing-$suffix" } $accounts[0].accessToken
