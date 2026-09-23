@@ -11,10 +11,12 @@ def validateReleaseApiUrl = tasks.register('validateReleaseApiUrl') {
         try { uri = new URI(inputs.properties.apiUrl.toString()) }
         catch (Exception ignored) { throw new GradleException('Release requires a valid VIETTABLE_API_BASE_URL HTTPS origin.') }
         def host = uri.host?.toLowerCase(Locale.ROOT)?.replaceAll(/\.$/, '')
-        if (uri.scheme != 'https' || !host || uri.userInfo || uri.query || uri.fragment ||
+        if (uri.scheme != 'https' || !host || uri.port != -1 || uri.userInfo || uri.query || uri.fragment ||
                 !(uri.path in ['', '/']) || host == 'localhost' || host.endsWith('.localhost') ||
                 host == '10.0.2.2' || host.startsWith('127.') || host.contains(':') ||
-                host == '0.0.0.0' || host == 'ip6-localhost') {
+                host == '0.0.0.0' || host == 'ip6-localhost' ||
+                host.endsWith('.invalid') || host.endsWith('.example') || host.endsWith('.test') ||
+                host in ['example.com', 'example.net', 'example.org']) {
             throw new GradleException('Release requires VIETTABLE_API_BASE_URL=https://<real-gateway-host>; HTTP and local endpoints are forbidden.')
         }
     }

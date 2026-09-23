@@ -45,7 +45,7 @@ Debug resource overlay chỉ cho HTTP tới `127.0.0.1`, `localhost`, `10.0.2.2`
 
 Emulator mặc định dùng `http://10.0.2.2:5100`; điện thoại giữ `adb reverse tcp:5100 tcp:5100`. Không đổi scripts development.
 
-Release không có URL fallback. Cung cấp Gradle property `VIETTABLE_API_BASE_URL` bằng HTTPS origin của **Gateway thật**, không URL microservice. `preReleaseBuild` bắt buộc chạy `validateReleaseApiUrl`: reject thiếu URL, HTTP, local loopback/emulator, userinfo/query/fragment/path ngoài `/`. IPv6 literal cũng bị reject; sử dụng hostname production.
+Release không có URL fallback. Cung cấp Gradle property `VIETTABLE_API_BASE_URL` bằng HTTPS origin của **Gateway thật**, không URL microservice. `preReleaseBuild` bắt buộc chạy `validateReleaseApiUrl`: reject thiếu URL, HTTP, local loopback/emulator, explicit port, userinfo/query/fragment/path ngoài `/`, và các domain ví dụ/reserved (`.invalid`, `.test`, `.example`). IPv6 literal cũng bị reject; sử dụng hostname production.
 
 Release network config cấm cleartext toàn bộ, gồm localhost được khai báo tường minh để không hưởng implicit loopback exception trên Android mới. Release debuggable mặc định false, không instrumentation component.
 
@@ -58,6 +58,8 @@ Command kiểm chứng build (không cấu hình production, không cài APK nà
 URL tài liệu Android này **chỉ dùng kiểm tra build**. APK unsigned sinh ra từ command đó không được deploy/chạy như VietTable release. Không có request/token nào được gửi tới URL này trong kiểm thử. Phải rebuild với Gateway thật và signing/release pipeline trước phát hành.
 
 ## Backend readiness audit — không thay backend/.env
+
+Ghi chú cập nhật sau audit: [Production HTTPS deployment](PRODUCTION_HTTPS_DEPLOYMENT.md) đã thêm cấu hình forwarded headers chỉ tin IP Caddy khai báo, nhưng chưa có server/domain/chứng chỉ thật để nghiệm thu public HTTPS. Các nhận định bên dưới là snapshot trước thay đổi này.
 
 - Gateway có HSTS ngoài Development, HTTPS redirection opt-in (mặc định false). Không thấy `UseForwardedHeaders` trong source. Khi triển khai TLS termination phải xác định trusted proxy/network và scheme forwarding, tránh redirect loop; không bật trust forwarded headers từ mọi nguồn.
 - Hub mobile đi qua Gateway. HTTP giữa các service trong local Docker là cấu hình nội bộ, không phải URL để Android gọi.

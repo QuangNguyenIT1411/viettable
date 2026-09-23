@@ -1,0 +1,99 @@
+# Use only with docker-compose.yml on a dedicated deployment host.
+# Docker Compose 2.24.4+ supports !reset; the dev file remains unchanged.
+services:
+  rabbitmq:
+    ports: !reset []
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Set a production RabbitMQ user}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set a production RabbitMQ password}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+  db:
+    ports: !reset []
+    restart: unless-stopped
+
+  catalog:
+    ports: !reset []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    restart: unless-stopped
+
+  orders:
+    ports: !reset []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      RabbitMq__Username: ${RABBITMQ_USER:?Set a production RabbitMQ user}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:?Set a production RabbitMQ password}
+    restart: unless-stopped
+
+  customers:
+    ports: !reset []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    restart: unless-stopped
+
+  identity:
+    ports: !reset []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      MobileJwt__SigningKey: ${MOBILE_JWT_SIGNING_KEY:?Set a production JWT signing key}
+      PasswordReset__PublicBaseUrl: https://${PUBLIC_HOST:?Set a real public DNS host}
+    restart: unless-stopped
+
+  billing:
+    ports: !reset []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      MobileJwt__SigningKey: ${MOBILE_JWT_SIGNING_KEY:?Set a production JWT signing key}
+      RabbitMq__Username: ${RABBITMQ_USER:?Set a production RabbitMQ user}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:?Set a production RabbitMQ password}
+      Payments__VnPay__Enabled: ${VNPAY_ENABLED:-false}
+      Payments__VnPay__TmnCode: ${VNPAY_TMN_CODE:-}
+      Payments__VnPay__HashSecret: ${VNPAY_HASH_SECRET:-}
+      Payments__VnPay__ReturnUrl: ${VNPAY_RETURN_URL:-}
+    restart: unless-stopped
+
+  gateway:
+    ports: !reset []
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      MobileJwt__SigningKey: ${MOBILE_JWT_SIGNING_KEY:?Set a production JWT signing key}
+      ReverseProxy__KnownProxy: ${VIETTABLE_PROXY_IP:?Set the Caddy container IP}
+      ReverseProxy__PublicHost: ${PUBLIC_HOST:?Set a real public DNS host}
+      Security__EnableHsts: ${ENABLE_HSTS:-false}
+    volumes:
+      - gateway-dpkeys:/root/.aspnet/DataProtection-Keys
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    depends_on:
+      - gateway
+      - billing
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Set a real public DNS host}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      default:
+        ipv4_address: ${VIETTABLE_PROXY_IP:?Set the Caddy container IP}
+    restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${VIETTABLE_DOCKER_SUBNET:?Set a non-conflicting Docker subnet}
+
+volumes:
+  rabbitmq-data:
+  caddy-data:
+  caddy-config:
+  gateway-dpkeys:

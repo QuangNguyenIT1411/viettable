@@ -2,7 +2,7 @@
 
 Evidence date: 2026-09-23. This document distinguishes proven behavior from external or manual acceptance work.
 
-**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01. [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md), [Orders ownership cleanup](ORDERS_OWNERSHIP_CLEANUP.md) and [Customers ownership cleanup](CUSTOMERS_OWNERSHIP_CLEANUP.md) close scoped internal database isolation. The [full database ownership audit](DATABASE_OWNERSHIP_AUDIT.md) retains its historical inventory and later PASS addendum. External acceptance and production release prerequisites remain. [Original audit](FINAL_RELEASE_AUDIT.md) is historical evidence.
+**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01. [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md), [Orders ownership cleanup](ORDERS_OWNERSHIP_CLEANUP.md) and [Customers ownership cleanup](CUSTOMERS_OWNERSHIP_CLEANUP.md) close scoped internal database isolation. [Production HTTPS deployment](PRODUCTION_HTTPS_DEPLOYMENT.md) is prepared but lacks a real server/domain/certificate and public E2E acceptance. The [full database ownership audit](DATABASE_OWNERSHIP_AUDIT.md) retains its historical inventory and later PASS addendum. [Original audit](FINAL_RELEASE_AUDIT.md) is historical evidence.
 
 | Area | Status | Evidence / remaining condition |
 |---|---|---|
@@ -13,6 +13,9 @@ Evidence date: 2026-09-23. This document distinguishes proven behavior from exte
 | Instrumentation tests | PASS | Post-Customers Tier All on Samsung: 10 pass, 1 existing-session opt-in skip, 0 fail (`OK (11 tests)`). Earlier dedicated non-split and split UI acceptance also passed. |
 | Token security | PASS | Device tests covered Keystore migration, rotation, corruption handling, logout, concurrent 401 refresh, and relogin. |
 | HTTPS enforcement | PASS | Release Gradle validation requires a non-local HTTPS origin; merged release manifest has `usesCleartextTraffic=false`. |
+| Reverse proxy configuration | PREPARED | Separate production Compose override and Caddyfile validate; only 80/443 publish in merged config. Not deployed to a production host. |
+| DNS / trusted production TLS | BLOCKED_EXTERNAL | No real server, public DNS name or trusted certificate has been supplied or accepted. |
+| Public Android/SignalR HTTPS E2E | BLOCKED_EXTERNAL | No public endpoint to test WSS or Samsung without `adb reverse`; local tests do not count as production acceptance. |
 | Login/password | PASS | Real Gateway login success/failure/logout passed instrumentation; forms now expose field-local errors and guarded submits. |
 | Google Sign-In | BLOCKED_EXTERNAL | Implementation/config guard exists, but Google Cloud consent/client configuration and a real external account E2E are not accepted here. |
 | Branch/menu | PASS | Authenticated cold launch loaded canonical branches/menu in device instrumentation; fake distance/rating/open/map data is no longer presented. |

@@ -1,0 +1,20 @@
+{$PUBLIC_HOST} {
+	# Only these two provider callbacks bypass Gateway and reach private Billing.
+	@vnpay path /api/payments/providers/vnpay/ipn /api/payments/providers/vnpay/return
+	handle @vnpay {
+		reverse_proxy billing:8080
+	}
+
+	@private path /readyz /api/internal/* /internal/* /swagger*
+	handle @private {
+		respond "Not Found" 404
+	}
+
+	handle {
+		reverse_proxy gateway:8080 {
+			health_uri /healthz
+			health_interval 30s
+			stream_close_delay 5m
+		}
+	}
+}

@@ -8,8 +8,30 @@ using Microsoft.IdentityModel.Tokens;
 using SelfRestaurant.Gateway.Api.Models;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var knownProxyText = builder.Configuration["ReverseProxy:KnownProxy"];
+var publicHost = builder.Configuration["ReverseProxy:PublicHost"];
+if (!string.IsNullOrWhiteSpace(knownProxyText) || !string.IsNullOrWhiteSpace(publicHost))
+{
+    if (!IPAddress.TryParse(knownProxyText, out var knownProxy) ||
+        string.IsNullOrWhiteSpace(publicHost) ||
+        Uri.CheckHostName(publicHost) != UriHostNameType.Dns ||
+        publicHost.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException("ReverseProxy requires a known proxy IP and a public DNS host.");
+
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+            ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+        options.ForwardLimit = 1;
+        options.KnownProxies.Add(knownProxy);
+        options.AllowedHosts.Add(publicHost);
+    });
+}
 
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
@@ -171,6 +193,9 @@ builder.Services.AddScoped<CustomerDishRecommendationService>();
 
 var app = builder.Build();
 
+if (!string.IsNullOrWhiteSpace(knownProxyText))
+    app.UseForwardedHeaders();
+
 app.Use(async (context, next) =>
 {
     var correlationId = context.Request.Headers["X-Correlation-Id"].FirstOrDefault();
@@ -212,7 +237,7 @@ app.Use(async (context, next) =>
     }
 });
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Security:EnableHsts"))
 {
     app.UseHsts();
 }
