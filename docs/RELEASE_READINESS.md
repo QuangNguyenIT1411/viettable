@@ -2,7 +2,7 @@
 
 Evidence date: 2026-09-23. This document distinguishes proven behavior from external or manual acceptance work.
 
-**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01 with real Cashier/Samsung evidence. [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md) closes the scoped Billing dependency; other service aliases, external acceptance and production release prerequisites remain. [Original audit](FINAL_RELEASE_AUDIT.md) is retained as historical evidence, superseded only where follow-up evidence explicitly says so.
+**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01 with real Cashier/Samsung evidence. [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md) closes the scoped Billing dependency. The [full database ownership audit](DATABASE_OWNERSHIP_AUDIT.md) found 26 Orders and 30 Customers cross-DB aliases; no active consumer was proven, but fresh setup recreates them. External acceptance and production release prerequisites also remain. [Original audit](FINAL_RELEASE_AUDIT.md) is historical evidence.
 
 | Area | Status | Evidence / remaining condition |
 |---|---|---|
@@ -35,9 +35,20 @@ Evidence date: 2026-09-23. This document distinguishes proven behavior from exte
 | Release build | PASS | `:app:assembleRelease :app:lintRelease` passed using a non-committed HTTPS validation origin. APK is unsigned, as expected without release signing material. |
 | Release signing | BLOCKED_EXTERNAL | Production keystore/signing policy has not been supplied. |
 | Production API | BLOCKED_EXTERNAL | A real HTTPS Gateway domain and trusted certificate are not yet supplied. |
-| Database ownership | PASS_SCOPED | Billing now maps local `billing.Bills`; 30 Billing synonyms removed, 0 cross-DB SQL dependencies, legacy cashier write/read proven. Other services still require ownership audit; global isolation is not certified. |
+| Database ownership | FAILED | Billing is isolated, but Orders has 26 and Customers 30 live aliases to shared `RESTAURANT`, recreated by fresh setup. No active cross-DB business query was proven; strict physical isolation still fails. See matrix below. |
 | Backend regression | PASS_SCOPED | Docker .NET suite 108/108; B4/B5/B6/split/B7, internal provider and legacy cashier regression passed after Billing cutover. B2/B3 remain earlier audit evidence. External provider acceptance remains blocked. |
 | Git baseline | PASS | Baseline `20a32b9` remains in history; this task is committed separately and no remote is configured/pushed. |
+
+## Database ownership matrix (read-only audit, 2026-09-23)
+
+| Service | Status | Evidence |
+|---|---|---|
+| Catalog | PASS | Own DB, 0 synonyms, 0 SQL cross-DB dependencies. |
+| Orders | FAILED | Own DB for active entities, but 26 aliases to `RESTAURANT.dbo` remain. No active alias consumer identified. |
+| Customers | FAILED | Own DB for active entities, but 30 aliases to `RESTAURANT.dbo` remain. No active alias consumer identified. |
+| Identity | PASS | Own DB, 0 synonyms, 0 SQL cross-DB dependencies. |
+| Billing | PASS | Local `billing.Bills`, 0 synonyms, 0 SQL cross-DB dependencies. |
+| Gateway | PASS | HTTP orchestration; no business DB context/connection. |
 
 ## Artifact sizes
 
