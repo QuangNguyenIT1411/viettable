@@ -22,6 +22,13 @@ public sealed class IdentityDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<LoyaltySettlement>(entity =>
+        {
+            entity.ToTable("LoyaltySettlements");
+            entity.HasKey(x => x.SettlementKey);
+            entity.Property(x => x.SettlementKey).HasMaxLength(100);
+            entity.Property(x => x.AmountPaid).HasPrecision(18, 2);
+        });
         modelBuilder.Entity<BusinessAuditLogs>(entity =>
         {
             entity.HasKey(e => e.BusinessAuditLogId);

@@ -135,6 +135,13 @@ public sealed class CashierController : ControllerBase
             return NotFound(new { message = "Không tìm thấy đơn hàng." });
         }
 
+        if (!string.IsNullOrWhiteSpace(initialOrder.DiningSessionCode)
+            && await _db.CheckoutQuotes.AnyAsync(x => x.DiningSessionCode == initialOrder.DiningSessionCode, cancellationToken))
+        {
+            await MarkCheckoutCommandFailedAsync(command, "Phiên ứng dụng phải xác nhận qua giao dịch mobile.", cancellationToken);
+            return Conflict(new { code = "mobile_payment_required", message = "Phiên này sử dụng thanh toán ứng dụng. Hãy xác nhận giao dịch ở mục Thanh toán ứng dụng tại chỗ." });
+        }
+
         await using var tableLock = await BeginTableOperationAsync(initialOrder.TableId, cancellationToken);
 
         var alreadyBilled = await _db.Bills

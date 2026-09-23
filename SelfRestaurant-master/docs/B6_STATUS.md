@@ -2,6 +2,8 @@
 
 Status: **implemented and runtime-tested on 2026-09-22**
 
+2026-09-23 follow-up: **ONSITE Cashier → mobile Payment → invoice/split/session acceptance PASS**, including Samsung UI, concurrent confirmation and Orders-outage reconciliation. See [ONSITE acceptance](../../docs/ONSITE_PAYMENT_ACCEPTANCE.md) for current evidence and limitations; the earlier verification below is historical.
+
 ## Delivered
 
 - Billing-owned immutable checkout quotes aggregate every non-cancelled item in one Dining Session.
@@ -18,12 +20,12 @@ Status: **implemented and runtime-tested on 2026-09-22**
 - Payment updates are projected through the authenticated customer SignalR group.
 - ONLINE/QR creates a signed VNPAY Sandbox payment URL; Android opens that URL and polls the Gateway-owned payment resource.
 - VNPAY IPN is HMAC-SHA512 verified, correlated by the server-generated provider reference, and validates both signed VND amount and currency.
-- The browser return URL is informational only. Invoice issuance and Dining Session closure remain exclusively driven by a verified successful IPN.
+- The browser return URL is informational only. Verified successful IPN and authorized Cashier ONSITE confirmation use the same finalization service; durable reconciliation retries cross-service completion.
 - Provider transaction identifiers are persisted separately from internal payment IDs/codes; sensitive provider secrets remain environment-only.
 
 ## Compatibility
 
-- Existing cashier checkout and bill APIs remain intact.
+- Existing cashier checkout and bill APIs remain for legacy sessions. Mobile checkout sessions use the mobile ONSITE panel; legacy checkout rejects a disconnected Bill settlement for those sessions. Legacy Bill reports are not migrated or synchronized with mobile invoices here.
 - Orders continues to own Dining Session/order state; Billing calls Orders APIs instead of reading its database.
 - Public mobile APIs remain Gateway-only and customer ownership comes from the JWT subject.
 

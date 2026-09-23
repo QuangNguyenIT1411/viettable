@@ -228,7 +228,14 @@ public sealed class DiningSessionsController : ControllerBase
         var entity = await _db.DiningSessions.FirstOrDefaultAsync(x => x.DiningSessionId == sessionId, ct);
         if (entity is null) return NotFound(new { code = "session_not_found", message = "Không tìm thấy phiên phục vụ." });
         if (entity.CustomerId != request.CustomerId) return StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu phiên phục vụ này." });
-        if (entity.PaymentId == request.PaymentId && entity.EndedAtUtc is not null) return Ok(Map(entity, false));
+        if (entity.PaymentId == request.PaymentId && entity.CheckoutQuoteId == request.CheckoutQuoteId && entity.EndedAtUtc is not null)
+        {
+            // Retry a Catalog release that failed after the Orders commit; never release
+            // a table already reused by a newer session.
+            if (!await _db.DiningSessions.AnyAsync(x => x.TableId == entity.TableId && x.EndedAtUtc == null, ct))
+                await _catalog.ReleaseTableAsync(entity.TableId, ct);
+            return Ok(Map(entity, false));
+        }
         if (entity.Status != "PAYMENT_REQUESTED" || entity.CheckoutQuoteId != request.CheckoutQuoteId)
             return Conflict(new { code = "session_payment_state_conflict", message = "Phiên không ở trạng thái chờ thanh toán phù hợp." });
         var completedStatusId = await _db.OrderStatus.Where(x => x.StatusCode == "COMPLETED").Select(x => (int?)x.StatusID).FirstOrDefaultAsync(ct);

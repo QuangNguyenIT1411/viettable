@@ -31,6 +31,14 @@ public static class IdentityDbBootstrapper
         await EnsureBusinessAuditLogsTableAsync(db, logger, cancellationToken);
         await EnsureMobileRefreshTokensTableAsync(db, logger, cancellationToken);
         await EnsureCustomerSettingsTableAsync(db, logger, cancellationToken);
+        await db.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID('dbo.LoyaltySettlements', 'U') IS NULL
+            CREATE TABLE dbo.LoyaltySettlements (
+                SettlementKey NVARCHAR(100) NOT NULL PRIMARY KEY,
+                CustomerId INT NOT NULL, PointsUsed INT NOT NULL,
+                AmountPaid DECIMAL(18,2) NOT NULL, ResponseJson NVARCHAR(MAX) NOT NULL
+            );
+            """, cancellationToken);
         await ValidateOwnedSchemaAsync(db, logger, cancellationToken);
         await EnsureCustomerExternalLoginColumnsAsync(db, logger, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);

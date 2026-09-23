@@ -45,9 +45,12 @@ try {
     $accounts=@((Register 0);(Register 1))
     $branch=(Invoke-Json Get "$gateway/api/mobile/v1/branches")[0]
     $layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
-    $table=$layout.tables|Where-Object{$_.isAvailable-and-not [string]::IsNullOrWhiteSpace($_.qrCode)}|Select-Object -First 1
-    if($null-eq $table){throw "No available QR table."};$tableId=$table.tableId
-    $session=Invoke-Json Post "$gateway/api/mobile/v1/check-ins/walk-in" @{qrCode=$table.qrCode} $accounts[0].accessToken "walkin"
+    $table=$null;$session=$null
+    foreach($candidate in @($layout.tables|Where-Object{$_.isAvailable-and-not[string]::IsNullOrWhiteSpace($_.qrCode)})){
+        try{$session=Invoke-Json Post "$gateway/api/mobile/v1/check-ins/walk-in" @{qrCode=$candidate.qrCode} $accounts[0].accessToken "walkin-$($candidate.tableId)";$table=$candidate;break}
+        catch{if($null-eq$_.Exception.Response-or$_.Exception.Response.StatusCode.value__-ne409){throw}}
+    }
+    if($null-eq$table-or$null-eq$session){throw "No runtime-available QR table."};$tableId=$table.tableId
     if($session.status-ne "ACTIVE"){throw "Walk-in session was not created."}
 
     $menu=Invoke-Json Get "$gateway/api/mobile/v1/branches/$($branch.branchId)/menu"

@@ -493,6 +493,20 @@ public sealed class IdentityController : ControllerBase
         [FromBody] LoyaltySettlementRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.SettlementKey is { Length: > 100 }) return BadRequest(new { code = "invalid_settlement_key" });
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+        // Serialize settlements for this customer, including legacy callers without a key.
+        await _db.Database.ExecuteSqlInterpolatedAsync($"DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource={"loyalty:" + customerId}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r<0 THROW 51000, 'Loyalty settlement busy', 1;", cancellationToken);
+        if (!string.IsNullOrWhiteSpace(request.SettlementKey))
+        {
+            var replay = await _db.Set<LoyaltySettlement>().FindAsync(new object[] { request.SettlementKey }, cancellationToken);
+            if (replay is not null)
+            {
+                if (replay.CustomerId != customerId || replay.AmountPaid != request.AmountPaid || replay.PointsUsed != request.PointsUsed)
+                    return Conflict(new { code = "settlement_conflict", message = "Settlement key đã được sử dụng." });
+                return Content(replay.ResponseJson, "application/json");
+            }
+        }
         var customer = await _db.Customers
             .FirstOrDefaultAsync(x => x.CustomerID == customerId && (x.IsActive ?? true), cancellationToken);
         if (customer is null)
@@ -517,9 +531,7 @@ public sealed class IdentityController : ControllerBase
         customer.LoyaltyPoints = updatedPoints + pointsEarned;
         customer.UpdatedAt = DateTime.Now;
 
-        await _db.SaveChangesAsync(cancellationToken);
-
-        return Ok(new
+        var response = new
         {
             customerId = customer.CustomerID,
             customerName = customer.Name,
@@ -527,7 +539,14 @@ public sealed class IdentityController : ControllerBase
             pointsUsed,
             pointsEarned,
             customerPoints = customer.LoyaltyPoints ?? 0,
-        });
+        };
+        if (!string.IsNullOrWhiteSpace(request.SettlementKey))
+            _db.Set<LoyaltySettlement>().Add(new LoyaltySettlement { SettlementKey = request.SettlementKey,
+                CustomerId = customerId, PointsUsed = request.PointsUsed, AmountPaid = request.AmountPaid,
+                ResponseJson = System.Text.Json.JsonSerializer.Serialize(response) });
+        await _db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return Ok(response);
     }
 
     [HttpPost("password/change")]
@@ -2117,7 +2136,7 @@ public sealed class IdentityController : ControllerBase
         DateOnly? DateOfBirth,
         string? Address);
 
-    public sealed record LoyaltySettlementRequest(int PointsUsed, decimal AmountPaid);
+    public sealed record LoyaltySettlementRequest(int PointsUsed, decimal AmountPaid, string? SettlementKey = null);
 
     public sealed record ChangePasswordRequest(int CustomerId, string CurrentPassword, string NewPassword);
 

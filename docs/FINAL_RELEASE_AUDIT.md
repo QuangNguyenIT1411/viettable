@@ -1,5 +1,9 @@
 # Final VietTable release audit and acceptance
 
+## Subsequent acceptance: ONSITE F01 closed
+
+2026-09-23: [ONSITE payment acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) supersedes the F01/payment and associated regression gaps below: real Cashier and Samsung non-split/split settlement, review CRUD, concurrency and outage retry passed. **Database ownership F02 and deployment blockers remain.** The original audit below is retained as historical evidence, not the current ONSITE verdict.
+
 Audit date: 2026-09-23, Asia/Saigon (started 01:26 local time).
 Audited code commit: `550c273 feat: polish Android UI and release readiness`.
 Baseline `20a32b9` is preserved. Working tree was clean before this audit; no remote was configured.

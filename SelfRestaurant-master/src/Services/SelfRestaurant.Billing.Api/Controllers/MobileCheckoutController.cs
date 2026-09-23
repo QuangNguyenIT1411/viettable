@@ -18,11 +18,13 @@ public sealed class MobileCheckoutController : ControllerBase
     private readonly CustomersApiClient _customers;
     private readonly IPaymentProvider _paymentProvider;
     private readonly ILogger<MobileCheckoutController> _logger;
+    private readonly PaymentFinalizationService _finalization;
 
     public MobileCheckoutController(BillingDbContext db, OrdersApiClient orders, CustomersApiClient customers,
-        IPaymentProvider paymentProvider, ILogger<MobileCheckoutController> logger)
+        IPaymentProvider paymentProvider, ILogger<MobileCheckoutController> logger, PaymentFinalizationService finalization)
     {
         _db = db; _orders = orders; _customers = customers; _paymentProvider = paymentProvider; _logger = logger;
+        _finalization = finalization;
     }
 
     [HttpPost("dining-sessions/{sessionId:int}/checkout/quote")]
@@ -124,35 +126,50 @@ public sealed class MobileCheckoutController : ControllerBase
     public async Task<ActionResult<object>> CreatePayment(int quoteId, CreatePaymentRequest request, CancellationToken ct)
     {
         if (!ValidCommand(request.CustomerId, request.IdempotencyKey, request.RequestHash)) return Validation();
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await PaymentFinalizationService.LockQuoteAsync(_db, quoteId, ct);
         var replay = await _db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.IdempotencyKey == request.IdempotencyKey, ct);
         if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(MapPayment(replay)) : IdempotencyConflict();
         var quote = await _db.CheckoutQuotes.FirstOrDefaultAsync(x => x.CheckoutQuoteId == quoteId, ct);
         if (quote is null) return NotFound(new { code = "quote_not_found", message = "Không tìm thấy báo giá." });
         if (quote.CustomerId != request.CustomerId) return ForbidResult();
         if (quote.Status != "PAYMENT_REQUESTED") return Conflict(new { code = "payment_request_required", message = "Hãy yêu cầu thanh toán trước." });
+        if (await _db.SplitBills.AnyAsync(x => x.CheckoutQuoteId == quoteId, ct)
+            || await _db.Payments.AnyAsync(x => x.CheckoutQuoteId == quoteId && (x.Status == "PENDING" || x.Status == "SUCCEEDED"), ct))
+            return Conflict(new { code = "payment_in_progress", message = "Báo giá đã có giao dịch hoặc chia hóa đơn." });
         var validation = ValidatePaymentMethod(request.Channel, request.Method, request.Location); if (validation is not null) return validation;
         var payment = NewPayment(quote, request.Channel, request.Method, request.Location, request.IdempotencyKey, request.RequestHash, 1, quote.TotalAmount);
         var providerError = await InitializeProviderAsync(payment, ct); if (providerError is not null) return providerError;
-        _db.Payments.Add(payment); await _db.SaveChangesAsync(ct); return Ok(MapPayment(payment));
+        _db.Payments.Add(payment); await _db.SaveChangesAsync(ct); await transaction.CommitAsync(ct); return Ok(MapPayment(payment));
     }
 
     [HttpGet("payments/{paymentId:int}")]
     public async Task<ActionResult<object>> GetPayment(int paymentId, [FromQuery] int customerId, CancellationToken ct)
     {
+        var quoteId = await _db.Payments.Where(x => x.PaymentId == paymentId).Select(x => (int?)x.CheckoutQuoteId).FirstOrDefaultAsync(ct);
+        if (quoteId is null) return NotFound(new { code = "payment_not_found", message = "Không tìm thấy giao dịch." });
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await PaymentFinalizationService.LockQuoteAsync(_db, quoteId.Value, ct);
         var payment = await _db.Payments.FirstOrDefaultAsync(x => x.PaymentId == paymentId, ct);
         if (payment is null) return NotFound(new { code = "payment_not_found", message = "Không tìm thấy giao dịch." });
+        if (payment.CustomerId != customerId) return ForbidResult();
         if (payment.Status == "PENDING" && payment.ProviderExpiresAtUtc <= DateTime.UtcNow)
         {
             payment.Status = "EXPIRED"; payment.FailureCode = "provider_session_expired"; payment.UpdatedAtUtc = DateTime.UtcNow; payment.CompletedAtUtc = DateTime.UtcNow;
             await _db.SaveChangesAsync(ct);
         }
-        return payment.CustomerId == customerId ? Ok(MapPayment(payment)) : ForbidResult();
+        await transaction.CommitAsync(ct);
+        return Ok(MapPayment(payment));
     }
 
     [HttpPost("payments/{paymentId:int}/retry")]
     public async Task<ActionResult<object>> Retry(int paymentId, RetryPaymentRequest request, CancellationToken ct)
     {
         if (!ValidCommand(request.CustomerId, request.IdempotencyKey, request.RequestHash)) return Validation();
+        var quoteId = await _db.Payments.Where(x => x.PaymentId == paymentId).Select(x => (int?)x.CheckoutQuoteId).FirstOrDefaultAsync(ct);
+        if (quoteId is null) return NotFound(new { code = "payment_not_found", message = "Không tìm thấy giao dịch." });
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await PaymentFinalizationService.LockQuoteAsync(_db, quoteId.Value, ct);
         var replay = await _db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.IdempotencyKey == request.IdempotencyKey, ct);
         if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(MapPayment(replay)) : IdempotencyConflict();
         var old = await _db.Payments.FirstOrDefaultAsync(x => x.PaymentId == paymentId, ct);
@@ -160,16 +177,22 @@ public sealed class MobileCheckoutController : ControllerBase
         if (old.CustomerId != request.CustomerId) return ForbidResult();
         if (old.Status is not ("FAILED" or "CANCELLED" or "EXPIRED")) return Conflict(new { code = "payment_not_retryable", message = "Chỉ giao dịch thất bại, hủy hoặc hết hạn mới được thử lại." });
         var quote = await _db.CheckoutQuotes.FirstAsync(x => x.CheckoutQuoteId == old.CheckoutQuoteId, ct);
+        if (quote.Status != "PAYMENT_REQUESTED") return StateConflict();
+        var splitPart = await _db.SplitBillParts.FirstOrDefaultAsync(x => x.PaymentId == old.PaymentId, ct);
+        if (splitPart is null && await _db.SplitBills.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct))
+            return Conflict(new { code = "payment_attempt_replaced", message = "Giao dịch đã được thay thế." });
+        if (splitPart is null && await _db.Payments.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId && (x.Status == "PENDING" || x.Status == "SUCCEEDED"), ct))
+            return Conflict(new { code = "payment_in_progress", message = "Đã có giao dịch đang thanh toán." });
         var payment = NewPayment(quote, old.Channel, old.Method, old.Location, request.IdempotencyKey, request.RequestHash, old.AttemptNumber + 1, old.Amount);
         var providerError = await InitializeProviderAsync(payment, ct); if (providerError is not null) return providerError;
         _db.Payments.Add(payment); await _db.SaveChangesAsync(ct);
-        var splitPart = await _db.SplitBillParts.FirstOrDefaultAsync(x => x.PaymentId == old.PaymentId, ct);
         if (splitPart is not null)
         {
             splitPart.PaymentId = payment.PaymentId;
             splitPart.Status = "PENDING";
             await _db.SaveChangesAsync(ct);
         }
+        await transaction.CommitAsync(ct);
         return Ok(MapPayment(payment));
     }
 
@@ -184,8 +207,7 @@ public sealed class MobileCheckoutController : ControllerBase
             return Ok(new { RspCode = "97", Message = "Invalid signature" });
         }
         if (string.IsNullOrWhiteSpace(webhook.ProviderReference)) return Ok(new { RspCode = "01", Message = "Order not found" });
-        await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
-        var payment = await _db.Payments.FirstOrDefaultAsync(x => x.ProviderReference == webhook.ProviderReference, ct);
+        var payment = await _db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.ProviderReference == webhook.ProviderReference, ct);
         if (payment is null) return Ok(new { RspCode = "01", Message = "Order not found" });
         if (webhook.Amount != payment.Amount || !string.Equals(webhook.Currency, payment.Currency, StringComparison.OrdinalIgnoreCase))
         {
@@ -195,12 +217,19 @@ public sealed class MobileCheckoutController : ControllerBase
         if (payment.Status == "SUCCEEDED" || payment.Status is "FAILED" or "CANCELLED" or "EXPIRED")
             return Ok(new { RspCode = "02", Message = "Order already confirmed" });
         var status = webhook.PaymentStatus!;
+        if (status == "SUCCEEDED")
+        {
+            try { await _finalization.ConfirmAsync(payment.PaymentId, null, null, webhook.ProviderTransactionId, ct); }
+            catch (PaymentDomainException) { return Ok(new { RspCode = "02", Message = "Order already confirmed or replaced" }); }
+            return Ok(new { RspCode = "00", Message = "Confirm success" });
+        }
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await PaymentFinalizationService.LockQuoteAsync(_db, payment.CheckoutQuoteId, ct);
+        payment = await _db.Payments.SingleAsync(x => x.PaymentId == payment.PaymentId, ct);
+        if (payment.Status != "PENDING") return Ok(new { RspCode = "02", Message = "Order already confirmed" });
         payment.Status = status; payment.ProviderTransactionId = webhook.ProviderTransactionId; payment.FailureCode = webhook.FailureCode;
         payment.UpdatedAtUtc = DateTime.UtcNow; payment.CompletedAtUtc = DateTime.UtcNow;
-        SplitBillPart? part = await _db.SplitBillParts.FirstOrDefaultAsync(x => x.PaymentId == payment.PaymentId, ct);
-        if (part is not null && status == "SUCCEEDED") part.Status = "PAID";
         await _db.SaveChangesAsync(ct);
-        if (status == "SUCCEEDED") await TryFinalizeAsync(payment, ct);
         await transaction.CommitAsync(ct);
         _logger.LogInformation("Processed {Provider} webhook for payment {PaymentId}, provider transaction {ProviderTransactionId}, new state {PaymentStatus}",
             _paymentProvider.Name, payment.PaymentId, webhook.ProviderTransactionId, status);
@@ -237,12 +266,16 @@ public sealed class MobileCheckoutController : ControllerBase
     public async Task<ActionResult<object>> CreateSplitBill(int sessionId, CreateSplitBillRequest request, CancellationToken ct)
     {
         if (!ValidCommand(request.CustomerId, request.IdempotencyKey, request.RequestHash) || request.Amounts is null || request.Amounts.Count < 2 || request.Amounts.Any(x => x <= 0)) return Validation();
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await PaymentFinalizationService.LockQuoteAsync(_db, request.CheckoutQuoteId, ct);
         var replay = await _db.SplitBills.Include(x => x.Parts).FirstOrDefaultAsync(x => x.IdempotencyKey == request.IdempotencyKey, ct);
         if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(await MapSplitAsync(replay, ct)) : IdempotencyConflict();
         var quote = await _db.CheckoutQuotes.FirstOrDefaultAsync(x => x.CheckoutQuoteId == request.CheckoutQuoteId && x.DiningSessionId == sessionId, ct);
         if (quote is null) return NotFound(new { code = "quote_not_found", message = "Không tìm thấy báo giá." });
         if (quote.CustomerId != request.CustomerId) return ForbidResult();
         if (quote.Status != "PAYMENT_REQUESTED") return StateConflict();
+        if (await _db.Payments.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId && (x.Status == "PENDING" || x.Status == "SUCCEEDED"), ct))
+            return Conflict(new { code = "payment_in_progress", message = "Báo giá đã có giao dịch đang thanh toán." });
         if (await _db.SplitBills.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct))
             return Conflict(new { code = "split_bill_exists", message = "Báo giá này đã được chia hóa đơn." });
         if (request.Amounts.Sum() != quote.TotalAmount) return Conflict(new { code = "split_total_mismatch", message = "Tổng các phần phải bằng tổng tiền báo giá." });
@@ -250,7 +283,7 @@ public sealed class MobileCheckoutController : ControllerBase
         var split = new SplitBill { CheckoutQuoteId = quote.CheckoutQuoteId, DiningSessionId = sessionId, CustomerId = request.CustomerId,
             TotalAmount = quote.TotalAmount, Status = "OPEN", IdempotencyKey = request.IdempotencyKey.Trim(), RequestHash = request.RequestHash, CreatedAtUtc = now, UpdatedAtUtc = now };
         var index = 0; foreach (var amount in request.Amounts) split.Parts.Add(new SplitBillPart { Label = $"Phần {++index}", Amount = amount, Status = "UNPAID" });
-        _db.SplitBills.Add(split); await _db.SaveChangesAsync(ct); return Ok(await MapSplitAsync(split, ct));
+        _db.SplitBills.Add(split); await _db.SaveChangesAsync(ct); await transaction.CommitAsync(ct); return Ok(await MapSplitAsync(split, ct));
     }
 
     [HttpGet("dining-sessions/{sessionId:int}/split-bill")]
@@ -276,38 +309,27 @@ public sealed class MobileCheckoutController : ControllerBase
     public async Task<ActionResult<object>> PaySplitPart(int splitBillId, SplitPaymentRequest request, CancellationToken ct)
     {
         if (!ValidCommand(request.CustomerId, request.IdempotencyKey, request.RequestHash)) return Validation();
+        var quoteId = await _db.SplitBills.Where(x => x.SplitBillId == splitBillId).Select(x => (int?)x.CheckoutQuoteId).FirstOrDefaultAsync(ct);
+        if (quoteId is null) return NotFound(new { code = "split_bill_not_found", message = "Không tìm thấy yêu cầu chia hóa đơn." });
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await PaymentFinalizationService.LockQuoteAsync(_db, quoteId.Value, ct);
         var split = await _db.SplitBills.Include(x => x.Parts).FirstOrDefaultAsync(x => x.SplitBillId == splitBillId, ct);
         if (split is null) return NotFound(new { code = "split_bill_not_found", message = "Không tìm thấy yêu cầu chia hóa đơn." });
         if (split.CustomerId != request.CustomerId) return ForbidResult();
+        var replay = await _db.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.IdempotencyKey == request.IdempotencyKey, ct);
+        if (replay is not null) return replay.CustomerId == request.CustomerId && replay.RequestHash == request.RequestHash
+            ? Ok(new { payment = MapPayment(replay), splitBill = await MapSplitAsync(split, ct) }) : IdempotencyConflict();
         var part = split.Parts.FirstOrDefault(x => x.SplitBillPartId == request.SplitBillPartId);
         if (part is null) return NotFound(new { code = "split_part_not_found", message = "Không tìm thấy phần thanh toán." });
         if (part.Status != "UNPAID") return Conflict(new { code = "split_part_already_paid", message = "Phần này đã có giao dịch." });
         var validation = ValidatePaymentMethod(request.Channel, request.Method, request.Location); if (validation is not null) return validation;
         var quote = await _db.CheckoutQuotes.FirstAsync(x => x.CheckoutQuoteId == split.CheckoutQuoteId, ct);
+        if (quote.Status != "PAYMENT_REQUESTED") return StateConflict();
         var payment = NewPayment(quote, request.Channel, request.Method, request.Location, request.IdempotencyKey, request.RequestHash, 1, part.Amount);
         var providerError = await InitializeProviderAsync(payment, ct); if (providerError is not null) return providerError;
         _db.Payments.Add(payment); await _db.SaveChangesAsync(ct); part.PaymentId = payment.PaymentId; part.Status = "PENDING"; await _db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
         return Ok(new { payment = MapPayment(payment), splitBill = await MapSplitAsync(split, ct) });
-    }
-
-    private async Task TryFinalizeAsync(Payment payment, CancellationToken ct)
-    {
-        var quote = await _db.CheckoutQuotes.FirstAsync(x => x.CheckoutQuoteId == payment.CheckoutQuoteId, ct);
-        var split = await _db.SplitBills.Include(x => x.Parts).FirstOrDefaultAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct);
-        if (split is not null)
-        {
-            if (split.Parts.Any(x => x.Status != "PAID")) return;
-            split.Status = "PAID"; split.UpdatedAtUtc = DateTime.UtcNow;
-        }
-        else if (payment.Amount != quote.TotalAmount) return;
-        quote.Status = "PAID"; quote.UpdatedAtUtc = DateTime.UtcNow;
-        if (!await _db.Invoices.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct))
-            _db.Invoices.Add(new Invoice { InvoiceCode = Code("INV"), CheckoutQuoteId = quote.CheckoutQuoteId, PaymentId = payment.PaymentId,
-                DiningSessionId = quote.DiningSessionId, CustomerId = quote.CustomerId, Subtotal = quote.Subtotal,
-                Discount = quote.VoucherDiscount + quote.PointsDiscount, TotalAmount = quote.TotalAmount, ItemsJson = quote.ItemsJson, IssuedAtUtc = DateTime.UtcNow });
-        await _db.SaveChangesAsync(ct);
-        await _orders.CompletePaymentAsync(quote.DiningSessionId, quote.CustomerId, quote.CheckoutQuoteId, payment.PaymentId, ct);
-        await _customers.SettleLoyaltyAsync(quote.CustomerId, new CustomersApiClient.LoyaltySettlementRequest(quote.PointsApplied, quote.TotalAmount), ct);
     }
 
     private async Task<(CheckoutQuote? Value, ActionResult? Result)> OwnedOpenQuote(int id, int customerId, CancellationToken ct)

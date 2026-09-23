@@ -12,6 +12,12 @@ import type {
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
+export type OnsitePayment = {
+  paymentId: number; paymentCode: string; amount: number; currency: string;
+  method: string; location: string; status: string; diningSessionId: number;
+  diningSessionCode: string; tableId: number; splitPart: string | null; isCurrentAttempt: boolean;
+};
+
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const response = await fetch(input, {
     credentials: "include",
@@ -29,6 +35,9 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
 }
 
 export const cashierApi = {
+  getOnsitePayments: () => request<OnsitePayment[]>("/api/gateway/staff/cashier/onsite-payments"),
+  confirmOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
+    `/api/gateway/staff/cashier/onsite-payments/${id}/confirm`, { method: "POST", body: "{}" }),
   getSession: () => request<StaffSessionDto>("/api/gateway/staff/cashier/session"),
   login: (username: string, password: string) =>
     request<{ success: boolean; nextPath?: string; session: StaffSessionDto }>("/api/gateway/staff/auth/login", {

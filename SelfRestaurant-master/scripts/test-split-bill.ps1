@@ -4,7 +4,8 @@ param(
     [string]$OrdersBaseUrl = "http://localhost:5102",
     [string]$BillingBaseUrl = "http://localhost:5105",
     [string]$VnPayHashSecret = $env:VNPAY_HASH_SECRET,
-    [switch]$KeepTestData
+    [switch]$KeepTestData,
+    [switch]$MixedOnsite
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,7 +22,16 @@ function Assert-Error([int]$Status,[string]$Code,[scriptblock]$Action){try{&$Act
 try {
     foreach($attempt in 1..40){try{Invoke-RestMethod "$gateway/readyz" -TimeoutSec 2|Out-Null;break}catch{if($attempt-eq40){throw};Start-Sleep -Milliseconds 500}}
     $account=Invoke-Json Post "$gateway/api/mobile/v1/auth/register" @{name="Split Test";username=$username;password="Pass123!";phoneNumber="09$tail";email="$username@example.test"}
-    $branch=(Invoke-Json Get "$gateway/api/mobile/v1/branches")[0];$layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
+    $branches=Invoke-Json Get "$gateway/api/mobile/v1/branches"
+    $branch=$branches[0]
+    if ($MixedOnsite) {
+        if (!$env:VIETTABLE_TEST_CASHIER_USERNAME -or !$env:VIETTABLE_TEST_CASHIER_PASSWORD) { throw 'Mixed acceptance requires test cashier credentials.' }
+        $staff=New-Object Microsoft.PowerShell.Commands.WebRequestSession
+        $cashierLogin=Invoke-RestMethod -Method Post -Uri "$gateway/api/gateway/staff/cashier/auth/login" -WebSession $staff -ContentType 'application/json' -Body (@{username=$env:VIETTABLE_TEST_CASHIER_USERNAME;password=$env:VIETTABLE_TEST_CASHIER_PASSWORD}|ConvertTo-Json)
+        $branch=$branches|Where-Object branchId -eq $cashierLogin.session.staff.branchId|Select-Object -First 1
+        if (!$branch) { throw 'Cashier branch is not available.' }
+    }
+    $layout=Invoke-Json Get "$catalog/api/branches/$($branch.branchId)/tables"
     $table=$null;$session=$null
     foreach($candidate in @($layout.tables|Where-Object{$_.isAvailable-and-not[string]::IsNullOrWhiteSpace($_.qrCode)})){
         try{$session=Invoke-Json Post "$gateway/api/mobile/v1/check-ins/walk-in" @{qrCode=$candidate.qrCode} $account.accessToken "walkin-$($candidate.tableId)";$table=$candidate;break}catch{if($null-eq$_.Exception.Response-or$_.Exception.Response.StatusCode.value__-ne409){throw}}
@@ -54,6 +64,17 @@ try {
     Write-Output "PASS failed split payment projection, real retry relink and paid part state"
 
     foreach($remaining in @($afterRetry.parts|Where-Object status -eq "UNPAID")){
+        if ($MixedOnsite) {
+            if (!$env:VIETTABLE_TEST_CASHIER_USERNAME -or !$env:VIETTABLE_TEST_CASHIER_PASSWORD) { throw 'Mixed acceptance requires test cashier credentials.' }
+            $staff=New-Object Microsoft.PowerShell.Commands.WebRequestSession
+            Invoke-RestMethod -Method Post -Uri "$gateway/api/gateway/staff/cashier/auth/login" -WebSession $staff -ContentType 'application/json' -Body (@{username=$env:VIETTABLE_TEST_CASHIER_USERNAME;password=$env:VIETTABLE_TEST_CASHIER_PASSWORD}|ConvertTo-Json) | Out-Null
+            # The failed provider attempt must never be collectible by cashier, even after relink.
+            try { Invoke-RestMethod -Method Post -Uri "$gateway/api/gateway/staff/cashier/onsite-payments/$($created.payment.paymentId)/confirm" -WebSession $staff -ContentType 'application/json' -Body '{}'|Out-Null; throw 'Old online attempt accepted by cashier' }
+            catch { if ([int]$_.Exception.Response.StatusCode -ne 403) { throw } }
+            $result=Invoke-Json Post "$gateway/api/mobile/v1/split-bills/$($split.splitBillId)/payments" @{splitBillPartId=$remaining.splitBillPartId;channel="ONSITE";method="CASH";location="CASHIER"} $account.accessToken "onsite-$($remaining.splitBillPartId)"
+            Invoke-RestMethod -Method Post -Uri "$gateway/api/gateway/staff/cashier/onsite-payments/$($result.payment.paymentId)/confirm" -WebSession $staff -ContentType 'application/json' -Body '{}'|Out-Null
+            continue
+        }
         $result=Invoke-Json Post "$gateway/api/mobile/v1/split-bills/$($split.splitBillId)/payments" @{splitBillPartId=$remaining.splitBillPartId;channel="ONLINE";method="QR"} $account.accessToken "part-$($remaining.splitBillPartId)"
         Invoke-VnPayTestIpn -BillingBaseUrl $billing -ProviderReference $result.payment.providerReference -Amount $result.payment.amount -ResponseCode "00" -TransactionNo "SPOK$($remaining.splitBillPartId)$tail" -HashSecret $VnPayHashSecret|Out-Null
     }

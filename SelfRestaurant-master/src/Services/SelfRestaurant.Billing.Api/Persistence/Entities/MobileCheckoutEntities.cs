@@ -63,6 +63,7 @@ public sealed class Payment
     public DateTime CreatedAtUtc { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
     public DateTime? CompletedAtUtc { get; set; }
+    public int? ConfirmedByEmployeeId { get; set; }
 }
 
 public sealed class Invoice
@@ -78,6 +79,7 @@ public sealed class Invoice
     public decimal TotalAmount { get; set; }
     public string ItemsJson { get; set; } = "[]";
     public DateTime IssuedAtUtc { get; set; }
+    public DateTime? SettlementCompletedAtUtc { get; set; }
 }
 
 public sealed class SplitBill

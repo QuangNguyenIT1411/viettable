@@ -135,6 +135,21 @@ signed amount and currency to equal the stored payment before changing state.
 `GET /api/payments/providers/vnpay/return` is display-only and never finalizes a
 payment. Existing ONSITE payments do not create a provider session.
 
+### Cashier ONSITE collection (2026-09-23)
+
+Staff browser routes through Gateway:
+
+- `GET /api/gateway/staff/cashier/onsite-payments`: branch-scoped ONSITE rows including payment reference, session/table, persisted VND amount, status and current split-part label/attempt.
+- `POST /api/gateway/staff/cashier/onsite-payments/{paymentId}/confirm` with JSON `{}`: confirm actual collection. Requires staff session and CASHIER/MANAGER/ADMIN role and matching branch. No client amount/customer/actor is authoritative.
+
+Gateway relays to Billing `/api/internal/cashier/onsite-payments` using a short-lived purpose-scoped staff service JWT. Customer Bearer tokens cannot self-confirm. Billing repeats role/branch enforcement. Successful duplicate confirmation returns the existing success without issuing another invoice. Only a current PENDING obligation can newly succeed; terminal or replaced attempts return business conflicts. Wrong channel/branch returns 403; missing payment returns 404. Amount/session/quote/currency mismatch is rejected.
+
+Cashier confirmation and verified successful VNPAY IPN share the same finalizer. Payment/part/quote/invoice changes commit together; only all-paid splits issue the canonical invoice and trigger session closure. Durable invoice reconciliation retries Orders/loyalty completion after outages without reverting SUCCEEDED. Cashier actor and completion timestamp are retained. ONSITE works with VNPAY disabled.
+
+Creating a second pending/succeeded full-payment obligation or a full payment for an existing split returns `payment_in_progress` (409). Mobile GET of a missing payment, split or not-yet-issued invoice returns 404. Mobile routes and Android polling semantics are otherwise unchanged. Legacy Bill checkout cannot settle a mobile checkout session; use the mobile payment panel. Legacy reporting/ownership migration is out of scope.
+
+See [ONSITE acceptance](../../docs/ONSITE_PAYMENT_ACCEPTANCE.md) for tested cases, resilience boundaries and retained-data limitations.
+
 ## 8. B0 exit criteria
 
 - The 72-screen and 27-rule traceability matrix is complete.

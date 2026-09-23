@@ -45,6 +45,22 @@ public sealed class StaffCashierGatewayController : ControllerBase
     [HttpGet("session")]
     public ActionResult<StaffSessionDto> GetSession() => Ok(BuildSessionDto());
 
+    [HttpGet("onsite-payments")]
+    public async Task<IActionResult> MobileOnsitePayments(CancellationToken ct) => await CashierPayment(null, ct);
+
+    [HttpPost("onsite-payments/{paymentId:int}/confirm")]
+    [Consumes("application/json")]
+    public async Task<IActionResult> ConfirmMobileOnsitePayment(int paymentId, CancellationToken ct) => await CashierPayment(paymentId, ct);
+
+    private async Task<IActionResult> CashierPayment(int? paymentId, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        if (staff.BranchId <= 0) return Error("branch_required", "Tài khoản chưa được gán chi nhánh.", 403);
+        try { return Ok(await _billingClient.CashierMobilePaymentAsync(staff, paymentId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "cashier_payment_failed", ex.Message, ex.StatusCode); }
+    }
+
     [HttpPost("auth/login")]
     public async Task<ActionResult<object>> Login([FromBody] StaffLoginApiRequest request, CancellationToken cancellationToken)
     {
@@ -728,4 +744,3 @@ public sealed class StaffCashierGatewayController : ControllerBase
     private ActionResult Error(string code, string message, int statusCode, object? details = null)
         => StatusCode(statusCode, new ApiErrorResponse(false, code, message, details));
 }
-

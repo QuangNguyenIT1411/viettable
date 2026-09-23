@@ -1,6 +1,7 @@
+[CmdletBinding()]
 param(
     [string]$GatewayBaseUrl = "http://localhost:5100",
-    [switch]$KeepTestCustomer
+    [switch]$KeepTestCustomer = $true
 )
 
 $ErrorActionPreference = "Stop"

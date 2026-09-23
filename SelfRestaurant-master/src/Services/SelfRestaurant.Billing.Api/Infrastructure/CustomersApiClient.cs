@@ -59,7 +59,7 @@ public sealed class CustomersApiClient
         string? Address,
         int LoyaltyPoints);
 
-    public sealed record LoyaltySettlementRequest(int PointsUsed, decimal AmountPaid);
+    public sealed record LoyaltySettlementRequest(int PointsUsed, decimal AmountPaid, string? SettlementKey = null);
 
     public sealed record LoyaltySettlementResponse(
         int CustomerId,

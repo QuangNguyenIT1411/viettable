@@ -53,8 +53,9 @@ try {
     $payment=Invoke-Json Post "$gateway/api/mobile/v1/checkout/quotes/$($quote.checkoutQuoteId)/payments" $paymentBody $account.accessToken "pay-1"
     $paymentRetry=Invoke-Json Post "$gateway/api/mobile/v1/checkout/quotes/$($quote.checkoutQuoteId)/payments" $paymentBody $account.accessToken "pay-1"
     if($payment.paymentId-ne$paymentRetry.paymentId-or$payment.status-ne"PENDING"-or$payment.providerName-ne"VNPAY"-or[string]::IsNullOrWhiteSpace($payment.providerReference)-or-not$payment.paymentUrl.StartsWith("https://sandbox.vnpayment.vn/")){throw "Payment creation/replay/provider session failed."}
-    $onsite=Invoke-Json Post "$gateway/api/mobile/v1/checkout/quotes/$($quote.checkoutQuoteId)/payments" @{channel="ONSITE";method="CASH";location="TABLE"} $account.accessToken "onsite-compat"
-    if($onsite.status-ne"PENDING"-or$onsite.channel-ne"ONSITE"-or$null-ne$onsite.providerReference-or$null-ne$onsite.paymentUrl){throw "Onsite payment was coupled to the online provider."}
+    # ONSITE is exercised independently by test-onsite-payment.ps1 with provider disabled.
+    # One quote must not collect the same obligation through two pending channels.
+    Assert-Error 409 "payment_in_progress" {Invoke-Json Post "$gateway/api/mobile/v1/checkout/quotes/$($quote.checkoutQuoteId)/payments" @{channel="ONSITE";method="CASH";location="TABLE"} $account.accessToken "onsite-compat"}
     $unknown=Invoke-VnPayTestIpn -BillingBaseUrl $billing -ProviderReference "$($payment.providerReference)-UNKNOWN" -Amount $payment.amount -ResponseCode "00" -TransactionNo "UNKNOWN$tail" -HashSecret $VnPayHashSecret
     if($unknown.RspCode-ne"01"){throw "Unknown provider transaction was not rejected."}
     $invalid=Invoke-VnPayTestIpn -BillingBaseUrl $billing -ProviderReference $payment.providerReference -Amount $payment.amount -ResponseCode "00" -TransactionNo "BAD$tail" -HashSecret $VnPayHashSecret -InvalidSignature
@@ -63,7 +64,7 @@ try {
     if($wrongAmount.RspCode-ne"04"){throw "Signed amount mismatch was not rejected."}
     $stillPending=Invoke-Json Get "$gateway/api/mobile/v1/payments/$($payment.paymentId)" $null $account.accessToken
     if($stillPending.status-ne"PENDING"){throw "Rejected webhook mutated payment state."}
-    Write-Output "PASS onsite isolation and signed VNPAY webhook rejects unknown reference, invalid signature and amount mismatch"
+    Write-Output "PASS duplicate-channel collection guard and signed VNPAY webhook rejects unknown reference, invalid signature and amount mismatch"
     Invoke-VnPayTestIpn -BillingBaseUrl $billing -ProviderReference $payment.providerReference -Amount $payment.amount -ResponseCode "05" -TransactionNo "B6FAIL$tail" -HashSecret $VnPayHashSecret|Out-Null
     $retry=Invoke-Json Post "$gateway/api/mobile/v1/payments/$($payment.paymentId)/retry" @{} $account.accessToken "retry-1"
     if($retry.attemptNumber-ne2-or$retry.status-ne"PENDING"){throw "Failed payment retry failed."}

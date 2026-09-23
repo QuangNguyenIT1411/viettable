@@ -25,6 +25,15 @@ public static class BillingDbBootstrapper
         await EnsureOrderContextSnapshotTableAsync(db, cancellationToken);
         await EnsureCheckoutCommandTableAsync(db, cancellationToken);
         await EnsureMobileCheckoutTablesAsync(db, cancellationToken);
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('dbo.MobilePayments', 'ConfirmedByEmployeeId') IS NULL
+                ALTER TABLE dbo.MobilePayments ADD ConfirmedByEmployeeId INT NULL;
+            IF COL_LENGTH('dbo.Invoices', 'SettlementCompletedAtUtc') IS NULL
+            BEGIN
+                ALTER TABLE dbo.Invoices ADD SettlementCompletedAtUtc DATETIME2 NULL;
+                EXEC('UPDATE dbo.Invoices SET SettlementCompletedAtUtc = IssuedAtUtc');
+            END;
+            """, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);
     }
 

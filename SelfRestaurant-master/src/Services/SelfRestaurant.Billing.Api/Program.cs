@@ -11,6 +11,24 @@ builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
 builder.Services.AddControllers();
+builder.Services.AddAuthentication("CashierService").AddJwtBearer("CashierService", options =>
+{
+    options.MapInboundClaims = false;
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuer = true, ValidIssuer = "SelfRestaurant.Gateway",
+        ValidateAudience = true, ValidAudience = "SelfRestaurant.Billing.Cashier",
+        ValidateLifetime = true, ClockSkew = TimeSpan.FromSeconds(5),
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["MobileJwt:SigningKey"]
+                ?? throw new InvalidOperationException("MobileJwt:SigningKey required for cashier authentication"))),
+        RoleClaimType = "role"
+    };
+});
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<PaymentFinalizationService>();
+builder.Services.AddHostedService<PaymentReconciliationWorker>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -70,6 +88,8 @@ if (app.Configuration.GetValue<bool?>("HttpsRedirection:Enabled") ?? app.Environ
     app.UseHttpsRedirection();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));

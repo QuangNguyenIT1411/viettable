@@ -63,7 +63,12 @@ try {
     $branches = Invoke-Json "Get" "$gateway/api/mobile/v1/branches"
     $branchId = $branches[0].branchId
     $catalogTables = Invoke-Json "Get" "$catalog/api/branches/$branchId/tables"
-    $tables = @($catalogTables.tables | Where-Object { $_.isAvailable -and -not [string]::IsNullOrWhiteSpace($_.qrCode) } | Select-Object -First 2)
+    # Read-only local fixture discovery: Catalog availability can lag Orders sessions,
+    # including an empty walk-in that has no order yet. Never reset/delete an old fixture.
+    $occupiedRows = docker exec selfrestaurant-db /bin/bash -lc '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -d RESTAURANT_ORDERS -h -1 -W -Q "SET NOCOUNT ON; SELECT TableId FROM dbo.DiningSessions WHERE EndedAtUtc IS NULL UNION SELECT TableID FROM dbo.Orders WHERE IsActive=1;"'
+    if ($LASTEXITCODE -ne 0) { throw 'Could not read Orders fixture availability.' }
+    $occupied = @($occupiedRows | Where-Object { $_.Trim() -match '^\d+$' } | ForEach-Object { [int]$_.Trim() })
+    $tables = @($catalogTables.tables | Where-Object { $_.isAvailable -and $_.tableId -notin $occupied -and -not [string]::IsNullOrWhiteSpace($_.qrCode) } | Select-Object -First 2)
     if ($tables.Count -lt 2) { throw "B4 needs two available tables with QR codes." }
     $tableIds = @($tables[0].tableId, $tables[1].tableId)
 

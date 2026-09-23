@@ -26,8 +26,13 @@ try {
     docker compose up -d --force-recreate billing gateway | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Could not start Billing/Gateway with VNPAY configuration." }
 
-    & "$PSScriptRoot/test-b6.ps1" -VnPayHashSecret $HashSecret
-    & "$PSScriptRoot/test-split-bill.ps1" -VnPayHashSecret $HashSecret
+    & "$PSScriptRoot/test-b6.ps1" -VnPayHashSecret $HashSecret -KeepTestData
+    & "$PSScriptRoot/test-split-bill.ps1" -VnPayHashSecret $HashSecret -KeepTestData
+    if ($env:VIETTABLE_TEST_CASHIER_USERNAME -and $env:VIETTABLE_TEST_CASHIER_PASSWORD) {
+        & "$PSScriptRoot/test-split-bill.ps1" -VnPayHashSecret $HashSecret -KeepTestData -MixedOnsite
+        Write-Output 'PASS mixed ONLINE retry + ONSITE split finalization and old-attempt cashier rejection'
+    }
+    & "$PSScriptRoot/test-b7.ps1" -VnPayHashSecret $HashSecret -KeepTestData
     Write-Output "Payment provider contract runtime checks passed."
     if ($generatedCredentials) {
         Write-Output "NOTE local credentials validate VietTable signing/state transitions only; they are not a real VNPAY merchant transaction."

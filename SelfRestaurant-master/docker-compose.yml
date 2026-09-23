@@ -140,6 +140,7 @@
       ASPNETCORE_URLS: http://+:8080
       HttpsRedirection__Enabled: "false"
       ConnectionStrings__RestaurantDb: Server=db,1433;Database=RESTAURANT_BILLING;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      MobileJwt__SigningKey: ${MOBILE_JWT_SIGNING_KEY:-selfrestaurant-local-development-mobile-jwt-key-change-me-2026}
       Services__Identity: http://identity:8080
       Services__Orders: http://orders:8080
       RabbitMq__Enabled: "true"
