@@ -7,6 +7,7 @@ COPY src/Services/SelfRestaurant.Billing.Api/SelfRestaurant.Billing.Api.csproj s
 RUN dotnet restore src/Services/SelfRestaurant.Billing.Api/SelfRestaurant.Billing.Api.csproj
 
 COPY src/ ./src/
+COPY sql/billing-owned-tables.sql ./sql/billing-owned-tables.sql
 
 RUN dotnet publish src/Services/SelfRestaurant.Billing.Api/SelfRestaurant.Billing.Api.csproj -c Release -o /app/publish --no-restore /p:UseAppHost=false
 

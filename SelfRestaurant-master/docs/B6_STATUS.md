@@ -4,6 +4,8 @@ Status: **implemented and runtime-tested on 2026-09-22**
 
 2026-09-23 follow-up: **ONSITE Cashier → mobile Payment → invoice/split/session acceptance PASS**, including Samsung UI, concurrent confirmation and Orders-outage reconciliation. See [ONSITE acceptance](../../docs/ONSITE_PAYMENT_ACCEPTANCE.md) for current evidence and limitations; the earlier verification below is historical.
 
+2026-09-23 ownership follow-up: legacy cashier Bills now persist in Billing-owned `billing.Bills`, not the shared `RESTAURANT.dbo.Bills` synonym. Live legacy checkout/write, history/report reads and mobile ONSITE/provider regressions passed after all Billing synonyms were retired. Migration/rollback evidence is in [Billing ownership migration](../../docs/BILLING_OWNERSHIP_MIGRATION.md). Mobile Invoices remain separate; this does not certify other services' database ownership or external VNPAY acceptance.
+
 ## Delivered
 
 - Billing-owned immutable checkout quotes aggregate every non-cancelled item in one Dining Session.

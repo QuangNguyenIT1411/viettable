@@ -148,3 +148,7 @@ Exact production placeholder search found only the model comment `DiningSession.
 - [ ] Decide whether Google/VNPAY are mandatory release features and accept their E2E accordingly.
 
 Recommended next action: address F01 first with a narrowly scoped cashier-to-mobile settlement task and regression for ONSITE single/split payment, then complete database ownership and rerun final acceptance. Do not publish the current dev compose or mark the current code baseline ready solely because Android builds/tests pass.
+
+## Follow-up evidence, 2026-09-23
+
+The findings above are the historical audit snapshot. F01 was closed by [ONSITE payment acceptance](ONSITE_PAYMENT_ACCEPTANCE.md). F02 is closed **for Billing only** by the [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md): the active Bill mapping is local, all 30 Billing synonyms are retired, a real Gateway legacy cashier checkout wrote only to Billing, and post-cutover payment/review/backend regressions passed. The shared Bills source remains untouched. Other service synonyms and global ownership, external provider acceptance, release signing, and production HTTPS deployment remain open; this addendum does not change the overall release block.

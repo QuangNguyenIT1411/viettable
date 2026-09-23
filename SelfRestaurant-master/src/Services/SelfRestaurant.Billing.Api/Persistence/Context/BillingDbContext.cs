@@ -26,6 +26,7 @@ public sealed class BillingDbContext : DbContext
     {
         modelBuilder.Entity<Bills>(entity =>
         {
+            entity.ToTable("Bills", "billing");
             entity.HasKey(e => e.BillID);
             entity.HasIndex(e => e.BillTime).HasDatabaseName("IX_Bills_BillTime");
             entity.HasIndex(e => e.CheckoutIdempotencyKey).IsUnique().HasFilter("[CheckoutIdempotencyKey] IS NOT NULL").HasDatabaseName("UX_Bills_CheckoutIdempotencyKey");

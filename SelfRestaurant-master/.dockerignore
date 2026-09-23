@@ -20,4 +20,4 @@ UpgradeLog*.htm
 # SQL scripts except the one used for container init
 *.sql
 !sql/localdb.sql
-
+!sql/billing-owned-tables.sql

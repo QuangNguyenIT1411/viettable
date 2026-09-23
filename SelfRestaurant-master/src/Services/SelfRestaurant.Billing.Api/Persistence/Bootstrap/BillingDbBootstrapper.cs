@@ -17,11 +17,8 @@ public static class BillingDbBootstrapper
 
         await WaitForDatabaseAsync(db, logger, cancellationToken);
         await EnsureOutboxTableAsync(db, cancellationToken);
-        await EnsureBillSnapshotColumnsAsync(db, cancellationToken);
-        await EnsureBillIdempotencyColumnsAsync(db, cancellationToken);
+        await EnsureOwnedBillsAsync(db, cancellationToken);
         await EnsureBusinessAuditTableAsync(db, cancellationToken);
-        await EnsureBillsDetachedFromLegacyOrderFkAsync(db, cancellationToken);
-        await EnsureBillsDetachedFromLegacyCustomerFkAsync(db, cancellationToken);
         await EnsureOrderContextSnapshotTableAsync(db, cancellationToken);
         await EnsureCheckoutCommandTableAsync(db, cancellationToken);
         await EnsureMobileCheckoutTablesAsync(db, cancellationToken);
@@ -247,113 +244,17 @@ public static class BillingDbBootstrapper
             """, cancellationToken);
     }
 
-    private static async Task EnsureBillSnapshotColumnsAsync(BillingDbContext db, CancellationToken cancellationToken)
+    private static async Task EnsureOwnedBillsAsync(BillingDbContext db, CancellationToken cancellationToken)
     {
-        const string sql = """
-                           DECLARE @targetObject nvarchar(512) = N'dbo.Bills';
-                           DECLARE @baseObject nvarchar(512) =
-                               (SELECT TOP 1 base_object_name
-                                FROM sys.synonyms
-                                WHERE schema_id = SCHEMA_ID(N'dbo')
-                                  AND name = N'Bills');
-
-                           IF @baseObject IS NOT NULL
-                               SET @targetObject = @baseObject;
-
-                           IF COL_LENGTH(@targetObject, 'OrderCodeSnapshot') IS NULL
-                               EXEC(N'ALTER TABLE ' + @targetObject + N' ADD OrderCodeSnapshot NVARCHAR(50) NULL;');
-
-                           IF COL_LENGTH(@targetObject, 'TableIdSnapshot') IS NULL
-                               EXEC(N'ALTER TABLE ' + @targetObject + N' ADD TableIdSnapshot INT NULL;');
-
-                           IF COL_LENGTH(@targetObject, 'TableNameSnapshot') IS NULL
-                               EXEC(N'ALTER TABLE ' + @targetObject + N' ADD TableNameSnapshot NVARCHAR(200) NULL;');
-
-                           IF COL_LENGTH(@targetObject, 'BranchIdSnapshot') IS NULL
-                               EXEC(N'ALTER TABLE ' + @targetObject + N' ADD BranchIdSnapshot INT NULL;');
-
-                           IF COL_LENGTH(@targetObject, 'BranchNameSnapshot') IS NULL
-                               EXEC(N'ALTER TABLE ' + @targetObject + N' ADD BranchNameSnapshot NVARCHAR(200) NULL;');
-                           """;
-
-        await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
-    }
-
-    private static async Task EnsureBillIdempotencyColumnsAsync(BillingDbContext db, CancellationToken cancellationToken)
-    {
-        // Split column adds from index creation so an older schema can recover even if a previous
-        // startup stopped after ALTER TABLE but before the dependent index statements ran.
-        const string addColumnsSql = """
-                                     DECLARE @targetObject nvarchar(512) = N'dbo.Bills';
-                                     DECLARE @baseObject nvarchar(512) =
-                                         (SELECT TOP 1 base_object_name
-                                          FROM sys.synonyms
-                                          WHERE schema_id = SCHEMA_ID(N'dbo')
-                                            AND name = N'Bills');
-
-                                     IF @baseObject IS NOT NULL
-                                         SET @targetObject = @baseObject;
-
-                                     IF COL_LENGTH(@targetObject, 'DiningSessionCode') IS NULL
-                                         EXEC(N'ALTER TABLE ' + @targetObject + N' ADD DiningSessionCode VARCHAR(64) NULL;');
-
-                                     IF COL_LENGTH(@targetObject, 'CheckoutIdempotencyKey') IS NULL
-                                         EXEC(N'ALTER TABLE ' + @targetObject + N' ADD CheckoutIdempotencyKey VARCHAR(100) NULL;');
-                                     """;
-
-        const string addIndexesSql = """
-                                     DECLARE @targetObject nvarchar(512) = N'dbo.Bills';
-                                     DECLARE @baseObject nvarchar(512) =
-                                         (SELECT TOP 1 base_object_name
-                                          FROM sys.synonyms
-                                          WHERE schema_id = SCHEMA_ID(N'dbo')
-                                            AND name = N'Bills');
-
-                                     IF @baseObject IS NOT NULL
-                                         SET @targetObject = @baseObject;
-
-                                     DECLARE @targetDb sysname = ISNULL(PARSENAME(@targetObject, 3), DB_NAME());
-                                     DECLARE @targetSchema sysname = ISNULL(PARSENAME(@targetObject, 2), N'dbo');
-                                     DECLARE @targetTable sysname = PARSENAME(@targetObject, 1);
-                                     DECLARE @indexSql nvarchar(max) = N'
-                                         IF NOT EXISTS (
-                                             SELECT 1
-                                             FROM ' + QUOTENAME(@targetDb) + N'.sys.indexes i
-                                             INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.tables t ON i.object_id = t.object_id
-                                             INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.schemas s ON t.schema_id = s.schema_id
-                                             WHERE i.name = N''UX_Bills_CheckoutIdempotencyKey''
-                                               AND s.name = N''' + REPLACE(@targetSchema, '''', '''''') + N'''
-                                               AND t.name = N''' + REPLACE(@targetTable, '''', '''''') + N'''
-                                         )
-                                         BEGIN
-                                             CREATE UNIQUE INDEX UX_Bills_CheckoutIdempotencyKey
-                                             ON ' + QUOTENAME(@targetDb) + N'.' + QUOTENAME(@targetSchema) + N'.' + QUOTENAME(@targetTable) + N'(CheckoutIdempotencyKey)
-                                             WHERE CheckoutIdempotencyKey IS NOT NULL;
-                                         END';
-
-                                     EXEC sp_executesql @indexSql;
-
-                                     DECLARE @activeOrderIndexSql nvarchar(max) = N'
-                                         IF NOT EXISTS (
-                                             SELECT 1
-                                             FROM ' + QUOTENAME(@targetDb) + N'.sys.indexes i
-                                             INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.tables t ON i.object_id = t.object_id
-                                             INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.schemas s ON t.schema_id = s.schema_id
-                                             WHERE i.name = N''UX_Bills_OrderID_Active''
-                                               AND s.name = N''' + REPLACE(@targetSchema, '''', '''''') + N'''
-                                               AND t.name = N''' + REPLACE(@targetTable, '''', '''''') + N'''
-                                         )
-                                         BEGIN
-                                             CREATE UNIQUE INDEX UX_Bills_OrderID_Active
-                                             ON ' + QUOTENAME(@targetDb) + N'.' + QUOTENAME(@targetSchema) + N'.' + QUOTENAME(@targetTable) + N'(OrderID)
-                                             WHERE IsActive = 1;
-                                         END';
-
-                                     EXEC sp_executesql @activeOrderIndexSql;
-                                     """;
-
-        await db.Database.ExecuteSqlRawAsync(addColumnsSql, cancellationToken);
-        await db.Database.ExecuteSqlRawAsync(addIndexesSql, cancellationToken);
+        using var stream = typeof(BillingDbBootstrapper).Assembly.GetManifestResourceStream("Billing.OwnedTables.sql")
+            ?? throw new InvalidOperationException("Billing owned schema resource missing");
+        using var reader = new StreamReader(stream);
+        await db.Database.ExecuteSqlRawAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken);
+        await db.Database.ExecuteSqlRawAsync("""
+            IF EXISTS (SELECT 1 FROM sys.synonyms WHERE name = 'Bills')
+               AND NOT EXISTS (SELECT 1 FROM billing.OwnershipMigrations WHERE MigrationId = 'billing-bills-v1')
+                THROW 51000, 'Run explicit Billing migration before application cutover.', 1;
+            """, cancellationToken);
     }
 
     private static async Task EnsureCheckoutCommandTableAsync(BillingDbContext db, CancellationToken cancellationToken)
@@ -412,77 +313,6 @@ public static class BillingDbBootstrapper
             """, cancellationToken);
     }
 
-    private static async Task EnsureBillsDetachedFromLegacyOrderFkAsync(BillingDbContext db, CancellationToken cancellationToken)
-    {
-        const string sql = """
-                           DECLARE @targetObject nvarchar(512) = N'dbo.Bills';
-                           DECLARE @baseObject nvarchar(512) =
-                               (SELECT TOP 1 base_object_name
-                                FROM sys.synonyms
-                                WHERE schema_id = SCHEMA_ID(N'dbo')
-                                  AND name = N'Bills');
-
-                           IF @baseObject IS NOT NULL
-                               SET @targetObject = @baseObject;
-
-                           DECLARE @targetDb sysname = ISNULL(PARSENAME(@targetObject, 3), DB_NAME());
-                           DECLARE @targetSchema sysname = ISNULL(PARSENAME(@targetObject, 2), N'dbo');
-                           DECLARE @targetTable sysname = PARSENAME(@targetObject, 1);
-                           DECLARE @dynamicSql nvarchar(max) = N'
-                               IF EXISTS (
-                                   SELECT 1
-                                   FROM ' + QUOTENAME(@targetDb) + N'.sys.foreign_keys fk
-                                   INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.tables t ON fk.parent_object_id = t.object_id
-                                   INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.schemas s ON t.schema_id = s.schema_id
-                                   WHERE fk.name = N''FK_Bills_Orders''
-                                     AND s.name = N''' + REPLACE(@targetSchema, '''', '''''') + N'''
-                                     AND t.name = N''' + REPLACE(@targetTable, '''', '''''') + N'''
-                               )
-                               BEGIN
-                                   ALTER TABLE ' + QUOTENAME(@targetDb) + N'.' + QUOTENAME(@targetSchema) + N'.' + QUOTENAME(@targetTable) + N' DROP CONSTRAINT [FK_Bills_Orders];
-                               END';
-
-                           EXEC sp_executesql @dynamicSql;
-                           """;
-
-        await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
-    }
-
-    private static async Task EnsureBillsDetachedFromLegacyCustomerFkAsync(BillingDbContext db, CancellationToken cancellationToken)
-    {
-        const string sql = """
-                           DECLARE @targetObject nvarchar(512) = N'dbo.Bills';
-                           DECLARE @baseObject nvarchar(512) =
-                               (SELECT TOP 1 base_object_name
-                                FROM sys.synonyms
-                                WHERE schema_id = SCHEMA_ID(N'dbo')
-                                  AND name = N'Bills');
-
-                           IF @baseObject IS NOT NULL
-                               SET @targetObject = @baseObject;
-
-                           DECLARE @targetDb sysname = ISNULL(PARSENAME(@targetObject, 3), DB_NAME());
-                           DECLARE @targetSchema sysname = ISNULL(PARSENAME(@targetObject, 2), N'dbo');
-                           DECLARE @targetTable sysname = PARSENAME(@targetObject, 1);
-                           DECLARE @dynamicSql nvarchar(max) = N'
-                               IF EXISTS (
-                                   SELECT 1
-                                   FROM ' + QUOTENAME(@targetDb) + N'.sys.foreign_keys fk
-                                   INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.tables t ON fk.parent_object_id = t.object_id
-                                   INNER JOIN ' + QUOTENAME(@targetDb) + N'.sys.schemas s ON t.schema_id = s.schema_id
-                                   WHERE fk.name = N''FK_Bills_Customers''
-                                     AND s.name = N''' + REPLACE(@targetSchema, '''', '''''') + N'''
-                                     AND t.name = N''' + REPLACE(@targetTable, '''', '''''') + N'''
-                               )
-                               BEGIN
-                                   ALTER TABLE ' + QUOTENAME(@targetDb) + N'.' + QUOTENAME(@targetSchema) + N'.' + QUOTENAME(@targetTable) + N' DROP CONSTRAINT [FK_Bills_Customers];
-                               END';
-
-                           EXEC sp_executesql @dynamicSql;
-                           """;
-
-        await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
-    }
 
     private static async Task EnsureOrderContextSnapshotTableAsync(BillingDbContext db, CancellationToken cancellationToken)
     {

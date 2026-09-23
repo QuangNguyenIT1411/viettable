@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Compile Remove="Persistence/bin/**;Persistence/obj/**" />
+    <EmbeddedResource Include="../../../sql/billing-owned-tables.sql" LogicalName="Billing.OwnedTables.sql" />
     <Content Remove="Persistence/bin/**;Persistence/obj/**" />
     <EmbeddedResource Remove="Persistence/bin/**;Persistence/obj/**" />
     <None Remove="Persistence/bin/**;Persistence/obj/**" />

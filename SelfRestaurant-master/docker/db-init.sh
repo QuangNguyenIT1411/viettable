@@ -91,6 +91,10 @@ for service_db in "${SERVICE_DATABASE_ARRAY[@]}"; do
   fi
 
   case "$service_db" in
+    RESTAURANT_BILLING)
+      # Explicit migration removes aliases only after application cutover verification.
+      continue
+      ;;
     RESTAURANT_CATALOG|RESTAURANT_IDENTITY)
       allow_inserts="-- this service uses physical owned tables only"
       ;;
@@ -140,7 +144,8 @@ done
 for ownership_spec in \
   "RESTAURANT_CATALOG:/scripts/catalog-owned-tables.sql" \
   "RESTAURANT_IDENTITY:/scripts/identity-owned-tables.sql" \
-  "RESTAURANT_ORDERS:/scripts/orders-owned-tables.sql"; do
+  "RESTAURANT_ORDERS:/scripts/orders-owned-tables.sql" \
+  "RESTAURANT_BILLING:/scripts/billing-owned-tables.sql"; do
   ownership_db="${ownership_spec%%:*}"
   ownership_script="${ownership_spec#*:}"
   if [[ ! -f "$ownership_script" ]]; then

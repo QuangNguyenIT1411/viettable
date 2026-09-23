@@ -39,6 +39,7 @@
       - ./sql/catalog-owned-tables.sql:/scripts/catalog-owned-tables.sql:ro
       - ./sql/identity-owned-tables.sql:/scripts/identity-owned-tables.sql:ro
       - ./sql/orders-owned-tables.sql:/scripts/orders-owned-tables.sql:ro
+      - ./sql/billing-owned-tables.sql:/scripts/billing-owned-tables.sql:ro
     entrypoint: ["/bin/bash", "/docker/db-init.sh"]
     restart: "no"
 

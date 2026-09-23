@@ -2,7 +2,7 @@
 
 Evidence date: 2026-09-23. This document distinguishes proven behavior from external or manual acceptance work.
 
-**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01 with real Cashier/Samsung evidence. Active shared-database dependencies remain unresolved. [Original audit](FINAL_RELEASE_AUDIT.md) is retained as historical evidence; the acceptance addendum supersedes its payment/regression gaps only.
+**Code baseline NOT_READY_FOR_RELEASE_CANDIDATE; Deployment BLOCKED.** [ONSITE acceptance](ONSITE_PAYMENT_ACCEPTANCE.md) closes mobile ONSITE F01 with real Cashier/Samsung evidence. [Billing ownership migration](BILLING_OWNERSHIP_MIGRATION.md) closes the scoped Billing dependency; other service aliases, external acceptance and production release prerequisites remain. [Original audit](FINAL_RELEASE_AUDIT.md) is retained as historical evidence, superseded only where follow-up evidence explicitly says so.
 
 | Area | Status | Evidence / remaining condition |
 |---|---|---|
@@ -35,8 +35,8 @@ Evidence date: 2026-09-23. This document distinguishes proven behavior from exte
 | Release build | PASS | `:app:assembleRelease :app:lintRelease` passed using a non-committed HTTPS validation origin. APK is unsigned, as expected without release signing material. |
 | Release signing | BLOCKED_EXTERNAL | Production keystore/signing policy has not been supplied. |
 | Production API | BLOCKED_EXTERNAL | A real HTTPS Gateway domain and trusted certificate are not yet supplied. |
-| Database ownership | FAILED | Runtime Billing dbo.Bills is a synonym to shared RESTAURANT.dbo.Bills and is actively used by cashier code. Other legacy synonyms remain; service isolation is incomplete. |
-| Backend regression | PASS_SCOPED | Docker .NET suite 106/106; B1/B4/B5/B6/split/B7 and internal provider regression passed. B2/B3 remain earlier audit evidence. External provider acceptance remains blocked. |
+| Database ownership | PASS_SCOPED | Billing now maps local `billing.Bills`; 30 Billing synonyms removed, 0 cross-DB SQL dependencies, legacy cashier write/read proven. Other services still require ownership audit; global isolation is not certified. |
+| Backend regression | PASS_SCOPED | Docker .NET suite 108/108; B4/B5/B6/split/B7, internal provider and legacy cashier regression passed after Billing cutover. B2/B3 remain earlier audit evidence. External provider acceptance remains blocked. |
 | Git baseline | PASS | Baseline `20a32b9` remains in history; this task is committed separately and no remote is configured/pushed. |
 
 ## Artifact sizes

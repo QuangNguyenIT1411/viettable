@@ -365,7 +365,7 @@ IF OBJECT_ID(N'dbo.InboxEvents', N'U') IS NOT NULL DELETE FROM dbo.InboxEvents;
             $ordersTx = $ordersConn.BeginTransaction()
             try {
                 Invoke-NonQuery -Connection $ordersConn -Transaction $ordersTx -Sql @"
-IF OBJECT_ID(N'dbo.Bills', N'U') IS NOT NULL OR EXISTS (SELECT 1 FROM sys.synonyms WHERE schema_id = SCHEMA_ID(N'dbo') AND name = N'Bills') DELETE FROM dbo.Bills;
+-- Historical shared Bills are retained by the Billing ownership migration.
 IF OBJECT_ID(N'dbo.OrderItems', N'U') IS NOT NULL OR EXISTS (SELECT 1 FROM sys.synonyms WHERE schema_id = SCHEMA_ID(N'dbo') AND name = N'OrderItems') DELETE FROM dbo.OrderItems;
 IF OBJECT_ID(N'dbo.Orders', N'U') IS NOT NULL OR EXISTS (SELECT 1 FROM sys.synonyms WHERE schema_id = SCHEMA_ID(N'dbo') AND name = N'Orders') DELETE FROM dbo.Orders;
 IF OBJECT_ID(N'dbo.InboxEvents', N'U') IS NOT NULL OR EXISTS (SELECT 1 FROM sys.synonyms WHERE schema_id = SCHEMA_ID(N'dbo') AND name = N'InboxEvents') DELETE FROM dbo.InboxEvents;
@@ -390,7 +390,7 @@ IF OBJECT_ID(N'dbo.OutboxEvents', N'U') IS NOT NULL OR EXISTS (SELECT 1 FROM sys
             $billingTx = $billingConn.BeginTransaction()
             try {
                 Invoke-NonQuery -Connection $billingConn -Transaction $billingTx -Sql @"
-IF OBJECT_ID(N'dbo.Bills', N'U') IS NOT NULL OR EXISTS (SELECT 1 FROM sys.synonyms WHERE schema_id = SCHEMA_ID(N'dbo') AND name = N'Bills') DELETE FROM dbo.Bills;
+IF OBJECT_ID(N'billing.Bills', N'U') IS NOT NULL DELETE FROM billing.Bills;
 IF OBJECT_ID(N'dbo.OrderContextSnapshots', N'U') IS NOT NULL DELETE FROM dbo.OrderContextSnapshots;
 IF OBJECT_ID(N'dbo.OutboxEvents', N'U') IS NOT NULL OR EXISTS (SELECT 1 FROM sys.synonyms WHERE schema_id = SCHEMA_ID(N'dbo') AND name = N'OutboxEvents') DELETE FROM dbo.OutboxEvents;
 "@ | Out-Null
