@@ -4,7 +4,7 @@ Mục tiêu: Samsung SM-A528B → `adb reverse tcp:5100 tcp:5100` → Gateway lo
 
 ## Trước buổi demo
 
-1. Sạc laptop và Samsung (ít nhất 25%); chuẩn bị cáp USB, bật USB debugging, cho phép ADB trên điện thoại. Wi-Fi không bắt buộc cho backend local qua USB.
+1. Sạc laptop và Samsung (ít nhất 30%, nên >=60% hoặc cắm nguồn ổn định); chuẩn bị cáp USB, bật USB debugging, cho phép ADB trên điện thoại. Wi-Fi không bắt buộc cho backend local qua USB.
 2. Mở Docker Desktop. Chạy từ `D:\Quang\VietTable`:
 
    ```powershell
@@ -14,8 +14,8 @@ Mục tiêu: Samsung SM-A528B → `adb reverse tcp:5100 tcp:5100` → Gateway lo
    ```
 
    Installer dùng `adb install -r`, giữ app data/session và tạo reverse. Nếu không cần cài lại, bỏ qua bước install.
-3. Chuẩn bị một tài khoản customer **riêng cho demo** qua màn Register hoặc API register hợp lệ. Ghi username vào ghi chú cá nhân; không commit password. Để preflight xác minh login, đặt `VIETTABLE_DEMO_USERNAME` và `VIETTABLE_DEMO_PASSWORD` trong PowerShell session hiện tại, rồi xoá biến sau demo. Không dùng tài khoản cá nhân nếu có thể tránh.
-4. Chuẩn bị tài khoản Cashier đúng chi nhánh và mở `http://localhost:5100/app/cashier/Staff/Account/Login` trong browser. ONSITE chỉ thành công sau thao tác xác nhận thu tiền của Cashier; Android không tự đánh dấu thành công.
+3. Customer rehearsal 2026-09-24 đã dùng tài khoản hiện có `Quang`, không tạo account mới. Chỉ dùng tài khoản này khi chủ tài khoản cho phép; ưu tiên customer riêng nếu tạo sau này. Preflight xác minh qua `VIETTABLE_DEMO_USERNAME`/`VIETTABLE_DEMO_PASSWORD` trong **process environment**, hoặc file `artifacts/demo-customer.credential.xml` xuất bằng `Get-Credential | Export-Clixml` trên cùng Windows user. Không commit hoặc in password. Preflight thu hồi refresh token của lần login kiểm tra.
+4. Cashier rehearsal đã dùng tài khoản role `CASHIER` ở chi nhánh Quận 1, không dùng Admin bypass. Preflight nhận `VIETTABLE_TEST_CASHIER_USERNAME`/`VIETTABLE_TEST_CASHIER_PASSWORD` hoặc `artifacts/demo-cashier.credential.xml`; đăng nhập UI tại `http://localhost:5100/app/cashier/Staff/Account/Login`. ONSITE chỉ thành công sau thao tác xác nhận thu tiền của Cashier; Android không tự đánh dấu thành công. Khi đổi chi nhánh, xác minh lại scope Cashier.
 5. Chạy `powershell -ExecutionPolicy Bypass -File .\scripts\demo-find-table.ps1` ngay trước khi chọn bàn. Script chỉ đọc Catalog + Orders và loại bàn có session/order đang active. Không xem mã QR in sẵn là luôn trống; chọn lại khi fixture thay đổi. Nếu muốn đặt bàn, kiểm tra availability đúng ngày/giờ trong app.
    Chạy `powershell -ExecutionPolicy Bypass -File .\scripts\demo-fixture-audit.ps1` để biết số phiên, order, payment PENDING, split bill OPEN và reservation sắp tới. Số lớn không đồng nghĩa lỗi toàn hệ thống; tuyệt đối không xoá SQL để làm số về 0.
 6. Với hàng đã chọn, dùng cột `QrCode` để nhập tay. Muốn demo camera, hiển thị QR mã đó trên **màn hình khác/giấy**, không phải ngay trên Samsung. QR là artifact kiểm thử, không phải fallback trong app.
@@ -29,12 +29,21 @@ powershell -ExecutionPolicy Bypass -File .\scripts\demo-preflight.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\demo-find-table.ps1
 ```
 
-Preflight kiểm tra Docker, 8 container, 6 `/readyz`, SQL `SELECT 1`, RabbitMQ ping, Samsung, reverse, APK, pin, launch và AndroidRuntime sau launch. Exit code khác 0 là chưa sẵn sàng. Nó không tạo account, reservation, session hoặc payment. `Demo login MANUAL` nghĩa là chưa cung cấp credential qua biến môi trường; đăng nhập thử trên app trước khi lên trình bày.
+Preflight kiểm tra Docker, 8 container, 6 `/readyz`, SQL `SELECT 1`, RabbitMQ ping, Samsung, reverse, APK, pin >=30%, launch, AndroidRuntime, customer login/profile và Cashier role/branch. Exit code khác 0 là chưa sẵn sàng. Nó không tạo account, reservation, session hoặc payment. Nếu thiếu credential, preflight báo `DEMO NOT READY`; đặt biến môi trường trong cùng PowerShell chạy script hoặc tạo artifact mã hóa, rồi chạy lại.
+
+Checklist 5 phút trước bảo vệ:
+
+- [ ] Samsung >=60% hoặc đang cắm sạc ổn định.
+- [ ] Docker đang chạy; `demo-preflight.ps1` exit 0.
+- [ ] Customer credential đã xác minh.
+- [ ] Cashier credential/role/chi nhánh đã xác minh.
+- [ ] `demo-find-table.ps1` vừa được chạy lại; bàn không có active Orders session/order.
+- [ ] QR của đúng bàn đã sẵn sàng trên màn hình khác, hoặc dùng nhập mã thủ công.
 
 ## Trong demo (8–12 phút)
 
 1. Login → Home → Branch/Menu (dữ liệu qua Gateway).
-2. Quét QR của bàn trống đã xác minh, hoặc nhập mã bàn thủ công → validate → walk-in/check-in → Dining Session. Reservation có thể trình bày riêng nếu slot/bàn thực sự phù hợp.
+2. Nhập mã QR của bàn trống đã xác minh → validate → walk-in/check-in → Dining Session. Quét camera là tùy chọn sau khi đã thử QR vật lý; rehearsal 2026-09-24 mới dùng manual QR. Reservation có thể trình bày riêng nếu slot/bàn thực sự phù hợp.
 3. Thêm món → Cart → gửi Order → Order Tracking.
 4. Gọi nhân viên → xem service request; nếu realtime không đến ngay, refresh REST.
 5. Checkout quote → ONSITE PENDING → Cashier web xác nhận thu tiền → Android cập nhật SUCCEEDED → Invoice → Review.

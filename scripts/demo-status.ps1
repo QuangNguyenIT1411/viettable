@@ -8,6 +8,17 @@ $adb = 'D:\Quang\Android\platform-tools\adb.exe'
 $package = 'com.restaurant.viettable'
 $failed = [Collections.Generic.List[string]]::new()
 
+function Resolve-DemoCredential([string]$UsernameVariable, [string]$PasswordVariable, [string]$FileName) {
+    $username = [Environment]::GetEnvironmentVariable($UsernameVariable)
+    $password = [Environment]::GetEnvironmentVariable($PasswordVariable)
+    if ($username -and $password) { return @{ Username=$username; Password=$password } }
+    $path = Join-Path (Split-Path -Parent $PSScriptRoot) "artifacts\$FileName"
+    if (-not (Test-Path -LiteralPath $path)) { return $null }
+    $credential = Import-Clixml -LiteralPath $path
+    if ($credential -isnot [System.Management.Automation.PSCredential]) { throw "Invalid credential artifact: $FileName" }
+    return @{ Username=$credential.UserName; Password=$credential.GetNetworkCredential().Password }
+}
+
 function Report([string]$Name, [bool]$Ok, [string]$Reason = '') {
     if ($Ok) { Write-Host ("{0,-18} OK" -f $Name) }
     else {
@@ -78,7 +89,7 @@ if ($device) {
     $batteryText = (& $adb -s $device shell dumpsys battery | Select-String '^\s*level:\s*(\d+)' | Select-Object -First 1).Matches.Groups[1].Value
     $battery = 0
     if ([int]::TryParse($batteryText, [ref]$battery)) {
-        Report 'Battery' ($battery -ge 25) "$battery% (charge phone before demo)"
+        Report 'Battery' ($battery -ge 30) "$battery% (minimum 30%; prefer 60%)"
     }
     if ($LaunchApp -and $hasApk) {
         $since = [long]((& $adb -s $device shell date '+%s').Trim())
@@ -92,14 +103,46 @@ if ($device) {
     }
 }
 
-if ($env:VIETTABLE_DEMO_USERNAME -and $env:VIETTABLE_DEMO_PASSWORD) {
+$customerCredential = Resolve-DemoCredential 'VIETTABLE_DEMO_USERNAME' 'VIETTABLE_DEMO_PASSWORD' 'demo-customer.credential.xml'
+if ($customerCredential) {
+    $login = $null
     try {
-        $body = @{ username=$env:VIETTABLE_DEMO_USERNAME; password=$env:VIETTABLE_DEMO_PASSWORD } | ConvertTo-Json
+        $body = @{ username=$customerCredential.Username; password=$customerCredential.Password } | ConvertTo-Json
         $login = Invoke-RestMethod -Method Post 'http://127.0.0.1:5100/api/mobile/v1/auth/login' -Body $body -ContentType 'application/json' -TimeoutSec 8
-        Report 'Demo login' ([bool]$login.accessToken) 'login returned no access token'
-    } catch { Report 'Demo login' $false 'credentials rejected or API unavailable' }
+        if (-not $login.accessToken) { throw 'missing access token' }
+        $profile = Invoke-RestMethod -Method Get 'http://127.0.0.1:5100/api/mobile/v1/me' -Headers @{Authorization="Bearer $($login.accessToken)"} -TimeoutSec 8
+        Report 'Demo customer' ([bool]$profile) 'authenticated profile unavailable'
+    } catch { Report 'Demo customer' $false 'credentials rejected or API unavailable' }
+    finally {
+        if ($login -and $login.refreshToken) {
+            try {
+                $body = @{ refreshToken=$login.refreshToken } | ConvertTo-Json
+                Invoke-RestMethod -Method Post 'http://127.0.0.1:5100/api/mobile/v1/auth/logout' -Body $body -ContentType 'application/json' -TimeoutSec 8 | Out-Null
+            } catch { Write-Warning 'Could not revoke the short-lived preflight login session.' }
+        }
+    }
 } else {
-    Write-Host ('{0,-18} MANUAL (set VIETTABLE_DEMO_USERNAME/PASSWORD to verify)' -f 'Demo login')
+    Report 'Demo customer' $false 'set process env credential or encrypted artifacts/demo-customer.credential.xml'
+}
+
+$cashierCredential = Resolve-DemoCredential 'VIETTABLE_TEST_CASHIER_USERNAME' 'VIETTABLE_TEST_CASHIER_PASSWORD' 'demo-cashier.credential.xml'
+if ($cashierCredential) {
+    try {
+        $staffSession = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+        $body = @{ username=$cashierCredential.Username; password=$cashierCredential.Password } | ConvertTo-Json
+        $login = Invoke-RestMethod -Method Post 'http://127.0.0.1:5100/api/gateway/staff/cashier/auth/login' -Body $body -ContentType 'application/json' -WebSession $staffSession -TimeoutSec 8
+        $staff = $login.session.staff
+        $valid = $login.success -and $staff.roleCode -eq 'CASHIER' -and $staff.branchId -gt 0
+        Report 'Demo cashier' $valid 'login failed, wrong role or no branch'
+        if ($valid) { Write-Host "Cashier branch ID: $($staff.branchId)" }
+    } catch { Report 'Demo cashier' $false 'credentials rejected or API unavailable' }
+    finally {
+        if ($staffSession) {
+            try { Invoke-RestMethod -Method Post 'http://127.0.0.1:5100/api/gateway/staff/cashier/auth/logout' -WebSession $staffSession -TimeoutSec 8 | Out-Null } catch { }
+        }
+    }
+} else {
+    Report 'Demo cashier' $false 'set process env credential or encrypted artifacts/demo-cashier.credential.xml'
 }
 
 if ($failed.Count -eq 0) { Write-Host 'DEMO PREFLIGHT OK (business flow still requires manual rehearsal)'; exit 0 }
