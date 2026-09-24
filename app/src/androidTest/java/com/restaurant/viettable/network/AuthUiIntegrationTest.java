@@ -73,6 +73,13 @@ public class AuthUiIntegrationTest {
         session.loginThroughGateway();
         scenario = ActivityScenario.launch(MainActivity.class);
         UiTestActions.waitForHomeCatalog(scenario);
+        scenario.onActivity(activity -> SignalRManager.getInstance().pause());
+        com.restaurant.viettable.testing.UiWaiter.until("SignalR stopped before reconnect",
+                UiTestActions.activity(scenario), ignored -> SignalRManager.getInstance().getState()
+                        == SignalRManager.ConnectionState.STOPPED);
+        scenario.onActivity(activity -> SignalRManager.getInstance().resume());
+        com.restaurant.viettable.testing.UiWaiter.until("SignalR reconnected before logout",
+                UiTestActions.activity(scenario), ignored -> SignalRManager.getInstance().isConnected());
         onView(withId(R.id.nav_profile)).perform(click());
         UiTestActions.waitFragment(scenario, com.restaurant.viettable.ui.profile.ProfileFragment.class);
         onView(withId(R.id.btnLogout)).perform(scrollTo(), click());
@@ -80,6 +87,15 @@ public class AuthUiIntegrationTest {
         UiTestActions.waitFragment(scenario, com.restaurant.viettable.ui.auth.WelcomeFragment.class);
         assertFalse(session.client.hasSession());
         assertEquals(SignalRManager.ConnectionState.STOPPED, SignalRManager.getInstance().getState());
+        UiTestActions.openLogin(scenario);
+        onView(withId(R.id.etEmail)).perform(replaceText(session.username), closeSoftKeyboard());
+        onView(withId(R.id.etPassword)).perform(replaceText(session.password), closeSoftKeyboard());
+        onView(withId(R.id.btnSubmitLogin)).perform(click());
+        UiTestActions.waitFragment(scenario, com.restaurant.viettable.ui.branch.BranchListFragment.class);
+        onView(withId(R.id.rvBranches)).perform(clickChildInFirstRecyclerRow(R.id.btnSelectBranch));
+        UiTestActions.waitForHomeCatalog(scenario);
+        com.restaurant.viettable.testing.UiWaiter.until("SignalR connected after login again",
+                UiTestActions.activity(scenario), ignored -> SignalRManager.getInstance().isConnected());
     }
 
     private static ViewAction clickChildInFirstRecyclerRow(int childId) {

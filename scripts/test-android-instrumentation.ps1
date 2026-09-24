@@ -124,6 +124,7 @@ if (($Tier -in @('Integration', 'All')) -and [string]::IsNullOrWhiteSpace($QrCod
 $classes = switch ($Tier) {
     'Smoke' { @('com.restaurant.viettable.network.AppLaunchSmokeTest') }
     'Integration' { @(
+        'com.restaurant.viettable.network.LifecycleRecoveryTest',
         'com.restaurant.viettable.network.AuthUiIntegrationTest',
         'com.restaurant.viettable.network.FaqUiIntegrationTest',
         'com.restaurant.viettable.network.QrManualUiIntegrationTest') }
@@ -131,6 +132,7 @@ $classes = switch ($Tier) {
         'com.restaurant.viettable.network.SecureTokenStoreDeviceTest',
         'com.restaurant.viettable.network.AuthSecurityRuntimeTest') }
     'All' { @(
+        'com.restaurant.viettable.network.LifecycleRecoveryTest',
         'com.restaurant.viettable.network.AppLaunchSmokeTest',
         'com.restaurant.viettable.network.AuthUiIntegrationTest',
         'com.restaurant.viettable.network.FaqUiIntegrationTest',

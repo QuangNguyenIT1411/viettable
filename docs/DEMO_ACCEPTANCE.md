@@ -40,3 +40,9 @@
 ## Lần trình bày kế tiếp
 
 Không sửa code thêm cho main flow đã PASS. Sạc Samsung >=60% hoặc cắm nguồn; chạy `demo-preflight.ps1` với credential runtime, rồi `demo-find-table.ps1` ngay trước khi quét. Chọn bàn cùng chi nhánh Cashier và đối chiếu payment mới theo payment/session code + amount trước khi confirm. Không reset database/volume.
+
+## Lifecycle stability follow-up — 2026-09-24
+
+Crash Splash sau saved state và race SignalR stop-during-negotiate đã được sửa trong logic Android; không đổi ảnh/icon/backend. Samsung restart Gateway + resume bằng Recents **10/10 PASS, 0 crash**, cùng PID, một kết nối phục hồi và REST resync mỗi vòng. Gateway down **25,4 giây** rồi tự phục hồi; rapid foreground/background 10 vòng không crash; Home restore sau `am kill` tải lại menu thật. Build, 31 unit tests, instrumentation (bao gồm hồi quy lifecycle/fallback/logout-login) PASS theo kết quả chi tiết tại `ANDROID_LIFECYCLE_SIGNALR_FIX.md`.
+
+Không mở rộng acceptance sang toàn bộ process-death UI: MenuFragment còn lỗi bind catalog sau restore process ngay tại màn Thực đơn; quay về Home/mở lại Menu phục hồi được. Không tạo order/payment mới trong lượt lifecycle này và không thay kết quả B6/ONSITE đã nghiệm thu ở trên.

@@ -60,4 +60,11 @@ Checklist 5 phút trước bảo vệ:
 | ONSITE chưa thành công | Kiểm tra đúng Cashier/chi nhánh và trạng thái PENDING; chỉ xác nhận khi giả lập thao tác thu tiền thật trong buổi demo. Không dùng VNPAY. |
 | Docker/API lỗi | Chạy preflight, xem container/log liên quan; không `docker compose down -v`. |
 
+### Lifecycle sau khi Gateway restart (2026-09-24)
+
+- Đã nghiệm thu Samsung: Home → nền → restart Gateway → mở từ Recents **10/10**, không crash; reconnect và REST resync mỗi vòng.
+- Khi Gateway tạm tắt, giữ app và chờ retry; backoff có thể mất khoảng 30 giây sau khi API sẵn sàng. Không cần xóa dữ liệu/đăng nhập lại vì lỗi mạng.
+- Nếu Android kill process ngay ở màn Thực đơn và danh sách trống, quay về Home rồi mở lại Thực đơn. Đây là giới hạn bind lại catalog có sẵn, không phải lỗi SignalR. Home process restore đã PASS.
+- Evidence và regression: `ANDROID_LIFECYCLE_SIGNALR_FIX.md`.
+
 Trạng thái bên ngoài phạm vi demo: Google OAuth E2E cần cấu hình Google Cloud; VNPAY external cần merchant credentials/callback public; production HTTPS cần server/domain thật. Không trình bày ba mục này là đã nghiệm thu.

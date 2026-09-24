@@ -3,6 +3,7 @@ package com.restaurant.viettable.ui.auth;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,8 @@ public class SplashFragment extends BaseFragment {
     private FragmentSplashBinding binding;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable navigateRunnable;
+    private long navigateAt;
+    private boolean navigated;
 
     @Nullable
     @Override
@@ -48,19 +51,35 @@ public class SplashFragment extends BaseFragment {
         ImageLoader.getInstance().load(SPLASH_BG_URL, R.drawable.splash_bg, binding.ivSplashBg);
         ImageLoader.getInstance().load(SPLASH_LOGO_URL, R.drawable.ic_splash_lotus_3d, binding.ivSplashLogo);
 
+        // Preserve the existing visual duration across pause/recreation. The timer
+        // never owns navigation while the FragmentManager has saved its state.
+        navigateAt = savedInstanceState == null ? SystemClock.uptimeMillis() + 1200
+                : savedInstanceState.getLong("navigateAt", SystemClock.uptimeMillis());
         navigateRunnable = () -> {
-            if (isAdded() && getActivity() != null) {
-                if (appStateManager.isLoggedIn()) {
-                    setBottomNavVisible(true);
-                    navigateTo(HomeFragment.newInstance());
-                } else {
-                    navigateTo(WelcomeFragment.newInstance());
-                }
-            }
+            if (navigated || binding == null || !isResumed()
+                    || getParentFragmentManager().isStateSaved()
+                    || getParentFragmentManager().findFragmentById(R.id.fragment_container) != this) return;
+            navigated = true;
+            boolean loggedIn = appStateManager.isLoggedIn();
+            setBottomNavVisible(loggedIn);
+            navigationCoordinator.navigateTo(loggedIn ? HomeFragment.newInstance()
+                    : WelcomeFragment.newInstance(), false);
         };
+    }
 
-        // 1200ms splash duration as per requirements (500-1200ms)
-        handler.postDelayed(navigateRunnable, 1200);
+    @Override public void onResume() {
+        super.onResume();
+        if (!navigated && navigateRunnable != null) handler.postAtTime(navigateRunnable, navigateAt);
+    }
+
+    @Override public void onPause() {
+        if (navigateRunnable != null) handler.removeCallbacks(navigateRunnable);
+        super.onPause();
+    }
+
+    @Override public void onSaveInstanceState(@NonNull Bundle outState) {
+        outState.putLong("navigateAt", navigateAt);
+        super.onSaveInstanceState(outState);
     }
 
     @Override

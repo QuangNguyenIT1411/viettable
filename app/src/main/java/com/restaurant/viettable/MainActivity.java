@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     @Override
     protected void onStart() {
         super.onStart();
-        SignalRManager.getInstance().startIfAuthenticated();
+        SignalRManager.getInstance().resume();
     }
 
     @Override

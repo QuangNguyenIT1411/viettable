@@ -60,9 +60,13 @@ public final class SignalRManager {
     private HubConnection hub;
     private volatile ConnectionState state = ConnectionState.STOPPED;
     private boolean initialized;
+    private boolean foreground;
     private boolean desired;
     private boolean startInProgress;
     private boolean stopInProgress;
+    private boolean stopAfterStart;
+    private boolean authRefreshInProgress;
+    private long sessionGeneration;
     private boolean authRefreshAttempted;
     private boolean orderRefreshInFlight;
     private boolean orderRefreshPending;
@@ -80,32 +84,39 @@ public final class SignalRManager {
 
     public void addListener(Listener listener) {
         listeners.add(listener);
-        main.post(() -> listener.onConnectionStateChanged(state));
+        main.post(() -> { if (listeners.contains(listener)) listener.onConnectionStateChanged(state); });
     }
 
     public void removeListener(Listener listener) { listeners.remove(listener); }
 
+    public synchronized void resume() {
+        foreground = true;
+        startIfAuthenticated();
+    }
+
     public synchronized void startIfAuthenticated() {
-        if (!initialized || !ApiClient.getInstance().hasSession()) return;
+        if (!initialized || !foreground || !ApiClient.getInstance().hasSession()) return;
         desired = true;
-        main.removeCallbacks(reconnectRunnable);
-        if (state == ConnectionState.CONNECTED || startInProgress || stopInProgress) return;
+        if (state == ConnectionState.CONNECTED || startInProgress || stopInProgress
+                || authRefreshInProgress || state == ConnectionState.RECONNECTING) return;
         startConnection(retryAttempt > 0);
     }
 
     public synchronized void pause() {
+        foreground = false;
         desired = false;
         main.removeCallbacks(reconnectRunnable);
-        stopHub(false);
+        stopHub();
     }
 
     public synchronized void stopAndClear() {
         desired = false;
+        sessionGeneration++;
         retryAttempt = 0;
         authRefreshAttempted = false;
         main.removeCallbacks(reconnectRunnable);
         deduplicator.clear();
-        stopHub(true);
+        stopHub();
     }
 
     private synchronized void ensureHub() {
@@ -116,47 +127,78 @@ public final class SignalRManager {
                     return Single.just(attemptedAccessToken);
                 }))
                 .build();
-        hub.on("orderUpdated", this::handleOrderUpdated, OrderUpdatedEvent.class);
-        hub.on("serviceRequestUpdated", this::handleServiceRequestUpdated,
+        HubConnection current = hub;
+        current.on("orderUpdated", event -> handleOrderUpdated(current, event), OrderUpdatedEvent.class);
+        current.on("serviceRequestUpdated", event -> handleServiceRequestUpdated(current, event),
                 ServiceRequestUpdatedEvent.class);
-        hub.onClosed(error -> main.post(() -> handleClosed(error)));
+        current.onClosed(error -> main.post(() -> handleClosed(current, error)));
     }
 
     private synchronized void startConnection(boolean reconnecting) {
-        if (!desired || startInProgress || stopInProgress || !ApiClient.getInstance().hasSession()) return;
+        if (!desired || startInProgress || stopInProgress || authRefreshInProgress
+                || !ApiClient.getInstance().hasSession()) return;
+        main.removeCallbacks(reconnectRunnable);
         ensureHub();
         if (hub.getConnectionState() == HubConnectionState.CONNECTED) {
             changeState(ConnectionState.CONNECTED);
             return;
         }
         startInProgress = true;
+        HubConnection current = hub;
+        long generation = sessionGeneration;
         changeState(reconnecting ? ConnectionState.RECONNECTING : ConnectionState.CONNECTING);
-        hub.start().subscribe(
-                () -> main.post(this::handleConnected),
-                error -> main.post(() -> handleStartFailure(error)));
+        current.start().subscribe(
+                () -> main.post(() -> handleConnected(current)),
+                error -> main.post(() -> handleStartFailure(current, generation, error)));
     }
 
-    private synchronized void handleConnected() {
+    private synchronized void handleConnected(HubConnection current) {
+        if (hub != current) return;
         startInProgress = false;
+        if (stopAfterStart || !desired || !ApiClient.getInstance().hasSession()) {
+            stopHub();
+            return;
+        }
+        if (current.getConnectionState() != HubConnectionState.CONNECTED) {
+            handleClosed(current, null);
+            return;
+        }
         retryAttempt = 0;
         authRefreshAttempted = false;
         changeState(ConnectionState.CONNECTED);
         Log.i(TAG, "connected");
-        resyncCanonicalState();
+        resyncCanonicalState(current);
     }
 
-    private synchronized void handleStartFailure(Throwable error) {
+    private synchronized void handleStartFailure(HubConnection current, long generation, Throwable error) {
+        if (hub != current) return;
         startInProgress = false;
-        if (!desired) return;
+        stopAfterStart = false;
+        hub = null;
+        if (!desired) { changeState(ConnectionState.STOPPED); return; }
+        if (generation != sessionGeneration) {
+            changeState(ConnectionState.STOPPED);
+            startIfAuthenticated();
+            return;
+        }
         String message = error == null ? "" : String.valueOf(error.getMessage());
         Log.w(TAG, "connection failed: " + safeFailure(message));
         if (!authRefreshAttempted && isAuthenticationFailure(message)) {
             authRefreshAttempted = true;
+            authRefreshInProgress = true;
+            String rejectedToken = attemptedAccessToken;
             authExecutor.execute(() -> {
-                boolean refreshed = ApiClient.getInstance().refreshAccessTokenBlocking(attemptedAccessToken);
+                boolean refreshed = ApiClient.getInstance().refreshAccessTokenBlocking(rejectedToken);
                 main.post(() -> {
-                    if (refreshed && desired) startConnection(true);
-                    else scheduleReconnect();
+                    synchronized (SignalRManager.this) {
+                        authRefreshInProgress = false;
+                        if (!desired) return;
+                        if (generation != sessionGeneration) {
+                            changeState(ConnectionState.STOPPED);
+                            startIfAuthenticated();
+                        } else if (refreshed) startConnection(true);
+                        else scheduleReconnect();
+                    }
                 });
             });
             return;
@@ -164,9 +206,11 @@ public final class SignalRManager {
         scheduleReconnect();
     }
 
-    private synchronized void handleClosed(Exception error) {
-        startInProgress = false;
-        if (stopInProgress) return;
+    private synchronized void handleClosed(HubConnection current, Exception error) {
+        // start()/stop() subscriptions own their terminal transition. An old Hub
+        // must never clear the flags or reconnect a newer authenticated session.
+        if (hub != current || startInProgress || stopInProgress) return;
+        hub = null;
         if (!desired) {
             changeState(ConnectionState.STOPPED);
             return;
@@ -176,7 +220,10 @@ public final class SignalRManager {
     }
 
     private synchronized void scheduleReconnect() {
-        if (!desired) return;
+        if (!desired || !ApiClient.getInstance().hasSession()) {
+            changeState(ConnectionState.STOPPED);
+            return;
+        }
         changeState(ConnectionState.RECONNECTING);
         main.removeCallbacks(reconnectRunnable);
         long delay = RETRY_DELAYS_MS[Math.min(retryAttempt, RETRY_DELAYS_MS.length - 1)];
@@ -184,32 +231,48 @@ public final class SignalRManager {
         main.postDelayed(reconnectRunnable, delay);
     }
 
-    private synchronized void stopHub(boolean discard) {
+    private synchronized void stopHub() {
         main.removeCallbacks(reconnectRunnable);
-        startInProgress = false;
-        HubConnection current = hub;
-        if (discard) hub = null;
-        if (current == null || current.getConnectionState() == HubConnectionState.DISCONNECTED) {
-            stopInProgress = false;
+        if (startInProgress) {
+            // SignalR 8.0.30 stop-during-negotiate dereferences a null transport
+            // when negotiate fails. Drain start first; never overlap start/stop.
+            stopAfterStart = true;
             changeState(ConnectionState.STOPPED);
+            return;
+        }
+        if (stopInProgress) return;
+        HubConnection current = hub;
+        stopAfterStart = false;
+        if (current == null || current.getConnectionState() == HubConnectionState.DISCONNECTED) {
+            hub = null;
+            changeState(ConnectionState.STOPPED);
+            if (desired) startIfAuthenticated();
             return;
         }
         stopInProgress = true;
         current.stop().subscribe(
-                () -> main.post(() -> {
-                    stopInProgress = false;
-                    changeState(ConnectionState.STOPPED);
-                    if (desired) startIfAuthenticated();
-                }),
+                () -> main.post(() -> finishStop(current)),
                 error -> main.post(() -> {
-                    stopInProgress = false;
-                    changeState(ConnectionState.STOPPED);
-                    if (desired) startIfAuthenticated();
+                    Log.w(TAG, "stop failed: " + safeFailure(error.getMessage()));
+                    finishStop(current);
                 }));
     }
 
-    private void handleOrderUpdated(OrderUpdatedEvent event) {
+    private synchronized void finishStop(HubConnection current) {
+        if (hub != current) return;
+        hub = null;
+        stopInProgress = false;
+        changeState(ConnectionState.STOPPED);
+        if (desired) startIfAuthenticated();
+    }
+
+    private synchronized boolean acceptsEvents(HubConnection current) {
+        return desired && hub == current && state == ConnectionState.CONNECTED;
+    }
+
+    private void handleOrderUpdated(HubConnection current, OrderUpdatedEvent event) {
         main.post(() -> {
+            if (!acceptsEvents(current) || event == null) return;
             DiningSession session = AppStateManager.getInstance().getActiveDiningSession();
             int sessionId = parseId(session == null ? null : session.getId());
             Set<Integer> orderIds = new HashSet<>();
@@ -225,8 +288,9 @@ public final class SignalRManager {
         });
     }
 
-    private void handleServiceRequestUpdated(ServiceRequestUpdatedEvent event) {
+    private void handleServiceRequestUpdated(HubConnection current, ServiceRequestUpdatedEvent event) {
         main.post(() -> {
+            if (!acceptsEvents(current) || event == null) return;
             DiningSession session = AppStateManager.getInstance().getActiveDiningSession();
             int sessionId = parseId(session == null ? null : session.getId());
             if (!RealtimeEventPolicy.appliesToService(sessionId, event.diningSessionId)) return;
@@ -237,9 +301,11 @@ public final class SignalRManager {
         });
     }
 
-    private void resyncCanonicalState() {
+    private void resyncCanonicalState(HubConnection current) {
         MobileRepository.getInstance().loadActiveSession(new MobileRepository.Callback<DiningSession>() {
             @Override public void onSuccess(DiningSession value) {
+                if (!acceptsEvents(current)) return;
+                Log.i(TAG, "REST resync complete");
                 if (value != null) refreshServiceCanonical();
             }
             @Override public void onError(ApiException error) {
@@ -249,6 +315,7 @@ public final class SignalRManager {
     }
 
     private void refreshOrdersCanonical() {
+        if (!desired || !ApiClient.getInstance().hasSession()) return;
         if (orderRefreshInFlight) { orderRefreshPending = true; return; }
         orderRefreshInFlight = true;
         MobileRepository.getInstance().loadOrders("active", new MobileRepository.Callback<java.util.List<Order>>() {
@@ -263,6 +330,7 @@ public final class SignalRManager {
     }
 
     private void refreshServiceCanonical() {
+        if (!desired || !ApiClient.getInstance().hasSession()) return;
         if (serviceRefreshInFlight) { serviceRefreshPending = true; return; }
         if (AppStateManager.getInstance().getActiveDiningSession() == null) return;
         serviceRefreshInFlight = true;
@@ -279,7 +347,9 @@ public final class SignalRManager {
 
     private void changeState(ConnectionState next) {
         state = next;
-        for (Listener listener : listeners) main.post(() -> listener.onConnectionStateChanged(next));
+        for (Listener listener : listeners) main.post(() -> {
+            if (listeners.contains(listener)) listener.onConnectionStateChanged(state);
+        });
     }
 
     private static int parseId(String value) {

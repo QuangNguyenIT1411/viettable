@@ -51,9 +51,9 @@ public class AuthSecurityRuntimeTest {
             if (state == SignalRManager.ConnectionState.CONNECTED) connected.countDown();
         };
         try {
-            manager.initialize(); manager.addListener(listener); manager.startIfAuthenticated();
+            manager.initialize(); manager.addListener(listener); manager.resume();
             assertTrue("SignalR did not connect", connected.await(30, TimeUnit.SECONDS));
-        } finally { manager.removeListener(listener); manager.stopAndClear(); }
+        } finally { manager.removeListener(listener); manager.pause(); manager.stopAndClear(); }
         assertTrue(client.hasSession());
         assertFalse(ctx.getSharedPreferences("viettable_session",0).contains("access_token"));
         assertFalse(ctx.getSharedPreferences("viettable_session",0).contains("refresh_token"));
