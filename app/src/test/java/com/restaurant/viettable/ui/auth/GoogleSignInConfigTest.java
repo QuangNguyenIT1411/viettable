@@ -7,6 +7,11 @@ import static org.junit.Assert.assertTrue;
 
 public class GoogleSignInConfigTest {
     @Test
+    public void buildUsesConfiguredGoogleClient() {
+        assertTrue(GoogleSignInConfig.isConfigured(com.restaurant.viettable.BuildConfig.GOOGLE_WEB_CLIENT_ID));
+    }
+
+    @Test
     public void acceptsGoogleWebClientId() {
         assertTrue(GoogleSignInConfig.isConfigured(
                 "123456-example.apps.googleusercontent.com"));

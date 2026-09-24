@@ -2,6 +2,30 @@ namespace SelfRestaurant.Backend.ContractTests;
 
 public sealed class MobileAuthB1Tests
 {
+    [Fact]
+    public void Google_mobile_and_legacy_web_have_separate_audience_configuration()
+    {
+        var mobile = ReadRepoFile("src/Services/SelfRestaurant.Identity.Api/Controllers/MobileAuthController.cs");
+        var web = ReadRepoFile("src/Services/SelfRestaurant.Identity.Api/Controllers/IdentityController.cs");
+        Assert.Contains("\"Authentication:Google:ClientId\"", mobile, StringComparison.Ordinal);
+        Assert.DoesNotContain("Authentication:Google:WebClientId", mobile, StringComparison.Ordinal);
+        Assert.Contains("\"Authentication:Google:WebClientId\"", web, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"Authentication:Google:ClientId\"", web, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Google_keeps_verified_identity_and_password_provider_conflict_guards()
+    {
+        var source = ReadRepoFile("src/Services/SelfRestaurant.Identity.Api/Controllers/MobileAuthController.cs");
+        Assert.Contains("GoogleJsonWebSignature.ValidateAsync", source, StringComparison.Ordinal);
+        Assert.Contains("Audience = [clientId.Trim()]", source, StringComparison.Ordinal);
+        Assert.Contains("payload.EmailVerified != true", source, StringComparison.Ordinal);
+        Assert.Contains("string.IsNullOrWhiteSpace(payload.Subject)", source, StringComparison.Ordinal);
+        Assert.Contains("\"email_provider_conflict\"", source, StringComparison.Ordinal);
+        // google_ + a GUID in N format is 39 chars; slicing it to 50 throws for every new user.
+        Assert.Contains("var baseUsername = $\"google_{Guid.NewGuid():N}\";", source, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("register")]
     [InlineData("login")]

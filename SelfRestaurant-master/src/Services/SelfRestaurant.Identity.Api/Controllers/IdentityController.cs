@@ -144,8 +144,10 @@ public sealed class IdentityController : ControllerBase
             return BadRequest(new { message = "Thiếu mã đăng nhập Google." });
         }
 
-        var googleClientId = _configuration["Authentication:Google:ClientId"]
-            ?? Environment.GetEnvironmentVariable("SELFRESTAURANT_GOOGLE_CLIENT_ID");
+        // Legacy customer web has its own OAuth project/client. Never accept the
+        // mobile audience here just because both flows use Identity.
+        var googleClientId = _configuration["Authentication:Google:WebClientId"]
+            ?? Environment.GetEnvironmentVariable("SELFRESTAURANT_GOOGLE_WEB_CLIENT_ID");
         if (string.IsNullOrWhiteSpace(googleClientId))
         {
             return BadRequest(new { message = "Chưa cấu hình Google Client ID cho hệ thống." });

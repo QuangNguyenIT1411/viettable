@@ -116,6 +116,8 @@
       ASPNETCORE_URLS: http://+:8080
       HttpsRedirection__Enabled: "false"
       ConnectionStrings__IdentityDb: Server=db,1433;Database=RESTAURANT_IDENTITY;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
+      Authentication__Google__ClientId: ${SELFRESTAURANT_GOOGLE_CLIENT_ID:-85490395082-lgrrtpiskqdnf2d0km1c9v2a20o32vhf.apps.googleusercontent.com}
+      Authentication__Google__WebClientId: ${SELFRESTAURANT_GOOGLE_WEB_CLIENT_ID:-703089463102-cbuu53j035vbrp8ea1hespobcqpbtll7.apps.googleusercontent.com}
       ConnectionStrings__RestaurantDb: Server=db,1433;Database=RESTAURANT_IDENTITY;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
       Services__Catalog: http://catalog:8080
       Services__Orders: http://orders:8080

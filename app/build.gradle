@@ -39,8 +39,8 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        def googleWebClientId = project.findProperty("VIETTABLE_GOOGLE_WEB_CLIENT_ID") ?: "703089463102-cbuu53j035vbrp8ea1hespobcqpbtll7.apps.googleusercontent.com"
-        buildConfigField "String", "GOOGLE_WEB_CLIENT_ID", "\"${googleWebClientId}\""
+        def googleWebClientId = providers.gradleProperty('VIETTABLE_GOOGLE_WEB_CLIENT_ID').orElse('').get().trim()
+        buildConfigField 'String', 'GOOGLE_WEB_CLIENT_ID', groovy.json.JsonOutput.toJson(googleWebClientId)
     }
 
     buildTypes {

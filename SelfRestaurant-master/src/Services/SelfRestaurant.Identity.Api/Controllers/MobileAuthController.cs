@@ -122,6 +122,8 @@ public sealed class MobileAuthController : ControllerBase
         }
         if (string.IsNullOrWhiteSpace(payload.Email) || payload.EmailVerified != true)
             return Error("google_email_unverified", "Google chưa xác minh email này.", 401);
+        if (string.IsNullOrWhiteSpace(payload.Subject))
+            return Error("invalid_google_token", "Không thể xác thực tài khoản Google.", 401);
 
         var email = payload.Email.Trim();
         var subject = payload.Subject.Trim();
@@ -132,7 +134,7 @@ public sealed class MobileAuthController : ControllerBase
             return Error("email_provider_conflict", "Email này đã đăng ký bằng mật khẩu.", 409);
         if (customer is null)
         {
-            var baseUsername = $"google_{Guid.NewGuid():N}"[..50];
+            var baseUsername = $"google_{Guid.NewGuid():N}";
             customer = new Customers
             {
                 Name = string.IsNullOrWhiteSpace(payload.Name) ? email.Split('@')[0] : payload.Name.Trim(),
