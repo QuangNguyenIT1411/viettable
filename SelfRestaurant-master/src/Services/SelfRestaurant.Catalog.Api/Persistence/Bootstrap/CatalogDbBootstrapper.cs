@@ -35,6 +35,7 @@ public static class CatalogDbBootstrapper
         var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
 
         await WaitForDatabaseAsync(db, logger, cancellationToken);
+        await EnsureBranchImagesAsync(db, cancellationToken);
         await EnsureBusinessAuditTableAsync(db, cancellationToken);
         await EnsureTableNumberSchemaAsync(db, cancellationToken);
         await EnsureUnitsSchemaAsync(db, cancellationToken);
@@ -46,6 +47,27 @@ public static class CatalogDbBootstrapper
         await EnsureRecommendationMenuDataAsync(db, cancellationToken);
         await EnsureDishImagePathsAsync(db, cancellationToken);
         await EnsureIngredientIssueMethodSchemaAsync(db, cancellationToken);
+    }
+
+    // Demo branch imagery is assigned only to known empty rows. A custom/admin path wins.
+    private static async Task EnsureBranchImagesAsync(CatalogDbContext db, CancellationToken cancellationToken)
+    {
+        const string ensureColumnSql = """
+            IF COL_LENGTH(N'dbo.Branches', N'Image') IS NULL
+                ALTER TABLE dbo.Branches ADD Image NVARCHAR(500) NULL;
+            """;
+        const string repairDemoRowsSql = """
+            UPDATE dbo.Branches
+            SET Image = CASE Name
+                WHEN N'Chi nhánh Quận 1' THEN N'/images/branches/branch-quan-1-cover.webp'
+                WHEN N'Chi nhánh Gò Vấp' THEN N'/images/branches/branch-go-vap-cover.webp'
+                WHEN N'Chi nhánh Bình Thạnh' THEN N'/images/branches/branch-binh-thanh-cover.webp'
+            END
+            WHERE (Image IS NULL OR LTRIM(RTRIM(Image)) = N'')
+              AND Name IN (N'Chi nhánh Quận 1', N'Chi nhánh Gò Vấp', N'Chi nhánh Bình Thạnh');
+            """;
+        await db.Database.ExecuteSqlRawAsync(ensureColumnSql, cancellationToken);
+        await db.Database.ExecuteSqlRawAsync(repairDemoRowsSql, cancellationToken);
     }
 
     // Repair only known legacy demo paths. Admin-uploaded/custom images are never replaced.

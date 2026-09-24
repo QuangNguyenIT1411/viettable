@@ -41,6 +41,7 @@ public sealed class CatalogController : ControllerBase
                 branchId = x.BranchID,
                 name = x.Name,
                 location = x.Location,
+                image = x.Image,
             })
             .ToListAsync(cancellationToken);
 

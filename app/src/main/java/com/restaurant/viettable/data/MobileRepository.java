@@ -175,9 +175,11 @@ public final class MobileRepository {
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
                     if (row == null) continue;
-                    branches.add(new Branch(String.valueOf(row.optInt("branchId")), row.optString("name"),
+                    Branch branch = new Branch(String.valueOf(row.optInt("branchId")), row.optString("name"),
                             row.optString("location"), "", "", 0, true, "", new ArrayList<>(),
-                            0, 0, 0, 0));
+                            0, 0, 0, 0);
+                    branch.setImageUrl(api().absoluteUrl(row.optString("image", "")));
+                    branches.add(branch);
                 }
                 state.replaceBranches(branches);
                 callback.onSuccess(branches);

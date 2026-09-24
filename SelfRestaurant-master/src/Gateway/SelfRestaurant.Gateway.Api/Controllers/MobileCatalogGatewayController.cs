@@ -30,7 +30,7 @@ public sealed class MobileCatalogGatewayController : ControllerBase
         var active = tables.Tables.Where(x => x.NumberOfSeats > 0).ToArray();
         return Ok(new MobileBranchDetailResponse(branch.BranchId, branch.Name, branch.Location,
             active.Length, active.Length == 0 ? 0 : active.Min(x => x.NumberOfSeats),
-            active.Length == 0 ? 0 : active.Max(x => x.NumberOfSeats)));
+            active.Length == 0 ? 0 : active.Max(x => x.NumberOfSeats), branch.Image));
     }
 
     [HttpGet("branches/nearby")]
@@ -40,7 +40,7 @@ public sealed class MobileCatalogGatewayController : ControllerBase
         var branches = await _catalog.GetBranchesAsync(ct) ?? Array.Empty<BranchDto>();
         // Current source data stores postal addresses but no coordinates. Keep distance nullable
         // instead of fabricating geometry; coordinates can be added without breaking v1.
-        return Ok(branches.Select(x => new MobileNearbyBranchResponse(x.BranchId, x.Name, x.Location, null)).ToArray());
+        return Ok(branches.Select(x => new MobileNearbyBranchResponse(x.BranchId, x.Name, x.Location, null, x.Image)).ToArray());
     }
 
     [HttpGet("branches/{branchId:int}/areas")]

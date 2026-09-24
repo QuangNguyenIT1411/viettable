@@ -3,6 +3,9 @@
 **/.vs
 **/bin
 **/obj
+**/node_modules
+**/dist
+**/*.tsbuildinfo
 packages
 SelfRestaurant/.vs
 SelfRestaurant/bin

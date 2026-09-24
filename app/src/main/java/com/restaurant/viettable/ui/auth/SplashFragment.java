@@ -15,14 +15,8 @@ import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentSplashBinding;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.home.HomeFragment;
-import com.restaurant.viettable.util.ImageLoader;
 
 public class SplashFragment extends BaseFragment {
-
-    private static final String SPLASH_BG_URL =
-            "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1080&h=1920&fit=crop&q=85";
-    private static final String SPLASH_LOGO_URL =
-            "https://img.icons8.com/3d-fluency/200/lotus.png";
 
     public static SplashFragment newInstance() {
         return new SplashFragment();
@@ -47,9 +41,8 @@ public class SplashFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
         setStatusBarLightIcons(false); // Dark icons on light luminous photo splash
 
-        // Dynamic online image & icon loading with bundled local fallbacks
-        ImageLoader.getInstance().load(SPLASH_BG_URL, R.drawable.splash_bg, binding.ivSplashBg);
-        ImageLoader.getInstance().load(SPLASH_LOGO_URL, R.drawable.ic_splash_lotus_3d, binding.ivSplashLogo);
+        binding.ivSplashBg.setImageResource(R.drawable.splash_bg);
+        binding.ivSplashLogo.setImageResource(R.drawable.ic_splash_lotus_3d);
 
         // Preserve the existing visual duration across pause/recreation. The timer
         // never owns navigation while the FragmentManager has saved its state.

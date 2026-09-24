@@ -1,4 +1,4 @@
-export type BranchDto = { branchId: number; name: string; location?: string | null };
+export type BranchDto = { branchId: number; name: string; location?: string | null; image?: string | null };
 export type BranchTableDto = {
   tableId: number;
   branchId: number;

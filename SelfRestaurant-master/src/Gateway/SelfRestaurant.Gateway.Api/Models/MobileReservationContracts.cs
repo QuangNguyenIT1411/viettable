@@ -1,8 +1,8 @@
 namespace SelfRestaurant.Gateway.Api.Models;
 
 public sealed record MobileBranchDetailResponse(int BranchId, string Name, string? Location,
-    int ActiveTableCount, int MinSeats, int MaxSeats);
-public sealed record MobileNearbyBranchResponse(int BranchId, string Name, string? Location, double? DistanceKm);
+    int ActiveTableCount, int MinSeats, int MaxSeats, string? Image = null);
+public sealed record MobileNearbyBranchResponse(int BranchId, string Name, string? Location, double? DistanceKm, string? Image = null);
 public sealed record MobileAreaResponse(string AreaCode, string Name, int TableCount);
 public sealed record MobileTableLayoutResponse(int BranchId, string BranchName, string AreaCode,
     IReadOnlyList<MobileTableResponse> Tables);

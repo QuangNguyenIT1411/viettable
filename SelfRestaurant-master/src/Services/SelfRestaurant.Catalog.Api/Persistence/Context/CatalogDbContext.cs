@@ -36,6 +36,7 @@ public sealed class CatalogDbContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(100).IsUnicode(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Location).HasMaxLength(500);
+            entity.Property(e => e.Image).HasMaxLength(500);
             entity.Property(e => e.ManagerName).HasMaxLength(100);
             entity.Property(e => e.Name).HasMaxLength(200);
             entity.Property(e => e.OpeningHours).HasMaxLength(100);

@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace SelfRestaurant.Gateway.Api.Models;
 
-public sealed record BranchDto(int BranchId, string Name, string? Location);
+public sealed record BranchDto(int BranchId, string Name, string? Location, string? Image = null);
 
 public sealed record BranchTablesResponse(string BranchName, IReadOnlyList<BranchTableDto> Tables);
 

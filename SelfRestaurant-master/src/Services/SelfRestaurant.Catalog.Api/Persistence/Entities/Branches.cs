@@ -11,6 +11,8 @@ public partial class Branches
 
     public string? Location { get; set; }
 
+    public string? Image { get; set; }
+
     public string? ManagerName { get; set; }
 
     public string? Phone { get; set; }

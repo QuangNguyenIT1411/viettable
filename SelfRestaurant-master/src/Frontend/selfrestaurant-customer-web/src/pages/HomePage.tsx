@@ -243,6 +243,7 @@ export function HomePage() {
                 data-branch-location={branch.location ?? ""}
                 onClick={() => setSelectedBranchId(branch.branchId)}
               >
+                {branch.image ? <img className="branch-cover" src={branch.image} alt={`Không gian minh họa ${branch.name}`} loading="lazy" /> : null}
                 <i className="fas fa-map-marker-alt me-2" />
                 {branch.name}
                 <br />

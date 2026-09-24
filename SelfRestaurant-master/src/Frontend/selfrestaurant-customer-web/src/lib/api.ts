@@ -82,6 +82,8 @@ function normalizeBranches(payload: RawBranchPayload): BranchDto[] {
       const name = String(source.name ?? source.Name ?? source.branchName ?? "").trim();
       const locationValue = source.location ?? source.Location ?? source.branchLocation;
       const location = typeof locationValue === "string" ? locationValue : undefined;
+      const imageValue = source.image ?? source.Image;
+      const image = typeof imageValue === "string" && imageValue.startsWith("/images/") ? imageValue : undefined;
 
       if (!Number.isFinite(branchId) || branchId <= 0 || !name) {
         continue;
@@ -91,6 +93,7 @@ function normalizeBranches(payload: RawBranchPayload): BranchDto[] {
         branchId,
         name,
         location,
+        image,
       });
     }
 
