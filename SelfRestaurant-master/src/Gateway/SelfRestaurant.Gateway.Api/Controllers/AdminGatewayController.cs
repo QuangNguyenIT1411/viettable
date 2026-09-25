@@ -143,7 +143,7 @@ public sealed class AdminGatewayController : ControllerBase
     public async Task<ActionResult<AdminCategoriesScreenDto>> GetCategories(CancellationToken cancellationToken)
     {
         if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
-        var categories = await _catalogClient.GetCategoriesAsync(false, cancellationToken) ?? Array.Empty<CategoryDto>();
+        var categories = await _catalogClient.GetCategoriesAsync(true, cancellationToken) ?? Array.Empty<CategoryDto>();
         var units = await BuildUnitSummaryAsync(cancellationToken);
         return Ok(new AdminCategoriesScreenDto(categories.OrderBy(x => x.DisplayOrder).ThenBy(x => x.CategoryId).ToArray(), units));
     }
