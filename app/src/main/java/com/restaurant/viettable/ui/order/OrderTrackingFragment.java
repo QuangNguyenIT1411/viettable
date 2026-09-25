@@ -87,11 +87,33 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
 
             adapter = new TrackedItemAdapter(allTrackedItems, item -> {
                 navigateTo(OrderItemDetailFragment.newInstance(item));
-            });
+            }, this::confirmReceived);
             binding.rvTrackedItems.setLayoutManager(new LinearLayoutManager(requireContext()));
             binding.rvTrackedItems.setAdapter(adapter);
         }
         renderState(false, null);
+    }
+
+    private void confirmReceived(OrderItem item) {
+        if (binding == null || item == null || item.getStatus() != OrderItem.Status.READY) return;
+        Order owner = null;
+        DiningSession session = appStateManager.getActiveDiningSession();
+        if (session != null) for (Order order : session.getOrders()) {
+            for (OrderItem candidate : order.getItems()) if (candidate.getId().equals(item.getId())) { owner = order; break; }
+            if (owner != null) break;
+        }
+        if (owner == null) { showToast("Không tìm thấy đơn chứa món này."); return; }
+        final Order target = owner;
+        adapter.setReceivePending(item, true);
+        MobileRepository.getInstance().confirmOrderItemReceived(Integer.parseInt(target.getId()), Integer.parseInt(item.getId()), new MobileRepository.Callback<Boolean>() {
+            @Override public void onSuccess(Boolean ignored) { if (binding != null) refreshOrders(); }
+            @Override public void onError(ApiException error) {
+                if (binding != null && adapter != null) {
+                    adapter.setReceivePending(item, false);
+                    showToast(apiError(error));
+                }
+            }
+        });
     }
 
     private void updateStepperState(Order.Status status) {

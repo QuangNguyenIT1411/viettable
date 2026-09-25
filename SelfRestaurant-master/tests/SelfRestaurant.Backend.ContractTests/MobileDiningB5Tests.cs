@@ -10,11 +10,52 @@ public sealed class MobileDiningB5Tests
     [InlineData("[HttpPost(\"dining-sessions/{sessionId:int}/service-requests\")]")]
     [InlineData("[HttpGet(\"dining-sessions/{sessionId:int}/service-requests\")]")]
     [InlineData("[HttpPost(\"service-requests/{requestId:int}/cancel\")]")]
+    [InlineData("[HttpPost(\"orders/{orderId:int}/items/{itemId:int}/confirm-received\")]")]
     public void Gateway_exposes_B5_mobile_routes(string route)
     {
         var source = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileDiningOperationsController.cs");
         Assert.Contains("[Authorize(Roles = \"customer\")]", source, StringComparison.Ordinal);
         Assert.Contains(route, source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Staff_service_requests_are_branch_scoped_and_transition_guarded()
+    {
+        var source = Read("src/Services/SelfRestaurant.Orders.Api/Controllers/StaffServiceRequestsController.cs");
+        var gateway = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/StaffCashierGatewayController.cs");
+        Assert.Contains("x.BranchId == branchId", source, StringComparison.Ordinal);
+        Assert.Contains("row.BranchId != command.BranchId", source, StringComparison.Ordinal);
+        Assert.Contains("ServiceRequestStateMachine.CanTransition", source, StringComparison.Ordinal);
+        Assert.Contains("RequireCashier()", gateway, StringComparison.Ordinal);
+        Assert.Contains("serviceRequestUpdated", gateway, StringComparison.Ordinal);
+        Assert.Contains("session.EndedAtUtc is not null", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Session_close_cleanup_cancels_only_active_service_requests()
+    {
+        var source = Read("src/Services/SelfRestaurant.Orders.Api/Controllers/DiningSessionsController.cs");
+        var start = source.IndexOf("[HttpPost(\"{sessionId:int}/payment-succeeded\")]", StringComparison.Ordinal);
+        Assert.True(start >= 0, "Expected to find the session payment-success endpoint.");
+        var end = source.IndexOf("[HttpPost(\"{sessionId:int}/orders\")]", start, StringComparison.Ordinal);
+        Assert.True(end > start, "Expected to find the next order endpoint boundary.");
+
+        var closeEndpoint = source[start..end];
+        Assert.Contains("x.Status == \"OPEN\" || x.Status == \"ACKNOWLEDGED\"", closeEndpoint, StringComparison.Ordinal);
+        Assert.Contains("serviceRequest.Status = \"CANCELLED\"", closeEndpoint, StringComparison.Ordinal);
+        Assert.Contains("serviceRequest.CancelledAtUtc = now", closeEndpoint, StringComparison.Ordinal);
+        Assert.DoesNotContain("x.Status == \"COMPLETED\"", closeEndpoint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Customer_item_received_endpoint_checks_owner_and_item_state()
+    {
+        var gateway = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileDiningOperationsController.cs");
+        var orders = Read("src/Services/SelfRestaurant.Orders.Api/Controllers/OrdersController.cs");
+        Assert.Contains("[Authorize(Roles = \"customer\")]", gateway, StringComparison.Ordinal);
+        Assert.Contains("_orders.GetMobileOrderAsync(orderId, actor.Value", gateway, StringComparison.Ordinal);
+        Assert.Contains("order.CustomerID != customerId", orders, StringComparison.Ordinal);
+        Assert.Contains("x.OrderID == orderId && x.ItemID == itemId.Value", orders, StringComparison.Ordinal);
     }
 
     [Fact]

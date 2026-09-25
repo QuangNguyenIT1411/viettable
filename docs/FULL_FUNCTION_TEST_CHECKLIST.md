@@ -45,6 +45,7 @@ Biên bản lượt đóng gap: 25/09/2026, Samsung SM-A528B, bắt đầu từ 
 - [ ] CHEF Quận 1 mở `http://localhost:5100/app/chef/Staff/Account/Login` → chỉ thấy order active Quận 1, đúng bàn.
 - [ ] Bấm `Bắt đầu` ở món A → backend món A `PREPARING`, món B giữ status cũ; order aggregate theo rule backend.
 - [x] Bấm `BẮT ĐẦU NẤU` rồi `Hoàn thành` → backend/Chef UI thành `READY`; Chef không tự chuyển sang `SERVING`; order `4019` lượt mới.
+- [x] Item `READY` hiển thị nút `Tôi đã nhận món` riêng; Samsung order `5016`: Bánh mì ốp la sang `SERVING`/Android `ĐÃ PHỤC VỤ`, Bò né vẫn `PREPARING`/`ĐANG NẤU`.
 - [ ] Reload Chef rồi logout/login → order active và lịch sử vẫn khớp backend.
 - [ ] Thử transition sai trên order test bằng API hợp lệ → backend trả conflict, status không đổi; không sửa SQL trực tiếp.
 
@@ -56,10 +57,18 @@ Biên bản lượt đóng gap: 25/09/2026, Samsung SM-A528B, bắt đầu từ 
 
 ## 10 Service Request
 
-- [x] Customer gửi `Thêm nước lọc / Trà đá` → lịch sử hiện request thật `WATER`, trạng thái `CHỜ TIẾP NHẬN`; request `3004` session `4013`.
-- [ ] Xác định staff role/UI nhận request từ source; khi handler tồn tại, staff cập nhật → Android phản ánh đúng status, không tự giả định Chef xử lý.
+- [x] Samsung Customer tạo `WATER` trên session `5012` → Android hiện `CHỜ TIẾP NHẬN`; request đúng Bàn 5 / Quận 1.
+- [x] Cashier Web `http://localhost:5100/app/cashier/Staff/Account/Login`, cashier `cashier_lan` Quận 1 → mục `Yêu cầu phục vụ` hiện đúng bàn/type/time/status/note.
+- [x] Cashier `Tiếp nhận` → Orders `ACKNOWLEDGED`; không refresh Samsung, Android tự resync thành `ĐANG XỬ LÝ`.
+- [x] Cashier `Hoàn tất` → `COMPLETED`; Android tự hiện `ĐÃ HOÀN TẤT`.
+- [x] Customer hủy request OPEN tiếp theo → history Android hiện `ĐÃ HỦY`; staff active list bỏ request.
+- [x] Cashier `cashier_huong` branch 2 (UI runtime hiện tên Gò Vấp) không thấy request `4005` của branch 1; POST `/api/gateway/staff/cashier/service-requests/4005/acknowledge` trả **403 forbidden**, request vẫn `OPEN` sau lần thử.
+- [x] Customer không có staff session gọi acknowledge/complete bị chặn bởi staff auth policy (401); state machine từ chối OPEN→COMPLETED/ACKNOWLEDGED→CANCELLED (contract test/source guard).
+- [x] Payment `4042` thành công qua Cashier UI → session `5012` chuyển `PAYMENT_REQUESTED → CLOSED`; request `4005` tự `OPEN → CANCELLED` cùng thời điểm kết thúc session. Request `4003` đã `COMPLETED` vẫn `COMPLETED`; targeted backend source-contract test bảo vệ predicate chỉ gồm `OPEN`/`ACKNOWLEDGED`.
 
-`DEMO_BLOCKER`: source hiện chỉ có Customer create/list/cancel; không có staff handler/UI hay transition xử lý. Request `3004` từ `OPEN` thành `CANCELLED` khi đóng phiên. Không tick mục staff/realtime cho đến khi feature được triển khai theo task riêng.
+**Runtime status:** Staff UI→Android realtime, customer cancel, READY→SERVING, wrong-branch mutation rejection, và session-close cleanup đều PASS trên Samsung SM-A528B/Cashier Web, session `5012`, Bàn 5 Quận 1. Cashier UI payment `4042` (`PAY-20260925154843-62EEA9CE200A4691A87A0`, 120.000đ) xác nhận thành công; Samsung tự tới màn Payment Success; invoice `4016` phát hành đúng 120.000đ. Local demo state đã được khép lại; không phải giao dịch tiền thật.
+
+**Kiểm thử lượt tiếp nối:** Android `:app:assembleDebug` + `:app:testDebugUnitTest` PASS; Orders API build PASS; Backend ContractTests 114/114 PASS; Cashier Web `npm run build` PASS. Android instrumentation không chạy lại (không có Android source change ở lượt này); lần trước trên cùng thay đổi Android: 13 PASS, 1 opt-in SKIPPED.
 
 ## 11 Checkout
 
@@ -120,3 +129,5 @@ Biên bản lượt đóng gap: 25/09/2026, Samsung SM-A528B, bắt đầu từ 
 - [ ] Trong 8–12 phút: Customer Android login → QR bàn trống → order `4019` → Chef Web bắt đầu/hoàn thành → Samsung tự cập nhật → Customer checkout ONSITE → Cashier Web xác nhận `3045` → Samsung tự Success → invoice đúng → session `4014` `CLOSED`. Flow đã PASS ở mục ghi nhận; thời lượng không được bấm giờ nên tiêu chí 8–12 phút chưa tick.
 - [ ] Mở Admin Web khi được hỏi → giải thích đúng các menu đã hiện; không khẳng định một CRUD chưa test là PASS.
 - [ ] Ghi lại commit, thiết bị, thời gian, ID session/order/payment và từng PASS/FAIL; không ghi password/token, không push nếu chưa được yêu cầu.
+
+**Cập nhật service workflow (25/09/2026):** Dùng `CASHIER` là handler role vì chưa có waiter UI; staff page mục `Yêu cầu phục vụ`, state machine `OPEN → ACKNOWLEDGED → COMPLETED`, Customer chỉ hủy `OPEN → CANCELLED`. Samsung E2E thật cho tạo/nhận/hoàn tất/hủy Service Request và READY→SERVING PASS. Bổ sung runtime branch isolation (`4005`, branch 2 → 403, giữ OPEN) và session-close cleanup (`4005` → CANCELLED; `4003` COMPLETED được giữ). Những mục unchecked khác trong checklist tổng thể thuộc các luồng chưa chạy ngoài task này.

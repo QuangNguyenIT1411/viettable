@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SelfRestaurant.Orders.Api.Infrastructure;
 using SelfRestaurant.Orders.Api.Persistence;
 using SelfRestaurant.Orders.Api.Persistence.Entities;
+using SelfRestaurant.Orders.Api.Domain.ServiceRequests;
 using OrderEntity = SelfRestaurant.Orders.Api.Persistence.Entities.Orders;
 
 namespace SelfRestaurant.Orders.Api.Controllers;
@@ -242,7 +243,7 @@ public sealed class DiningSessionsController : ControllerBase
         var now = DateTime.UtcNow;
         var orders = await _db.Orders.Where(x => x.DiningSessionCode == entity.SessionCode && (x.IsActive ?? true)).ToListAsync(ct);
         foreach (var order in orders) { order.IsActive = false; order.CompletedTime = now; if (completedStatusId is not null) order.StatusID = completedStatusId.Value; }
-        var openRequests = await _db.ServiceRequests.Where(x => x.DiningSessionId == sessionId && x.Status == "OPEN").ToListAsync(ct);
+        var openRequests = await _db.ServiceRequests.Where(x => x.DiningSessionId == sessionId && (x.Status == "OPEN" || x.Status == "ACKNOWLEDGED")).ToListAsync(ct);
         foreach (var serviceRequest in openRequests) { serviceRequest.Status = "CANCELLED"; serviceRequest.CancelledAtUtc = now; serviceRequest.UpdatedAtUtc = now; }
         entity.Status = "CLOSED";
         entity.PaymentId = request.PaymentId;
@@ -414,7 +415,7 @@ public sealed class DiningSessionsController : ControllerBase
         if (entity is null) return NotFound(new { code = "service_request_not_found", message = "Không tìm thấy yêu cầu phục vụ." });
         if (entity.CustomerId != request.CustomerId) return StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu yêu cầu này." });
         if (string.Equals(entity.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase)) return Ok(MapServiceRequest(entity));
-        if (!string.Equals(entity.Status, "OPEN", StringComparison.OrdinalIgnoreCase))
+        if (!ServiceRequestStateMachine.CanTransition(entity.Status, ServiceRequestStateMachine.Cancelled))
             return Conflict(new { code = "service_request_state_conflict", message = "Yêu cầu đang được xử lý và không thể hủy." });
         entity.Status = "CANCELLED";
         entity.CancelledAtUtc = DateTime.UtcNow;
@@ -451,7 +452,8 @@ public sealed class DiningSessionsController : ControllerBase
     }
 
     private static ServiceRequestResponse MapServiceRequest(ServiceRequest x) => new(x.ServiceRequestId,
-        x.DiningSessionId, x.RequestType, x.Note, x.Status, x.CreatedAtUtc, x.UpdatedAtUtc, x.CancelledAtUtc);
+        x.DiningSessionId, x.RequestType, x.Note, x.Status, x.CreatedAtUtc, x.UpdatedAtUtc, x.CancelledAtUtc,
+        x.BranchId, x.TableId, x.CustomerId);
 
     private static DiningSessionResponse Map(DiningSession x, bool alreadyCheckedIn) => new(
         x.DiningSessionId, x.SessionCode, x.CustomerId, x.BranchId, x.TableId, x.ReservationId,
@@ -481,5 +483,6 @@ public sealed class DiningSessionsController : ControllerBase
     public sealed record CreateServiceRequestRequest(int CustomerId, string? RequestType, string? Note,
         string IdempotencyKey, string RequestHash);
     public sealed record ServiceRequestResponse(int ServiceRequestId, int DiningSessionId, string RequestType,
-        string? Note, string Status, DateTime CreatedAtUtc, DateTime UpdatedAtUtc, DateTime? CancelledAtUtc);
+        string? Note, string Status, DateTime CreatedAtUtc, DateTime UpdatedAtUtc, DateTime? CancelledAtUtc,
+        int BranchId, int TableId, int CustomerId);
 }

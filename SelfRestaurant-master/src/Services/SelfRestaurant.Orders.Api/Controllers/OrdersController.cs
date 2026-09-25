@@ -1198,7 +1198,7 @@ public sealed class OrdersController : ControllerBase
     }
 
     [HttpPost("api/orders/{orderId:int}/confirm-received")]
-    public async Task<ActionResult> ConfirmReceived(int orderId, CancellationToken cancellationToken)
+    public async Task<ActionResult> ConfirmReceived(int orderId, [FromQuery] int customerId, [FromQuery] int? itemId, CancellationToken cancellationToken)
     {
         var tableIdHint = await _db.Orders
             .AsNoTracking()
@@ -1213,6 +1213,10 @@ public sealed class OrdersController : ControllerBase
         if (order is null)
         {
             return NotFound();
+        }
+        if (customerId <= 0 || order.CustomerID != customerId)
+        {
+            return StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu đơn hàng này." });
         }
 
         var sessionCheck = await EnsureSessionWritableAsync(order.OrderID, order.DiningSessionCode, null, cancellationToken);
@@ -1231,9 +1235,14 @@ public sealed class OrdersController : ControllerBase
                 .ToListAsync(cancellationToken);
 
         var sessionOrderIds = sessionOrders.Select(x => x.OrderID).ToArray();
-        var readyItems = await _db.OrderItems
-            .Where(x => sessionOrderIds.Contains(x.OrderID) && x.StatusCode == "READY")
-            .ToListAsync(cancellationToken);
+        var readyItems = itemId is > 0
+            ? await _db.OrderItems.Where(x => x.OrderID == orderId && x.ItemID == itemId.Value).ToListAsync(cancellationToken)
+            : await _db.OrderItems.Where(x => sessionOrderIds.Contains(x.OrderID) && x.StatusCode == "READY").ToListAsync(cancellationToken);
+
+        if (itemId is > 0 && readyItems.Count == 0) return NotFound(new { code = "order_item_not_found", message = "Không tìm thấy món trong đơn hàng này." });
+        if (itemId is > 0 && string.Equals(readyItems[0].StatusCode, "SERVING", StringComparison.OrdinalIgnoreCase)) return NoContent();
+        if (readyItems.Any(x => !string.Equals(x.StatusCode, "READY", StringComparison.OrdinalIgnoreCase)))
+            return Conflict(new { code = "order_item_state_conflict", message = "Chỉ có thể xác nhận món đang ở trạng thái READY." });
 
         if (readyItems.Count == 0)
         {

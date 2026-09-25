@@ -3,6 +3,7 @@ import { HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
 import { Link } from "react-router-dom";
 import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
+import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { cashierApi } from "../lib/api";
 import { buildCashierTransferReference, buildCashierVietQrUrl, cashierQrBankInfo } from "../lib/vietQr";
 import type { CashierCheckoutResultDto, CashierDashboardDto, CashierReservationCheckInResultDto, ReservationDto } from "../lib/types";
@@ -550,6 +551,7 @@ export function DashboardPage({ onLogout }: Props) {
 
       {message ? <div className="success-box">{message}</div> : null}
       <OnsitePaymentsPanel />
+      <ServiceRequestsPanel tables={dashboard.tables} />
       {error ? <div className="error-box">{error}</div> : null}
 
       <section className="panel cashier-panel-card cashier-reservation-panel">

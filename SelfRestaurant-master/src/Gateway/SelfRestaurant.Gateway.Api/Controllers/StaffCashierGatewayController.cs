@@ -22,6 +22,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
     private readonly CustomersClient _customersClient;
     private readonly OrdersClient _ordersClient;
     private readonly IHubContext<CustomerNotificationsHub> _customerNotificationsHub;
+    private readonly IHubContext<MobileNotificationsHub> _mobileNotificationsHub;
     private readonly ILogger<StaffCashierGatewayController> _logger;
 
     public StaffCashierGatewayController(
@@ -31,6 +32,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
         CustomersClient customersClient,
         OrdersClient ordersClient,
         IHubContext<CustomerNotificationsHub> customerNotificationsHub,
+        IHubContext<MobileNotificationsHub> mobileNotificationsHub,
         ILogger<StaffCashierGatewayController> logger)
     {
         _billingClient = billingClient;
@@ -39,6 +41,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
         _customersClient = customersClient;
         _ordersClient = ordersClient;
         _customerNotificationsHub = customerNotificationsHub;
+        _mobileNotificationsHub = mobileNotificationsHub;
         _logger = logger;
     }
 
@@ -110,6 +113,39 @@ public sealed class StaffCashierGatewayController : ControllerBase
         var staff = RequireCashier();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
         return Ok(await BuildDashboardAsync(staff.BranchId, staff, includeBills: false, billsDate: null, cancellationToken));
+    }
+
+    [HttpGet("service-requests")]
+    public async Task<IActionResult> GetServiceRequests(CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản nhân viên chi nhánh.", 401);
+        try { return Ok(await _ordersClient.GetStaffServiceRequestsAsync(staff.BranchId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "service_requests_failed", ex.Message, ex.StatusCode); }
+    }
+
+    [HttpPost("service-requests/{requestId:int}/acknowledge")]
+    public Task<IActionResult> AcknowledgeServiceRequest(int requestId, CancellationToken ct) => UpdateServiceRequest(requestId, complete: false, ct);
+
+    [HttpPost("service-requests/{requestId:int}/complete")]
+    public Task<IActionResult> CompleteServiceRequest(int requestId, CancellationToken ct) => UpdateServiceRequest(requestId, complete: true, ct);
+
+    private async Task<IActionResult> UpdateServiceRequest(int requestId, bool complete, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản nhân viên chi nhánh.", 401);
+        try
+        {
+            var command = new StaffServiceRequestCommand(staff.BranchId, staff.EmployeeId);
+            var updated = complete
+                ? await _ordersClient.CompleteServiceRequestAsync(requestId, command, ct)
+                : await _ordersClient.AcknowledgeServiceRequestAsync(requestId, command, ct);
+            if (updated is null) return Error("service_request_not_found", "Không tìm thấy yêu cầu phục vụ.", 404);
+            await _mobileNotificationsHub.Clients.Group(MobileNotificationsHub.CustomerGroup(updated.CustomerId))
+                .SendAsync("serviceRequestUpdated", new { updated.ServiceRequestId, updated.DiningSessionId, updated.Status, updated.UpdatedAtUtc }, ct);
+            return Ok(updated);
+        }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "service_request_update_failed", ex.Message, ex.StatusCode); }
     }
 
     [HttpGet("/api/cashier/reservations/today")]

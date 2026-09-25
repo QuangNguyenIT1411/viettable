@@ -55,6 +55,17 @@
                 android:text="Gọi lúc 19:15"
                 android:textColor="@color/text_tertiary"
                 android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirmReceived"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginTop="4dp"
+                android:minHeight="40dp"
+                android:text="Tôi đã nhận món"
+                android:textAllCaps="false"
+                android:visibility="gone" />
         </LinearLayout>
 
         <TextView

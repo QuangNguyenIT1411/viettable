@@ -90,6 +90,11 @@ export type CashierDashboardDto = {
   account: CashierAccountDto;
 };
 
+export type StaffServiceRequestDto = {
+  serviceRequestId: number; diningSessionId: number; branchId: number; tableId: number; customerId: number;
+  requestType: string; note?: string | null; status: "OPEN" | "ACKNOWLEDGED"; createdAtUtc: string; updatedAtUtc: string;
+};
+
 export type CashierHistoryDto = {
   staff: StaffSessionUserDto;
   bills: CashierBillHistoryItemDto[];

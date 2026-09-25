@@ -3,6 +3,7 @@ import type {
   CashierAccountDto,
   CashierCheckoutResultDto,
   CashierDashboardDto,
+  StaffServiceRequestDto,
   CashierHistoryDto,
   CashierReportScreenDto,
   CashierReservationCheckInResultDto,
@@ -46,6 +47,9 @@ export const cashierApi = {
     }),
   logout: () => request<{ success: boolean; nextPath?: string }>("/api/gateway/staff/cashier/auth/logout", { method: "POST", body: JSON.stringify({}) }),
   getDashboard: () => request<CashierDashboardDto>("/api/gateway/staff/cashier/dashboard"),
+  getServiceRequests: () => request<StaffServiceRequestDto[]>("/api/gateway/staff/cashier/service-requests"),
+  acknowledgeServiceRequest: (id: number) => request<StaffServiceRequestDto>(`/api/gateway/staff/cashier/service-requests/${id}/acknowledge`, { method: "POST", body: "{}" }),
+  completeServiceRequest: (id: number) => request<StaffServiceRequestDto>(`/api/gateway/staff/cashier/service-requests/${id}/complete`, { method: "POST", body: "{}" }),
   getHistory: () => request<CashierHistoryDto>("/api/gateway/staff/cashier/history"),
   getReport: (date?: string) => request<CashierReportScreenDto>(`/api/gateway/staff/cashier/report${date ? `?date=${date}` : ""}`),
   getTodayReservations: (branchId?: number | null, status?: string) => {

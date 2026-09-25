@@ -39,7 +39,7 @@ public class ServiceRequest implements Serializable {
         switch (status) {
             case REQUESTED: return "Đã gửi yêu cầu";
             case ACCEPTED: return "Nhân viên đã nhận";
-            case COMPLETED: return "Đã hoàn thành";
+            case COMPLETED: return "Đã hoàn tất";
             case CANCELLED: return "Đã hủy";
             default: return status.name();
         }

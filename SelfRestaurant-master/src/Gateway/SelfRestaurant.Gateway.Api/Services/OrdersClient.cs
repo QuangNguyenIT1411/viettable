@@ -85,6 +85,16 @@ public sealed class OrdersClient : ApiClientBase
         PostForAsync<DiningSessionCustomerRequest, ServiceRequestResponse>(
             $"/api/internal/dining-sessions/service-requests/{requestId}/cancel", new DiningSessionCustomerRequest(customerId), cancellationToken);
 
+    public async Task<IReadOnlyList<StaffServiceRequestResponse>> GetStaffServiceRequestsAsync(int branchId, CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<StaffServiceRequestResponse>>($"/api/internal/service-requests?branchId={branchId}", ct)
+        ?? Array.Empty<StaffServiceRequestResponse>();
+
+    public Task<StaffServiceRequestResponse?> AcknowledgeServiceRequestAsync(int id, StaffServiceRequestCommand command, CancellationToken ct) =>
+        PostForAsync<StaffServiceRequestCommand, StaffServiceRequestResponse>($"/api/internal/service-requests/{id}/acknowledge", command, ct);
+
+    public Task<StaffServiceRequestResponse?> CompleteServiceRequestAsync(int id, StaffServiceRequestCommand command, CancellationToken ct) =>
+        PostForAsync<StaffServiceRequestCommand, StaffServiceRequestResponse>($"/api/internal/service-requests/{id}/complete", command, ct);
+
     public Task<DishReferenceStatusDto?> GetDishReferenceStatusAsync(int dishId, CancellationToken cancellationToken) =>
         GetAsync<DishReferenceStatusDto>($"/api/internal/dishes/{dishId}/references", cancellationToken);
 
@@ -139,8 +149,8 @@ public sealed class OrdersClient : ApiClientBase
             new { primaryTableId, tableIds },
             cancellationToken);
 
-    public Task ConfirmOrderReceivedAsync(int orderId, CancellationToken cancellationToken) =>
-        PostAsync<object>($"/api/orders/{orderId}/confirm-received", new { }, cancellationToken);
+    public Task ConfirmOrderReceivedAsync(int orderId, int customerId, int? itemId, CancellationToken cancellationToken) =>
+        PostAsync<object>($"/api/orders/{orderId}/confirm-received?customerId={customerId}{(itemId is > 0 ? $"&itemId={itemId}" : "")}", new { }, cancellationToken);
 
     public Task ResetDevTestStateAsync(CancellationToken cancellationToken) =>
         PostAsync<object>("/api/dev/reset-test-state", new { }, cancellationToken);

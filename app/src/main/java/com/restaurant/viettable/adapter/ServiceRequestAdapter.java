@@ -75,7 +75,7 @@ public class ServiceRequestAdapter extends RecyclerView.Adapter<ServiceRequestAd
                     binding.tvRequestStatusBadge.setTextColor(0xFFD84315);
                     break;
                 case COMPLETED:
-                    binding.tvRequestStatusBadge.setText("ĐÃ HOÀN THÀNH");
+                    binding.tvRequestStatusBadge.setText("ĐÃ HOÀN TẤT");
                     binding.tvRequestStatusBadge.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFFE8F5E9)
                     );

@@ -13,6 +13,8 @@ import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.ViewHolder> {
 
@@ -22,10 +24,25 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
 
     private final List<OrderItem> items;
     private final OnTrackedItemClickListener listener;
+    public interface OnReceiveClickListener { void onReceive(OrderItem item); }
+    private final OnReceiveClickListener receiveListener;
+    private final Set<String> pendingReceiveIds = new HashSet<>();
 
     public TrackedItemAdapter(List<OrderItem> items, OnTrackedItemClickListener listener) {
+        this(items, listener, null);
+    }
+
+    public TrackedItemAdapter(List<OrderItem> items, OnTrackedItemClickListener listener, OnReceiveClickListener receiveListener) {
         this.items = items;
         this.listener = listener;
+        this.receiveListener = receiveListener;
+    }
+
+    public void setReceivePending(OrderItem item, boolean pending) {
+        String id = item.getId();
+        if (pending) pendingReceiveIds.add(id); else pendingReceiveIds.remove(id);
+        int index = items.indexOf(item);
+        if (index >= 0) notifyItemChanged(index);
     }
 
     @NonNull
@@ -39,7 +56,7 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(items.get(position), listener);
+        holder.bind(items.get(position), listener, receiveListener, pendingReceiveIds.contains(items.get(position).getId()));
     }
 
     @Override
@@ -55,7 +72,7 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
             this.binding = binding;
         }
 
-        public void bind(OrderItem item, OnTrackedItemClickListener listener) {
+        public void bind(OrderItem item, OnTrackedItemClickListener listener, OnReceiveClickListener receiveListener, boolean pending) {
             binding.tvTrackedFoodName.setText(item.getFoodName());
             binding.tvTrackedFoodOptions.setText("SL: " + item.getQuantity() + " • " + item.getOptionsSummary());
             binding.tvTrackedFoodTime.setText("Gọi lúc " + DisplayFormatters.dateTime(item.getCreatedAt()));
@@ -101,6 +118,11 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
             itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onItemClick(item);
             });
+            boolean canReceive = item.getStatus() == OrderItem.Status.READY && receiveListener != null;
+            binding.btnConfirmReceived.setVisibility(canReceive ? android.view.View.VISIBLE : android.view.View.GONE);
+            binding.btnConfirmReceived.setEnabled(!pending);
+            binding.btnConfirmReceived.setText(pending ? "Đang cập nhật…" : "Tôi đã nhận món");
+            binding.btnConfirmReceived.setOnClickListener(canReceive && !pending ? v -> receiveListener.onReceive(item) : null);
         }
     }
 }

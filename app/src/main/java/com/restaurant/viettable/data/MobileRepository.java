@@ -535,6 +535,14 @@ public final class MobileRepository {
         });
     }
 
+    public void confirmOrderItemReceived(int orderId, int itemId, Callback<Boolean> callback) {
+        api().post("/api/mobile/v1/orders/" + orderId + "/items/" + itemId + "/confirm-received", new JSONObject(), true, null,
+                new ApiClient.Callback() {
+                    @Override public void onSuccess(Object body) { callback.onSuccess(true); }
+                    @Override public void onError(ApiException error) { callback.onError(error); }
+                });
+    }
+
     public void createServiceRequest(String type, String note, Callback<ServiceRequest> callback) {
         DiningSession session = state.getActiveDiningSession();
         if (session == null) { callback.onError(new ApiException(0, "session_required", "Chưa có phiên phục vụ.", null)); return; }
@@ -945,10 +953,17 @@ public final class MobileRepository {
     }
 
     private ServiceRequest parseServiceRequest(JSONObject row) {
-        ServiceRequest.Status status;
-        try { status = ServiceRequest.Status.valueOf(row.optString("status").toUpperCase(Locale.ROOT)); }
-        catch (Exception e) { status = ServiceRequest.Status.REQUESTED; }
+        ServiceRequest.Status status = serviceRequestStatus(row.optString("status"));
         return new ServiceRequest(String.valueOf(row.optInt("serviceRequestId")), row.optString("requestType"), row.optString("note"), status, row.optString("createdAtUtc"));
+    }
+
+    static ServiceRequest.Status serviceRequestStatus(String value) {
+        String rawStatus = value == null ? "" : value.toUpperCase(Locale.ROOT);
+        try {
+            if ("OPEN".equals(rawStatus)) return ServiceRequest.Status.REQUESTED;
+            if ("ACKNOWLEDGED".equals(rawStatus)) return ServiceRequest.Status.ACCEPTED;
+            return ServiceRequest.Status.valueOf(rawStatus);
+        } catch (Exception e) { return ServiceRequest.Status.REQUESTED; }
     }
 
     private Invoice invoiceFromQuote(JSONObject quote) {

@@ -83,6 +83,28 @@ public sealed class MobileDiningOperationsController : ControllerBase
         catch (ApiClientException ex) { return Downstream(ex, "tracking_failed"); }
     }
 
+    [HttpPost("orders/{orderId:int}/items/{itemId:int}/confirm-received")]
+    public async Task<IActionResult> ConfirmItemReceived(int orderId, int itemId, CancellationToken ct)
+    {
+        var actor = Actor();
+        if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
+        try
+        {
+            var order = await _orders.GetMobileOrderAsync(orderId, actor.Value, ct);
+            if (order is null) return Error("order_not_found", "Không tìm thấy đơn hàng.", 404);
+            var item = order.Items.FirstOrDefault(x => x.ItemId == itemId);
+            if (item is null) return Error("order_item_not_found", "Không tìm thấy món trong đơn hàng này.", 404);
+            if (!string.Equals(item.Status, "READY", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(item.Status, "SERVING", StringComparison.OrdinalIgnoreCase))
+                return Error("order_item_state_conflict", "Chỉ có thể xác nhận món đang sẵn sàng.", 409);
+            await _orders.ConfirmOrderReceivedAsync(orderId, actor.Value, itemId, ct);
+            await _hub.Clients.Group(MobileNotificationsHub.CustomerGroup(actor.Value))
+                .SendAsync("orderUpdated", new { orderId, order.DiningSessionId, status = "SERVING" }, ct);
+            return NoContent();
+        }
+        catch (ApiClientException ex) { return Downstream(ex, "confirm_received_failed"); }
+    }
+
     [HttpPost("dining-sessions/{sessionId:int}/service-requests")]
     public async Task<ActionResult<ServiceRequestResponse>> CreateServiceRequest(int sessionId, MobileCreateServiceRequest request, CancellationToken ct)
     {

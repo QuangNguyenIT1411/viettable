@@ -16,4 +16,8 @@ public sealed record MobileCreateServiceRequest(string RequestType, string? Note
 public sealed record InternalCreateServiceRequest(int CustomerId, string RequestType, string? Note,
     string IdempotencyKey, string RequestHash);
 public sealed record ServiceRequestResponse(int ServiceRequestId, int DiningSessionId, string RequestType,
-    string? Note, string Status, DateTime CreatedAtUtc, DateTime UpdatedAtUtc, DateTime? CancelledAtUtc);
+    string? Note, string Status, DateTime CreatedAtUtc, DateTime UpdatedAtUtc, DateTime? CancelledAtUtc,
+    int BranchId = 0, int TableId = 0, int CustomerId = 0);
+public sealed record StaffServiceRequestCommand(int BranchId, int EmployeeId);
+public sealed record StaffServiceRequestResponse(int ServiceRequestId, int DiningSessionId, int BranchId,
+    int TableId, int CustomerId, string RequestType, string? Note, string Status, DateTime CreatedAtUtc, DateTime UpdatedAtUtc);

@@ -847,7 +847,7 @@ public sealed class CustomerGatewayController : ControllerBase
         if (orderId <= 0) return Error("invalid_order", "Đơn hàng không hợp lệ.", 400);
         try
         {
-            await _ordersClient.ConfirmOrderReceivedAsync(orderId, cancellationToken);
+            await _ordersClient.ConfirmOrderReceivedAsync(orderId, customer.CustomerId, null, cancellationToken);
             var tableId = HttpContext.Session.GetInt32(SessionKeys.CurrentTableId);
             if (tableId is > 0)
             {
