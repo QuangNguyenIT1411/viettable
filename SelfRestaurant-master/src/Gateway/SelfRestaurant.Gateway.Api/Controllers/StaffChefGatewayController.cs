@@ -225,6 +225,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
         if (orderId <= 0) return Error("invalid_order", "Đơn hàng không hợp lệ.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         try
         {
             await _ordersClient.ChefStartAsync(orderId, cancellationToken);
@@ -243,6 +244,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
         if (orderId <= 0) return Error("invalid_order", "Đơn hàng không hợp lệ.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         try
         {
             await _ordersClient.ChefReadyAsync(orderId, staff.EmployeeId, cancellationToken);
@@ -261,6 +263,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
         if (orderId <= 0 || itemId <= 0) return Error("invalid_item", "Món trong đơn không hợp lệ.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         try
         {
             await _ordersClient.ChefStartItemAsync(orderId, itemId, staff.EmployeeId, cancellationToken);
@@ -279,6 +282,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
         if (orderId <= 0 || itemId <= 0) return Error("invalid_item", "Món trong đơn không hợp lệ.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         try
         {
             await _ordersClient.ChefReadyItemAsync(orderId, itemId, staff.EmployeeId, cancellationToken);
@@ -307,6 +311,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
         if (orderId <= 0) return Error("invalid_order", "Đơn hàng không hợp lệ.", 400);
         if (string.IsNullOrWhiteSpace(request.Reason)) return Error("invalid_reason", "Vui lòng nhập lý do hủy đơn.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         await _ordersClient.ChefCancelAsync(orderId, request.Reason.Trim(), cancellationToken);
         return Ok(new { success = true, message = "Đã hủy đơn hàng." });
     }
@@ -318,6 +323,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
         if (orderId <= 0 || itemId <= 0) return Error("invalid_item", "Món trong đơn không hợp lệ.", 400);
         if (string.IsNullOrWhiteSpace(request.Reason)) return Error("invalid_reason", "Vui lòng nhập lý do hủy món.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
 
         try
         {
@@ -336,6 +342,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
         if (orderId <= 0 || itemId <= 0) return Error("invalid_item", "Món trong đơn không hợp lệ.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         await _ordersClient.ChefUpdateItemNoteAsync(orderId, itemId, request.Note, request.Append, cancellationToken);
         return Ok(new { success = true, message = "Đã cập nhật ghi chú món." });
     }
@@ -366,6 +373,8 @@ public sealed class StaffChefGatewayController : ControllerBase
     {
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
+        if (orderId <= 0 || itemId <= 0) return Error("invalid_item", "Món trong đơn không hợp lệ.", 400);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         var overrides = await _ordersClient.GetOrderItemIngredientOverridesAsync(orderId, itemId, cancellationToken);
         if (overrides is null) return Error("item_not_found", "Không tìm thấy món trong đơn.", 404);
         await EnsureDishInTodayMenuAsync(staff.BranchId, overrides.DishId, cancellationToken);
@@ -389,6 +398,7 @@ public sealed class StaffChefGatewayController : ControllerBase
     {
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
+        if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         var requestedItems = request.Items ?? Array.Empty<ChefOrderItemIngredientOverrideDto>();
         if (requestedItems.Any(x => x.IngredientId <= 0)) return Error("invalid_ingredient", "Nguyên liệu không hợp lệ.", 400);
         if (requestedItems.Any(x => x.Quantity < 0)) return Error("invalid_quantity", "Số lượng nguyên liệu không được âm.", 400);
@@ -939,6 +949,9 @@ public sealed class StaffChefGatewayController : ControllerBase
             _ => "/Staff/Chef/Index",
         };
     }
+
+    private async Task<bool> IsOrderInChefBranchAsync(int branchId, int orderId, CancellationToken cancellationToken) =>
+        (await _ordersClient.GetChefOrdersAsync(branchId, null, cancellationToken)).Any(order => order.OrderId == orderId);
 
     private StaffSessionUserDto? RequireChef() => RequireStaff(ChefRoles);
 

@@ -1020,12 +1020,17 @@ public final class MobileRepository {
     private static DiningSession.Status sessionStatus(String value) {
         try { return DiningSession.Status.valueOf(value.toUpperCase(Locale.ROOT)); } catch (Exception e) { return DiningSession.Status.ACTIVE; }
     }
-    private static Order.Status orderStatus(String value) {
-        String v = value.toUpperCase(Locale.ROOT); if (v.equals("PENDING")) v = "PLACED"; if (v.equals("PREPARING")) v = "IN_PROGRESS";
+    static Order.Status orderStatus(String value) {
+        String v = value == null ? "" : value.toUpperCase(Locale.ROOT);
+        if (v.equals("PENDING")) return Order.Status.PLACED;
+        if (v.equals("PREPARING") || v.equals("READY")) return Order.Status.IN_PROGRESS;
+        if (v.equals("SERVING")) return Order.Status.COMPLETED;
         try { return Order.Status.valueOf(v); } catch (Exception e) { return Order.Status.PLACED; }
     }
-    private static OrderItem.Status orderItemStatus(String value) {
-        try { return OrderItem.Status.valueOf(value.toUpperCase(Locale.ROOT)); } catch (Exception e) { return OrderItem.Status.PENDING; }
+    static OrderItem.Status orderItemStatus(String value) {
+        String v = value == null ? "" : value.toUpperCase(Locale.ROOT);
+        if (v.equals("SERVING")) return OrderItem.Status.SERVED;
+        try { return OrderItem.Status.valueOf(v); } catch (Exception e) { return OrderItem.Status.PENDING; }
     }
     private static String normalizeServiceType(String value) {
         String lower = value == null ? "" : value.toLowerCase(Locale.ROOT);
