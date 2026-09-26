@@ -2,6 +2,7 @@ package com.restaurant.viettable.ui.auth;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,7 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.branch.BranchListFragment;
 
 public class LoginFragment extends BaseFragment {
+    private static final String GOOGLE_LOG_TAG = "GoogleSignIn";
 
     private FragmentLoginBinding binding;
     private final GoogleSignInCoordinator googleSignIn = new GoogleSignInCoordinator();
@@ -94,10 +96,12 @@ public class LoginFragment extends BaseFragment {
         googleSignIn.start(requireActivity(), BuildConfig.GOOGLE_WEB_CLIENT_ID, new GoogleSignInCoordinator.Callback() {
             @Override public void onIdToken(@NonNull String idToken) {
                 if (binding == null) return;
+                if (BuildConfig.DEBUG) Log.d(GOOGLE_LOG_TAG, "Google credential callback received; dispatching Gateway auth request");
                 binding.btnGoogleSignIn.setText(com.restaurant.viettable.R.string.auth_google_authenticating);
                 MobileRepository.getInstance().loginWithGoogle(idToken, new MobileRepository.Callback<User>() {
                     @Override public void onSuccess(User value) {
                         if (binding == null) return;
+                        if (BuildConfig.DEBUG) Log.d(GOOGLE_LOG_TAG, "Gateway auth succeeded; VietTable session stored; navigating to branch selection");
                         binding.btnGoogleSignIn.setText(com.restaurant.viettable.R.string.auth_google_success_state);
                         showToast(getString(com.restaurant.viettable.R.string.auth_google_success));
                         navigateTo(new BranchListFragment());
@@ -105,8 +109,10 @@ public class LoginFragment extends BaseFragment {
 
                     @Override public void onError(ApiException error) {
                         if (binding == null) return;
+                        if (BuildConfig.DEBUG) Log.w(GOOGLE_LOG_TAG, "Gateway auth failed; status=" + error.getStatusCode()
+                                + "; code=" + error.getCode());
                         setAuthenticating(false, com.restaurant.viettable.R.string.auth_continue_with_google);
-                        showError(apiError(error));
+                        showError(GoogleSignInErrorMapper.messageFor(error));
                     }
                 });
             }

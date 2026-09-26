@@ -177,5 +177,62 @@ Acceptance là debug Samsung/local Gateway, không chứng nhận release signin
 hay Google Cloud Publishing. Test-user/Android-client configuration bên Cloud do user
 xác nhận; token thật được backend chấp nhận là evidence runtime cho cấu hình đang dùng.
 
+## Khắc phục lỗi mạng trên Samsung — 2026-09-26
+
+### Root cause
+
+Google chooser và Credential Manager không phải điểm lỗi. `app/build.gradle` mặc định tạo
+debug `API_BASE_URL=http://10.0.2.2:5100`, địa chỉ dành cho emulator. Trên Samsung, tunnel
+`adb reverse tcp:5100 tcp:5100` chỉ làm Gateway khả dụng tại `http://127.0.0.1:5100`.
+`scripts/connect-phone.ps1 -OpenApp` trước đây chỉ kiểm tra tunnel bằng `curl` từ thiết bị
+rồi mở APK đã cài; nó không đảm bảo APK đó được build/install với URL dành cho điện thoại.
+Vì thế tunnel có thể báo PASS trong khi app gọi host emulator cũ, gây `IOException` và
+hiện thông báo mạng.
+
+Evidence: trước khi cài APK Samsung build đúng URL, lỗi mạng được tái hiện nhưng Gateway
+không có request `/api/mobile/v1/auth/google`. Sau khi build/install với
+`-PVIETTABLE_API_BASE_URL=http://127.0.0.1:5100`, cùng Gmail test đi qua các bước credential
+parse và POST thành công. Không thay Android OAuth client, SHA-1, Web Client ID hay backend
+audience.
+
+### Android fix và error handling
+
+- `connect-phone.ps1 -OpenApp` hiện build debug với Gateway URL `127.0.0.1:5100`, xác minh
+  `BuildConfig.API_BASE_URL`, cài APK bằng `adb install -r`, rồi mở app. Luồng emulator giữ
+  nguyên mặc định `10.0.2.2:5100`.
+- Thêm DEBUG diagnostics chỉ gồm stage, credential type, exception category, HTTP status
+  và backend error code. Không ghi ID token, access/refresh token, JWT, email hoặc request body.
+- Chỉ `IOException` được phân loại là network error. Exception parse/response bất ngờ có
+  message riêng, không còn bị gộp thành “Không thể kết nối”. API errors giữ HTTP status và
+  message backend; `email_provider_conflict` hướng người dùng đăng nhập bằng mật khẩu.
+- Hủy chooser được xử lý như cancellation, reset trạng thái nút và không hiện network error.
+
+### Nghiệm thu Samsung
+
+- Thiết bị `SM-A528B`, Android 14/API 34, package `com.restaurant.viettable`; `adb reverse`
+  được giữ trong lúc test.
+- Credential Manager trả `TYPE_GOOGLE_ID_TOKEN_CREDENTIAL`; ID token parse thành công
+  (token không được in vào log).
+- Android gọi Gateway `POST /api/mobile/v1/auth/google`; Gateway gọi Identity
+  `/api/internal/mobile/auth/google`; Identity trả 200. Android lưu VietTable token pair,
+  hiện danh sách chi nhánh rồi vào Home sau khi chọn chi nhánh.
+- Đã logout, hủy chooser thật: callback là `GetCredentialCancellationException`, nút Google
+  trở lại trạng thái sẵn sàng, không có network error. Đăng nhập Google lần tiếp theo cũng
+  trả 200 và vào Home.
+- Test Gmail đã chọn không gặp provider conflict. Mapping 409
+  `email_provider_conflict` được kiểm thử riêng bằng unit test; không xóa hoặc sửa tài khoản
+  chỉ để test.
+
+### Lệnh kết nối Samsung
+
+```powershell
+cd D:\Quang\VietTable
+powershell -ExecutionPolicy Bypass -File .\scripts\connect-phone.ps1 -OpenApp
+```
+
+Lệnh này giờ build/install APK phù hợp cho thiết bị thật; không cần tự nhớ thêm Gradle
+property `VIETTABLE_API_BASE_URL`. Build trực tiếp thủ công vẫn phải truyền property đó khi
+target là Samsung.
+
 Nguồn đối chiếu: [Android Credential Manager Google button flow](https://developer.android.com/identity/sign-in/credential-manager-siwg-implementation),
 [Google backend ID-token verification](https://developers.google.com/identity/sign-in/android/backend-auth).

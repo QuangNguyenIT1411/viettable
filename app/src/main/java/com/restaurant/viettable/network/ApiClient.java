@@ -3,6 +3,7 @@ package com.restaurant.viettable.network;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.restaurant.viettable.BuildConfig;
 
@@ -21,6 +22,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class ApiClient {
+    private static final String GOOGLE_AUTH_PATH = "/api/mobile/v1/auth/google";
+    private static final String GOOGLE_AUTH_TAG = "GoogleSignIn";
     public interface Callback {
         void onSuccess(Object body);
         void onError(ApiException error);
@@ -108,6 +111,8 @@ public final class ApiClient {
 
     private void request(String method, String path, JSONObject body, boolean authenticated,
                          String idempotencyKey, Callback callback) {
+        boolean googleAuthRequest = BuildConfig.DEBUG && "POST".equals(method) && GOOGLE_AUTH_PATH.equals(path);
+        if (googleAuthRequest) Log.d(GOOGLE_AUTH_TAG, "Gateway auth request queued; method=POST path=" + GOOGLE_AUTH_PATH);
         executor.execute(() -> {
             try {
                 String attemptedToken = authenticated ? getAccessToken() : "";
@@ -123,10 +128,17 @@ public final class ApiClient {
                     }
                 }
             } catch (ApiException error) {
+                if (googleAuthRequest) {
+                    Log.w(GOOGLE_AUTH_TAG, "Gateway auth returned HTTP/API error; status=" + error.getStatusCode()
+                            + "; code=" + error.getCode());
+                }
                 mainHandler.post(() -> callback.onError(error));
             } catch (Exception error) {
-                ApiException wrapped = new ApiException(0, "network_error",
-                        "Không thể kết nối đến VietTable. Vui lòng kiểm tra mạng và thử lại.", null);
+                if (googleAuthRequest) {
+                    Log.e(GOOGLE_AUTH_TAG, "Gateway auth request failed before a classified API response; exception="
+                            + error.getClass().getName());
+                }
+                ApiException wrapped = ApiFailureMapper.fromRequestFailure(error);
                 mainHandler.post(() -> callback.onError(wrapped));
             }
         });
@@ -164,6 +176,9 @@ public final class ApiClient {
         }
 
         int status = connection.getResponseCode();
+        if (BuildConfig.DEBUG && "POST".equals(method) && GOOGLE_AUTH_PATH.equals(path)) {
+            Log.d(GOOGLE_AUTH_TAG, "Gateway auth HTTP response received; status=" + status);
+        }
         String text = read(status >= 200 && status < 300 ? connection.getInputStream() : connection.getErrorStream());
         connection.disconnect();
         Object parsed = text.isEmpty() ? new JSONObject() : new JSONTokener(text).nextValue();
