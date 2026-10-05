@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Gateway/SelfRestaurant.Gateway.Api/SelfRestaurant.Gateway.Api.csproj" />
+    <ProjectReference Include="../../src/Services/SelfRestaurant.Catalog.Api/SelfRestaurant.Catalog.Api.csproj" />
+    <ProjectReference Include="../../src/Services/SelfRestaurant.Orders.Api/SelfRestaurant.Orders.Api.csproj" />
+    <ProjectReference Include="../../src/Services/SelfRestaurant.Customers.Api/SelfRestaurant.Customers.Api.csproj" />
+    <ProjectReference Include="../../src/Services/SelfRestaurant.Identity.Api/SelfRestaurant.Identity.Api.csproj" />
+    <ProjectReference Include="../../src/Services/SelfRestaurant.Billing.Api/SelfRestaurant.Billing.Api.csproj" />
+  </ItemGroup>
+</Project>

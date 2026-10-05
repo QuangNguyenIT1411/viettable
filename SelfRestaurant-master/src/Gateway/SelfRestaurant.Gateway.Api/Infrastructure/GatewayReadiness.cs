@@ -1,9 +1,14 @@
 namespace SelfRestaurant.Gateway.Api.Infrastructure;
 
-public sealed class GatewayReadiness(HttpClient http, IConfiguration configuration)
+public sealed class GatewayReadiness(HttpClient http, IConfiguration configuration, StackExchange.Redis.IConnectionMultiplexer? redis = null)
 {
     public async Task<bool> IsReadyAsync(CancellationToken ct)
     {
+        if (redis is not null)
+        {
+            try { await redis.GetDatabase().PingAsync().WaitAsync(TimeSpan.FromSeconds(3), ct); }
+            catch { return false; }
+        }
         var services = new[] { ("Catalog", 5101), ("Orders", 5102), ("Customers", 5103), ("Identity", 5104), ("Billing", 5105) };
         var results = await Task.WhenAll(services.Select(async service =>
         {

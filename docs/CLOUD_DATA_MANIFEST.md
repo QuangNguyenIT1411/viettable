@@ -104,4 +104,10 @@ QA usernames/temporary categories/orders/payments are excluded only by a reviewe
 
 ## Cutover decision still required
 
+### Staging reference bootstrap đã nghiệm thu 05/10/2026
+
+Allowlist owner export từ local Catalog: Restaurants, TableStatus, Branches, Categories, Units, Ingredients, Dishes, DiningTables, Menus, MenuCategory, CategoryDish, DishIngredients. Giữ IDs/QR/recipes/reference configuration; fresh staging không có local sessions nên không import occupancy/CurrentOrderID. Orders statuses và Identity roles seed fresh, không account/password seed. Không import audit/stock-movement/batch records hoặc transactional/account tables trong reference bootstrap này.
+
+Canonical checks:3branches/47tables/10categories/52dishes; first insert649 reference rows, second insert0. Explicit source instant policy: current Catalog + SQL Server Docker clocks UTC và existing mobile offsetless-UTC contract; bootstrap đổi bằng UTC timezone, không device timezone. Initial Vietnam-zone conversion bug đã được CAS-correct reference-only819fields, second correction0; không overwrite legitimate API edits. Không dùng policy này để tự gắn UTC cho transactional lịch sử chưa xác minh nguồn. Xem [SUPABASE_ACCEPTANCE.md](SUPABASE_ACCEPTANCE.md).
+
 Freeze mutations, settle/drain pending payments and outboxes, or migrate a consistent graph of active reservations/sessions/orders/payments with deduplication receipts. Specify timezone of legacy SQL timestamps before conversion; do not label arbitrary Unspecified time as UTC. Backup/restore rehearsal and row-count/FK/amount/event reconciliation are mandatory next-phase acceptance.

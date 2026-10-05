@@ -13,11 +13,7 @@ using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
-var mediaProvider = builder.Configuration["MediaStorage:Provider"] ?? "Local";
-if (!mediaProvider.Equals("Local", StringComparison.OrdinalIgnoreCase))
-    throw new InvalidOperationException("Configured media provider is not implemented. Cloud object storage is required before cutover.");
-builder.Services.AddSingleton<SelfRestaurant.Gateway.Api.Infrastructure.Media.IDishMediaStorage,
-    SelfRestaurant.Gateway.Api.Infrastructure.Media.LocalDishMediaStorage>();
+SelfRestaurant.Gateway.Api.Infrastructure.Media.MediaStorageConfiguration.Configure(builder.Services, builder.Configuration);
 
 var knownProxyText = builder.Configuration["ReverseProxy:KnownProxy"];
 var publicHost = builder.Configuration["ReverseProxy:PublicHost"];
@@ -125,15 +121,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
-builder.Services.AddDistributedMemoryCache();
+builder.Services.AddVietTableSession(builder.Configuration, builder.Environment);
 builder.Services.AddMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.IdleTimeout = TimeSpan.FromHours(8);
-});
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<CorrelationIdHandler>();
