@@ -184,7 +184,7 @@ public sealed class CatalogApiClient : ICatalogReadModel
 
             return remote ?? (cached is null ? null : Map(cached));
         }
-        catch
+        catch (Exception ex) when (!SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter.IsConflict(ex))
         {
             return cached is null ? null : Map(cached);
         }
@@ -209,7 +209,7 @@ public sealed class CatalogApiClient : ICatalogReadModel
                 return remote;
             }
         }
-        catch
+        catch (Exception ex) when (!SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter.IsConflict(ex))
         {
         }
 
@@ -231,7 +231,7 @@ public sealed class CatalogApiClient : ICatalogReadModel
 
             return remote ?? (cached is null ? null : Map(cached));
         }
-        catch
+        catch (Exception ex) when (!SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter.IsConflict(ex))
         {
             return cached is null ? null : Map(cached);
         }
@@ -252,7 +252,7 @@ public sealed class CatalogApiClient : ICatalogReadModel
                 return remote;
             }
         }
-        catch
+        catch (Exception ex) when (!SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter.IsConflict(ex))
         {
         }
 
@@ -278,7 +278,7 @@ public sealed class CatalogApiClient : ICatalogReadModel
                 return remote;
             }
         }
-        catch
+        catch (Exception ex) when (!SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter.IsConflict(ex))
         {
         }
 

@@ -15,6 +15,13 @@ public static class BillingDbBootstrapper
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
 
+        if (db.Database.IsNpgsql())
+        {
+            await SelfRestaurant.CloudCompatibility.PostgresBootstrap.ValidateOrMigrateAsync(db,
+                scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(), cancellationToken);
+            return;
+        }
+
         await WaitForDatabaseAsync(db, logger, cancellationToken);
         await EnsureOutboxTableAsync(db, cancellationToken);
         await EnsureOwnedBillsAsync(db, cancellationToken);

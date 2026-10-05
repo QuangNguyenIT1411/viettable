@@ -5,11 +5,16 @@ using SelfRestaurant.Orders.Api.Infrastructure.Eventing;
 using SelfRestaurant.Orders.Api.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    if (string.Equals(builder.Configuration["Database:Provider"], "Postgres", StringComparison.OrdinalIgnoreCase))
+        options.Filters.Add<SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter>();
+});
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -17,7 +22,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<OrdersDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("RestaurantDb")));
+    SelfRestaurant.CloudCompatibility.DatabaseProvider.Configure(options, builder.Configuration, "Orders"));
 
 var servicesTimeout = TimeSpan.FromSeconds(Math.Clamp(builder.Configuration.GetValue<int?>("Services:TimeoutSeconds") ?? 10, 2, 60));
 

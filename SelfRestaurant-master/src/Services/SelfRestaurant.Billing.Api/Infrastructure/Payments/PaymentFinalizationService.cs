@@ -17,7 +17,7 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
     CustomersApiClient customers, ILogger<PaymentFinalizationService> logger)
 {
     public static Task LockQuoteAsync(BillingDbContext db, int quoteId, CancellationToken ct) =>
-        db.Database.ExecuteSqlInterpolatedAsync($"DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource={"mobile-settlement:" + quoteId}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r<0 THROW 51000, 'Payment command busy', 1;", ct);
+        SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(db, "mobile-settlement:" + quoteId, ct);
 
     public async Task<Payment> ConfirmAsync(int paymentId, int? employeeId, int? branchId,
         string? providerTransactionId, CancellationToken ct)

@@ -64,24 +64,32 @@ public sealed class FileIntegrationEventPublisher : IIntegrationEventPublisher
                 await _db.SaveChangesAsync(cancellationToken);
             }
 
-            var baseDir = _configuration["IntegrationEvents:Directory"];
-            if (string.IsNullOrWhiteSpace(baseDir))
-            {
-                baseDir = Path.Combine(_environment.ContentRootPath, "App_Data", "integration-events");
-            }
-            else if (!Path.IsPathRooted(baseDir))
-            {
-                baseDir = Path.Combine(_environment.ContentRootPath, baseDir);
-            }
-
-            Directory.CreateDirectory(baseDir);
-            var filePath = Path.Combine(baseDir, $"billing-events-{DateTime.UtcNow:yyyyMMdd}.jsonl");
             var json = JsonSerializer.Serialize(envelope, JsonOptions);
-            await File.AppendAllTextAsync(filePath, json + Environment.NewLine, cancellationToken);
+            // Durable business delivery remains in the database outbox above.
+            // JSONL is an optional local diagnostic copy, never a delivery dependency.
+            if (_configuration.GetValue<bool?>("IntegrationEvents:WriteDiagnosticFiles") ?? _environment.IsDevelopment())
+            {
+                try
+                {
+                    var baseDir = _configuration["IntegrationEvents:Directory"];
+                    if (string.IsNullOrWhiteSpace(baseDir))
+                        baseDir = Path.Combine(_environment.ContentRootPath, "App_Data", "integration-events");
+                    else if (!Path.IsPathRooted(baseDir))
+                        baseDir = Path.Combine(_environment.ContentRootPath, baseDir);
+
+                    Directory.CreateDirectory(baseDir);
+                    var filePath = Path.Combine(baseDir, $"billing-events-{DateTime.UtcNow:yyyyMMdd}.jsonl");
+                    await File.AppendAllTextAsync(filePath, json + Environment.NewLine, cancellationToken);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    _logger.LogWarning("Diagnostic event file unavailable ({ErrorType}); database outbox retained.", ex.GetType().Name);
+                }
+            }
 
             TryPublishToRabbitMq(envelope, json);
 
-            _logger.LogInformation("Published integration event {EventName} to {FilePath}", envelope.EventName, filePath);
+            _logger.LogInformation("Integration event {EventName} recorded; source {Source}, correlation {CorrelationId}", envelope.EventName, envelope.Source, envelope.CorrelationId);
         }
         catch (Exception ex)
         {
@@ -112,15 +120,7 @@ public sealed class FileIntegrationEventPublisher : IIntegrationEventPublisher
 
         try
         {
-            var factory = new ConnectionFactory
-            {
-                HostName = _configuration["RabbitMq:Host"] ?? "localhost",
-                Port = _configuration.GetValue<int?>("RabbitMq:Port") ?? 5672,
-                UserName = _configuration["RabbitMq:Username"] ?? "guest",
-                Password = _configuration["RabbitMq:Password"] ?? "guest",
-                VirtualHost = _configuration["RabbitMq:VirtualHost"] ?? "/",
-                DispatchConsumersAsync = true
-            };
+            var factory = SelfRestaurant.CloudCompatibility.RabbitConnectionConfiguration.Create(_configuration);
 
             using var connection = factory.CreateConnection();
             using var channel = connection.CreateModel();
@@ -147,7 +147,7 @@ public sealed class FileIntegrationEventPublisher : IIntegrationEventPublisher
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to publish integration event {EventName} to RabbitMQ", envelope.EventName);
+            _logger.LogWarning("Failed to publish integration event {EventName} to RabbitMQ ({ErrorType}); outbox delivery remains available", envelope.EventName, ex.GetType().Name);
         }
     }
 }

@@ -118,6 +118,17 @@ public sealed class CustomersController : ControllerBase
         try
         {
             await _db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (Exception exception) when (_db.Database.IsNpgsql()
+            && (exception is Npgsql.PostgresException { SqlState: "40001" }
+                || exception.InnerException is Npgsql.PostgresException { SqlState: "40001" }))
+        {
+            // PostgreSQL may detect the competing reservation at commit, not at INSERT.
+            // Keep SERIALIZABLE: the aborted command must not be reported as a success.
+            // Disposal rolls back an INSERT failure. A failed COMMIT has already
+            // completed the Npgsql transaction, so a second Rollback would throw.
+            return Conflict(new { code = "command_in_progress", message = "Bàn đang được cập nhật. Vui lòng kiểm tra lại tình trạng bàn và thử lại." });
         }
         catch (DbUpdateException) when (idempotencyKey is not null)
         {
@@ -137,8 +148,6 @@ public sealed class CustomersController : ControllerBase
 
             throw;
         }
-
-        await transaction.CommitAsync(cancellationToken);
 
         return CreatedAtAction(nameof(GetReservationByCode), new { reservationCode = reservation.ReservationCode }, MapReservation(reservation));
     }

@@ -27,6 +27,15 @@ public static class IdentityDbBootstrapper
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
 
+        if (db.Database.IsNpgsql())
+        {
+            await SelfRestaurant.CloudCompatibility.PostgresBootstrap.ValidateOrMigrateAsync(db,
+                scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(), cancellationToken);
+            await IdentityPostgresSeed.RunAsync(db, SelfRestaurant.CloudCompatibility.PostgresBootstrap.SeedProfile(
+                scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()), cancellationToken);
+            return;
+        }
+
         await WaitForDatabaseAsync(db, logger, cancellationToken);
         await EnsureBusinessAuditLogsTableAsync(db, logger, cancellationToken);
         await EnsureMobileRefreshTokensTableAsync(db, logger, cancellationToken);

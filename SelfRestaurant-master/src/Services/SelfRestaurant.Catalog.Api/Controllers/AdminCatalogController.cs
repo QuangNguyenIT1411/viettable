@@ -2600,16 +2600,15 @@ public sealed class AdminCatalogController : ControllerBase
 
     private async Task IncreaseIngredientCurrentStockAsync(int ingredientId, decimal quantity, CancellationToken cancellationToken)
     {
-        await _db.Database.ExecuteSqlInterpolatedAsync(
-            $"UPDATE dbo.Ingredients SET CurrentStock = CurrentStock + {quantity} WHERE IngredientID = {ingredientId}",
-            cancellationToken);
+        await _db.Ingredients.Where(x => x.IngredientID == ingredientId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentStock, x => x.CurrentStock + quantity), cancellationToken);
     }
 
     private async Task<int> TryDecreaseIngredientCurrentStockAsync(int ingredientId, decimal quantity, CancellationToken cancellationToken)
     {
-        return await _db.Database.ExecuteSqlInterpolatedAsync(
-            $"UPDATE dbo.Ingredients SET CurrentStock = CurrentStock - {quantity} WHERE IngredientID = {ingredientId} AND CurrentStock >= {quantity}",
-            cancellationToken);
+        return await _db.Ingredients
+            .Where(x => x.IngredientID == ingredientId && x.CurrentStock >= quantity)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.CurrentStock, x => x.CurrentStock - quantity), cancellationToken);
     }
 
     private static string NormalizeInventoryBatchStatusFilter(string? status)

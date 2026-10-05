@@ -12,6 +12,12 @@ using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
+SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
+var mediaProvider = builder.Configuration["MediaStorage:Provider"] ?? "Local";
+if (!mediaProvider.Equals("Local", StringComparison.OrdinalIgnoreCase))
+    throw new InvalidOperationException("Configured media provider is not implemented. Cloud object storage is required before cutover.");
+builder.Services.AddSingleton<SelfRestaurant.Gateway.Api.Infrastructure.Media.IDishMediaStorage,
+    SelfRestaurant.Gateway.Api.Infrastructure.Media.LocalDishMediaStorage>();
 
 var knownProxyText = builder.Configuration["ReverseProxy:KnownProxy"];
 var publicHost = builder.Configuration["ReverseProxy:PublicHost"];
@@ -133,6 +139,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<CorrelationIdHandler>();
 builder.Services.AddTransient<ActorContextHandler>();
 var serviceTimeout = TimeSpan.FromSeconds(Math.Clamp(builder.Configuration.GetValue<int?>("Services:TimeoutSeconds") ?? 10, 2, 60));
+builder.Services.AddHttpClient<GatewayReadiness>(http => http.Timeout = TimeSpan.FromSeconds(3));
 
 builder.Services.AddHttpClient<CatalogClient>(http =>
 {
@@ -292,7 +299,10 @@ app.MapControllers();
 app.MapHub<CustomerNotificationsHub>("/hubs/customer-notifications");
 app.MapHub<MobileNotificationsHub>("/hubs/mobile-notifications");
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
-app.MapGet("/readyz", () => Results.Ok(new { status = "ready" }));
+app.MapGet("/readyz", async (GatewayReadiness readiness, CancellationToken ct) =>
+    await readiness.IsReadyAsync(ct)
+        ? Results.Ok(new { status = "ready" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
 app.MapGet("/Staff/Account/Login", (HttpContext context) => Results.Redirect($"/app/chef/Staff/Account/Login{context.Request.QueryString}"));
 app.MapGet("/Staff/Account/ForgotPassword", (HttpContext context) => Results.Redirect($"/app/chef/Staff/Account/ForgotPassword{context.Request.QueryString}"));
 app.MapGet("/Staff/Account/ResetPassword", (HttpContext context) => Results.Redirect($"/app/chef/Staff/Account/ResetPassword{context.Request.QueryString}"));

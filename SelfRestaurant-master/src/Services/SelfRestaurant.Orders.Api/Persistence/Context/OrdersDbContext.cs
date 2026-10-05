@@ -30,6 +30,7 @@ public sealed class OrdersDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // PostgreSQL overrides are applied after the existing SQL Server mapping.
         modelBuilder.Entity<CatalogBranchSnapshots>(entity =>
         {
             entity.HasKey(e => e.BranchId);
@@ -252,5 +253,7 @@ public sealed class OrdersDbContext : DbContext
             entity.Property(e => e.UnitPriceSnapshot).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Note).HasMaxLength(1000);
         });
+        if (Database.IsNpgsql())
+            SelfRestaurant.CloudCompatibility.PostgresModel.Apply(modelBuilder, "orders");
     }
 }

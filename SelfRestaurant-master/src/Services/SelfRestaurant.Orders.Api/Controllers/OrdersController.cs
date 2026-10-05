@@ -3239,6 +3239,7 @@ public sealed class OrdersController : ControllerBase
 
     private async Task EnsureOrderItemIngredientOverrideSchemaAsync(CancellationToken cancellationToken)
     {
+        if (_db.Database.IsNpgsql()) return; // Schema is owned by the deployment migration.
         await _db.Database.ExecuteSqlRawAsync("""
             IF OBJECT_ID(N'dbo.OrderItemIngredients', N'U') IS NOT NULL
             BEGIN
@@ -3581,6 +3582,11 @@ public sealed class OrdersController : ControllerBase
 
     private async Task AcquireApplicationLockAsync(string resource, CancellationToken cancellationToken)
     {
+        if (_db.Database.IsNpgsql())
+        {
+            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, resource, cancellationToken);
+            return;
+        }
         var connection = _db.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
         {
@@ -3655,6 +3661,8 @@ public sealed class OrdersController : ControllerBase
 
     private static bool IsUniqueConstraintViolation(DbUpdateException ex)
     {
+        if (ex.GetBaseException() is Npgsql.PostgresException postgres)
+            return postgres.SqlState == Npgsql.PostgresErrorCodes.UniqueViolation;
         var message = ex.GetBaseException().Message ?? string.Empty;
         return message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase)
                || message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)

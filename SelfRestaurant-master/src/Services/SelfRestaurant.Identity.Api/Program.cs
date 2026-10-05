@@ -9,11 +9,16 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    if (string.Equals(builder.Configuration["Database:Provider"], "Postgres", StringComparison.OrdinalIgnoreCase))
+        options.Filters.Add<SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter>();
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -60,13 +65,8 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-var identityConnectionString =
-    builder.Configuration.GetConnectionString("IdentityDb") ??
-    builder.Configuration.GetConnectionString("RestaurantDb") ??
-    throw new InvalidOperationException("Missing connection string: ConnectionStrings:IdentityDb");
-
 builder.Services.AddDbContext<IdentityDbContext>(options =>
-    options.UseSqlServer(identityConnectionString));
+    SelfRestaurant.CloudCompatibility.DatabaseProvider.Configure(options, builder.Configuration, "Identity"));
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 builder.Services.PostConfigure<SmtpOptions>(options =>
 {

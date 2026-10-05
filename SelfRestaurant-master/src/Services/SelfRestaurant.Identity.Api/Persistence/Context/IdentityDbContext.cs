@@ -22,6 +22,7 @@ public sealed class IdentityDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // PostgreSQL overrides are applied after the existing SQL Server mapping.
         modelBuilder.Entity<LoyaltySettlement>(entity =>
         {
             entity.ToTable("LoyaltySettlements");
@@ -170,5 +171,22 @@ public sealed class IdentityDbContext : DbContext
                 .HasForeignKey<CustomerSettings>(e => e.CustomerId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        if (Database.IsNpgsql())
+        {
+            // Preserve case-insensitive account/email lookup and username uniqueness.
+            // citext is database infrastructure, not a cross-service domain table.
+            modelBuilder.HasPostgresExtension("citext");
+            modelBuilder.Entity<Customers>().Property(x => x.Username).HasColumnType("citext");
+            modelBuilder.Entity<Customers>().Property(x => x.Email).HasColumnType("citext");
+            modelBuilder.Entity<Employees>().Property(x => x.Username).HasColumnType("citext");
+            modelBuilder.Entity<Employees>().Property(x => x.Email).HasColumnType("citext");
+            modelBuilder.Entity<LoyaltyCard>(entity =>
+            {
+                entity.ToTable("LoyaltyCards");
+                entity.HasKey(x => x.CardID);
+                entity.HasOne<Customers>().WithMany().HasForeignKey(x => x.CustomerID);
+            });
+            SelfRestaurant.CloudCompatibility.PostgresModel.Apply(modelBuilder, "identity");
+        }
     }
 }

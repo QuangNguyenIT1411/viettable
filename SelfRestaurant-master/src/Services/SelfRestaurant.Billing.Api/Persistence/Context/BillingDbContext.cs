@@ -24,6 +24,7 @@ public sealed class BillingDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // PostgreSQL overrides are applied after the existing SQL Server mapping.
         modelBuilder.Entity<Bills>(entity =>
         {
             entity.ToTable("Bills", "billing");
@@ -167,5 +168,7 @@ public sealed class BillingDbContext : DbContext
             entity.HasKey(x => x.SplitBillPartId); entity.Property(x => x.Label).HasMaxLength(100); entity.Property(x => x.Status).HasMaxLength(20).IsUnicode(false); entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
         });
 
+        if (Database.IsNpgsql())
+            SelfRestaurant.CloudCompatibility.PostgresModel.Apply(modelBuilder, "billing");
     }
 }

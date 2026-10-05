@@ -19,7 +19,7 @@ public sealed class AdminGatewayController : ControllerBase
     private readonly CatalogClient _catalogClient;
     private readonly CustomersClient _customersClient;
     private readonly ILogger<AdminGatewayController> _logger;
-    private readonly IWebHostEnvironment _environment;
+    private readonly SelfRestaurant.Gateway.Api.Infrastructure.Media.IDishMediaStorage _mediaStorage;
 
     public AdminGatewayController(
         IdentityClient identityClient,
@@ -27,14 +27,14 @@ public sealed class AdminGatewayController : ControllerBase
         CatalogClient catalogClient,
         CustomersClient customersClient,
         ILogger<AdminGatewayController> logger,
-        IWebHostEnvironment environment)
+        SelfRestaurant.Gateway.Api.Infrastructure.Media.IDishMediaStorage mediaStorage)
     {
         _identityClient = identityClient;
         _ordersClient = ordersClient;
         _catalogClient = catalogClient;
         _customersClient = customersClient;
         _logger = logger;
-        _environment = environment;
+        _mediaStorage = mediaStorage;
     }
 
     [HttpGet("session")]
@@ -942,95 +942,10 @@ public sealed class AdminGatewayController : ControllerBase
             extension = ".png";
         }
 
-        var imageRoots = ResolveDishImagesRoots();
-        foreach (var imageRoot in imageRoots)
-        {
-            Directory.CreateDirectory(imageRoot);
-        }
-
         var slug = SlugifyDishName(dishName);
         var fileName = $"{slug}{extension}";
-        var targetPaths = imageRoots
-            .Select(root => new { Root = root, AbsolutePath = Path.Combine(root, fileName) })
-            .ToArray();
-
-        foreach (var target in targetPaths)
-        {
-            DeleteManagedDishImage(existingImagePath, target.Root, target.AbsolutePath);
-            DeleteSiblingSlugFiles(target.Root, slug, target.AbsolutePath);
-        }
-
         await using var uploadStream = imageFile.OpenReadStream();
-        using var buffer = new MemoryStream();
-        await uploadStream.CopyToAsync(buffer, cancellationToken);
-        var content = buffer.ToArray();
-
-        foreach (var target in targetPaths)
-        {
-            await System.IO.File.WriteAllBytesAsync(target.AbsolutePath, content, cancellationToken);
-        }
-
-        return $"/images/dishes/{fileName}";
-    }
-
-    private IReadOnlyList<string> ResolveDishImagesRoots()
-    {
-        var contentRoot = Path.GetFullPath(_environment.ContentRootPath);
-        var inBuildOutput = contentRoot.Contains("/bin/", StringComparison.OrdinalIgnoreCase)
-            || contentRoot.Contains("\\bin\\", StringComparison.OrdinalIgnoreCase);
-
-        var direct = Path.Combine(contentRoot, "wwwroot", "images", "dishes");
-        var source = Path.GetFullPath(Path.Combine(contentRoot, "..", "..", "..", "wwwroot", "images", "dishes"));
-        var candidates = inBuildOutput ? new[] { direct, source } : new[] { direct, source };
-        var roots = new List<string>();
-
-        foreach (var candidate in candidates)
-        {
-            var wwwroot = Directory.GetParent(candidate)?.Parent?.FullName;
-            if (!string.IsNullOrWhiteSpace(wwwroot) && Directory.Exists(wwwroot))
-            {
-                roots.Add(candidate);
-            }
-        }
-
-        if (roots.Count == 0)
-        {
-            roots.Add(candidates[0]);
-        }
-
-        return roots
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-    }
-
-    private static void DeleteManagedDishImage(string? existingImagePath, string imagesRoot, string nextAbsolutePath)
-    {
-        var existingAbsolute = ResolveManagedDishImagePath(existingImagePath, imagesRoot);
-        if (existingAbsolute is null) return;
-        if (string.Equals(existingAbsolute, nextAbsolutePath, StringComparison.OrdinalIgnoreCase)) return;
-        if (System.IO.File.Exists(existingAbsolute))
-        {
-            System.IO.File.Delete(existingAbsolute);
-        }
-    }
-
-    private static void DeleteSiblingSlugFiles(string imagesRoot, string slug, string nextAbsolutePath)
-    {
-        foreach (var file in Directory.GetFiles(imagesRoot, slug + ".*", SearchOption.TopDirectoryOnly))
-        {
-            if (string.Equals(file, nextAbsolutePath, StringComparison.OrdinalIgnoreCase)) continue;
-            System.IO.File.Delete(file);
-        }
-    }
-
-    private static string? ResolveManagedDishImagePath(string? imagePath, string imagesRoot)
-    {
-        if (string.IsNullOrWhiteSpace(imagePath)) return null;
-        var normalized = imagePath.Replace('\\', '/').Trim();
-        if (!normalized.StartsWith("/images/dishes/", StringComparison.OrdinalIgnoreCase)) return null;
-        var fileName = Path.GetFileName(normalized);
-        if (string.IsNullOrWhiteSpace(fileName)) return null;
-        return Path.Combine(imagesRoot, fileName);
+        return await _mediaStorage.SaveAsync(fileName, uploadStream, existingImagePath, cancellationToken);
     }
 
     private static string SlugifyDishName(string dishName)

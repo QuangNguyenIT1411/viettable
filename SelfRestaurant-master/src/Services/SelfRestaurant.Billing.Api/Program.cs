@@ -6,11 +6,16 @@ using SelfRestaurant.Billing.Api.Infrastructure.Payments;
 using SelfRestaurant.Billing.Api.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    if (string.Equals(builder.Configuration["Database:Provider"], "Postgres", StringComparison.OrdinalIgnoreCase))
+        options.Filters.Add<SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter>();
+});
 builder.Services.AddAuthentication("CashierService").AddJwtBearer("CashierService", options =>
 {
     options.MapInboundClaims = false;
@@ -35,7 +40,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<BillingDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("RestaurantDb")));
+    SelfRestaurant.CloudCompatibility.DatabaseProvider.Configure(options, builder.Configuration, "Billing"));
 
 var servicesTimeout = TimeSpan.FromSeconds(Math.Clamp(builder.Configuration.GetValue<int?>("Services:TimeoutSeconds") ?? 10, 2, 60));
 

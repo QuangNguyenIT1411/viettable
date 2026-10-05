@@ -5,23 +5,23 @@ using SelfRestaurant.Catalog.Api.Infrastructure.Tables;
 using SelfRestaurant.Catalog.Api.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    if (string.Equals(builder.Configuration["Database:Provider"], "Postgres", StringComparison.OrdinalIgnoreCase))
+        options.Filters.Add<SelfRestaurant.CloudCompatibility.PostgresConcurrencyFilter>();
+});
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var catalogConnectionString =
-    builder.Configuration.GetConnectionString("CatalogDb") ??
-    builder.Configuration.GetConnectionString("RestaurantDb") ??
-    throw new InvalidOperationException("Missing connection string: ConnectionStrings:CatalogDb");
-
 builder.Services.AddDbContext<CatalogDbContext>(options =>
-    options.UseSqlServer(catalogConnectionString));
+    SelfRestaurant.CloudCompatibility.DatabaseProvider.Configure(options, builder.Configuration, "Catalog"));
 builder.Services.AddScoped<RequestActorContextAccessor>();
 builder.Services.AddScoped<BusinessAuditLogger>();
 builder.Services.AddScoped<IngredientStockAvailabilityService>();

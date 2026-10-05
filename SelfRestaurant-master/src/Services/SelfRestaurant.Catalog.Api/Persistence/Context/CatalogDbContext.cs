@@ -25,8 +25,29 @@ public sealed class CatalogDbContext : DbContext
     public DbSet<TableStatus> TableStatus => Set<TableStatus>();
     public DbSet<Units> Units => Set<Units>();
 
+    private void StampPostgresConcurrencyTokens()
+    {
+        if (!Database.IsNpgsql()) return;
+        foreach (var entry in ChangeTracker.Entries<IngredientBatches>())
+            if (entry.State is EntityState.Added or EntityState.Modified)
+                entry.Entity.RowVersion = Guid.NewGuid().ToByteArray();
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        StampPostgresConcurrencyTokens();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        StampPostgresConcurrencyTokens();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // PostgreSQL overrides are applied after the existing SQL Server mapping.
         modelBuilder.Entity<Branches>(entity =>
         {
             entity.HasKey(e => e.BranchID);
@@ -186,7 +207,10 @@ public sealed class CatalogDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
-            entity.Property(e => e.RowVersion).IsRowVersion();
+            if (Database.IsNpgsql())
+                entity.Property(e => e.RowVersion).IsConcurrencyToken().ValueGeneratedNever();
+            else
+                entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasOne(e => e.Ingredient)
                 .WithMany(i => i.IngredientBatches)
                 .HasForeignKey(e => e.IngredientID);
@@ -263,5 +287,21 @@ public sealed class CatalogDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
         });
+        if (Database.IsNpgsql())
+        {
+            modelBuilder.Entity<Restaurants>(entity =>
+            {
+                entity.ToTable("Restaurants");
+                entity.HasKey(x => x.RestaurantID);
+                entity.Property(x => x.Name).HasMaxLength(200);
+                entity.Property(x => x.Address).HasMaxLength(500);
+                entity.Property(x => x.Description).HasMaxLength(1000);
+                entity.Property(x => x.Phone).HasMaxLength(20);
+                entity.Property(x => x.Email).HasMaxLength(100);
+                entity.Ignore(x => x.Branches);
+            });
+            modelBuilder.Entity<Branches>().HasOne<Restaurants>().WithMany().HasForeignKey(x => x.RestaurantID);
+            SelfRestaurant.CloudCompatibility.PostgresModel.Apply(modelBuilder, "catalog");
+        }
     }
 }

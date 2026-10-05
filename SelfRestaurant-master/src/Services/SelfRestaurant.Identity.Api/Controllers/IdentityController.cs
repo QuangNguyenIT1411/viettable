@@ -498,7 +498,7 @@ public sealed class IdentityController : ControllerBase
         if (request.SettlementKey is { Length: > 100 }) return BadRequest(new { code = "invalid_settlement_key" });
         await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
         // Serialize settlements for this customer, including legacy callers without a key.
-        await _db.Database.ExecuteSqlInterpolatedAsync($"DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource={"loyalty:" + customerId}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r<0 THROW 51000, 'Loyalty settlement busy', 1;", cancellationToken);
+        await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, "loyalty:" + customerId, cancellationToken);
         if (!string.IsNullOrWhiteSpace(request.SettlementKey))
         {
             var replay = await _db.Set<LoyaltySettlement>().FindAsync(new object[] { request.SettlementKey }, cancellationToken);

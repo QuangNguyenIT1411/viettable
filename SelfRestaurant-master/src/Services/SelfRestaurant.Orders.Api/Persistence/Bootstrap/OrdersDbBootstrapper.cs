@@ -40,6 +40,15 @@ public static class OrdersDbBootstrapper
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
 
+        if (db.Database.IsNpgsql())
+        {
+            await SelfRestaurant.CloudCompatibility.PostgresBootstrap.ValidateOrMigrateAsync(db,
+                scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(), cancellationToken);
+            await OrdersPostgresSeed.RunAsync(db, SelfRestaurant.CloudCompatibility.PostgresBootstrap.SeedProfile(
+                scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()), cancellationToken);
+            return;
+        }
+
         await WaitForDatabaseAsync(db, logger, cancellationToken);
         await EnsureOutboxTableAsync(db, cancellationToken);
         await EnsureInboxTableAsync(db, cancellationToken);

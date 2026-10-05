@@ -7,18 +7,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="../../Shared/CloudCompatibility/CloudHosting.cs" Link="Infrastructure/Cloud/CloudHosting.cs" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.22" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
     <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Persistence/bin/**;Persistence/obj/**" />
+    <Compile Include="../../Shared/CloudCompatibility/DatabaseProvider.cs" Link="Infrastructure/Cloud/DatabaseProvider.cs" />
+    <Compile Include="../../Shared/CloudCompatibility/PostgresModel.cs" Link="Infrastructure/Cloud/PostgresModel.cs" />
+    <Compile Include="../../Shared/CloudCompatibility/PostgresBootstrap.cs" Link="Infrastructure/Cloud/PostgresBootstrap.cs" />
+    <Compile Include="../../Shared/CloudCompatibility/PostgresConcurrencyFilter.cs" Link="Infrastructure/Cloud/PostgresConcurrencyFilter.cs" />
+    <Compile Include="../../Shared/CloudCompatibility/TransactionLocks.cs" Link="Infrastructure/Cloud/TransactionLocks.cs" />
+    <Compile Include="../../Shared/CloudCompatibility/RabbitConnectionConfiguration.cs" Link="Infrastructure/Cloud/RabbitConnectionConfiguration.cs" />
     <Content Remove="Persistence/bin/**;Persistence/obj/**" />
     <EmbeddedResource Remove="Persistence/bin/**;Persistence/obj/**" />
     <None Remove="Persistence/bin/**;Persistence/obj/**" />

@@ -21,6 +21,7 @@ public sealed class CustomersDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // PostgreSQL overrides are applied after the existing SQL Server mapping.
         modelBuilder.Entity<InboxEvents>(entity =>
         {
             entity.HasKey(e => e.InboxEventId);
@@ -140,5 +141,7 @@ public sealed class CustomersDbContext : DbContext
             entity.Property(x => x.IdempotencyKey).HasMaxLength(140).IsUnicode(false);
             entity.Property(x => x.RequestHash).HasMaxLength(64).IsUnicode(false);
         });
+        if (Database.IsNpgsql())
+            SelfRestaurant.CloudCompatibility.PostgresModel.Apply(modelBuilder, "customers");
     }
 }
