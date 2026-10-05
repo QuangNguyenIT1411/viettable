@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -21,18 +23,10 @@ public final class DisplayFormatters {
         if (value == null || value.trim().isEmpty()) return "Chưa rõ thời gian";
         String normalized = value.trim();
         try {
-            return OffsetDateTime.parse(normalized)
-                    .atZoneSameInstant(ZoneId.systemDefault()).format(DATE_TIME);
+            ZonedDateTime local = parseUtcInstant(normalized).atZone(ZoneId.systemDefault());
+            return local.format(DATE_TIME);
         } catch (DateTimeParseException ignored) {
-            try {
-                return Instant.parse(normalized).atZone(ZoneId.systemDefault()).format(DATE_TIME);
-            } catch (DateTimeParseException ignoredAgain) {
-                try {
-                    return LocalDateTime.parse(normalized).format(DATE_TIME);
-                } catch (DateTimeParseException ignoredLocal) {
-                    return normalized.contains("T") ? "Chưa rõ thời gian" : normalized;
-                }
-            }
+            return normalized.contains("T") ? "Chưa rõ thời gian" : normalized;
         }
     }
 
@@ -46,6 +40,31 @@ public final class DisplayFormatters {
             int separator = formatted.indexOf(", ");
             if (separator >= 0) return formatted.substring(separator + 2);
             return normalized.contains("T") ? "Chưa rõ ngày" : normalized;
+        }
+    }
+
+    public static String time(String value) {
+        if (value == null || value.trim().isEmpty()) return "Chưa rõ giờ";
+        String normalized = value.trim();
+        try {
+            return parseUtcInstant(normalized).atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("HH:mm", new Locale("vi", "VN")));
+        } catch (DateTimeParseException ignored) {
+            return normalized.contains("T") ? "Chưa rõ giờ" : normalized;
+        }
+    }
+
+    private static Instant parseUtcInstant(String value) {
+        try {
+            return OffsetDateTime.parse(value).toInstant();
+        } catch (DateTimeParseException ignored) {
+            try {
+                return Instant.parse(value);
+            } catch (DateTimeParseException ignoredAgain) {
+                // The mobile API contract defines every ISO timestamp as UTC. SQL Server
+                // datetime2 can lose DateTime.Kind, so some valid UTC values arrive without Z.
+                return LocalDateTime.parse(value).toInstant(ZoneOffset.UTC);
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { CustomerOrderHistoryDto } from "../lib/types";
 
 const text = {
@@ -27,8 +28,8 @@ function formatCurrency(value: number) {
 
 function formatDateTime(value?: string | null) {
   if (!value) return text.noValue;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("vi-VN");
+  const parsed = parseApiUtcTimestamp(value);
+  return parsed ? parsed.toLocaleString("vi-VN") : value;
 }
 
 function renderOrderStatus(status?: string | null) {

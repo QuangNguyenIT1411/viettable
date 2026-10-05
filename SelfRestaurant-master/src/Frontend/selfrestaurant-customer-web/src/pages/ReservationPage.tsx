@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { PublicNavbar } from "../components/PublicNavbar";
 import { api } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { CreateReservationPayload, ReservationDto } from "../lib/types";
 
 type ReservationFormState = {
@@ -53,10 +54,8 @@ function createIdempotencyKey() {
 }
 
 function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
+  const date = parseApiUtcTimestamp(value);
+  if (!date) return value;
 
   return new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "full",

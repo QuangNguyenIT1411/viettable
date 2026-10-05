@@ -338,7 +338,18 @@ public sealed class DiningSessionsController : ControllerBase
         if (string.Equals(scope, "history", StringComparison.OrdinalIgnoreCase)) query = query.Where(x => !(x.IsActive ?? true));
         var orders = await query.OrderByDescending(x => x.OrderTime).Take(100).ToListAsync(ct);
         var result = new List<MobileOrderResponse>(orders.Count);
-        foreach (var order in orders) result.Add(await MapOrder(order, ct));
+        var sessionCodes = orders.Select(x => x.DiningSessionCode).Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct().ToArray();
+        var sessions = sessionCodes.Length == 0
+            ? new Dictionary<string, DiningSession>(StringComparer.Ordinal)
+            : await _db.DiningSessions.AsNoTracking().Where(x => sessionCodes.Contains(x.SessionCode))
+                .ToDictionaryAsync(x => x.SessionCode, StringComparer.Ordinal, ct);
+        foreach (var order in orders)
+        {
+            var session = string.IsNullOrWhiteSpace(order.DiningSessionCode)
+                ? null : sessions.GetValueOrDefault(order.DiningSessionCode);
+            result.Add(await MapOrder(order, ct, session));
+        }
         return Ok(result);
     }
 
@@ -434,7 +445,7 @@ public sealed class DiningSessionsController : ControllerBase
         return null;
     }
 
-    private async Task<MobileOrderResponse> MapOrder(OrderEntity order, CancellationToken ct)
+    private async Task<MobileOrderResponse> MapOrder(OrderEntity order, CancellationToken ct, DiningSession? session = null)
     {
         var status = await _db.OrderStatus.AsNoTracking().Where(x => x.StatusID == order.StatusID)
             .Select(x => x.StatusCode).FirstOrDefaultAsync(ct) ?? "PENDING";
@@ -445,10 +456,12 @@ public sealed class DiningSessionsController : ControllerBase
         var names = dishes.ToDictionary(x => x.DishId, x => x.Name);
         var items = rawItems.Select(x => new MobileOrderItemResponse(x.ItemID, x.DishID,
             names.GetValueOrDefault(x.DishID) ?? $"Món #{x.DishID}", x.Quantity, x.UnitPrice, x.LineTotal, x.Note, x.StatusCode)).ToArray();
-        var sessionId = await _db.DiningSessions.AsNoTracking().Where(x => x.SessionCode == order.DiningSessionCode)
-            .Select(x => (int?)x.DiningSessionId).FirstOrDefaultAsync(ct);
-        return new MobileOrderResponse(order.OrderID, order.OrderCode, sessionId, order.DiningSessionCode,
-            order.TableID, status, order.OrderTime, order.CompletedTime, items.Sum(x => x.LineTotal), items);
+        session ??= await _db.DiningSessions.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.SessionCode == order.DiningSessionCode, ct);
+        var sessionSummary = session is null ? null : new DiningSessionSummaryResponse(session.DiningSessionId,
+            session.SessionCode, session.BranchId, session.TableId, session.Status, session.StartedAtUtc, session.EndedAtUtc);
+        return new MobileOrderResponse(order.OrderID, order.OrderCode, session?.DiningSessionId, order.DiningSessionCode,
+            order.TableID, status, order.OrderTime, order.CompletedTime, items.Sum(x => x.LineTotal), items, sessionSummary);
     }
 
     private static ServiceRequestResponse MapServiceRequest(ServiceRequest x) => new(x.ServiceRequestId,
@@ -475,9 +488,11 @@ public sealed class DiningSessionsController : ControllerBase
         IReadOnlyList<MobileOrderItemRequest>? Items, string? Note);
     public sealed record MobileOrderItemResponse(int ItemId, int DishId, string DishName, int Quantity,
         decimal UnitPrice, decimal LineTotal, string? Note, string Status);
+    public sealed record DiningSessionSummaryResponse(int DiningSessionId, string SessionCode, int BranchId,
+        int TableId, string Status, DateTime StartedAtUtc, DateTime? EndedAtUtc);
     public sealed record MobileOrderResponse(int OrderId, string? OrderCode, int? DiningSessionId,
         string? DiningSessionCode, int? TableId, string Status, DateTime OrderTime, DateTime? CompletedTime,
-        decimal Subtotal, IReadOnlyList<MobileOrderItemResponse> Items);
+        decimal Subtotal, IReadOnlyList<MobileOrderItemResponse> Items, DiningSessionSummaryResponse? DiningSession = null);
     public sealed record MobileOrderTrackingResponse(MobileOrderResponse Order,
         IReadOnlyDictionary<string, int> StatusCounts, DateTime RefreshedAtUtc);
     public sealed record CreateServiceRequestRequest(int CustomerId, string? RequestType, string? Note,

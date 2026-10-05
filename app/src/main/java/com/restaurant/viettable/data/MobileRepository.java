@@ -10,6 +10,7 @@ import com.restaurant.viettable.model.FaqItem;
 import com.restaurant.viettable.model.NotificationItem;
 import com.restaurant.viettable.model.CartItem;
 import com.restaurant.viettable.model.DiningSession;
+import com.restaurant.viettable.model.DiningSessionSummary;
 import com.restaurant.viettable.model.Order;
 import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.Reservation;
@@ -17,11 +18,13 @@ import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.model.Review;
 import com.restaurant.viettable.model.ServiceRequest;
 import com.restaurant.viettable.model.Invoice;
+import com.restaurant.viettable.model.InvoiceHistoryItem;
 import com.restaurant.viettable.model.PaymentInfo;
 import com.restaurant.viettable.model.SplitBill;
 import com.restaurant.viettable.model.SplitPaymentResult;
 import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.model.User;
+import com.restaurant.viettable.util.DisplayFormatters;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -724,6 +727,70 @@ public final class MobileRepository {
         });
     }
 
+    public void loadInvoiceHistory(Callback<List<InvoiceHistoryItem>> callback) {
+        api().get("/api/mobile/v1/invoices?limit=100", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONArray rows = ((JSONObject) body).optJSONArray("items");
+                List<InvoiceHistoryItem> invoices = new ArrayList<>();
+                if (rows != null) for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.optJSONObject(i);
+                    if (row != null) invoices.add(parseInvoiceHistoryItem(row));
+                }
+                callback.onSuccess(invoices);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    public void loadInvoiceHistoryItem(int invoiceId, Callback<InvoiceHistoryItem> callback) {
+        api().get("/api/mobile/v1/invoices/" + invoiceId, true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                callback.onSuccess(parseInvoiceHistoryItem((JSONObject) body));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    private InvoiceHistoryItem parseInvoiceHistoryItem(JSONObject row) {
+        int branchId = row.optInt("branchId");
+        Branch branch = state.findBranch(String.valueOf(branchId));
+        int tableId = row.optInt("tableId");
+        JSONArray lineRows = row.optJSONArray("items");
+        List<InvoiceHistoryItem.Line> lines = new ArrayList<>();
+        if (lineRows != null) for (int i = 0; i < lineRows.length(); i++) {
+            JSONObject line = lineRows.optJSONObject(i);
+            if (line == null) continue;
+            String name = jsonString(line, "dishName", "DishName", "name", "Name");
+            int quantity = jsonInt(line, "quantity", "Quantity");
+            long total = jsonLong(line, "lineTotal", "LineTotal");
+            if (total == 0) total = jsonLong(line, "totalAmount", "TotalAmount");
+            if (total == 0) total = jsonLong(line, "unitPrice", "UnitPrice") * quantity;
+            lines.add(new InvoiceHistoryItem.Line(name, quantity, total));
+        }
+        return new InvoiceHistoryItem(row.optInt("invoiceId"), row.optString("invoiceCode"),
+                row.optInt("checkoutQuoteId"), row.optInt("paymentId"), row.optInt("diningSessionId"),
+                row.optString("diningSessionCode"), branch == null ? "Chi nhánh " + branchId : branch.getName(),
+                tableId > 0 ? "Bàn " + tableId : "Không gắn bàn", Math.round(row.optDouble("subtotal")),
+                Math.round(row.optDouble("discount")), Math.round(row.optDouble("totalAmount")),
+                row.optString("issuedAtUtc"), row.optString("paymentCode"), row.optString("paymentChannel"),
+                row.optString("paymentMethod"), row.optString("paymentLocation"), row.optString("paymentStatus"), lines);
+    }
+
+    private static String jsonString(JSONObject row, String... keys) {
+        for (String key : keys) if (row.has(key) && !row.isNull(key)) return row.optString(key);
+        return "Món ăn";
+    }
+
+    private static int jsonInt(JSONObject row, String... keys) {
+        for (String key : keys) if (row.has(key)) return row.optInt(key);
+        return 0;
+    }
+
+    private static long jsonLong(JSONObject row, String... keys) {
+        for (String key : keys) if (row.has(key)) return Math.round(row.optDouble(key));
+        return 0;
+    }
+
     public void loadFaqs(Callback<List<FaqItem>> callback) {
         api().get("/api/mobile/v1/support/faqs", false, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
@@ -913,11 +980,18 @@ public final class MobileRepository {
     private Reservation parseReservation(JSONObject row) {
         if (row == null) return new Reservation();
         String branchId = String.valueOf(row.optInt("branchId")); Branch branch = state.findBranch(branchId);
-        String reserved = row.optString("reservedAt"); String date = reserved; String time = "";
-        try { OffsetDateTime at = OffsetDateTime.parse(reserved + (reserved.endsWith("Z") ? "" : "Z")); date = at.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")); time = at.format(DateTimeFormatter.ofPattern("HH:mm")); } catch (Exception ignored) {}
+        String reserved = row.optString("reservedAt");
+        String date = DisplayFormatters.date(reserved);
+        String time = DisplayFormatters.time(reserved);
+        String note = row.isNull("note") ? "" : row.optString("note", "");
+        int tableId = row.isNull("tableId") ? 0 : row.optInt("tableId");
+        JSONArray assignedTables = row.optJSONArray("assignedTables");
+        if (tableId <= 0 && assignedTables != null && assignedTables.length() > 0) {
+            tableId = assignedTables.optJSONObject(0) == null ? 0 : assignedTables.optJSONObject(0).optInt("tableId");
+        }
         return new Reservation(String.valueOf(row.optInt("reservationId")), branchId,
                 branch == null ? "Chi nhánh " + branchId : branch.getName(), branch == null ? "" : branch.getAddress(),
-                date, time, row.optInt("partySize"), "", String.valueOf(row.optInt("tableId")), row.optString("note"),
+                date, time, row.optInt("partySize"), "", tableId > 0 ? String.valueOf(tableId) : "", note,
                 new ArrayList<>(), 0, reservationStatus(row.optString("status")), row.optJSONArray("preOrderItems") != null && row.optJSONArray("preOrderItems").length() > 0,
                 row.optString("customerName"), row.optString("phoneNumber"));
     }
@@ -946,10 +1020,28 @@ public final class MobileRepository {
                     Math.round(item.optDouble("unitPrice")), item.optInt("quantity"), item.optString("note"),
                     orderItemStatus(item.optString("status")), ""));
         }
-        DiningSession session = state.getActiveDiningSession();
-        return new Order(String.valueOf(row.optInt("orderId")), String.valueOf(row.optInt("diningSessionId")),
-                session == null ? "" : session.getBranchName(), session == null ? "" : session.getTableId(), Order.Type.DINE_IN,
+        DiningSession activeSession = state.getActiveDiningSession();
+        JSONObject sessionRow = row.optJSONObject("diningSession");
+        String sessionId = row.isNull("diningSessionId") ? "" : String.valueOf(row.optInt("diningSessionId"));
+        String branchName = activeSession == null ? "" : activeSession.getBranchName();
+        String tableName = row.isNull("tableId") ? "" : "Bàn " + row.optInt("tableId");
+        DiningSessionSummary summary = null;
+        if (sessionRow != null) {
+            sessionId = String.valueOf(sessionRow.optInt("diningSessionId"));
+            String branchId = String.valueOf(sessionRow.optInt("branchId"));
+            Branch branch = state.findBranch(branchId);
+            branchName = branch == null ? "Chi nhánh " + branchId : branch.getName();
+            int tableId = sessionRow.optInt("tableId");
+            if (tableId > 0) tableName = "Bàn " + tableId;
+            summary = new DiningSessionSummary(sessionId, sessionRow.optString("sessionCode"), branchId,
+                    tableId > 0 ? String.valueOf(tableId) : "", sessionRow.optString("status"),
+                    sessionRow.optString("startedAtUtc"), sessionRow.isNull("endedAtUtc") ? null : sessionRow.optString("endedAtUtc"));
+        }
+        Order order = new Order(String.valueOf(row.optInt("orderId")), sessionId,
+                branchName, tableName, Order.Type.DINE_IN,
                 orderStatus(row.optString("status")), row.optString("orderTime"), items, Math.round(row.optDouble("subtotal")), "");
+        order.setDiningSessionSummary(summary);
+        return order;
     }
 
     private ServiceRequest parseServiceRequest(JSONObject row) {
@@ -1029,7 +1121,8 @@ public final class MobileRepository {
     }
 
     private static Reservation.Status reservationStatus(String value) {
-        String normalized = value.replace("CheckedIn", "CHECKED_IN").replace("NoShow", "NO_SHOW").replace("PendingDeposit", "PENDING_DEPOSIT").toUpperCase(Locale.ROOT);
+        String normalized = value.replace("CheckedIn", "CHECKED_IN").replace("CheckingIn", "CHECKING_IN")
+                .replace("NoShow", "NO_SHOW").replace("PendingDeposit", "PENDING_DEPOSIT").toUpperCase(Locale.ROOT);
         try { return Reservation.Status.valueOf(normalized); } catch (Exception e) { return Reservation.Status.PENDING; }
     }
     private static DiningSession.Status sessionStatus(String value) {

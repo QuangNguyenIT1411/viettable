@@ -5,6 +5,7 @@ import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { cashierApi } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import { buildCashierTransferReference, buildCashierVietQrUrl, cashierQrBankInfo } from "../lib/vietQr";
 import type { CashierCheckoutResultDto, CashierDashboardDto, CashierReservationCheckInResultDto, ReservationDto } from "../lib/types";
 
@@ -86,8 +87,8 @@ function reservationStatusBadgeClass(status?: string | null) {
 }
 
 function formatReservationTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseApiUtcTimestamp(value);
+  if (!date) return value;
   return new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }).format(date);
 }
 
@@ -1115,7 +1116,7 @@ export function DashboardPage({ onLogout }: Props) {
                 </div>
                 <div className="bill-meta-card">
                   <span>Thời gian</span>
-                  <strong>{new Date(checkoutResult.paidTime).toLocaleString("vi-VN")}</strong>
+                  <strong>{parseApiUtcTimestamp(checkoutResult.paidTime)?.toLocaleString("vi-VN") ?? checkoutResult.paidTime}</strong>
                 </div>
                 <div className="bill-meta-card">
                   <span>Thu ngân</span>

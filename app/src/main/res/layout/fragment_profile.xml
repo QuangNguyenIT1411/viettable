@@ -321,7 +321,7 @@
                             android:layout_marginStart="14dp"
                             android:layout_weight="1"
                             android:fontFamily="sans-serif-medium"
-                            android:text="Lịch sử hóa đơn &amp; dùng bữa"
+                            android:text="Lịch sử phiên và hóa đơn"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
 

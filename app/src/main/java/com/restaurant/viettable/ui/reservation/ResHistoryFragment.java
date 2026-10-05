@@ -86,14 +86,17 @@ public class ResHistoryFragment extends BaseFragment {
         filteredList.clear();
         List<Reservation> all = appStateManager.getReservations();
 
-        // 0: Sắp tới (CONFIRMED)
-        // 1: Đang diễn ra (CHECKED_IN)
+        // 0: Sắp tới (pending/confirmed)
+        // 1: Đang diễn ra (check-in in progress or completed)
         // 2: Hoàn thành (COMPLETED)
         // 3: Đã hủy (CANCELLED)
         for (Reservation r : all) {
-            if (tabIndex == 0 && r.getStatus() == Reservation.Status.CONFIRMED) {
+            if (tabIndex == 0 && (r.getStatus() == Reservation.Status.PENDING
+                    || r.getStatus() == Reservation.Status.PENDING_DEPOSIT
+                    || r.getStatus() == Reservation.Status.CONFIRMED)) {
                 filteredList.add(r);
-            } else if (tabIndex == 1 && r.getStatus() == Reservation.Status.CHECKED_IN) {
+            } else if (tabIndex == 1 && (r.getStatus() == Reservation.Status.CHECKING_IN
+                    || r.getStatus() == Reservation.Status.CHECKED_IN)) {
                 filteredList.add(r);
             } else if (tabIndex == 2 && r.getStatus() == Reservation.Status.COMPLETED) {
                 filteredList.add(r);

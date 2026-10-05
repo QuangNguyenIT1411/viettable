@@ -58,7 +58,10 @@ public class ResHistoryAdapter extends RecyclerView.Adapter<ResHistoryAdapter.Re
             binding.tvHistResId.setText("#" + r.getId());
             binding.tvHistBranch.setText(r.getBranchName());
             binding.tvHistDateTime.setText(r.getTimeSlot() + " • " + DisplayFormatters.date(r.getDate()));
-            binding.tvHistDetails.setText("Bàn " + r.getTableId() + " • " + r.getGuestCount() + " khách • " + r.getAreaName());
+            String table = r.getTableId() == null || r.getTableId().trim().isEmpty()
+                    || "0".equals(r.getTableId()) ? "Chưa xếp bàn" : "Bàn " + r.getTableId();
+            binding.tvHistDetails.setText(table + " • " + r.getGuestCount() + " khách"
+                    + (r.getAreaName() == null || r.getAreaName().isEmpty() ? "" : " • " + r.getAreaName()));
             binding.tvHistStatusBadge.setText(r.getStatusDisplayText());
             binding.tvHistStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);
             switch (r.getStatus()) {
@@ -66,6 +69,12 @@ public class ResHistoryAdapter extends RecyclerView.Adapter<ResHistoryAdapter.Re
                     binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
                     binding.tvHistStatusBadge.setTextColor(0xFF1B5E20);
                     break;
+                case PENDING:
+                case PENDING_DEPOSIT:
+                    binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFF3E0));
+                    binding.tvHistStatusBadge.setTextColor(0xFFE65100);
+                    break;
+                case CHECKING_IN:
                 case CHECKED_IN:
                     binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE1F5FE));
                     binding.tvHistStatusBadge.setTextColor(0xFF01579B);

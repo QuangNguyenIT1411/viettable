@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PublicNavbar } from "../components/PublicNavbar";
 import { api } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { MenuDishDto, ReservationDto } from "../lib/types";
 
 type PreOrderCartItem = {
@@ -69,8 +70,8 @@ function normalizeText(value: string | null | undefined) {
 }
 
 function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseApiUtcTimestamp(value);
+  if (!date) return value;
   return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 

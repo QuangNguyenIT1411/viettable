@@ -9,6 +9,7 @@ public class Reservation implements Serializable {
         PENDING,
         PENDING_DEPOSIT,
         CONFIRMED,
+        CHECKING_IN,
         CHECKED_IN,
         COMPLETED,
         CANCELLED,
@@ -93,6 +94,7 @@ public class Reservation implements Serializable {
             case PENDING: return "Chờ xử lý";
             case PENDING_DEPOSIT: return "Chờ đặt cọc";
             case CONFIRMED: return "Đã xác nhận";
+            case CHECKING_IN: return "Đang check-in";
             case CHECKED_IN: return "Đã check-in";
             case COMPLETED: return "Hoàn thành";
             case CANCELLED: return "Đã hủy";

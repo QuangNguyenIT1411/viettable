@@ -28,6 +28,9 @@ import com.restaurant.viettable.ui.order.CurrentOrdersFragment;
 import com.restaurant.viettable.ui.order.OrderDetailFragment;
 import com.restaurant.viettable.ui.order.OrderTrackingFragment;
 import com.restaurant.viettable.ui.payment.PaymentCheckoutFragment;
+import com.restaurant.viettable.util.DiningSessionHistoryGrouper;
+
+import java.util.List;
 
 public class DiningSessionFragment extends BaseFragment implements AppStateManager.StateChangeListener, SignalRManager.Listener {
 
@@ -221,7 +224,8 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
             binding.tvEstimatedTotalAmount.setText(session.getFormattedSubtotal());
 
             // Orders list
-            orderAdapter = new SessionOrderAdapter(session.getOrders(), order -> {
+            List<Order> chronologicalOrders = DiningSessionHistoryGrouper.sortChronologically(session.getOrders());
+            orderAdapter = new SessionOrderAdapter(chronologicalOrders, order -> {
                 navigateTo(OrderDetailFragment.newInstance(order));
             });
             binding.rvSessionOrders.setLayoutManager(new LinearLayoutManager(requireContext()));

@@ -2,6 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAppDialog } from "../components/AppDialog";
 import { chefApi } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type {
   ChefDashboardDto,
   ChefDishIngredientsDto,
@@ -238,8 +239,8 @@ export function DashboardPage({ onLogout }: Props) {
 
   function formatShortDateTime(value?: string | null) {
     if (!value) return "Chưa cập nhật";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+    const date = parseApiUtcTimestamp(value);
+    if (!date) return value;
     return date.toLocaleString("vi-VN", {
       day: "2-digit",
       month: "2-digit",
@@ -643,7 +644,7 @@ export function DashboardPage({ onLogout }: Props) {
             <div>
               <h2>Thực đơn hôm nay</h2>
               <p className="muted chef-menu-subtitle">
-                {data.menu.branchName} | {formatShortDateTime(`${data.menu.menuDate}T00:00:00`)}
+                {data.menu.branchName} | {new Date(`${data.menu.menuDate}T00:00:00`).toLocaleDateString("vi-VN")}
               </p>
             </div>
             <div className="chef-chip-row">
@@ -942,8 +943,8 @@ function OrderColumn({
   onCancelItem,
 }: OrderColumnProps) {
   function formatOrderTime(value: string) {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
+    const date = parseApiUtcTimestamp(value);
+    if (!date) return value;
     return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
   }
 

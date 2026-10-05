@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { cashierApi } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { CashierReportScreenDto } from "../lib/types";
 
 function formatDateTime(value?: string | null) {
   if (!value) return "Ch\u01b0a c\u1eadp nh\u1eadt";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
+  const date = parseApiUtcTimestamp(value);
+  return !date
     ? value
     : date.toLocaleString("vi-VN", {
         day: "2-digit",

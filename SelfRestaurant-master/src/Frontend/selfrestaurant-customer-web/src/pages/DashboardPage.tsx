@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import { toMvcPath } from "../lib/mvcPaths";
 
 const text = {
@@ -54,8 +55,8 @@ function formatCurrency(value: number) {
 
 function formatDateTime(value?: string | null) {
   if (!value) return text.none;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("vi-VN");
+  const parsed = parseApiUtcTimestamp(value);
+  return parsed ? parsed.toLocaleString("vi-VN") : value;
 }
 
 function normalizeGender(value?: string | null) {
@@ -607,5 +608,4 @@ export function DashboardPage({ initialTab = "profile" }: { initialTab?: "profil
     </div>
   );
 }
-
 

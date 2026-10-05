@@ -7,19 +7,30 @@
 
     <!-- Camera state and permission controls. -->
     <LinearLayout
+        android:id="@+id/qrHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:elevation="8dp"
         android:padding="16dp"
         android:tag="safe_top">
 
         <TextView
+            android:id="@+id/tvQrTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif-medium"
             android:text="Quét mã QR tại bàn"
             android:textColor="#FFFFFF"
             android:textSize="20sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnToggleManualEntry"
+            style="@style/Widget.VietTable.Button.Secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Nhập mã bàn thủ công" />
 
         <TextView
             android:id="@+id/tvCameraStatus"
@@ -88,9 +99,11 @@
 
     <!-- Manual table-code entry backed by the Gateway QR validation endpoint. -->
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/manualEntryCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:visibility="gone"
         app:cardBackgroundColor="@color/colorSurface"
         app:cardCornerRadius="24dp"
         app:cardElevation="8dp">
@@ -136,6 +149,7 @@
                         android:layout_height="wrap_content"
                         android:imeOptions="actionDone"
                         android:inputType="textCapCharacters"
+                        android:singleLine="true"
                         android:textSize="14sp" />
                 </com.google.android.material.textfield.TextInputLayout>
 

@@ -28,6 +28,7 @@ public class Order implements Serializable {
     private List<OrderItem> items;
     private long totalAmount;
     private String eta;
+    private DiningSessionSummary diningSessionSummary;
 
     public Order() {
         this.items = new ArrayList<>();
@@ -61,6 +62,8 @@ public class Order implements Serializable {
     public List<OrderItem> getItems() { return items; }
     public long getTotalAmount() { return totalAmount; }
     public String getEta() { return eta; }
+    public DiningSessionSummary getDiningSessionSummary() { return diningSessionSummary; }
+    public void setDiningSessionSummary(DiningSessionSummary summary) { this.diningSessionSummary = summary; }
 
     public String getFormattedTotal() {
         return String.format(java.util.Locale.GERMANY, "%,dđ", totalAmount);

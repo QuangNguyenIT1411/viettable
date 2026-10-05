@@ -39,7 +39,7 @@ public class SessionOrderAdapter extends RecyclerView.Adapter<SessionOrderAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(orders.get(position), listener);
+        holder.bind(orders.get(position), listener, position + 1);
     }
 
     @Override
@@ -55,16 +55,18 @@ public class SessionOrderAdapter extends RecyclerView.Adapter<SessionOrderAdapte
             this.binding = binding;
         }
 
-        public void bind(Order order, OnOrderClickListener listener) {
-            binding.tvOrderTitle.setText("Đơn #" + order.getId() + " • " + DisplayFormatters.dateTime(order.getCreatedAt()));
+        public void bind(Order order, OnOrderClickListener listener, int roundNumber) {
+            binding.tvOrderTitle.setText("Đợt " + roundNumber + " • Đơn #" + order.getId()
+                    + " • " + DisplayFormatters.dateTime(order.getCreatedAt()));
 
             StringBuilder sb = new StringBuilder();
             int itemCount = 0;
             for (int i = 0; i < order.getItems().size(); i++) {
                 OrderItem item = order.getItems().get(i);
                 itemCount += item.getQuantity();
-                if (i > 0) sb.append(", ");
-                sb.append(item.getQuantity()).append("x ").append(item.getFoodName());
+                if (i > 0) sb.append("\n");
+                sb.append(item.getQuantity()).append("x ").append(item.getFoodName())
+                        .append(" • ").append(item.getStatusDisplayText());
             }
 
             binding.tvOrderItemsSummary.setText(sb.toString());

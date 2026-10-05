@@ -75,6 +75,8 @@ public sealed class BillingClient : ApiClientBase
     public Task<JsonElement> RetryMobilePaymentAsync(int paymentId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/payments/{paymentId}/retry", request, ct);
     public Task<JsonElement> GetSessionInvoiceAsync(int sessionId, int customerId, CancellationToken ct) => GetRequiredAsync($"/api/internal/mobile/dining-sessions/{sessionId}/invoice?customerId={customerId}", "invoice_not_found", ct);
     public Task<JsonElement> GetInvoiceAsync(int invoiceId, int customerId, CancellationToken ct) => GetRequiredAsync($"/api/internal/mobile/invoices/{invoiceId}?customerId={customerId}", "invoice_not_found", ct);
+    public Task<JsonElement> GetCustomerInvoicesAsync(int customerId, int limit, CancellationToken ct) =>
+        GetRequiredAsync($"/api/internal/mobile/invoices?customerId={customerId}&limit={limit}", "invoice_history_unavailable", ct);
 
     private async Task<JsonElement> GetRequiredAsync(string path, string code, CancellationToken ct)
     {

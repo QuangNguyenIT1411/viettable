@@ -251,7 +251,8 @@ public sealed class MobileCheckoutController : ControllerBase
     {
         var invoice = await _db.Invoices.AsNoTracking().FirstOrDefaultAsync(x => x.DiningSessionId == sessionId, ct);
         if (invoice is null) return NotFound(new { code = "invoice_not_found", message = "Hóa đơn chưa được phát hành." });
-        return invoice.CustomerId == customerId ? Ok(MapInvoice(invoice)) : ForbidResult();
+        if (invoice.CustomerId != customerId) return ForbidResult();
+        return Ok(await MapCustomerInvoiceAsync(invoice, ct));
     }
 
     [HttpGet("invoices/{invoiceId:int}")]
@@ -259,7 +260,29 @@ public sealed class MobileCheckoutController : ControllerBase
     {
         var invoice = await _db.Invoices.AsNoTracking().FirstOrDefaultAsync(x => x.InvoiceId == invoiceId, ct);
         if (invoice is null) return NotFound(new { code = "invoice_not_found", message = "Không tìm thấy hóa đơn." });
-        return invoice.CustomerId == customerId ? Ok(MapInvoice(invoice)) : ForbidResult();
+        if (invoice.CustomerId != customerId) return ForbidResult();
+        return Ok(await MapCustomerInvoiceAsync(invoice, ct));
+    }
+
+    [HttpGet("invoices")]
+    public async Task<ActionResult<object>> CustomerInvoices([FromQuery] int customerId,
+        [FromQuery] int limit = 50, CancellationToken ct = default)
+    {
+        if (customerId <= 0 || limit is < 1 or > 100)
+            return BadRequest(new { code = "validation_failed", message = "Thông tin lịch sử hóa đơn không hợp lệ." });
+        var invoices = await _db.Invoices.AsNoTracking().Where(x => x.CustomerId == customerId)
+            .OrderByDescending(x => x.IssuedAtUtc).ThenByDescending(x => x.InvoiceId).Take(limit).ToArrayAsync(ct);
+        var quoteIds = invoices.Select(x => x.CheckoutQuoteId).Distinct().ToArray();
+        var paymentIds = invoices.Select(x => x.PaymentId).Distinct().ToArray();
+        var quotes = quoteIds.Length == 0 ? new Dictionary<int, CheckoutQuote>()
+            : await _db.CheckoutQuotes.AsNoTracking().Where(x => quoteIds.Contains(x.CheckoutQuoteId))
+                .ToDictionaryAsync(x => x.CheckoutQuoteId, ct);
+        var payments = paymentIds.Length == 0 ? new Dictionary<int, Payment>()
+            : await _db.Payments.AsNoTracking().Where(x => paymentIds.Contains(x.PaymentId))
+                .ToDictionaryAsync(x => x.PaymentId, ct);
+        var items = invoices.Select(invoice => MapCustomerInvoice(invoice,
+            quotes.GetValueOrDefault(invoice.CheckoutQuoteId), payments.GetValueOrDefault(invoice.PaymentId))).ToArray();
+        return Ok(new { items, nextCursor = (string?)null });
     }
 
     [HttpPost("dining-sessions/{sessionId:int}/split-bill")]
@@ -376,6 +399,23 @@ public sealed class MobileCheckoutController : ControllerBase
     private static object MapQuote(CheckoutQuote q) => new { q.CheckoutQuoteId, q.QuoteCode, q.DiningSessionId, q.Status, subtotal = Money(q.Subtotal), voucherDiscount = Money(q.VoucherDiscount), q.PointsApplied, pointsDiscount = Money(q.PointsDiscount), totalAmount = Money(q.TotalAmount), q.ExpiresAtUtc, items = JsonSerializer.Deserialize<JsonElement>(q.ItemsJson) };
     private static object MapPayment(Payment p) => new { p.PaymentId, p.PaymentCode, p.CheckoutQuoteId, p.DiningSessionId, amount = Money(p.Amount), p.Currency, p.Channel, p.Method, p.Location, p.Status, p.AttemptNumber, p.ProviderName, p.ProviderReference, p.ProviderTransactionId, paymentUrl = p.ProviderPaymentUrl, providerExpiresAtUtc = p.ProviderExpiresAtUtc, p.FailureCode, p.CreatedAtUtc, p.UpdatedAtUtc, p.CompletedAtUtc };
     private static object MapInvoice(Invoice x) => new { x.InvoiceId, x.InvoiceCode, x.CheckoutQuoteId, x.PaymentId, x.DiningSessionId, subtotal = Money(x.Subtotal), discount = Money(x.Discount), totalAmount = Money(x.TotalAmount), items = JsonSerializer.Deserialize<JsonElement>(x.ItemsJson), x.IssuedAtUtc };
+    private async Task<object> MapCustomerInvoiceAsync(Invoice invoice, CancellationToken ct)
+    {
+        var quote = await _db.CheckoutQuotes.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.CheckoutQuoteId == invoice.CheckoutQuoteId, ct);
+        var payment = await _db.Payments.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.PaymentId == invoice.PaymentId, ct);
+        return MapCustomerInvoice(invoice, quote, payment);
+    }
+    private static object MapCustomerInvoice(Invoice invoice, CheckoutQuote? quote, Payment? payment) => new
+    {
+        invoice.InvoiceId, invoice.InvoiceCode, invoice.CheckoutQuoteId, invoice.PaymentId, invoice.DiningSessionId,
+        subtotal = Money(invoice.Subtotal), discount = Money(invoice.Discount), totalAmount = Money(invoice.TotalAmount),
+        items = JsonSerializer.Deserialize<JsonElement>(invoice.ItemsJson), invoice.IssuedAtUtc,
+        branchId = quote?.BranchId, tableId = quote?.TableId, diningSessionCode = quote?.DiningSessionCode,
+        paymentCode = payment?.PaymentCode, paymentChannel = payment?.Channel, paymentMethod = payment?.Method,
+        paymentLocation = payment?.Location, paymentStatus = payment?.Status, paymentCompletedAtUtc = payment?.CompletedAtUtc
+    };
     private async Task<object> MapSplitAsync(SplitBill x, CancellationToken ct)
     {
         var paymentIds = x.Parts.Where(p => p.PaymentId.HasValue).Select(p => p.PaymentId!.Value).ToArray();

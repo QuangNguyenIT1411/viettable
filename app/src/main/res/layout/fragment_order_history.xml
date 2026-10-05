@@ -35,7 +35,12 @@
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Lịch sử hóa đơn" />
+                android:text="Lịch sử phiên" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hóa đơn" />
         </com.google.android.material.tabs.TabLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -67,7 +72,14 @@
                 android:orientation="vertical"
                 android:visibility="gone">
 
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progressHistoryInvoices"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:visibility="gone" />
+
                 <ImageView
+                    android:id="@+id/ivHistoryEmptyIcon"
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:background="@drawable/bg_badge"
@@ -77,6 +89,7 @@
                     app:tint="@color/colorTextSecondary" />
 
                 <TextView
+                    android:id="@+id/tvHistoryEmptyMessage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
@@ -135,9 +148,18 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:fontFamily="sans-serif-medium"
-                    android:text="Chưa có lịch sử đơn hàng"
+                    android:text="Chưa có lịch sử phiên dùng bữa"
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="16sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRetryHistoryInvoices"
+                    style="@style/Widget.VietTable.Button.Outlined"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Thử tải lại"
+                    android:visibility="gone" />
             </LinearLayout>
 
         </LinearLayout>

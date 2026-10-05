@@ -111,7 +111,7 @@ This catalog is the v1 target. `Planned` means the route is contractually reserv
 | Voucher | `GET /me/vouchers`; `POST /checkout/quotes/{id}/voucher` | Billing | Implemented B6 |
 | Loyalty | `POST /checkout/quotes/{id}/loyalty` | Identity/Billing | Implemented B6 |
 | Payment | `POST /checkout/quotes/{id}/payments`; `GET /payments/{id}`; `POST /payments/{id}/retry`; provider webhook is not a mobile route | Billing | Implemented B6 |
-| Invoice | `GET /dining-sessions/{id}/invoice`, `/invoices/{id}` | Billing | Implemented B6 |
+| Invoice | `GET /dining-sessions/{id}/invoice`, `/invoices/{id}`, `/invoices?limit=` | Billing | Implemented B6; customer-scoped history list is additive |
 | Split bill | `POST/GET /dining-sessions/{id}/split-bill`; `GET /split-bills/{id}`; `POST /split-bills/{id}/payments` | Billing | Implemented B6; additive read projection for mobile resume |
 | Reviews | `POST /reviews`; `GET /me/reviews`; `PUT/DELETE /reviews/{id}` | Customers | Implemented B7 |
 | Support | `GET /support/faqs`; `POST /support/requests` | Customers | Implemented B7 |

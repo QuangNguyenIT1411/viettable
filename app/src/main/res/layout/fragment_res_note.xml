@@ -117,8 +117,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="top"
                     android:inputType="textMultiLine"
-                    android:lines="3"
-                    android:text="Chuẩn bị thêm 1 ghế trẻ em và nến nhỏ giúp mình nhé." />
+                    android:lines="3" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Contact Information -->

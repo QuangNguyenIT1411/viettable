@@ -54,6 +54,15 @@ public sealed class MobileBillingGatewayController : ControllerBase
     public Task<ActionResult<object>> SessionInvoice(int sessionId, CancellationToken ct) => Get(() => _billing.GetSessionInvoiceAsync(sessionId, Actor()!.Value, ct));
     [HttpGet("invoices/{invoiceId:int}")]
     public Task<ActionResult<object>> Invoice(int invoiceId, CancellationToken ct) => Get(() => _billing.GetInvoiceAsync(invoiceId, Actor()!.Value, ct));
+    [HttpGet("invoices")]
+    public async Task<ActionResult<object>> Invoices([FromQuery] int limit = 50, CancellationToken ct = default)
+    {
+        var actor = Actor();
+        if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
+        if (limit is < 1 or > 100) return Error("validation_failed", "limit phải từ 1 đến 100.", 400);
+        try { return Ok(await _billing.GetCustomerInvoicesAsync(actor.Value, limit, ct)); }
+        catch (ApiClientException ex) { return Downstream(ex); }
+    }
 
     [HttpPost("dining-sessions/{sessionId:int}/split-bill")]
     public Task<ActionResult<object>> Split(int sessionId, CreateSplitBillBody request, CancellationToken ct) => Command("split", new { sessionId, request.CheckoutQuoteId, request.Amounts },

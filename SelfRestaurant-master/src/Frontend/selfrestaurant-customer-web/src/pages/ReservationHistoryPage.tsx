@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PublicNavbar } from "../components/PublicNavbar";
 import { api } from "../lib/api";
+import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { ReservationDto } from "../lib/types";
 import { toMvcPath } from "../lib/mvcPaths";
 
@@ -19,8 +20,8 @@ const preOrderStatuses = new Set(["Pending", "Confirmed"]);
 const cancelStatuses = new Set(["Pending", "Confirmed"]);
 
 function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const date = parseApiUtcTimestamp(value);
+  if (!date) return value;
   return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 

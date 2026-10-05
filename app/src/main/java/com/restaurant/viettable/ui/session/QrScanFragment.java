@@ -7,10 +7,11 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -23,7 +24,10 @@ import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
@@ -52,6 +56,8 @@ public class QrScanFragment extends BaseFragment {
     private ExecutorService cameraExecutor;
     private boolean cameraStarted;
     private boolean cameraStartRequested;
+    private boolean manualEntryMode;
+    private int manualPanelBaseBottomMargin;
     private final AtomicBoolean frameInFlight = new AtomicBoolean(false);
     private final AtomicBoolean qrConsumed = new AtomicBoolean(false);
 
@@ -89,6 +95,9 @@ public class QrScanFragment extends BaseFragment {
         barcodeScanner = BarcodeScanning.getClient(options);
 
         binding.btnCameraPermission.setOnClickListener(v -> handleCameraPermissionAction());
+        binding.btnToggleManualEntry.setOnClickListener(v -> {
+            if (manualEntryMode) showCameraMode(); else showManualMode(true);
+        });
         binding.btnSubmitTableCode.setOnClickListener(v -> submitManualCode());
         binding.etTableCode.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -96,6 +105,23 @@ public class QrScanFragment extends BaseFragment {
                 return true;
             }
             return false;
+        });
+        ViewGroup.LayoutParams panelParams = binding.manualEntryCard.getLayoutParams();
+        if (panelParams instanceof CoordinatorLayout.LayoutParams) {
+            manualPanelBaseBottomMargin = ((CoordinatorLayout.LayoutParams) panelParams).bottomMargin;
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(binding.manualEntryCard, (panel, windowInsets) -> {
+            int imeBottom = windowInsets.isVisible(WindowInsetsCompat.Type.ime())
+                    ? windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom : 0;
+            int navigationBottom = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+            int extraBottom = Math.max(0, imeBottom - navigationBottom);
+            ViewGroup.LayoutParams raw = panel.getLayoutParams();
+            if (raw instanceof CoordinatorLayout.LayoutParams) {
+                CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) raw;
+                params.bottomMargin = manualPanelBaseBottomMargin + extraBottom;
+                panel.setLayoutParams(params);
+            }
+            return windowInsets;
         });
         ensureCameraPermission();
     }
@@ -111,9 +137,16 @@ public class QrScanFragment extends BaseFragment {
         // is popped, so onViewCreated() is not guaranteed to reset this gate.
         if (qrConsumed.getAndSet(false)) {
             frameInFlight.set(false);
+            binding.progressCamera.setVisibility(View.GONE);
             binding.btnSubmitTableCode.setEnabled(true);
+            if (manualEntryMode) {
+                showManualMode(false);
+            } else if (!hasCameraPermission()) {
+                showCameraPermissionUnavailable(
+                        !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA));
+            }
         }
-        if (hasCameraPermission() && !cameraStarted) {
+        if (!manualEntryMode && hasCameraPermission() && !cameraStarted) {
             startCamera();
         }
     }
@@ -177,17 +210,17 @@ public class QrScanFragment extends BaseFragment {
 
     private void showCameraPermissionUnavailable(boolean permanentlyDenied) {
         if (binding == null) return;
-        binding.progressCamera.setVisibility(View.GONE);
         binding.tvCameraStatus.setText(permanentlyDenied
-                ? "Quyền camera đang bị tắt. Bạn vẫn có thể nhập mã bàn bên dưới."
-                : "Cần quyền camera để quét QR. Bạn vẫn có thể nhập mã bàn bên dưới.");
+                ? "Quyền camera đang bị tắt. Bạn vẫn có thể nhập mã bàn thủ công."
+                : "Cần quyền camera để quét QR. Bạn vẫn có thể nhập mã bàn thủ công.");
         binding.tvScanHint.setText("Camera chưa được cấp quyền");
         binding.btnCameraPermission.setText(permanentlyDenied ? "Mở cài đặt" : "Cho phép camera");
         binding.btnCameraPermission.setVisibility(View.VISIBLE);
+        showManualMode(false);
     }
 
     private void startCamera() {
-        if (binding == null || cameraStarted || cameraStartRequested
+        if (binding == null || manualEntryMode || cameraStarted || cameraStartRequested
                 || qrConsumed.get() || !hasCameraPermission()) return;
         cameraStartRequested = true;
         showCameraInitializing();
@@ -265,6 +298,7 @@ public class QrScanFragment extends BaseFragment {
 
     private void navigateWithConsumedQr(String code) {
         if (binding == null || !isAdded()) return;
+        hideKeyboard();
         binding.progressCamera.setVisibility(View.VISIBLE);
         binding.tvCameraStatus.setText("Đã đọc QR. Đang xác thực mã bàn...");
         binding.tvScanHint.setText("Đang xác thực");
@@ -290,9 +324,53 @@ public class QrScanFragment extends BaseFragment {
 
     private void showCameraError(String message) {
         if (binding == null) return;
+        binding.cameraContainer.setVisibility(View.VISIBLE);
         binding.progressCamera.setVisibility(View.GONE);
         binding.tvCameraStatus.setText(message);
         binding.tvScanHint.setText("Có thể nhập mã bàn bên dưới");
+    }
+
+    private void showManualMode(boolean focusInput) {
+        if (binding == null) return;
+        manualEntryMode = true;
+        stopCamera();
+        binding.tvQrTitle.setText("Nhập mã bàn");
+        binding.btnToggleManualEntry.setText("Quét mã QR");
+        binding.cameraContainer.setVisibility(View.GONE);
+        binding.manualEntryCard.setVisibility(View.VISIBLE);
+        binding.tvCameraStatus.setText(hasCameraPermission()
+                ? "Nhập mã bàn được in bên dưới QR để tiếp tục."
+                : "Camera không khả dụng; bạn vẫn có thể nhập mã bàn.");
+        if (focusInput) {
+            binding.etTableCode.requestFocus();
+            binding.etTableCode.post(() -> {
+                if (binding == null || !manualEntryMode) return;
+                InputMethodManager manager = (InputMethodManager) requireContext()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (manager != null) manager.showSoftInput(binding.etTableCode, InputMethodManager.SHOW_IMPLICIT);
+                ViewCompat.requestApplyInsets(binding.manualEntryCard);
+            });
+        }
+    }
+
+    private void showCameraMode() {
+        if (binding == null) return;
+        hideKeyboard();
+        binding.etTableCode.clearFocus();
+        manualEntryMode = false;
+        binding.tvQrTitle.setText("Quét mã QR tại bàn");
+        binding.btnToggleManualEntry.setText("Nhập mã bàn thủ công");
+        binding.manualEntryCard.setVisibility(View.GONE);
+        binding.cameraContainer.setVisibility(View.VISIBLE);
+        if (hasCameraPermission()) startCamera();
+        else showCameraPermissionUnavailable(!shouldShowRequestPermissionRationale(Manifest.permission.CAMERA));
+    }
+
+    private void hideKeyboard() {
+        if (binding == null || getContext() == null) return;
+        InputMethodManager manager = (InputMethodManager) requireContext()
+                .getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (manager != null) manager.hideSoftInputFromWindow(binding.etTableCode.getWindowToken(), 0);
     }
 
     private void postCameraError(String message) {
