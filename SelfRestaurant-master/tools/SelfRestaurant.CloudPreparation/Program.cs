@@ -13,7 +13,7 @@ try
 {
     var input = JsonSerializer.Deserialize<Input>(await Console.In.ReadToEndAsync())
         ?? throw new InvalidOperationException("Missing staging input.");
-    if (input.Action is not ("Probe" or "Migrate" or "Verify" or "Roles" or "Bootstrap" or "CorrectReferenceTime" or "Workflow" or "CloudHost" or "CloudHostAuth" or "StorageUpload" or "StorageVerify")) throw new InvalidOperationException("Unsupported staging action.");
+    if (input.Action is not ("Probe" or "Migrate" or "Verify" or "Roles" or "Bootstrap" or "CorrectReferenceTime" or "Workflow" or "CloudHost" or "CloudHostAuth" or "CloudRecovery" or "CloudRecoveryProbe" or "StorageUpload" or "StorageVerify")) throw new InvalidOperationException("Unsupported staging action.");
     if (string.IsNullOrWhiteSpace(input.ProjectRef) || string.IsNullOrWhiteSpace(input.Password))
         throw new InvalidOperationException("Staging credentials required.");
     if (!((input.Host == "db." + input.ProjectRef + ".supabase.co" && input.Username == "postgres")
@@ -33,7 +33,7 @@ try
     await using var admin = new NpgsqlConnection(connection);
     await admin.OpenAsync();
     Console.WriteLine("PASS: staging PostgreSQL connection with verified TLS.");
-    if (input.Action is "CloudHost" or "CloudHostAuth")
+    if (input.Action is "CloudHost" or "CloudHostAuth" or "CloudRecovery" or "CloudRecoveryProbe")
     {
         await CloudHostAcceptance.RunAsync(input);
         return 0;

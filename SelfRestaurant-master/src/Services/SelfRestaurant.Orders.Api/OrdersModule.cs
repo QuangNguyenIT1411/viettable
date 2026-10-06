@@ -65,6 +65,7 @@ builder.Services.AddHttpClient<BillingCheckoutGuardClient>(http =>
 builder.Services.AddScoped<IIntegrationEventPublisher, FileIntegrationEventPublisher>();
 builder.Services.AddScoped<RequestActorContextAccessor>();
 builder.Services.AddScoped<BusinessAuditLogger>();
+builder.Services.AddTransient<PaymentCompletedConsumerService>();
 if (builder.Configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") ?? true)
     builder.Services.AddHostedService<PaymentCompletedConsumerService>();
 

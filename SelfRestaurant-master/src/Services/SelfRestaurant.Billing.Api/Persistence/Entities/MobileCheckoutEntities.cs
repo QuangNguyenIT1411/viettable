@@ -80,6 +80,8 @@ public sealed class Invoice
     public string ItemsJson { get; set; } = "[]";
     public DateTime IssuedAtUtc { get; set; }
     public DateTime? SettlementCompletedAtUtc { get; set; }
+    public int RecoveryAttemptCount { get; set; }
+    public DateTime? RecoveryLastAttemptAtUtc { get; set; }
 }
 
 public sealed class SplitBill

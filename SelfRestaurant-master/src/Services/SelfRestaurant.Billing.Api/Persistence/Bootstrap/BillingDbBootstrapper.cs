@@ -37,6 +37,12 @@ public static class BillingDbBootstrapper
                 ALTER TABLE dbo.Invoices ADD SettlementCompletedAtUtc DATETIME2 NULL;
                 EXEC('UPDATE dbo.Invoices SET SettlementCompletedAtUtc = IssuedAtUtc');
             END;
+            IF COL_LENGTH('dbo.Invoices', 'RecoveryAttemptCount') IS NULL
+                ALTER TABLE dbo.Invoices ADD RecoveryAttemptCount INT NOT NULL CONSTRAINT DF_Invoices_RecoveryAttemptCount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'RecoveryLastAttemptAtUtc') IS NULL
+                ALTER TABLE dbo.Invoices ADD RecoveryLastAttemptAtUtc DATETIME2 NULL;
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.Invoices') AND name=N'IX_Invoices_RecoveryPending')
+                CREATE INDEX IX_Invoices_RecoveryPending ON dbo.Invoices(SettlementCompletedAtUtc, RecoveryLastAttemptAtUtc, InvoiceId);
             """, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);
     }

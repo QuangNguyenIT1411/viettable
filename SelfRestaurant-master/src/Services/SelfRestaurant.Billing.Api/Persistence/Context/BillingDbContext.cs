@@ -154,6 +154,7 @@ public sealed class BillingDbContext : DbContext
         modelBuilder.Entity<Invoice>(entity =>
         {
             entity.HasKey(x => x.InvoiceId); entity.HasIndex(x => x.InvoiceCode).IsUnique(); entity.HasIndex(x => x.CheckoutQuoteId).IsUnique(); entity.HasIndex(x => x.DiningSessionId).IsUnique();
+            entity.HasIndex(x => new { x.SettlementCompletedAtUtc, x.RecoveryLastAttemptAtUtc, x.InvoiceId }).HasDatabaseName("IX_Invoices_RecoveryPending");
             entity.Property(x => x.InvoiceCode).HasMaxLength(50).IsUnicode(false); entity.Property(x => x.ItemsJson).HasColumnType("nvarchar(max)");
             entity.Property(x => x.Subtotal).HasColumnType("decimal(18,2)"); entity.Property(x => x.Discount).HasColumnType("decimal(18,2)"); entity.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
         });

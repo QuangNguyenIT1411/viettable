@@ -25,9 +25,10 @@ public sealed class OrdersController : ControllerBase
     private readonly IIntegrationEventPublisher _eventPublisher;
     private readonly BusinessAuditLogger _auditLogger;
     private readonly IHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<OrdersController> _logger;
 
-    public OrdersController(OrdersDbContext db, ICatalogReadModel catalogApi, ICustomerLoyaltyReadModel customersApi, BillingCheckoutGuardClient billingGuard, IIntegrationEventPublisher eventPublisher, BusinessAuditLogger auditLogger, IHostEnvironment environment, ILogger<OrdersController> logger)
+    public OrdersController(OrdersDbContext db, ICatalogReadModel catalogApi, ICustomerLoyaltyReadModel customersApi, BillingCheckoutGuardClient billingGuard, IIntegrationEventPublisher eventPublisher, BusinessAuditLogger auditLogger, IHostEnvironment environment, IConfiguration configuration, ILogger<OrdersController> logger)
     {
         _db = db;
         _catalogApi = catalogApi;
@@ -36,6 +37,7 @@ public sealed class OrdersController : ControllerBase
         _eventPublisher = eventPublisher;
         _auditLogger = auditLogger;
         _environment = environment;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -2855,12 +2857,30 @@ public sealed class OrdersController : ControllerBase
             beforeState: new { status = beforeOrderStatusCode, changedItemIds = changedItems.Select(x => x.ItemID).ToArray() },
             afterState: new { status = syncResult.StatusCode, changedItemIds = changedItems.Select(x => x.ItemID).ToArray() });
         await _db.SaveChangesAsync(cancellationToken);
+        var atomicReadyEvents = isReady && _configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") == false;
+        if (atomicReadyEvents)
+        {
+            foreach (var changedItem in changedItems)
+                await PublishOrderEventAsync("order.status-ready.v1", order, new
+                {
+                    orderId = order.OrderID,
+                    orderCode = order.OrderCode,
+                    tableId = order.TableID,
+                    customerId = order.CustomerID,
+                    orderItemId = changedItem.ItemID,
+                    dishId = changedItem.DishID,
+                    dishName = await ResolveDishNameAsync(changedItem.DishID, cancellationToken),
+                    quantity = changedItem.Quantity,
+                    statusCode = syncResult.StatusCode,
+                    itemStatusCode = "READY"
+                }, cancellationToken);
+        }
         if (_db.Database.CurrentTransaction is not null)
         {
             await _db.Database.CurrentTransaction.CommitAsync(cancellationToken);
         }
 
-        if (string.Equals(statusCode, "READY", StringComparison.OrdinalIgnoreCase))
+        if (isReady && !atomicReadyEvents)
         {
             foreach (var item in changedItems)
             {
@@ -2972,12 +2992,28 @@ public sealed class OrdersController : ControllerBase
             afterState: new { status = statusCode, orderStatus = syncResult.StatusCode, chefId = item.ChefId },
             notes: cancelReason);
         await _db.SaveChangesAsync(cancellationToken);
+        var ready = string.Equals(statusCode, "READY", StringComparison.OrdinalIgnoreCase);
+        var atomicReadyEvent = ready && _configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") == false;
+        if (atomicReadyEvent)
+            await PublishOrderEventAsync("order.status-ready.v1", order, new
+            {
+                orderId = order.OrderID,
+                orderCode = order.OrderCode,
+                tableId = order.TableID,
+                customerId = order.CustomerID,
+                orderItemId = item.ItemID,
+                dishId = item.DishID,
+                dishName = await ResolveDishNameAsync(item.DishID, cancellationToken),
+                quantity = item.Quantity,
+                statusCode = syncResult.StatusCode,
+                itemStatusCode = "READY"
+            }, cancellationToken);
         if (_db.Database.CurrentTransaction is not null)
         {
             await _db.Database.CurrentTransaction.CommitAsync(cancellationToken);
         }
 
-        if (string.Equals(statusCode, "READY", StringComparison.OrdinalIgnoreCase))
+        if (ready && !atomicReadyEvent)
         {
             await PublishOrderEventAsync("order.status-ready.v1", order, new
             {

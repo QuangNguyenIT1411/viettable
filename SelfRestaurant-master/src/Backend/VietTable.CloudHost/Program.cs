@@ -9,6 +9,9 @@ using SelfRestaurant.Billing.Api;
 using SelfRestaurant.Gateway.Api;
 using SelfRestaurant.Identity.Api.Security;
 using VietTable.CloudHost.Auth;
+using VietTable.CloudHost;
+using System.Security.Cryptography;
+using System.Text;
 
 // One public listener. Module containers are owned/disposed with this process.
 var config = new ConfigurationBuilder().AddEnvironmentVariables().AddCommandLine(args).Build();
@@ -28,6 +31,9 @@ try
             builder.Configuration.AddConfiguration(config);
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> {
                 ["Runtime:LegacyPersistentWorkers"] = "false", ["HttpsRedirection:Enabled"] = "false",
+                ["IntegrationEvents:Enabled"] = "true",
+                ["IntegrationEvents:OutboxTrackedEvents:0"] = owner == "Orders"
+                    ? "order.status-ready.v1" : "payment.completed.v1",
                 ["CloudHost:DurableStaffReset"] = "true",
                 ["Services:TimeoutSeconds"] = config["Services:TimeoutSeconds"] ?? "30",
                 ["RabbitMq:Enabled"] = "false", ["IntegrationEvents:WriteDiagnosticFiles"] = "false" });
@@ -49,6 +55,8 @@ try
     }
     var identityBoundary = new CloudIdentityBoundary(modules.Single(x =>
         x.Environment.ApplicationName == "SelfRestaurant.Identity.Api").Services.GetRequiredService<IServiceScopeFactory>());
+    var recovery = new CloudRecoveryCoordinator(
+        modules[0].Services, modules[1].Services, modules[2].Services, modules[4].Services);
     var gateway = await GatewayModule.BuildAsync(args, new WebApplicationOptions {
         ApplicationName = typeof(GatewayModule).Assembly.FullName, Args = args,
         EnvironmentName = config["ASPNETCORE_ENVIRONMENT"] ?? "Production" }, builder => {
@@ -71,7 +79,36 @@ try
                 }
             });
             app.UseMiddleware<StaffCookieMiddleware>();
+            app.Use(async (context, next) => {
+                await next();
+                if (context.Response.StatusCode >= 400 || !HttpMethods.IsPost(context.Request.Method)) return;
+                var path = context.Request.Path.Value ?? "";
+                if (!(path.Contains("/chef/orders/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/ready", StringComparison.OrdinalIgnoreCase))
+                    && !(path.Contains("/cashier/onsite-payments/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/confirm", StringComparison.OrdinalIgnoreCase))
+                    && !(path.Contains("/cashier/orders/", StringComparison.OrdinalIgnoreCase) && path.EndsWith("/checkout", StringComparison.OrdinalIgnoreCase))) return;
+                try {
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+                    _ = await recovery.RunAsync(includeIdleCleanup: false, timeout.Token);
+                }
+                catch (Exception error) {
+                    app.Logger.LogWarning("Cloud recovery fast path deferred ({ErrorType}); durable work remains for scheduled retry.", error.GetType().Name);
+                }
+            });
         });
+    gateway.MapMethods("/api/internal/recovery", ["GET", "POST"], async (HttpContext context, CancellationToken ct) => {
+        var secret = config["CRON_SECRET"];
+        if (string.IsNullOrWhiteSpace(secret)) return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+        var supplied = context.Request.Headers.Authorization.ToString();
+        if (!supplied.StartsWith("Bearer ", StringComparison.Ordinal)) return Results.Unauthorized();
+        var actual = Encoding.UTF8.GetBytes(supplied[7..]);
+        var expected = Encoding.UTF8.GetBytes(secret);
+        if (!CryptographicOperations.FixedTimeEquals(actual, expected)) return Results.Unauthorized();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(55));
+        var processed = await recovery.RunAsync(includeIdleCleanup: true, timeout.Token);
+        return processed ? Results.Ok(new { status = "processed" })
+            : Results.Accepted(value: new { status = "already_running" });
+    });
     modules.Add(gateway);
     await gateway.RunAsync();
 }

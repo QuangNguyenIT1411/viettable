@@ -15,12 +15,29 @@ public sealed class DiningSessionsController : ControllerBase
 {
     private readonly OrdersDbContext _db;
     private readonly ICatalogReadModel _catalog;
+    private readonly IConfiguration _configuration;
+    private readonly IHostEnvironment _environment;
 
-    public DiningSessionsController(OrdersDbContext db, ICatalogReadModel catalog)
+    public DiningSessionsController(OrdersDbContext db, ICatalogReadModel catalog,
+        IConfiguration configuration, IHostEnvironment environment)
     {
         _db = db;
         _catalog = catalog;
+        _configuration = configuration;
+        _environment = environment;
     }
+
+    private void MaybeInjectTableReleaseFailure()
+    {
+        if (_environment.IsDevelopment() && _configuration.GetValue<bool>("Recovery:TestFailTableRelease"))
+            throw new InvalidOperationException("Injected failure after session close before table release.");
+    }
+
+    [HttpGet("active-table-ids")]
+    public async Task<ActionResult<int[]>> ActiveTableIds(CancellationToken ct) =>
+        Ok(await _db.DiningSessions.AsNoTracking()
+            .Where(x => x.EndedAtUtc == null)
+            .Select(x => x.TableId).Distinct().ToArrayAsync(ct));
 
     [HttpPost("check-in")]
     public async Task<ActionResult<DiningSessionResponse>> CheckIn(CreateDiningSessionRequest request, CancellationToken ct)
@@ -234,7 +251,10 @@ public sealed class DiningSessionsController : ControllerBase
             // Retry a Catalog release that failed after the Orders commit; never release
             // a table already reused by a newer session.
             if (!await _db.DiningSessions.AnyAsync(x => x.TableId == entity.TableId && x.EndedAtUtc == null, ct))
+            {
+                MaybeInjectTableReleaseFailure();
                 await _catalog.ReleaseTableAsync(entity.TableId, ct);
+            }
             return Ok(Map(entity, false));
         }
         if (entity.Status != "PAYMENT_REQUESTED" || entity.CheckoutQuoteId != request.CheckoutQuoteId)
@@ -250,6 +270,7 @@ public sealed class DiningSessionsController : ControllerBase
         entity.EndedAtUtc = now;
         entity.UpdatedAtUtc = now;
         await _db.SaveChangesAsync(ct);
+        MaybeInjectTableReleaseFailure();
         await _catalog.ReleaseTableAsync(entity.TableId, ct);
         return Ok(Map(entity, false));
     }

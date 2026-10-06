@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ProjectRef,
     [Parameter(Mandatory = $true)][string]$DatabaseHost,
     [Parameter(Mandatory = $true)][string]$DatabaseUser,
-    [ValidateSet('Probe', 'Migrate', 'Verify', 'Roles', 'Bootstrap', 'CorrectReferenceTime', 'Workflow', 'CloudHost', 'CloudHostAuth', 'StorageUpload', 'StorageVerify')][string]$Action = 'Probe',
+    [ValidateSet('Probe', 'Migrate', 'Verify', 'Roles', 'Bootstrap', 'CorrectReferenceTime', 'Workflow', 'CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe', 'StorageUpload', 'StorageVerify')][string]$Action = 'Probe',
     [switch]$DisableClientPooling,
     # Npgsql reset batches are not suitable for transaction pooling; runtime uses
     # fixed per-owner roles, AutoPrepare0 and transaction-local state only.
@@ -36,7 +36,7 @@ try {
         RuntimePooling = -not $DisableClientPooling.IsPresent
         RuntimeNoReset = $TransactionPoolerCompatibility.IsPresent
     }
-    if ($Action -in @('Roles', 'Workflow', 'CloudHost', 'CloudHostAuth')) {
+    if ($Action -in @('Roles', 'Workflow', 'CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe')) {
         $taskPayload.RolePasswords = @{}
         foreach ($taskOwner in @('catalog','orders','customers','identity','billing')) {
             $taskRolePath = Join-Path (Split-Path $taskSecretPath) ("RuntimeRole-$taskOwner.dpapi")
@@ -58,7 +58,7 @@ try {
         }
     }
     $taskReceiptPath = Join-Path (Split-Path $taskSecretPath) 'storage-acceptance-receipt.txt'
-    if ($Action -in @('CloudHost', 'CloudHostAuth')) {
+    if ($Action -in @('CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe')) {
         foreach ($taskName in @('CloudHostSigningKey','CloudHostDataProtectionCertificate','CloudHostAcceptancePassword','StorageServiceKey')) {
             $taskPath = Join-Path (Split-Path $taskSecretPath) ($taskName + '.dpapi')
             if (-not (Test-Path -LiteralPath $taskPath)) { throw 'CloudHost secret missing; use secure initialization/save helpers.' }

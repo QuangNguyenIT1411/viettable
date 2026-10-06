@@ -38,6 +38,12 @@ builder.Services.AddScoped<RequestActorContextAccessor>();
 builder.Services.AddScoped<BusinessAuditLogger>();
 builder.Services.AddScoped<IngredientStockAvailabilityService>();
 builder.Services.Configure<TableAutoReleaseOptions>(builder.Configuration.GetSection("TableAutoRelease"));
+builder.Services.AddHttpClient<OrdersActiveTablesClient>(http =>
+{
+    http.BaseAddress = new Uri(builder.Configuration["Services:Orders"] ?? "http://localhost:5102");
+    http.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddTransient<TableAutoReleaseService>();
 if (builder.Configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") ?? true)
     builder.Services.AddHostedService<TableAutoReleaseService>();
 

@@ -9,15 +9,18 @@ public sealed class TableAutoReleaseService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<TableAutoReleaseService> _logger;
     private readonly TableAutoReleaseOptions _options;
+    private readonly OrdersActiveTablesClient _orders;
 
     public TableAutoReleaseService(
         IServiceScopeFactory scopeFactory,
         IOptions<TableAutoReleaseOptions> options,
+        OrdersActiveTablesClient orders,
         ILogger<TableAutoReleaseService> logger)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _options = options.Value;
+        _orders = orders;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -26,7 +29,7 @@ public sealed class TableAutoReleaseService : BackgroundService
         {
             try
             {
-                await ReleaseExpiredIdleTablesAsync(stoppingToken);
+                await RunOnceAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -38,7 +41,8 @@ public sealed class TableAutoReleaseService : BackgroundService
         }
     }
 
-    private async Task ReleaseExpiredIdleTablesAsync(CancellationToken cancellationToken)
+    // Bounded recovery entrypoint; CloudHost invokes it on demand, never as a hosted loop.
+    public async Task RunOnceAsync(CancellationToken cancellationToken)
     {
         if (!_options.Enabled)
         {
@@ -66,6 +70,9 @@ public sealed class TableAutoReleaseService : BackgroundService
             return;
         }
 
+        // Never release a checked-in customer just because the first order has not
+        // been placed yet. If Orders is unavailable, fail closed and retry later.
+        var activeTableIds = await _orders.GetAsync(cancellationToken);
         // "No order placed yet" is represented by occupied tables with null CurrentOrderID.
         var tables = await db.DiningTables
             .Where(x =>
@@ -73,7 +80,10 @@ public sealed class TableAutoReleaseService : BackgroundService
                 x.StatusID == occupiedStatusId.Value &&
                 x.CurrentOrderID == null &&
                 x.UpdatedAt != null &&
-                x.UpdatedAt <= cutoff)
+                x.UpdatedAt <= cutoff &&
+                !activeTableIds.Contains(x.TableID))
+            .OrderBy(x => x.UpdatedAt)
+            .Take(50)
             .ToListAsync(cancellationToken);
 
         if (tables.Count == 0)
@@ -82,15 +92,21 @@ public sealed class TableAutoReleaseService : BackgroundService
         }
 
         var now = DateTime.Now;
+        var released = 0;
         foreach (var table in tables)
         {
-            table.StatusID = availableStatusId.Value;
-            table.CurrentOrderID = null;
-            table.UpdatedAt = now;
+            var observedAt = table.UpdatedAt;
+            released += await db.DiningTables
+                .Where(x => x.TableID == table.TableID && x.StatusID == occupiedStatusId.Value
+                    && x.CurrentOrderID == null && x.UpdatedAt == observedAt)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.StatusID, availableStatusId.Value)
+                    .SetProperty(x => x.CurrentOrderID, (int?)null)
+                    .SetProperty(x => x.UpdatedAt, now), cancellationToken);
         }
 
-        await db.SaveChangesAsync(cancellationToken);
-        _logger.LogInformation("Auto released {Count} idle table(s) after {TimeoutMinutes} minutes.", tables.Count, timeoutMinutes);
+        if (released > 0)
+            _logger.LogInformation("Auto released {Count} eligible idle tables after {TimeoutMinutes} minutes.", released, timeoutMinutes);
     }
 }
 

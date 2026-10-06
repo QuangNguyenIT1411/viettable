@@ -9,7 +9,6 @@ namespace SelfRestaurant.Orders.Api.Infrastructure.Eventing;
 public sealed class PaymentCompletedConsumerService : BackgroundService
 {
     private const string ConsumerName = "Orders.Api/payment-completed-consumer";
-    private const int MaxRetries = 3;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PaymentCompletedConsumerService> _logger;
     private readonly IConfiguration _configuration;
@@ -61,7 +60,7 @@ public sealed class PaymentCompletedConsumerService : BackgroundService
         }
     }
 
-    private async Task ConsumeBatchAsync(int take, CancellationToken cancellationToken)
+    public async Task ConsumeBatchAsync(int take, CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var billingEvents = scope.ServiceProvider.GetRequiredService<BillingEventsClient>();
@@ -89,11 +88,6 @@ public sealed class PaymentCompletedConsumerService : BackgroundService
                 continue;
             }
 
-            if (existingInbox is not null && string.Equals(existingInbox.Status, "DEAD", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
             if (existingInbox is not null &&
                 string.Equals(existingInbox.Status, "RETRY", StringComparison.OrdinalIgnoreCase) &&
                 existingInbox.NextRetryAtUtc is DateTime nextRetryAtUtc &&
@@ -102,6 +96,7 @@ public sealed class PaymentCompletedConsumerService : BackgroundService
                 continue;
             }
 
+            var effectCommitted = false;
             try
             {
                 var payload = item.Payload.Deserialize<PaymentCompletedPayload>(new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -131,11 +126,20 @@ public sealed class PaymentCompletedConsumerService : BackgroundService
                     db.InboxEvents.Add(inbox);
                 }
                 await db.SaveChangesAsync(cancellationToken);
+                effectCommitted = true;
 
                 await billingEvents.AckAsync(item.OutboxEventId, ConsumerName, cancellationToken);
             }
             catch (Exception ex)
             {
+                if (effectCommitted)
+                {
+                    _logger.LogWarning(ex, "Payment completion committed; source ACK deferred for event {OutboxEventId}", item.OutboxEventId);
+                    continue;
+                }
+                // A failed downstream table release must not accidentally flush tracked
+                // order completion alongside the retry receipt.
+                db.ChangeTracker.Clear();
                 var inbox = existingInbox ?? new InboxEvents
                 {
                     Source = item.Source,
@@ -145,16 +149,17 @@ public sealed class PaymentCompletedConsumerService : BackgroundService
                     ReceivedAtUtc = DateTime.UtcNow
                 };
                 inbox.PayloadJson = item.Payload.GetRawText();
-                var retryCount = (existingInbox?.RetryCount ?? 0) + 1;
+                var retryCount = Math.Min((existingInbox?.RetryCount ?? 0) + 1, 1000000);
                 inbox.RetryCount = retryCount;
-                inbox.Status = retryCount >= MaxRetries ? "DEAD" : "RETRY";
-                inbox.NextRetryAtUtc = retryCount >= MaxRetries ? null : DateTime.UtcNow.AddSeconds(Math.Min(15 * retryCount, 60));
+                inbox.Status = "RETRY";
+                inbox.NextRetryAtUtc = DateTime.UtcNow.AddSeconds(Math.Min(15 * retryCount, 300));
                 inbox.ProcessedAtUtc = DateTime.UtcNow;
                 inbox.Error = ex.ToString();
                 if (existingInbox is null)
                 {
                     db.InboxEvents.Add(inbox);
                 }
+                else db.InboxEvents.Update(inbox);
                 await db.SaveChangesAsync(cancellationToken);
                 _logger.LogWarning(ex, "Failed to process payment.completed event {OutboxEventId}", item.OutboxEventId);
             }
@@ -224,14 +229,11 @@ public sealed class PaymentCompletedConsumerService : BackgroundService
 
         foreach (var linkedTableId in tableIdsToRelease)
         {
-            try
-            {
-                await catalogApi.ReleaseTableAsync(linkedTableId, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to release linked table {TableId} for dining session {DiningSessionCode}; continuing payment completion.", linkedTableId, order.DiningSessionCode);
-            }
+            // A retry must never free a table already checked into a newer session.
+            if (await db.DiningSessions.AsNoTracking().AnyAsync(
+                x => x.TableId == linkedTableId && x.EndedAtUtc == null,
+                cancellationToken)) continue;
+            await catalogApi.ReleaseTableAsync(linkedTableId, cancellationToken);
         }
 
         auditLogger.Add(
@@ -253,7 +255,7 @@ public sealed class PaymentCompletedConsumerService : BackgroundService
                 activeOrderIds = Array.Empty<int>()
             });
 
-        await db.SaveChangesAsync(cancellationToken);
+        // Caller commits the order effect and its PROCESSED inbox in one owner save.
     }
 
     private sealed record PaymentCompletedPayload(

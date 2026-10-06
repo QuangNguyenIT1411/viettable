@@ -94,18 +94,14 @@ restart, one-time use and stale-cookie revocation passed.
 ## Workers and request-time limits
 
 CloudHost explicitly disables `Runtime:LegacyPersistentWorkers`, RabbitMQ and
-diagnostic JSONL. Original six-service defaults continue to enable existing workers.
-
-| Disabled worker | Remaining dependency / Phase C requirement |
-|---|---|
-| TableAutoReleaseService | autonomous stale-table cleanup |
-| OrderReadyConsumerService | Customers notification-inbox projection from Orders outbox |
-| PaymentCompletedConsumerService | legacy payment event completion/release recovery |
-| PaymentReconciliationWorker | retry after synchronous settlement/downstream failure |
-
-SignalR notifications do not replace durable notification inbox projection.
-Billing has synchronous finalization, but failure recovery still requires Phase C.
-No Queue/Workflow replacement is implemented or claimed here.
+diagnostic JSONL. Original six-service defaults retain their existing workers.
+Phase C adds bounded one-shot owner processors invoked by request fast paths and
+`/api/internal/recovery` (Bearer `CRON_SECRET`), serialized across instances with
+a PostgreSQL advisory lock. READY/outbox and legacy checkout/outbox commit in
+their owner transactions; Billing invoice remains the durable mobile settlement
+marker. See [CLOUD_RECOVERY_MODEL.md](CLOUD_RECOVERY_MODEL.md) for the exact four-worker
+inventory, failure matrix, limits and Vercel decision. SignalR is still only a
+notification/resync signal, never the durable recovery authority.
 
 ## Process-local state audit
 
@@ -234,8 +230,9 @@ configuration is mandatory. Production startup must not use Development cookie p
 
 ## Limits before cloud deployment
 
-- Phase C worker replacements and settlement/notification failure recovery remain
-  required. A synchronous happy-path PASS does not prove asynchronous recovery.
+- Phase C is implemented locally; production Cron wiring and multi-instance
+  deployment acceptance remain separate gates. Synchronous happy-path PASS alone
+  is not the Phase C failure/restart acceptance.
 - SignalR shared fan-out, load-balancer routing, scale-to-zero and multi-instance
   acceptance remain unverified; existing groups live in the current process.
 - Staff browser/Samsung cloud acceptance and trusted reverse-proxy HTTPS/WSS

@@ -43,6 +43,7 @@ builder.Services.AddHttpClient<OrdersEventsClient>(http =>
     http.BaseAddress = new Uri(builder.Configuration["Services:Orders"] ?? "http://localhost:5102");
     http.Timeout = servicesTimeout;
 });
+builder.Services.AddTransient<OrderReadyConsumerService>();
 if (builder.Configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") ?? true)
     builder.Services.AddHostedService<OrderReadyConsumerService>();
 

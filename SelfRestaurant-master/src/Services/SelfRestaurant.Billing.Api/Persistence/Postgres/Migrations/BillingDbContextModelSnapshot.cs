@@ -447,6 +447,12 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int>("PaymentId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("RecoveryAttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RecoveryLastAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("SettlementCompletedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -466,6 +472,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.HasIndex("InvoiceCode")
                         .IsUnique();
+
+                    b.HasIndex("SettlementCompletedAtUtc", "RecoveryLastAttemptAtUtc", "InvoiceId")
+                        .HasDatabaseName("IX_Invoices_RecoveryPending");
 
                     b.ToTable("Invoices", "billing");
                 });

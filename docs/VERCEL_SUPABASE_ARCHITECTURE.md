@@ -44,14 +44,20 @@ Dockerfile Gateway hiện chỉ publish Gateway và build/embed bốn web apps; 
 
 ## Worker migration plan
 
+Phase C implementation and acceptance details are in [CLOUD_RECOVERY_MODEL.md](CLOUD_RECOVERY_MODEL.md).
+The table below records the original worker inventory; the earlier Queue/Workflow
+items were candidates, **not** the selected architecture. CloudHost now uses
+PostgreSQL outbox/inbox/invoice receipts, request fast paths and a secured bounded
+recovery pass. Queue and Workflow are not used for .NET CloudHost.
+
 Inventory dựa trên `Program.cs` và implementation thực tế, không phải bốn worker giả định từ tên service:
 
 | Worker / owner | Purpose, trigger và interval hiện tại | Durable state | Replacement |
 |---|---|---|---|
-| `TableAutoReleaseService` / Catalog | Scan mỗi **60 giây**, giải phóng OCCUPIED idle không CurrentOrderID; idle default **15 phút** | Catalog table status, UpdatedAt, order link | Delayed Queue task khi occupy; recheck/cas ở execution. Availability/QR request-driven cleanup bounded là hỗ trợ, không thay autonomous recovery |
-| `OrderReadyConsumerService` / Customers | HTTP poll Orders ready-event outbox mỗi **2 giây**, default batch20 | Customers inbox, ready-dish notifications; source ack, retry/dead | Queue dispatch từ Orders outbox → Customers handler; projection + inbox commit rồi ack, duplicate không tạo notification mới |
-| `PaymentCompletedConsumerService` / Orders | HTTP poll Billing `payment.completed` mỗi **5 giây**, default batch20 | Orders inbox, order completion, Catalog release, source ack | Queue → Orders completion handler → Catalog facade; persist/retry release receipt trước khi coi toàn flow hoàn tất |
-| `PaymentReconciliationWorker` / Billing | Scan invoice chưa `SettlementCompletedAtUtc` mỗi **5 giây**, batch50 | Billing invoice/quote/split state, settlement receipts | Giữ synchronous fast path; Queue/Workflow recovery cho Orders completion và loyalty settlement; bounded scheduled scan safety |
+| `TableAutoReleaseService` / Catalog | Scan mỗi **60 giây**, giải phóng OCCUPIED idle không CurrentOrderID; idle default **15 phút** | Catalog table status, UpdatedAt, order link | Bounded secured recovery; exclude Orders active DiningSession table IDs; fail closed when Orders unavailable |
+| `OrderReadyConsumerService` / Customers | HTTP poll Orders ready-event outbox mỗi **2 giây**, default batch20 | Customers inbox, ready-dish notifications; source ack, retry/dead | Atomic READY/outbox in Orders; request-triggered one-shot projection plus secured recovery; inbox then ACK |
+| `PaymentCompletedConsumerService` / Orders | HTTP poll Billing `payment.completed` mỗi **2 giây** configured (5-second code fallback), default batch20 | Orders inbox, order completion, Catalog release, source ack | Bounded one-shot with source outbox + Orders inbox; Catalog release failure leaves event pending |
+| `PaymentReconciliationWorker` / Billing | Scan invoice chưa `SettlementCompletedAtUtc` mỗi **5 giây**, batch50 | Billing invoice/quote/split state, settlement receipts | Keep synchronous fast path; one-shot invoice scan retries Orders/Catalog/Customers after cold start |
 
 Source paths:
 
@@ -62,26 +68,26 @@ Source paths:
 
 Cho từng worker:
 
-1. **Table auto-release:** có thể request-driven một phần; Queue delayed task phù hợp; Workflow timer có thể dùng nhưng chưa cần; scheduled recovery cần để bàn không treo khi không có request. Chỉ bỏ vòng lặp, không bỏ purpose. Source dùng `DateTime.Now`: cần timezone regression trên PostgreSQL trước cutover.
-2. **Order ready:** request tạo ready event có thể dispatch ngay sau commit, không chờ HTTP poll. Queue phù hợp; Workflow không cần cho projection đơn bước. Recovery scan outbox/inbox bắt buộc. Chỉ bỏ poller sau tests ordering/retry/dedup/ack.
-3. **Payment completed:** synchronous module call hỗ trợ mobile fast path nhưng chưa thay được toàn legacy bill/event flow. Queue phù hợp; Workflow hữu ích nếu nhiều step. Recovery phải giữ retry table release; hiện consumer có nhánh catch release lỗi rồi tiếp tục, cần audit receipt trước bỏ poller. Không đọc Catalog DB từ Orders.
-4. **Payment reconciliation:** request-driven fast path đã có. Queue hoặc Workflow xử lý retry đa bước; scheduled scan là last resort. Không thể bỏ purpose: payment đã SUCCEEDED nhưng downstream fail vẫn có invoice unfinished để recovery. Không dùng background `Task.Run` làm guarantee.
+1. **Table auto-release:** only the cleanup purpose remains; recovery checks Orders active-session IDs before Catalog mutation. It does not replace the payment close path. Source still uses `DateTime.Now`; staging runtime UTC must be maintained.
+2. **Order ready:** the READY state and outbox commit together; Customers one-shot projection uses inbox then source ACK. Failure leaves outbox PENDING.
+3. **Payment completed:** legacy Billing outbox/Orders inbox remains; Catalog release failure now prevents ACK. No Orders read of Catalog DB.
+4. **Payment reconciliation:** request fast path remains; unfinished invoice is the retry marker across cold start. The bounded recovery pass invokes the same idempotent settlement handler. No background `Task.Run` guarantee.
 
-Không worker nào được xóa an toàn ngay. Lifecycle loop có thể thay; transaction/handler/recovery behavior phải được giữ.
+Local workers are retained for six-service compatibility. CloudHost does not start their loops.
 
 ### Durable processing contract
 
 Business transaction → owner outbox trong **cùng transaction** → post-commit enqueue → authenticated consumer → owner inbox/receipt + effect → ack. Enqueue fail/crash sau commit được sweeper đọc lại outbox; crash sau enqueue trước marking dispatched phải retry an toàn. Message chỉ chứa event ID/version/owner/entity reference, không token/credential. Unique event/operation key và DB receipts là authority; Queue dedup không thay business idempotency.
 
-Hiện `FileIntegrationEventPublisher` có DB outbox và optional Rabbit publish, nhưng catch lỗi và transaction boundaries chưa đồng nhất ở mọi call site. **Không được tuyên bố atomic outbox đã hoàn tất**. Phải audit call sites và bổ sung transaction coverage trước migration.
+`FileIntegrationEventPublisher` now propagates persistence failure in CloudHost. The Chef READY transitions move outbox persistence before the Orders transaction commit; legacy Billing checkout already publishes inside its checkout transaction. Other event call sites are not declared critical delivery paths by this Phase C model.
 
-Queues có HTTP API; chưa xác minh C# autonomous trigger/consumer phù hợp với CloudHost. Nếu cần thin Node Queue adapter, adapter chỉ verify delivery và gọi authenticated .NET handler, không sở hữu database/business logic. Một API project có adapter function **không đồng nghĩa đúng một executable artifact**. Nếu user yêu cầu nghiêm ngặt chỉ một ASP.NET artifact, direct C# trigger/receive integration là gate, không coi sẵn có SDK .NET.
+Queues have an official HTTP API for publish/receive/ack, but no proven native .NET push consumer trigger for this CloudHost. The selected Phase C model does **not** use Queues or a Node adapter; PostgreSQL is the durable authority. See the current [Queues API](https://vercel.com/docs/queues/api).
 
-Workflow chỉ orchestration; không rewrite domain sang JS. Queue/Workflow service là managed dependency dù không có Railway. At-least-once delivery yêu cầu dedup, retries có giới hạn, dead-letter/failed receipt và replay procedure. Queue retention hữu hạn không thay persistent outbox.
+Workflow is not used: the current SDK path is JS/TS, and a second runtime adds complexity here. At-least-once local recovery still requires owner idempotency, error visibility and replay; no finite Queue retention substitutes for the database records.
 
 Nguồn: [Queues](https://vercel.com/docs/queues), [Queue HTTP API](https://vercel.com/docs/queues/api), [Workflows](https://vercel.com/docs/workflows).
 
-Hobby Cron không thay được worker 2/5/60 giây: hiện lịch Hobby chỉ daily, không có near-real-time SLA. Nếu delayed tasks/push delivery không bảo đảm wake-up thì daily scan không đủ cho payment/demo. Phải chọn event-triggered recovery đã chứng minh hoặc đánh dấu blocker; không hứa miễn phí/minute recovery. [Cron pricing/limits](https://vercel.com/docs/cron-jobs/usage-and-pricing).
+Hobby Cron does not replace the old 2/5/60-second loops: current Hobby frequency is daily, not a near-real-time SLA. The fast path handles normal requests; scheduled Cron is a safety net once actually configured on Vercel. For prompt recovery after a failed request on Hobby, invoke the authenticated recovery endpoint explicitly. No Vercel Cron deployment is claimed. [Cron pricing/limits](https://vercel.com/docs/cron-jobs/usage-and-pricing).
 
 ### Payment correctness
 

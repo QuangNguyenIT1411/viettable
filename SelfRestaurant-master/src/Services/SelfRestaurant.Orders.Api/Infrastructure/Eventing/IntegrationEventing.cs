@@ -94,6 +94,8 @@ public sealed class FileIntegrationEventPublisher : IIntegrationEventPublisher
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to persist integration event {EventName}", envelope.EventName);
+            if (_configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") == false)
+                throw; // Do not commit READY without its recovery outbox in CloudHost.
         }
     }
 

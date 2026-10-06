@@ -14,7 +14,8 @@ public sealed class PaymentDomainException(string code, string message, int stat
 // Invoice is also the durable reconciliation work item. External calls occur only AFTER
 // payment/part/invoice commit. Both receivers must be idempotent on their persisted key.
 public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiClient orders,
-    CustomersApiClient customers, ILogger<PaymentFinalizationService> logger)
+    CustomersApiClient customers, ILogger<PaymentFinalizationService> logger,
+    IConfiguration? configuration = null, IHostEnvironment? environment = null)
 {
     public static Task LockQuoteAsync(BillingDbContext db, int quoteId, CancellationToken ct) =>
         SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(db, "mobile-settlement:" + quoteId, ct);
@@ -56,6 +57,8 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
                 logger.LogInformation("Payment {PaymentId} collected via {Channel}, cashier {EmployeeId}, split part {PartId}", paymentId, payment.Channel, employeeId, part?.SplitBillPartId);
             }
         }
+        if (environment?.IsDevelopment() == true && configuration?.GetValue<bool>("Recovery:TestFailAfterPaymentCommit") == true)
+            throw new InvalidOperationException("Injected failure after durable payment commit.");
         await ReconcileSafelyAsync(quoteId, ct);
         return await db.Payments.SingleAsync(x => x.PaymentId == paymentId, ct);
     }
@@ -86,6 +89,8 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
             var settled = await customers.SettleLoyaltyAsync(invoice.CustomerId,
                 new CustomersApiClient.LoyaltySettlementRequest(quote.PointsApplied, invoice.TotalAmount, $"mobile-invoice:{invoice.InvoiceCode}"), ct);
             if (settled is null) throw new HttpRequestException("Loyalty settlement unavailable");
+            invoice.RecoveryAttemptCount = Math.Min(invoice.RecoveryAttemptCount + 1, 1000000);
+            invoice.RecoveryLastAttemptAtUtc = DateTime.UtcNow;
             invoice.SettlementCompletedAtUtc = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
@@ -95,27 +100,50 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
             // Payment remains SUCCEEDED. The persisted invoice is retried by the worker.
             db.ChangeTracker.Clear();
             logger.LogWarning("Invoice reconciliation pending for quote {QuoteId}; {ErrorType}", quoteId, ex.GetType().Name);
+            try
+            {
+                var pending = await db.Invoices.FirstOrDefaultAsync(x => x.CheckoutQuoteId == quoteId && x.SettlementCompletedAtUtc == null, ct);
+                if (pending is not null)
+                {
+                    pending.RecoveryAttemptCount = Math.Min(pending.RecoveryAttemptCount + 1, 1000000);
+                    pending.RecoveryLastAttemptAtUtc = DateTime.UtcNow;
+                    await db.SaveChangesAsync(ct);
+                }
+            }
+            catch (Exception markerError) when (markerError is not OperationCanceledException || !ct.IsCancellationRequested)
+            {
+                db.ChangeTracker.Clear();
+                logger.LogWarning("Invoice retry marker deferred for quote {QuoteId}; {ErrorType}", quoteId, markerError.GetType().Name);
+            }
         }
     }
 }
 
 public sealed class PaymentReconciliationWorker(IServiceScopeFactory scopes) : BackgroundService
 {
+    public async Task RunOnceAsync(CancellationToken cancellationToken)
+    {
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
+        var ids = await db.Invoices.AsNoTracking().Where(x => x.SettlementCompletedAtUtc == null)
+            .OrderBy(x => x.RecoveryLastAttemptAtUtc.HasValue)
+            .ThenBy(x => x.RecoveryLastAttemptAtUtc).ThenBy(x => x.InvoiceId)
+            .Select(x => x.CheckoutQuoteId).Take(50).ToListAsync(cancellationToken);
+        foreach (var id in ids)
+            await scope.ServiceProvider.GetRequiredService<PaymentFinalizationService>().ReconcileSafelyAsync(id, cancellationToken);
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            using var scope = scopes.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
             try
             {
-                var ids = await db.Invoices.AsNoTracking().Where(x => x.SettlementCompletedAtUtc == null)
-                    .OrderBy(x => x.InvoiceId).Select(x => x.CheckoutQuoteId).Take(50).ToListAsync(stoppingToken);
-                foreach (var id in ids) await scope.ServiceProvider.GetRequiredService<PaymentFinalizationService>().ReconcileSafelyAsync(id, stoppingToken);
+                await RunOnceAsync(stoppingToken);
             }
             catch (Exception ex) when (ex is not OperationCanceledException || !stoppingToken.IsCancellationRequested)
-            { scope.ServiceProvider.GetRequiredService<ILogger<PaymentReconciliationWorker>>().LogWarning("Payment reconciliation deferred: {ErrorType}", ex.GetType().Name); }
+            { using var scope = scopes.CreateScope(); scope.ServiceProvider.GetRequiredService<ILogger<PaymentReconciliationWorker>>().LogWarning("Payment reconciliation deferred: {ErrorType}", ex.GetType().Name); }
         }
     }
 }

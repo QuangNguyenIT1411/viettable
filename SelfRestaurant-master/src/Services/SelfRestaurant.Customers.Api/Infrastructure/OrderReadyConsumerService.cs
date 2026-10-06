@@ -8,19 +8,21 @@ namespace SelfRestaurant.Customers.Api.Infrastructure;
 public sealed class OrderReadyConsumerService : BackgroundService
 {
     private const string ConsumerName = "Customers.Api/order-ready-consumer";
-    private const int MaxRetries = 3;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<OrderReadyConsumerService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IHostEnvironment _environment;
 
     public OrderReadyConsumerService(
         IServiceScopeFactory scopeFactory,
         ILogger<OrderReadyConsumerService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _configuration = configuration;
+        _environment = environment;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,8 +62,12 @@ public sealed class OrderReadyConsumerService : BackgroundService
         }
     }
 
-    private async Task ConsumeBatchAsync(int take, CancellationToken cancellationToken)
+    // CloudHost calls the same one-shot processor; the durable source outbox remains pending
+    // until the Customers inbox has committed and the source ACK succeeds.
+    public async Task ConsumeBatchAsync(int take, CancellationToken cancellationToken)
     {
+        if (_environment.IsDevelopment() && _configuration.GetValue<bool>("Recovery:TestFailReadyProjection"))
+            throw new InvalidOperationException("Injected failure before READY projection.");
         using var scope = _scopeFactory.CreateScope();
         var ordersEvents = scope.ServiceProvider.GetRequiredService<OrdersEventsClient>();
         var db = scope.ServiceProvider.GetRequiredService<CustomersDbContext>();
@@ -86,11 +92,6 @@ public sealed class OrderReadyConsumerService : BackgroundService
                 continue;
             }
 
-            if (existingInbox is not null && string.Equals(existingInbox.Status, "DEAD", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
             if (existingInbox is not null &&
                 string.Equals(existingInbox.Status, "RETRY", StringComparison.OrdinalIgnoreCase) &&
                 existingInbox.NextRetryAtUtc is DateTime nextRetryAtUtc &&
@@ -99,6 +100,7 @@ public sealed class OrderReadyConsumerService : BackgroundService
                 continue;
             }
 
+            var effectCommitted = false;
             try
             {
                 var payload = item.Payload.Deserialize<OrderReadyPayload>(new JsonSerializerOptions(JsonSerializerDefaults.Web));
@@ -153,10 +155,17 @@ public sealed class OrderReadyConsumerService : BackgroundService
                 }
 
                 await db.SaveChangesAsync(cancellationToken);
+                effectCommitted = true;
                 await ordersEvents.AckAsync(item.OutboxEventId, ConsumerName, cancellationToken);
             }
             catch (Exception ex)
             {
+                if (effectCommitted)
+                {
+                    _logger.LogWarning(ex, "READY projection committed; source ACK deferred for event {OutboxEventId}", item.OutboxEventId);
+                    continue;
+                }
+                db.ChangeTracker.Clear();
                 var inbox = existingInbox ?? new InboxEvents
                 {
                     Source = item.Source,
@@ -166,16 +175,17 @@ public sealed class OrderReadyConsumerService : BackgroundService
                     ReceivedAtUtc = DateTime.UtcNow
                 };
                 inbox.PayloadJson = item.Payload.GetRawText();
-                var retryCount = (existingInbox?.RetryCount ?? 0) + 1;
+                var retryCount = Math.Min((existingInbox?.RetryCount ?? 0) + 1, 1000000);
                 inbox.RetryCount = retryCount;
-                inbox.Status = retryCount >= MaxRetries ? "DEAD" : "RETRY";
-                inbox.NextRetryAtUtc = retryCount >= MaxRetries ? null : DateTime.UtcNow.AddSeconds(Math.Min(15 * retryCount, 60));
+                inbox.Status = "RETRY";
+                inbox.NextRetryAtUtc = DateTime.UtcNow.AddSeconds(Math.Min(15 * retryCount, 300));
                 inbox.ProcessedAtUtc = DateTime.UtcNow;
                 inbox.Error = ex.ToString();
                 if (existingInbox is null)
                 {
                     db.InboxEvents.Add(inbox);
                 }
+                else db.InboxEvents.Update(inbox);
 
                 await db.SaveChangesAsync(cancellationToken);
                 _logger.LogWarning(ex, "Failed to process order.status-ready event {OutboxEventId}", item.OutboxEventId);
