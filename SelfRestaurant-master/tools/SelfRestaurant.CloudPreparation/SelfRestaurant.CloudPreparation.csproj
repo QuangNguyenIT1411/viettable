@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../src/Backend/VietTable.CloudHost/VietTable.CloudHost.csproj" />
     <ProjectReference Include="../../src/Gateway/SelfRestaurant.Gateway.Api/SelfRestaurant.Gateway.Api.csproj" />
     <ProjectReference Include="../../src/Services/SelfRestaurant.Catalog.Api/SelfRestaurant.Catalog.Api.csproj" />
     <ProjectReference Include="../../src/Services/SelfRestaurant.Orders.Api/SelfRestaurant.Orders.Api.csproj" />

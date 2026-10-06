@@ -82,7 +82,7 @@ public sealed class MobileDiningB5Tests
     public void Mobile_realtime_hub_is_authenticated_and_customer_scoped()
     {
         var hub = Read("src/Gateway/SelfRestaurant.Gateway.Api/Hubs/MobileNotificationsHub.cs");
-        var program = Read("src/Gateway/SelfRestaurant.Gateway.Api/Program.cs");
+        var program = Read("src/Gateway/SelfRestaurant.Gateway.Api/GatewayModule.cs");
         Assert.Contains("[Authorize(Roles = \"customer\")]", hub, StringComparison.Ordinal);
         Assert.Contains("JwtRegisteredClaimNames.Sub", hub, StringComparison.Ordinal);
         Assert.Contains("/hubs/mobile-notifications", program, StringComparison.Ordinal);

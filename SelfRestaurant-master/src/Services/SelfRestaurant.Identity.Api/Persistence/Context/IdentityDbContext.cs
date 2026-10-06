@@ -19,9 +19,24 @@ public sealed class IdentityDbContext : DbContext
     public DbSet<PasswordResetTokens> PasswordResetTokens => Set<PasswordResetTokens>();
     public DbSet<MobileRefreshToken> MobileRefreshTokens => Set<MobileRefreshToken>();
     public DbSet<CustomerSettings> CustomerSettings => Set<CustomerSettings>();
+    public DbSet<CloudDataProtectionKey> CloudDataProtectionKeys => Set<CloudDataProtectionKey>();
+    public DbSet<CloudStaffResetToken> CloudStaffResetTokens => Set<CloudStaffResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CloudStaffResetToken>(entity =>
+        {
+            entity.ToTable("CloudStaffResetTokens");
+            entity.HasKey(x => x.TokenHash);
+            entity.Property(x => x.TokenHash).HasMaxLength(64);
+            entity.HasOne<Employees>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<CloudDataProtectionKey>(entity =>
+        {
+            entity.ToTable("CloudDataProtectionKeys");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.FriendlyName).HasMaxLength(200);
+        });
         // PostgreSQL overrides are applied after the existing SQL Server mapping.
         modelBuilder.Entity<LoyaltySettlement>(entity =>
         {

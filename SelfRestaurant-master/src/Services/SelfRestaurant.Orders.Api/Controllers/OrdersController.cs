@@ -1617,7 +1617,9 @@ public sealed class OrdersController : ControllerBase
     public async Task<ActionResult<object>> GetAdminStats([FromQuery] DateOnly? date, [FromQuery] int? branchId, CancellationToken cancellationToken)
     {
         var targetDate = date ?? DateOnly.FromDateTime(DateTime.Now);
-        var from = targetDate.ToDateTime(TimeOnly.MinValue);
+        // This report follows the server-local calendar, as its default date does.
+        // Explicit kind lets PostgreSQL's instant converter normalize the boundary.
+        var from = targetDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local);
         var to = from.AddDays(1);
         var branchTableIds = await ResolveBranchTableIdsAsync(branchId, cancellationToken);
 

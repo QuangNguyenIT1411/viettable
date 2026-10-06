@@ -20,7 +20,7 @@ public sealed class ActorContextHandler : DelegatingHandler
             request.Headers.TryAddWithoutValidation("Authorization", authorization);
         }
 
-        var session = _httpContextAccessor.HttpContext?.Session;
+        var session = _httpContextAccessor.HttpContext?.StaffIdentity();
         if (session is not null)
         {
             // Services do not own the web session, so the gateway forwards only

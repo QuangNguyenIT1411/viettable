@@ -43,7 +43,7 @@ public sealed class CashierBillsController : ControllerBase
         DateTime? end = null;
         if (date is not null)
         {
-            start = date.Value.ToDateTime(TimeOnly.MinValue);
+            start = date.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local);
             end = start.Value.AddDays(1);
         }
 
@@ -196,7 +196,7 @@ public sealed class CashierBillsController : ControllerBase
         }
 
         var target = date ?? DateOnly.FromDateTime(DateTime.Today);
-        var start = target.ToDateTime(TimeOnly.MinValue);
+        var start = target.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local);
         var end = start.AddDays(1);
 
         var bills = await _db.Bills

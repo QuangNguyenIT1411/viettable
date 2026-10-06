@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Gateway/SelfRestaurant.Gateway.Api/SelfRestaurant.Gateway.Api.csproj" />
+    <ProjectReference Include="../../Services/SelfRestaurant.Catalog.Api/SelfRestaurant.Catalog.Api.csproj" />
+    <ProjectReference Include="../../Services/SelfRestaurant.Orders.Api/SelfRestaurant.Orders.Api.csproj" />
+    <ProjectReference Include="../../Services/SelfRestaurant.Customers.Api/SelfRestaurant.Customers.Api.csproj" />
+    <ProjectReference Include="../../Services/SelfRestaurant.Identity.Api/SelfRestaurant.Identity.Api.csproj" />
+    <ProjectReference Include="../../Services/SelfRestaurant.Billing.Api/SelfRestaurant.Billing.Api.csproj" />
+  </ItemGroup>
+  <Target Name="CloudHostEnvironmentOnlySettings" BeforeTargets="_HandleFileConflictsForPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+        Condition="$([System.String]::Copy('%(ResolvedFileToPublish.Filename)').StartsWith('appsettings'))" />
+    </ItemGroup>
+  </Target>
+</Project>

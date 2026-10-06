@@ -326,7 +326,10 @@ public sealed class DiningSessionsController : ControllerBase
             await transaction.RollbackAsync(ct);
             return Conflict(new { code = "command_in_progress", message = "Yêu cầu đang được xử lý. Vui lòng thử lại." });
         }
-        return Ok(await MapOrder(order, ct));
+        // These snapshots already validated this exact new order before commit.
+        // Avoid a second remote Catalog refresh and duplicate snapshot write just
+        // to render its response (important with cloud database round trips).
+        return Ok(await MapOrder(order, ct, session, dishes, "CONFIRMED"));
     }
 
     [HttpGet("mobile-orders")]
@@ -445,13 +448,14 @@ public sealed class DiningSessionsController : ControllerBase
         return null;
     }
 
-    private async Task<MobileOrderResponse> MapOrder(OrderEntity order, CancellationToken ct, DiningSession? session = null)
+    private async Task<MobileOrderResponse> MapOrder(OrderEntity order, CancellationToken ct, DiningSession? session = null,
+        IReadOnlyList<CatalogApiClient.DishSnapshotResponse>? validatedDishes = null, string? knownStatus = null)
     {
-        var status = await _db.OrderStatus.AsNoTracking().Where(x => x.StatusID == order.StatusID)
+        var status = knownStatus ?? await _db.OrderStatus.AsNoTracking().Where(x => x.StatusID == order.StatusID)
             .Select(x => x.StatusCode).FirstOrDefaultAsync(ct) ?? "PENDING";
         var rawItems = await _db.OrderItems.AsNoTracking().Where(x => x.OrderID == order.OrderID)
             .OrderBy(x => x.ItemID).ToListAsync(ct);
-        var dishes = await _catalog.GetDishesAsync(rawItems.Select(x => x.DishID).Distinct(), ct)
+        var dishes = validatedDishes ?? await _catalog.GetDishesAsync(rawItems.Select(x => x.DishID).Distinct(), ct)
             ?? Array.Empty<CatalogApiClient.DishSnapshotResponse>();
         var names = dishes.ToDictionary(x => x.DishId, x => x.Name);
         var items = rawItems.Select(x => new MobileOrderItemResponse(x.ItemID, x.DishID,

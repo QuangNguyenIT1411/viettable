@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$ProjectRef,
     [Parameter(Mandatory = $true)][string]$DatabaseHost,
     [Parameter(Mandatory = $true)][string]$DatabaseUser,
-    [ValidateSet('Probe', 'Migrate', 'Verify', 'Roles', 'Bootstrap', 'CorrectReferenceTime', 'Workflow', 'StorageUpload', 'StorageVerify')][string]$Action = 'Probe',
+    [ValidateSet('Probe', 'Migrate', 'Verify', 'Roles', 'Bootstrap', 'CorrectReferenceTime', 'Workflow', 'CloudHost', 'CloudHostAuth', 'StorageUpload', 'StorageVerify')][string]$Action = 'Probe',
     [switch]$DisableClientPooling,
     # Npgsql reset batches are not suitable for transaction pooling; runtime uses
     # fixed per-owner roles, AutoPrepare0 and transaction-local state only.
@@ -36,12 +36,12 @@ try {
         RuntimePooling = -not $DisableClientPooling.IsPresent
         RuntimeNoReset = $TransactionPoolerCompatibility.IsPresent
     }
-    if ($Action -in @('Roles', 'Workflow')) {
+    if ($Action -in @('Roles', 'Workflow', 'CloudHost', 'CloudHostAuth')) {
         $taskPayload.RolePasswords = @{}
         foreach ($taskOwner in @('catalog','orders','customers','identity','billing')) {
             $taskRolePath = Join-Path (Split-Path $taskSecretPath) ("RuntimeRole-$taskOwner.dpapi")
             if (-not (Test-Path -LiteralPath $taskRolePath)) {
-                if ($Action -eq 'Workflow') { throw 'Runtime role secret missing; run/audit Roles provisioning first. No implicit password rotation.' }
+                if ($Action -ne 'Roles') { throw 'Runtime role secret missing; run/audit Roles provisioning first. No implicit password rotation.' }
                 $taskBytes = New-Object byte[] 32
                 $taskRandom = [Security.Cryptography.RandomNumberGenerator]::Create()
                 try { $taskRandom.GetBytes($taskBytes) } finally { $taskRandom.Dispose() }
@@ -58,6 +58,16 @@ try {
         }
     }
     $taskReceiptPath = Join-Path (Split-Path $taskSecretPath) 'storage-acceptance-receipt.txt'
+    if ($Action -in @('CloudHost', 'CloudHostAuth')) {
+        foreach ($taskName in @('CloudHostSigningKey','CloudHostDataProtectionCertificate','CloudHostAcceptancePassword','StorageServiceKey')) {
+            $taskPath = Join-Path (Split-Path $taskSecretPath) ($taskName + '.dpapi')
+            if (-not (Test-Path -LiteralPath $taskPath)) { throw 'CloudHost secret missing; use secure initialization/save helpers.' }
+            $taskSecure = ConvertTo-SecureString ([IO.File]::ReadAllText($taskPath))
+            $taskPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($taskSecure)
+            try { $taskPayload[$taskName] = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($taskPointer) }
+            finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($taskPointer); $taskSecure.Dispose() }
+        }
+    }
     if ($Action -in @('Bootstrap', 'CorrectReferenceTime')) {
         $taskSourceZone = docker exec selfrestaurant-catalog date '+%z'
         if ($LASTEXITCODE -ne 0 -or $taskSourceZone.Trim() -ne '+0000') { throw 'Source Catalog UTC policy needs review.' }
@@ -89,18 +99,18 @@ try {
         }
     }
     $taskInput = $taskPayload | ConvertTo-Json -Compress
-    $taskOutput = $taskInput | docker run --rm -i --label viettable.cloud-preparation=database `
+    $taskInput | docker run --rm -i --label viettable.cloud-preparation=database `
         --mount "type=bind,source=$taskBackendPath,target=/workspace,readonly" `
         --mount "type=bind,source=$taskCaPath,target=/staging-ca/supabase-ca.crt,readonly" `
         -w /workspace mcr.microsoft.com/dotnet/aspnet:8.0 `
-        dotnet tools/SelfRestaurant.CloudPreparation/bin/Debug/net8.0/SelfRestaurant.CloudPreparation.dll
-    $taskExitCode = $LASTEXITCODE
-    foreach ($taskLine in $taskOutput) {
+        dotnet tools/SelfRestaurant.CloudPreparation/bin/Debug/net8.0/SelfRestaurant.CloudPreparation.dll | ForEach-Object {
+        $taskLine = $_
         if ($taskLine.StartsWith('STORAGE_RECEIPT:')) {
             [IO.File]::WriteAllText($taskReceiptPath, $taskLine.Substring('STORAGE_RECEIPT:'.Length))
         }
         else { Write-Output $taskLine }
     }
+    $taskExitCode = $LASTEXITCODE
     if ($taskExitCode -ne 0) { throw 'Staging operation failed; no credential details printed.' }
 }
 finally {

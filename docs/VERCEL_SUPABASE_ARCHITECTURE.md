@@ -215,4 +215,13 @@ SignalR shared fan-out: mandatory POC, not yet selected/verified.
 No Customer Web deploy. No Railway / Redis / RabbitMQ cloud target.
 ```
 
-**Current status: architecture plan only; cloud runtime acceptance NOT RUN.**
+**Phase B update (05/10/2026): CLOUDHOST LOCAL: PASS — local/API scope.**
+See [CLOUDHOST.md](CLOUDHOST.md) for actual composition, route/auth/worker boundaries
+and evidence. Gateway and all five APIs now expose reusable module factories;
+CloudHost uses one listener and private in-process MVC dispatch, not loopback HTTP.
+Staff cookie keys are encrypted and Identity-owned; Customer Web is excluded only
+from the new target. Original six-service mode remains available. No deployment,
+Phase C worker replacement or multi-instance acceptance is claimed.
+The local transaction-pooler flow, role/branch guards, SignalR events and actual
+process restart passed. Staff SPA/API smoke is not browser/Samsung cloud UI
+acceptance; deployment and Phase C remain separate authorized tasks.

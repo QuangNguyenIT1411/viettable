@@ -58,6 +58,14 @@ public sealed class MobileReservationsB3Tests
     }
 
     [Fact]
+    public void Server_selected_table_replay_preserves_original_selection_but_explicit_table_is_checked()
+    {
+        var gateway = ReadRepoFile("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileReservationsGatewayController.cs");
+        Assert.Contains("(request.TableId is > 0 && retry.TableId != request.TableId)", gateway, StringComparison.Ordinal);
+        Assert.Contains("return Ok(retry)", gateway, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Availability_is_composed_without_cross_database_reads()
     {
         var gateway = ReadRepoFile("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileCatalogGatewayController.cs");

@@ -40,7 +40,10 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         if (retry is not null)
         {
             if (retry.CustomerId != actorId || retry.BranchId != request.BranchId || retry.PartySize != request.PartySize
-                || retry.TableId != request.TableId || Math.Abs((retry.ReservedAt - request.ReservedAt.UtcDateTime).TotalSeconds) > 1
+                // An omitted/nonpositive table requests server selection. Its
+                // replay must use the original selection, not compare it to null.
+                || (request.TableId is > 0 && retry.TableId != request.TableId)
+                || Math.Abs((retry.ReservedAt - request.ReservedAt.UtcDateTime).TotalSeconds) > 1
                 || !string.Equals(retry.Note?.Trim(), request.Note?.Trim(), StringComparison.Ordinal))
                 return MobileError("idempotency_conflict", "Idempotency key đã được dùng với dữ liệu khác.", 409);
             return Ok(retry);

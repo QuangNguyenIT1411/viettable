@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using SelfRestaurant.Gateway.Api.Infrastructure;
 
 namespace SelfRestaurant.Gateway.Api.Hubs;
 
@@ -9,6 +10,7 @@ public sealed class CustomerNotificationsHub : Hub
 
     public Task SubscribeTable(int tableId)
     {
+        CheckCloudSubscription(null); // Customer Web table subscriptions are legacy-only.
         if (tableId <= 0)
         {
             return Task.CompletedTask;
@@ -19,6 +21,7 @@ public sealed class CustomerNotificationsHub : Hub
 
     public Task UnsubscribeTable(int tableId)
     {
+        CheckCloudSubscription(null);
         if (tableId <= 0)
         {
             return Task.CompletedTask;
@@ -29,6 +32,7 @@ public sealed class CustomerNotificationsHub : Hub
 
     public Task SubscribeBranch(int branchId)
     {
+        CheckCloudSubscription(branchId);
         if (branchId <= 0)
         {
             return Task.CompletedTask;
@@ -39,11 +43,22 @@ public sealed class CustomerNotificationsHub : Hub
 
     public Task UnsubscribeBranch(int branchId)
     {
+        CheckCloudSubscription(branchId);
         if (branchId <= 0)
         {
             return Task.CompletedTask;
         }
 
         return Groups.RemoveFromGroupAsync(Context.ConnectionId, BranchGroup(branchId));
+    }
+
+    private void CheckCloudSubscription(int? branchId)
+    {
+        var http = Context.GetHttpContext();
+        if (http?.RequestServices.GetRequiredService<IConfiguration>().GetValue<bool>("CloudHost:StatelessStaff") != true) return;
+        var state = http.StaffIdentity();
+        if (branchId is not > 0 || state.GetInt32(SessionKeys.EmployeeId) is not > 0 ||
+            state.GetInt32(SessionKeys.EmployeeBranchId) != branchId)
+            throw new HubException("Forbidden branch subscription.");
     }
 }

@@ -17,6 +17,8 @@ namespace SelfRestaurant.Identity.Api.Controllers;
 public sealed class IdentityController : ControllerBase
 {
     private static readonly ConcurrentDictionary<string, StaffPasswordResetState> StaffPasswordResetTokens = new();
+    private bool DurableStaffReset => _configuration.GetValue<bool>("CloudHost:DurableStaffReset");
+    private static string ResetHash(string token) => Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token)));
 
     private readonly IdentityDbContext _db;
     private readonly ILogger<IdentityController> _logger;
@@ -938,12 +940,16 @@ public sealed class IdentityController : ControllerBase
 
         var token = GenerateResetToken();
         var expiresAt = DateTime.UtcNow.AddMinutes(30);
-        StaffPasswordResetTokens[token] = new StaffPasswordResetState
+        var resetState = new StaffPasswordResetState
         {
             EmployeeId = employee.EmployeeID,
             ExpiryUtc = expiresAt,
             IsUsed = false
         };
+        if (DurableStaffReset)
+            _db.CloudStaffResetTokens.Add(new CloudStaffResetToken { TokenHash = ResetHash(token),
+                EmployeeId = resetState.EmployeeId, ExpiryUtc = expiresAt });
+        else StaffPasswordResetTokens[token] = resetState;
 
         _logger.LogInformation("Staff forgot-password token issued. employeeId={EmployeeId}", employee.EmployeeID);
 
@@ -1010,7 +1016,19 @@ public sealed class IdentityController : ControllerBase
         CleanupExpiredStaffResetTokens();
 
         var token = request.Token.Trim();
-        if (!StaffPasswordResetTokens.TryGetValue(token, out var state))
+        await using var resetTransaction = DurableStaffReset ? await _db.Database.BeginTransactionAsync(cancellationToken) : null;
+        CloudStaffResetToken? durableToken = null;
+        StaffPasswordResetState? state;
+        if (DurableStaffReset)
+        {
+            var hash = ResetHash(token);
+            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, "staff-reset:" + hash, cancellationToken);
+            durableToken = await _db.CloudStaffResetTokens.SingleOrDefaultAsync(x => x.TokenHash == hash, cancellationToken);
+            state = durableToken is null ? null : new StaffPasswordResetState { EmployeeId = durableToken.EmployeeId,
+                ExpiryUtc = durableToken.ExpiryUtc, IsUsed = durableToken.IsUsed };
+        }
+        else StaffPasswordResetTokens.TryGetValue(token, out state);
+        if (state is null)
         {
             return BadRequest(new { message = "Link đặt lại mật khẩu không hợp lệ." });
         }
@@ -1038,6 +1056,7 @@ public sealed class IdentityController : ControllerBase
         employee.Password = PasswordHashing.HashPassword(request.NewPassword);
         employee.UpdatedAt = DateTime.Now;
         state.IsUsed = true;
+        if (durableToken is not null) durableToken.IsUsed = true;
 
         await _db.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Staff password reset. employeeId={EmployeeId}", employee.EmployeeID);
@@ -1054,12 +1073,13 @@ public sealed class IdentityController : ControllerBase
             notes: "Staff password reset completed successfully");
 
         await _db.SaveChangesAsync(cancellationToken);
+        if (resetTransaction is not null) await resetTransaction.CommitAsync(cancellationToken);
         return Ok(new { message = "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập với mật khẩu mới." });
     }
 
     [HttpGet("staff/password/reset/validate")]
     [EnableRateLimiting("identity-auth")]
-    public IActionResult ValidateStaffResetPasswordToken([FromQuery] string? token)
+    public async Task<IActionResult> ValidateStaffResetPasswordToken([FromQuery] string? token, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
@@ -1069,7 +1089,16 @@ public sealed class IdentityController : ControllerBase
         CleanupExpiredStaffResetTokens();
 
         var normalizedToken = token.Trim();
-        if (!StaffPasswordResetTokens.TryGetValue(normalizedToken, out var state))
+        StaffPasswordResetState? state;
+        if (DurableStaffReset)
+        {
+            var hash = ResetHash(normalizedToken);
+            var persisted = await _db.CloudStaffResetTokens.AsNoTracking().SingleOrDefaultAsync(x => x.TokenHash == hash, cancellationToken);
+            state = persisted is null ? null : new StaffPasswordResetState { EmployeeId = persisted.EmployeeId,
+                ExpiryUtc = persisted.ExpiryUtc, IsUsed = persisted.IsUsed };
+        }
+        else StaffPasswordResetTokens.TryGetValue(normalizedToken, out state);
+        if (state is null)
         {
             return BadRequest(new { message = "Link đặt lại mật khẩu không hợp lệ." });
         }
@@ -1230,7 +1259,7 @@ public sealed class IdentityController : ControllerBase
         var totalPages = totalItems == 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSize);
 
         var employees = await query
-            .OrderByDescending(e => e.CreatedAt ?? e.UpdatedAt ?? DateTime.MinValue)
+            .OrderByDescending(e => e.CreatedAt ?? e.UpdatedAt ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc))
             .ThenBy(e => e.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

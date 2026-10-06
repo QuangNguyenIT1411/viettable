@@ -24,6 +24,26 @@ namespace SelfRestaurant.Identity.Api.Persistence.Postgres.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.CloudDataProtectionKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FriendlyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Xml")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CloudDataProtectionKeys", "identity");
+                });
+
             modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.Entities.BusinessAuditLogs", b =>
                 {
                     b.Property<long>("BusinessAuditLogId")
@@ -154,6 +174,28 @@ namespace SelfRestaurant.Identity.Api.Persistence.Postgres.Migrations
                         .HasDatabaseName("idx_catalog_branch_snapshots_active");
 
                     b.ToTable("CatalogBranchSnapshots", "identity");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.Entities.CloudStaffResetToken", b =>
+                {
+                    b.Property<string>("TokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ExpiryUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("TokenHash");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("CloudStaffResetTokens", "identity");
                 });
 
             modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.Entities.CustomerLoyalty", b =>
@@ -601,6 +643,15 @@ namespace SelfRestaurant.Identity.Api.Persistence.Postgres.Migrations
                         .HasDatabaseName("idx_token");
 
                     b.ToTable("PasswordResetTokens", "identity");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.Entities.CloudStaffResetToken", b =>
+                {
+                    b.HasOne("SelfRestaurant.Identity.Api.Persistence.Entities.Employees", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.Entities.CustomerSettings", b =>

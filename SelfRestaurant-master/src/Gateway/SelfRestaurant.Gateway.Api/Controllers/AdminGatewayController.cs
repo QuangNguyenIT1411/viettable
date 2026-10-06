@@ -74,7 +74,7 @@ public sealed class AdminGatewayController : ControllerBase
     [HttpPost("auth/logout")]
     public ActionResult<object> Logout()
     {
-        var userName = HttpContext.Session.GetString(SessionKeys.EmployeeName) ?? "Người dùng";
+        var userName = HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeName) ?? "Người dùng";
         ClearStaffSession();
         return Ok(new
         {
@@ -890,10 +890,10 @@ public sealed class AdminGatewayController : ControllerBase
         var profile = await _identityClient.UpdateStaffProfileAsync(admin.EmployeeId, new StaffUpdateProfileRequest(request.Name.Trim(), request.Phone.Trim(), string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim()), cancellationToken);
         if (profile is not null)
         {
-            HttpContext.Session.SetString(SessionKeys.EmployeeName, profile.Name);
-            HttpContext.Session.SetString(SessionKeys.EmployeePhone, profile.Phone ?? string.Empty);
-            HttpContext.Session.SetString(SessionKeys.EmployeeEmail, profile.Email ?? string.Empty);
-            HttpContext.Session.SetString(SessionKeys.EmployeeUsername, profile.Username);
+            HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeName, profile.Name);
+            HttpContext.StaffIdentity().SetString(SessionKeys.EmployeePhone, profile.Phone ?? string.Empty);
+            HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeEmail, profile.Email ?? string.Empty);
+            HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeUsername, profile.Username);
         }
 
         return Ok(BuildSettingsDto(RequireAdmin() ?? admin));
@@ -1032,16 +1032,16 @@ public sealed class AdminGatewayController : ControllerBase
 
     private void ApplyStaffSession(StaffLoginResponse login)
     {
-        HttpContext.Session.SetInt32(SessionKeys.EmployeeId, login.EmployeeId);
-        HttpContext.Session.SetString(SessionKeys.EmployeeUsername, login.Username);
-        HttpContext.Session.SetString(SessionKeys.EmployeeName, login.Name);
-        HttpContext.Session.SetString(SessionKeys.EmployeePhone, login.Phone ?? string.Empty);
-        HttpContext.Session.SetString(SessionKeys.EmployeeEmail, login.Email ?? string.Empty);
-        HttpContext.Session.SetInt32(SessionKeys.EmployeeRoleId, login.RoleId);
-        HttpContext.Session.SetString(SessionKeys.EmployeeRoleCode, login.RoleCode);
-        HttpContext.Session.SetString(SessionKeys.EmployeeRoleName, login.RoleName);
-        HttpContext.Session.SetInt32(SessionKeys.EmployeeBranchId, login.BranchId);
-        HttpContext.Session.SetString(SessionKeys.EmployeeBranchName, login.BranchName);
+        HttpContext.StaffIdentity().SetInt32(SessionKeys.EmployeeId, login.EmployeeId);
+        HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeUsername, login.Username);
+        HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeName, login.Name);
+        HttpContext.StaffIdentity().SetString(SessionKeys.EmployeePhone, login.Phone ?? string.Empty);
+        HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeEmail, login.Email ?? string.Empty);
+        HttpContext.StaffIdentity().SetInt32(SessionKeys.EmployeeRoleId, login.RoleId);
+        HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeRoleCode, login.RoleCode);
+        HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeRoleName, login.RoleName);
+        HttpContext.StaffIdentity().SetInt32(SessionKeys.EmployeeBranchId, login.BranchId);
+        HttpContext.StaffIdentity().SetString(SessionKeys.EmployeeBranchName, login.BranchName);
     }
 
     private StaffSessionDto BuildSessionDto() => new(RequireStaff() is not null, RequireStaff(), "/Staff/Account/Login");
@@ -1049,9 +1049,9 @@ public sealed class AdminGatewayController : ControllerBase
 
     private StaffSessionUserDto? RequireStaff(params string[] allowedRoles)
     {
-        var employeeId = HttpContext.Session.GetInt32(SessionKeys.EmployeeId);
-        var roleCode = HttpContext.Session.GetString(SessionKeys.EmployeeRoleCode);
-        var branchId = HttpContext.Session.GetInt32(SessionKeys.EmployeeBranchId);
+        var employeeId = HttpContext.StaffIdentity().GetInt32(SessionKeys.EmployeeId);
+        var roleCode = HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeRoleCode);
+        var branchId = HttpContext.StaffIdentity().GetInt32(SessionKeys.EmployeeBranchId);
 
         if (employeeId is null || employeeId <= 0 || string.IsNullOrWhiteSpace(roleCode) || branchId is null || branchId <= 0)
         {
@@ -1065,38 +1065,38 @@ public sealed class AdminGatewayController : ControllerBase
 
         return new StaffSessionUserDto(
             employeeId.Value,
-            HttpContext.Session.GetString(SessionKeys.EmployeeUsername) ?? string.Empty,
-            HttpContext.Session.GetString(SessionKeys.EmployeeName) ?? string.Empty,
-            HttpContext.Session.GetString(SessionKeys.EmployeePhone),
-            HttpContext.Session.GetString(SessionKeys.EmployeeEmail),
-            HttpContext.Session.GetInt32(SessionKeys.EmployeeRoleId) ?? 0,
+            HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeUsername) ?? string.Empty,
+            HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeName) ?? string.Empty,
+            HttpContext.StaffIdentity().GetString(SessionKeys.EmployeePhone),
+            HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeEmail),
+            HttpContext.StaffIdentity().GetInt32(SessionKeys.EmployeeRoleId) ?? 0,
             roleCode,
-            HttpContext.Session.GetString(SessionKeys.EmployeeRoleName) ?? string.Empty,
+            HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeRoleName) ?? string.Empty,
             branchId.Value,
-            HttpContext.Session.GetString(SessionKeys.EmployeeBranchName) ?? string.Empty);
+            HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeBranchName) ?? string.Empty);
     }
 
     private AdminSettingsDto BuildSettingsDto(StaffSessionUserDto admin) => new(
         admin.EmployeeId,
-        HttpContext.Session.GetString(SessionKeys.EmployeeName) ?? admin.Name,
-        HttpContext.Session.GetString(SessionKeys.EmployeeUsername) ?? admin.Username,
-        HttpContext.Session.GetString(SessionKeys.EmployeePhone) ?? admin.Phone,
-        HttpContext.Session.GetString(SessionKeys.EmployeeEmail) ?? admin.Email,
-        HttpContext.Session.GetString(SessionKeys.EmployeeBranchName) ?? admin.BranchName,
-        HttpContext.Session.GetString(SessionKeys.EmployeeRoleName) ?? admin.RoleName);
+        HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeName) ?? admin.Name,
+        HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeUsername) ?? admin.Username,
+        HttpContext.StaffIdentity().GetString(SessionKeys.EmployeePhone) ?? admin.Phone,
+        HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeEmail) ?? admin.Email,
+        HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeBranchName) ?? admin.BranchName,
+        HttpContext.StaffIdentity().GetString(SessionKeys.EmployeeRoleName) ?? admin.RoleName);
 
     private void ClearStaffSession()
     {
-        HttpContext.Session.Remove(SessionKeys.EmployeeId);
-        HttpContext.Session.Remove(SessionKeys.EmployeeUsername);
-        HttpContext.Session.Remove(SessionKeys.EmployeeName);
-        HttpContext.Session.Remove(SessionKeys.EmployeePhone);
-        HttpContext.Session.Remove(SessionKeys.EmployeeEmail);
-        HttpContext.Session.Remove(SessionKeys.EmployeeRoleId);
-        HttpContext.Session.Remove(SessionKeys.EmployeeRoleCode);
-        HttpContext.Session.Remove(SessionKeys.EmployeeRoleName);
-        HttpContext.Session.Remove(SessionKeys.EmployeeBranchId);
-        HttpContext.Session.Remove(SessionKeys.EmployeeBranchName);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeId);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeUsername);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeName);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeePhone);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeEmail);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeRoleId);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeRoleCode);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeRoleName);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeBranchId);
+        HttpContext.StaffIdentity().Remove(SessionKeys.EmployeeBranchName);
     }
 
     private ActionResult Error(string code, string message, int statusCode, object? details = null)
