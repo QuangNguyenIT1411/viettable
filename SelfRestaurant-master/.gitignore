@@ -28,3 +28,6 @@ artifacts/
 
 # Runtime app data
 **/App_Data/integration-events/*.jsonl
+
+.vercel
+.env*

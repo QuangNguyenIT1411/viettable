@@ -290,9 +290,12 @@ if (sharedStaticRoot is not null)
 
 var customerAppRoot = builder.Configuration.GetValue<bool>("CloudHost:StatelessStaff") ? null :
     ResolveAppRoot("customer-app", builder.Configuration["Frontend:CustomerDistPath"], "selfrestaurant-customer-web", app.Environment.ContentRootPath);
-MapSpa(app, "/app/chef", ResolveAppRoot("chef-app", builder.Configuration["Frontend:ChefDistPath"], "selfrestaurant-chef-web", app.Environment.ContentRootPath));
-MapSpa(app, "/app/cashier", ResolveAppRoot("cashier-app", builder.Configuration["Frontend:CashierDistPath"], "selfrestaurant-cashier-web", app.Environment.ContentRootPath));
-MapSpa(app, "/app/admin", ResolveAppRoot("admin-app", builder.Configuration["Frontend:AdminDistPath"], "selfrestaurant-admin-web", app.Environment.ContentRootPath));
+if (builder.Configuration.GetValue<bool?>("CloudHost:ExposeStaffWeb") != false)
+{
+    MapSpa(app, "/app/chef", ResolveAppRoot("chef-app", builder.Configuration["Frontend:ChefDistPath"], "selfrestaurant-chef-web", app.Environment.ContentRootPath));
+    MapSpa(app, "/app/cashier", ResolveAppRoot("cashier-app", builder.Configuration["Frontend:CashierDistPath"], "selfrestaurant-cashier-web", app.Environment.ContentRootPath));
+    MapSpa(app, "/app/admin", ResolveAppRoot("admin-app", builder.Configuration["Frontend:AdminDistPath"], "selfrestaurant-admin-web", app.Environment.ContentRootPath));
+}
 UseRootSpaFiles(app, customerAppRoot);
 
 app.UseRouting();
