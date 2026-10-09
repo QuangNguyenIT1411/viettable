@@ -1,5 +1,19 @@
 # Staff Web — chuẩn bị Preview cùng-origin (10/10/2026)
 
+> Tài liệu dưới đây ghi baseline chuẩn bị của commit `41f7958`, không phải trạng thái
+> triển khai mới nhất. Deployment và browser acceptance sau phê duyệt được ghi riêng
+> tại [STAFF_WEB_CLOUD_ACCEPTANCE.md](STAFF_WEB_CLOUD_ACCEPTANCE.md).
+
+### Follow-up: staff ticket revocation migration
+
+CloudStaff logout dùng Identity-owned `CloudStaffRevocations` (SHA256 ticket hash +
+expiry), additive migration `20261010000100_CloudStaffRevocation`.
+Khi áp dụng schema mới lên staging: chạy helper `test-staging-database.ps1 -Action Migrate`
+rồi `-Action Roles` bằng credentials DPAPI hiện có để cấp quyền đúng owner cho table
+mới. Không reset DB, rotate password hay cấp quyền foreign schemas.
+Expired hashes hiện không có automatic cleanup schedule; không bật job mới như
+một phần deploy. Acceptance logout/replay/browser nằm trong tài liệu liên kết trên.
+
 ## Trạng thái và phạm vi
 
 **STAFF WEB DEPLOYMENT: READY — source/config/build preparation, NOT remote UI acceptance.**
@@ -77,7 +91,7 @@ Commands đã chạy và có thể chạy lại để **prepare/build**, không 
 cd D:\Quang\VietTable
 powershell -ExecutionPolicy Bypass -File .\scripts\prepare-staff-preview.ps1
 # cd vào context mới được in, không dùng root workspace làm upload context
-docker build -f Dockerfile.staff-preview -t viettable-staff-preview:prepared .
+docker build -f Dockerfile -t viettable-staff-preview:prepared .
 ```
 
 Trong mỗi frontend, command build vẫn là `npm ci` rồi `npm run build`.

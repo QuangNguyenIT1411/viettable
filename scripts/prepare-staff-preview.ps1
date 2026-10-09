@@ -37,7 +37,14 @@ foreach ($taskRelative in $taskFiles) {
         if ($taskAncestor.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Symlink/reparse source is not allowed.' }
         $taskAncestor = if ($taskAncestor -is [IO.DirectoryInfo]) { $taskAncestor.Parent } else { $taskAncestor.Directory }
     }
-    $taskDestination = Join-Path $taskOutput $taskRelative
+    # Vercel container entrypoints require a supported Dockerfile basename.
+    # Rename only inside this isolated upload context; keep the API Dockerfile intact.
+    $taskUploadRelative = switch ($taskRelative) {
+        'Dockerfile.staff-preview' { 'Dockerfile' }
+        'Dockerfile.staff-preview.dockerignore' { 'Dockerfile.dockerignore' }
+        default { $taskRelative }
+    }
+    $taskDestination = Join-Path $taskOutput $taskUploadRelative
     [void](New-Item -ItemType Directory -Path (Split-Path $taskDestination) -Force)
     Copy-Item -LiteralPath $taskSource -Destination $taskDestination
 }
@@ -46,4 +53,4 @@ foreach ($taskConfig in @('vercel.json', '.vercelignore')) {
 }
 Write-Output "PREPARED ONLY: $taskOutput"
 Write-Output "Source files: $($taskFiles.Count). No deploy/link/env pull/alias/Production action was executed."
-Write-Output 'Next local check: cd <prepared-context>; docker build -f Dockerfile.staff-preview -t viettable-staff-preview:prepared .'
+Write-Output 'Next local check: cd <prepared-context>; docker build -f Dockerfile -t viettable-staff-preview:prepared .'

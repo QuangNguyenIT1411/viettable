@@ -1,6 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
+using System.Text;
 using SelfRestaurant.Gateway.Api.Infrastructure;
 
 namespace VietTable.CloudHost.Auth;
@@ -35,20 +38,26 @@ public sealed class StaffCookieState : ISession
 public interface IStaffCookieValidator
 {
     Task<string?> VersionAsync(int employeeId, string role, int branch, CancellationToken ct);
+    Task<bool> IsRevokedAsync(string ticketHash, CancellationToken ct);
+    Task RevokeAsync(string ticketHash, DateTimeOffset expiry, CancellationToken ct);
 }
 
 public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment environment)
 {
-    public async Task InvokeAsync(HttpContext context, IStaffCookieValidator validator)
+    public async Task InvokeAsync(HttpContext context, IStaffCookieValidator validator, IOptionsMonitor<CookieAuthenticationOptions> options)
     {
         var auth = await context.AuthenticateAsync(StaffCookieState.Scheme);
+        var cookieOptions = options.Get(StaffCookieState.Scheme);
+        var ticket = cookieOptions.CookieManager.GetRequestCookie(context, cookieOptions.Cookie.Name!);
+        var ticketHash = string.IsNullOrEmpty(ticket) ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ticket)));
         var state = new StaffCookieState(auth.Succeeded ? auth.Principal : null);
         var id = state.GetInt32(SessionKeys.EmployeeId);
         string? version = null;
         if (id is > 0)
         {
-            version = await validator.VersionAsync(id.Value, state.GetString(SessionKeys.EmployeeRoleCode) ?? "",
-                state.GetInt32(SessionKeys.EmployeeBranchId) ?? 0, context.RequestAborted);
+            if (ticketHash is not null && !await validator.IsRevokedAsync(ticketHash, context.RequestAborted))
+                version = await validator.VersionAsync(id.Value, state.GetString(SessionKeys.EmployeeRoleCode) ?? "",
+                    state.GetInt32(SessionKeys.EmployeeBranchId) ?? 0, context.RequestAborted);
             if (version is null || version != auth.Principal?.FindFirst("auth-version")?.Value) state.Clear();
         }
         context.Items[StaffIdentityState.ItemKey] = state;
@@ -65,7 +74,15 @@ public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment
         {
             if (!state.Changed) return;
             var employee = state.GetInt32(SessionKeys.EmployeeId);
-            if (employee is not > 0) { await context.SignOutAsync(StaffCookieState.Scheme); return; }
+            if (employee is not > 0)
+            {
+                // Persist before emitting successful logout; deletion alone cannot revoke
+                // an already copied cookie across processes or a later cold start.
+                if (auth.Succeeded && ticketHash is not null)
+                    await validator.RevokeAsync(ticketHash, auth.Properties?.ExpiresUtc ?? DateTimeOffset.UtcNow.AddHours(8), context.RequestAborted);
+                await context.SignOutAsync(StaffCookieState.Scheme);
+                return;
+            }
             var current = await validator.VersionAsync(employee.Value, state.GetString(SessionKeys.EmployeeRoleCode) ?? "",
                 state.GetInt32(SessionKeys.EmployeeBranchId) ?? 0, context.RequestAborted);
             if (current is null) { await context.SignOutAsync(StaffCookieState.Scheme); return; }

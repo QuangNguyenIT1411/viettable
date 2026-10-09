@@ -75,6 +75,8 @@ public sealed class StaffPreviewRoutingTests
 
     private sealed class NoStaffFixtureValidator : IStaffCookieValidator
     {
+        public Task<bool> IsRevokedAsync(string ticketHash, CancellationToken ct) => throw new InvalidOperationException("No staff cookie expected.");
+        public Task RevokeAsync(string ticketHash, DateTimeOffset expiry, CancellationToken ct) => throw new InvalidOperationException("No staff cookie expected.");
         public Task<string?> VersionAsync(int employeeId, string role, int branch, CancellationToken ct) =>
             throw new InvalidOperationException("This routing/origin test must not access staff identity or database.");
     }

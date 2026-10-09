@@ -24,6 +24,15 @@ namespace SelfRestaurant.Identity.Api.Persistence.Postgres.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "citext");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.Entities.CloudStaffRevocation", b =>
+                {
+                    b.Property<string>("TicketHash").HasMaxLength(64).HasColumnType("character varying(64)");
+                    b.Property<DateTime>("ExpiresAtUtc").HasColumnType("timestamp with time zone");
+                    b.HasKey("TicketHash");
+                    b.HasIndex("ExpiresAtUtc");
+                    b.ToTable("CloudStaffRevocations", "identity");
+                });
+
             modelBuilder.Entity("SelfRestaurant.Identity.Api.Persistence.CloudDataProtectionKey", b =>
                 {
                     b.Property<Guid>("Id")

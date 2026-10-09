@@ -4,6 +4,7 @@ using SelfRestaurant.Identity.Api.Persistence;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
+using SelfRestaurant.Identity.Api.Persistence.Entities;
 
 namespace SelfRestaurant.Identity.Api.Security;
 
@@ -11,6 +12,29 @@ namespace SelfRestaurant.Identity.Api.Security;
 // DbContext or query Identity tables from another domain container.
 public sealed class CloudIdentityBoundary(IServiceScopeFactory scopes) : IXmlRepository
 {
+    public async Task<bool> StaffTicketRevokedAsync(string hash, CancellationToken ct)
+    {
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        return await db.CloudStaffRevocations.AsNoTracking()
+            .AnyAsync(x => x.TicketHash == hash && x.ExpiresAtUtc > DateTime.UtcNow, ct);
+    }
+
+    public async Task RevokeStaffTicketAsync(string hash, DateTimeOffset expiry, CancellationToken ct)
+    {
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        if (await db.CloudStaffRevocations.AnyAsync(x => x.TicketHash == hash, ct)) return;
+        db.CloudStaffRevocations.Add(new CloudStaffRevocation { TicketHash = hash, ExpiresAtUtc = expiry.UtcDateTime });
+        try { await db.SaveChangesAsync(ct); }
+        catch (DbUpdateException)
+        {
+            // Concurrent logout of the same ticket is idempotent, not a failed logout.
+            db.ChangeTracker.Clear();
+            if (!await db.CloudStaffRevocations.AnyAsync(x => x.TicketHash == hash, ct)) throw;
+        }
+    }
+
     public async Task<string?> StaffVersionAsync(int employeeId, string role, int branch, CancellationToken ct)
     {
         using var scope = scopes.CreateScope();

@@ -112,13 +112,13 @@ export function LoginPage({ onLoggedIn }: Props) {
           </button>
         </form>
 
-        <div className="login-help">
+        {import.meta.env.DEV ? <div className="login-help">
           <strong>Tài khoản test:</strong>
           <br />
           Thu ngân: <code>cashier_lan</code> / <code>123456</code>
           <br />
           Admin: <code>admin</code> / <code>123456</code>
-        </div>
+        </div> : null}
       </section>
     </main>
   );

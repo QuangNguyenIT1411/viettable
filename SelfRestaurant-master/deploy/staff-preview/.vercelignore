@@ -3,8 +3,8 @@
 !/src/**
 !/sql
 !/certs
-!/Dockerfile.staff-preview
-!/Dockerfile.staff-preview.dockerignore
+!/Dockerfile
+!/Dockerfile.dockerignore
 !/.vercelignore
 !/vercel.json
 /src/*

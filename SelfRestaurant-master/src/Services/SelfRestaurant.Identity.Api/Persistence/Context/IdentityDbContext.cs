@@ -21,9 +21,17 @@ public sealed class IdentityDbContext : DbContext
     public DbSet<CustomerSettings> CustomerSettings => Set<CustomerSettings>();
     public DbSet<CloudDataProtectionKey> CloudDataProtectionKeys => Set<CloudDataProtectionKey>();
     public DbSet<CloudStaffResetToken> CloudStaffResetTokens => Set<CloudStaffResetToken>();
+    public DbSet<CloudStaffRevocation> CloudStaffRevocations => Set<CloudStaffRevocation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CloudStaffRevocation>(entity =>
+        {
+            entity.ToTable("CloudStaffRevocations");
+            entity.HasKey(x => x.TicketHash);
+            entity.Property(x => x.TicketHash).HasMaxLength(64);
+            entity.HasIndex(x => x.ExpiresAtUtc);
+        });
         modelBuilder.Entity<CloudStaffResetToken>(entity =>
         {
             entity.ToTable("CloudStaffResetTokens");

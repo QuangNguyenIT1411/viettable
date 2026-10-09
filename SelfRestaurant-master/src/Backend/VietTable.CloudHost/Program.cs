@@ -81,6 +81,15 @@ try
         },
         app => {
             app.Use(async (context, next) => {
+                var media = CloudPublicMedia.Resolve(app.Configuration, context.Request.Path.Value ?? "");
+                if (media is not null && (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)))
+                {
+                    context.Response.Redirect(media);
+                    return;
+                }
+                await next();
+            });
+            app.Use(async (context, next) => {
                 // Opaque process identifier; also present on WebSocket upgrade responses.
                 context.Response.Headers["X-VietTable-Instance"] = app.Services.GetRequiredService<RealtimeDiagnostics>().InstanceId;
                 await next();
