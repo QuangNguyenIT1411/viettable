@@ -1,0 +1,37 @@
+# Only the source required by Dockerfile.vercel is uploaded.
+/*
+!/src
+!/src/**
+!/sql
+!/certs
+!/Dockerfile.vercel
+!/Dockerfile.vercel.dockerignore
+!/.vercelignore
+!/vercel.json
+/src/*
+!/src/Backend
+!/src/Backend/**
+!/src/Gateway
+!/src/Gateway/**
+!/src/Services
+!/src/Services/**
+!/src/Shared
+!/src/Shared/**
+/sql/*
+!/sql/billing-owned-tables.sql
+/certs/*
+!/certs/supabase-ca.crt
+
+# Never send local configuration, credentials, or generated artifacts.
+**/.env
+**/.env.*
+**/.vercel
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/*.dpapi
+**/*.pfx
+**/*.pem
+**/*.log
+**/appsettings*.json
