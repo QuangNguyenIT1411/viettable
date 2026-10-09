@@ -4,7 +4,7 @@
 
 Phase D targets only `VietTable.CloudHost` in the Vercel project `viettable-api`, using **Preview** and Supabase staging. On 09/10/2026 the user explicitly approved one harmless static Production bootstrap outside the repository, then a mandatory static Preview probe before uploading CloudHost. Both gates passed. The API is now deployed as a real Docker-backed Preview, not an empty READY deployment.
 
-**VERCEL API PREVIEW: PARTIAL — SignalR event delivery and remote fault-injection recovery are not accepted.** WSS authentication/handshakes/reconnect passed, but `orderUpdated READY` was not observed within the test window even after adding protocol heartbeat to the temporary verifier. Service Request event delivery remains unverified. Recovery fault switches are deliberately Development-only; they were not enabled on the public Production-mode container.
+**Follow-up acceptance — 09/10/2026: REALTIME + RECOVERY: PASS** for actual multi-instance event delivery, reconnect/REST resync and protected **manual** durable recovery after redeploy. Current Preview: [CloudHost private backplane](https://viettable-6ezq8ysww-hienkhanhvu981-7145.vercel.app), `dpl_2n6LXbAyfocDMgG5DdTid2u6N5wK`. See [CLOUD_REALTIME_RECOVERY_ACCEPTANCE.md](CLOUD_REALTIME_RECOVERY_ACCEPTANCE.md) for root-cause reproduction, private-channel/RLS security, event counts, isolated fault harness and repeated/concurrent recovery. **Automatic unattended recovery scheduling remains UNVERIFIED.** The older PARTIAL evidence below is retained as history, not the current acceptance state.
 
 Do not deploy the Chef, Cashier, Admin, or Customer frontends in this phase. Do not change Android's default API URL, configure Railway, or deploy application code to Production. Production must remain the harmless bootstrap.
 
@@ -36,6 +36,7 @@ MediaStorage__Supabase__ProjectUrl
 MediaStorage__Supabase__Bucket
 MobileJwt__Issuer
 MobileJwt__Audience
+Realtime__Provider
 ```
 
 `CloudHost__ExposeStaffWeb` keeps the staff SPAs out of this API-only deployment. `Database__ApplyMigrations` is disabled: schemas are already migrated, and application startup must not mutate them.
@@ -90,7 +91,7 @@ Probe: [static Preview](https://viettable-2cks1vn7z-hienkhanhvu981-7145.vercel.a
 
 Main E2E: [accepted API Preview](https://viettable-16r26dk9i-hienkhanhvu981-7145.vercel.app).
 
-Latest: [fresh container Preview](https://viettable-bl5keev4y-hienkhanhvu981-7145.vercel.app).
+Historical fresh-container baseline: [Preview before realtime fix](https://viettable-bl5keev4y-hienkhanhvu981-7145.vercel.app). Current deployment/evidence is linked at the top of this document.
 
 Executed from `D:\Quang\VietTable\SelfRestaurant-master`:
 
@@ -106,7 +107,7 @@ npx.cmd --yes vercel@62.4.0 deploy --yes --target preview --force --with-cache -
 3. A temporary staff-auth assertion expected `session.user`, whereas the actual DTO is `session.staff`. The verifier was corrected; no application auth code was changed.
 4. The first temporary raw WSS verifier did not send SignalR protocol pings during a long REST test. Heartbeat was added to that out-of-repository verifier. A later READY event observation still timed out; this is not accepted as event delivery PASS.
 
-## Remote acceptance evidence — 09/10/2026
+## Historical remote acceptance evidence — 09/10/2026, before realtime/recovery follow-up
 
 Requests used the exact protected Preview HTTPS origin, fresh in-memory development OIDC for Deployment Protection, and separate application JWT/cookies. No localhost fallback or protection disabling was used. No `.env` was pulled; a stale ignored local OIDC override was avoided by running verification from the linked temporary directory.
 

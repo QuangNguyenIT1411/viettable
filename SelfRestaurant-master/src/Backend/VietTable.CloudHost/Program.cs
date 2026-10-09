@@ -12,6 +12,9 @@ using VietTable.CloudHost.Auth;
 using VietTable.CloudHost;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.SignalR;
+using VietTable.CloudHost.Diagnostics;
+using VietTable.CloudHost.Realtime;
 
 // One public listener. Module containers are owned/disposed with this process.
 var config = new ConfigurationBuilder().AddEnvironmentVariables().AddCommandLine(args).Build();
@@ -67,8 +70,21 @@ try
             foreach (var target in new[] { "Catalog", "Orders", "Customers", "Identity", "Billing" })
                 builder.Configuration["Services:" + target] = "http://" + target + ".module.invalid";
             builder.Services.AddSingleton<IHttpMessageHandlerBuilderFilter>(new ModuleClientFilter(router));
-        }, builder => CloudStaffConfiguration.Configure(builder, identityBoundary),
+        }, builder => {
+            CloudStaffConfiguration.Configure(builder, identityBoundary);
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSingleton<RealtimeDiagnostics>();
+            builder.Services.AddSingleton(typeof(SupabasePrivateBackplane<>));
+            builder.Services.AddSingleton(typeof(HubLifetimeManager<>), typeof(DiagnosticHubLifetimeManager<>));
+            builder.Services.AddSingleton<RealtimeSubscriptionFilter>();
+            builder.Services.AddSignalR(options => options.AddFilter<RealtimeSubscriptionFilter>());
+        },
         app => {
+            app.Use(async (context, next) => {
+                // Opaque process identifier; also present on WebSocket upgrade responses.
+                context.Response.Headers["X-VietTable-Instance"] = app.Services.GetRequiredService<RealtimeDiagnostics>().InstanceId;
+                await next();
+            });
             app.Use(async (context,next) => {
                 try { await next(); }
                 catch(Exception error) {

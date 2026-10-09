@@ -11,6 +11,8 @@ internal static class CloudHostAcceptance
 {
     public static async Task RunAsync(Input input)
     {
+        var prepareRemoteRecovery = input.Action == "CloudRecoveryPrepare";
+        var recoveryFaults = input.Action == "CloudRecovery" || prepareRemoteRecovery;
         var fixture = await CloudStaffProvisioner.CreateAsync(input);
         var staff = fixture.Staff;
         var start = new ProcessStartInfo("dotnet", "bin/Debug/net8.0/VietTable.CloudHost.dll") {
@@ -26,11 +28,11 @@ internal static class CloudHostAcceptance
         start.Environment["MobileJwt__SigningKey"] = input.CloudHostSigningKey;
         start.Environment["CloudHost__EnvironmentNamespace"] = "staging-local";
         start.Environment["CloudHost__DataProtectionCertificate"] = input.CloudHostDataProtectionCertificate;
-        if (input.Action is "CloudRecovery" or "CloudRecoveryProbe")
+        if (input.Action is "CloudRecovery" or "CloudRecoveryProbe" or "CloudRecoveryPrepare")
         {
             // Test-only fault injection; the value is never written to source or logs.
             start.Environment["CRON_SECRET"] = input.CloudHostSigningKey;
-            if (input.Action == "CloudRecovery")
+            if (recoveryFaults)
             {
                 start.Environment["Recovery__TestFailReadyProjection"] = "true";
                 start.Environment["Recovery__TestFailAfterPaymentCommit"] = "true";
@@ -72,7 +74,8 @@ internal static class CloudHostAcceptance
                 using var request=new HttpRequestMessage(HttpMethod.Post,"/api/internal/recovery");
                 request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",input.CloudHostSigningKey);
                 using var response=await client.SendAsync(request);
-                Ensure(response.IsSuccessStatusCode,"Secured recovery endpoint failed: HTTP "+(int)response.StatusCode);
+                Ensure(response.IsSuccessStatusCode || (prepareRemoteRecovery && response.StatusCode==HttpStatusCode.InternalServerError),
+                    "Secured recovery endpoint failed: HTTP "+(int)response.StatusCode);
             }
             var ready = false;
             for (var attempt = 0; attempt < 240; attempt++)
@@ -97,7 +100,9 @@ internal static class CloudHostAcceptance
             }
             using (var denied = await client.GetAsync("/api/mobile/v1/me")) Ensure(denied.StatusCode == HttpStatusCode.Unauthorized,"Mobile auth denial mismatch.");
             using (var hidden = await client.GetAsync("/api/internal/mobile/auth/login")) Ensure(hidden.StatusCode == HttpStatusCode.NotFound,"Private module route exposed.");
-            var username = input.Action == "CloudRecovery"
+            var username = prepareRemoteRecovery
+                ? "cloudrecoverypreviewqa_" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(input.CloudHostAcceptancePassword)))[..24].ToLowerInvariant()
+                : input.Action == "CloudRecovery"
                 ? "cloudrecoveryqa_" + Guid.NewGuid().ToString("N")[..20]
                 : "cloudhostqa_" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(input.CloudHostAcceptancePassword)))[..24].ToLowerInvariant();
             var password = input.CloudHostAcceptancePassword;
@@ -119,7 +124,7 @@ internal static class CloudHostAcceptance
             Ensure(menu.GetProperty("categories").GetArrayLength()>0,"Menu empty.");
             _=await Send(client,HttpMethod.Get,$"/api/mobile/v1/branches/{branch}/table-layout");
             _=await Send(client,HttpMethod.Get,"/api/mobile/v1/reservations?scope=history");
-            if (input.Action != "CloudRecovery")
+            if (!recoveryFaults)
                 _=await Send(client,HttpMethod.Get,"/api/mobile/v1/orders?scope=history");
             Console.WriteLine("PASS: CloudHost mobile register/login/refresh/profile, Catalog/menu/tables, Customers/Orders histories and private-route denial.");
             if (input.Action == "CloudHostAuth")
@@ -199,7 +204,7 @@ internal static class CloudHostAcceptance
                 : await Send(client,HttpMethod.Post,"/api/mobile/v1/check-ins/walk-in",new{qrCode=fixture.QrCode},idempotency+"-walkin");
             var sessionId=session.GetProperty("diningSessionId").GetInt32();
             Ensure(session.GetProperty("branchId").GetInt32()==fixture.BranchId,"QA active session belongs to unexpected branch.");
-            if (input.Action == "CloudRecovery")
+            if (recoveryFaults)
             {
                 var occupied=await Send(client,HttpMethod.Get,$"/api/mobile/v1/branches/{fixture.BranchId}/table-layout");
                 Ensure(!occupied.GetProperty("tables").EnumerateArray()
@@ -208,7 +213,7 @@ internal static class CloudHostAcceptance
             }
             Console.WriteLine("Retained/resumed staging QA session="+sessionId);
             // Stable per-session commands safely replay a committed order after a response timeout.
-            idempotency=input.Action=="CloudRecovery"
+            idempotency=recoveryFaults
                 ? "hostqa-recovery-"+sessionId+"-"+Guid.NewGuid().ToString("N")
                 : "hostqa-session-"+sessionId;
             var actualMenu=await Send(client,HttpMethod.Get,$"/api/mobile/v1/branches/{fixture.BranchId}/menu");
@@ -230,7 +235,7 @@ internal static class CloudHostAcceptance
             await Send(chef,HttpMethod.Post,$"/api/gateway/staff/chef/orders/{orderId}/start");
             await realtime.ExpectAsync("orderUpdated", "PREPARING");
             await Send(chef,HttpMethod.Post,$"/api/gateway/staff/chef/orders/{orderId}/ready");
-            if (input.Action == "CloudRecovery")
+            if (recoveryFaults)
             {
                 var canonical=await Send(client,HttpMethod.Get,$"/api/mobile/v1/orders/{orderId}");
                 Ensure(canonical.GetProperty("status").GetString()=="READY","READY state did not commit with its outbox.");
@@ -239,6 +244,8 @@ internal static class CloudHostAcceptance
                     "READY projection unexpectedly succeeded during injected failure.");
                 using(var denied=await client.PostAsync("/api/internal/recovery",null))
                     Ensure(denied.StatusCode==HttpStatusCode.Unauthorized,"Customer token accessed recovery endpoint.");
+                if (!prepareRemoteRecovery)
+                {
                 start.Environment["Recovery__TestFailReadyProjection"]="false";
                 await RestartAsync();
                 await resumedRealtime.ConnectAsync(refresh.GetProperty("accessToken").GetString()!);
@@ -249,6 +256,7 @@ internal static class CloudHostAcceptance
                 Ensure(after.GetProperty("items").EnumerateArray().Count(x=>x.GetProperty("orderId").GetInt32()==orderId)==1,
                     "READY projection recovery duplicated or lost notification.");
                 Console.WriteLine("PASS: READY state survived injected projection failure and process restart; two concurrent plus duplicate recovery calls produced one notification; customer forbidden.");
+                }
             }
             var detail=await Send(client,HttpMethod.Get,$"/api/mobile/v1/orders/{orderId}");
             var itemId=detail.GetProperty("items")[0].GetProperty("itemId").GetInt32();
@@ -263,7 +271,7 @@ internal static class CloudHostAcceptance
             var quote=await Send(client,HttpMethod.Post,$"/api/mobile/v1/dining-sessions/{sessionId}/checkout/quote",new{},idempotency+"-quote");
             var quoteId=quote.GetProperty("checkoutQuoteId").GetInt32();
             decimal expectedSubtotal;
-            if (input.Action == "CloudRecovery") expectedSubtotal=quote.GetProperty("totalAmount").GetDecimal();
+            if (recoveryFaults) expectedSubtotal=quote.GetProperty("totalAmount").GetDecimal();
             else {
                 var sessionOrders=await Send(client,HttpMethod.Get,"/api/mobile/v1/orders?scope=all");
                 expectedSubtotal=sessionOrders.EnumerateArray().Where(x=>x.GetProperty("diningSessionId").ValueKind==JsonValueKind.Number &&
@@ -277,7 +285,7 @@ internal static class CloudHostAcceptance
                 Ensure(denied.StatusCode==HttpStatusCode.Unauthorized,"Customer acquired staff role.");
             using(var denied=await actors["CASHIEROtherBranch"].PostAsJsonAsync($"/api/gateway/staff/cashier/onsite-payments/{paymentId}/confirm",new{}))
                 Ensure(denied.StatusCode==HttpStatusCode.Forbidden,"Wrong-branch cashier was not rejected.");
-            if (input.Action == "CloudRecovery")
+            if (recoveryFaults)
             {
                 using(var failed=await cashier.PostAsJsonAsync($"/api/gateway/staff/cashier/onsite-payments/{paymentId}/confirm",new{}))
                     Ensure((int)failed.StatusCode>=500,"Injected post-commit failure did not interrupt cashier response.");
@@ -285,6 +293,8 @@ internal static class CloudHostAcceptance
                 Ensure(committed.GetProperty("status").GetString()=="SUCCEEDED","Payment did not commit before injected failure.");
                 var pending=await Send(client,HttpMethod.Get,$"/api/mobile/v1/dining-sessions/{sessionId}");
                 Ensure(pending.GetProperty("status").GetString()!="CLOSED","Session already closed during injected failure.");
+                if (prepareRemoteRecovery)
+                    Console.WriteLine($"PASS: isolated payment commit fault; session={sessionId}; payment={paymentId}; SUCCEEDED but downstream session not CLOSED.");
                 start.Environment["Recovery__TestFailAfterPaymentCommit"]="false";
                 start.Environment["Recovery__TestFailTableRelease"]="true";
                 await RestartAsync();
@@ -295,6 +305,20 @@ internal static class CloudHostAcceptance
                 Ensure(!stillOccupied.GetProperty("tables").EnumerateArray()
                     .Single(x=>x.GetProperty("tableId").GetInt32()==closedBeforeRelease.GetProperty("tableId").GetInt32())
                     .GetProperty("physicallyAvailable").GetBoolean(),"Catalog table unexpectedly released during injected failure.");
+                if (prepareRemoteRecovery)
+                {
+                    await using var receiptDb = new BillingDbContext(new DbContextOptionsBuilder<BillingDbContext>()
+                        .UseNpgsql(CloudWorkflow.RuntimeConnection(input,"billing")).Options);
+                    var receipts = await receiptDb.Invoices.AsNoTracking().Where(x=>x.DiningSessionId==sessionId).ToListAsync();
+                    Ensure(receipts.Count==1 && !receipts[0].SettlementCompletedAtUtc.HasValue
+                        && receipts[0].RecoveryAttemptCount>0,"Expected one durable pending invoice receipt.");
+                    var notifications=await Send(client,HttpMethod.Get,"/api/mobile/v1/notifications?limit=100");
+                    Ensure(!notifications.GetProperty("items").EnumerateArray().Any(x=>x.GetProperty("orderId").GetInt32()==orderId),
+                        "Pending READY notification was processed before remote recovery acceptance.");
+                    Console.WriteLine($"RECOVERY_PREPARED: session={sessionId}; order={orderId}; payment={paymentId}; invoice={receipts[0].InvoiceId}; table={closedBeforeRelease.GetProperty("tableId").GetInt32()}; branch={fixture.BranchId}; amount={quote.GetProperty("totalAmount").GetDecimal()}");
+                    Console.WriteLine("PASS: PostgreSQL pending invoice receipt, CLOSED session with occupied table, and pending READY notification; local fault process stops now. No public fault flags or endpoints.");
+                    return; // finally kills private process; Vercel must complete the pending work.
+                }
                 start.Environment["Recovery__TestFailTableRelease"]="false";
                 await RestartAsync();
                 await Task.WhenAll(InvokeRecoveryAsync(),InvokeRecoveryAsync());

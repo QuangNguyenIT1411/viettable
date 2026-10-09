@@ -13,7 +13,7 @@ try
 {
     var input = JsonSerializer.Deserialize<Input>(await Console.In.ReadToEndAsync())
         ?? throw new InvalidOperationException("Missing staging input.");
-    if (input.Action is not ("Probe" or "Migrate" or "Verify" or "Roles" or "Bootstrap" or "CorrectReferenceTime" or "Workflow" or "CloudHost" or "CloudHostAuth" or "CloudRecovery" or "CloudRecoveryProbe" or "StorageUpload" or "StorageVerify")) throw new InvalidOperationException("Unsupported staging action.");
+    if (input.Action is not ("Probe" or "RealtimePolicyProbe" or "CloudRecoveryInspect" or "Migrate" or "Verify" or "Roles" or "Bootstrap" or "CorrectReferenceTime" or "Workflow" or "CloudHost" or "CloudHostAuth" or "CloudRecovery" or "CloudRecoveryProbe" or "CloudRecoveryPrepare" or "StorageUpload" or "StorageVerify")) throw new InvalidOperationException("Unsupported staging action.");
     if (string.IsNullOrWhiteSpace(input.ProjectRef) || string.IsNullOrWhiteSpace(input.Password))
         throw new InvalidOperationException("Staging credentials required.");
     if (!((input.Host == "db." + input.ProjectRef + ".supabase.co" && input.Username == "postgres")
@@ -33,7 +33,23 @@ try
     await using var admin = new NpgsqlConnection(connection);
     await admin.OpenAsync();
     Console.WriteLine("PASS: staging PostgreSQL connection with verified TLS.");
-    if (input.Action is "CloudHost" or "CloudHostAuth" or "CloudRecovery" or "CloudRecoveryProbe")
+    if (input.Action == "CloudRecoveryInspect")
+    {
+        await RecoveryInspection.RunAsync(input);
+        return 0;
+    }
+    if (input.Action == "RealtimePolicyProbe")
+    {
+        await using var probe = new NpgsqlCommand("SELECT c.relrowsecurity, (SELECT count(*) FROM pg_policies p "
+            + "WHERE p.schemaname='realtime' AND p.tablename='messages') FROM pg_class c "
+            + "JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='realtime' AND c.relname='messages'", admin);
+        await using var row = await probe.ExecuteReaderAsync();
+        if (!await row.ReadAsync() || !row.GetBoolean(0) || row.GetInt64(1)!=0)
+            throw new CloudAcceptanceException("Realtime private policy boundary requires manual audit; no policy changes made.");
+        Console.WriteLine("PASS: realtime.messages RLS enabled with zero allow policies; anon/authenticated cannot read private channels. Trusted server-only key bypass is explicit; no client token exchange.");
+        return 0;
+    }
+    if (input.Action is "CloudHost" or "CloudHostAuth" or "CloudRecovery" or "CloudRecoveryProbe" or "CloudRecoveryPrepare")
     {
         await CloudHostAcceptance.RunAsync(input);
         return 0;
@@ -146,5 +162,6 @@ internal sealed class Input
     public string CloudHostSigningKey { get; set; } = "";
     public string CloudHostDataProtectionCertificate { get; set; } = "";
     public string CloudHostAcceptancePassword { get; set; } = "";
+    public int RecoverySessionId { get; set; }
     public override string ToString() => "Staging input (redacted)";
 }

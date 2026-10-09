@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory = $true)][string]$ProjectRef,
     [Parameter(Mandatory = $true)][string]$DatabaseHost,
     [Parameter(Mandatory = $true)][string]$DatabaseUser,
-    [ValidateSet('Probe', 'Migrate', 'Verify', 'Roles', 'Bootstrap', 'CorrectReferenceTime', 'Workflow', 'CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe', 'StorageUpload', 'StorageVerify')][string]$Action = 'Probe',
+    [ValidateSet('Probe', 'RealtimePolicyProbe', 'CloudRecoveryInspect', 'Migrate', 'Verify', 'Roles', 'Bootstrap', 'CorrectReferenceTime', 'Workflow', 'CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe', 'CloudRecoveryPrepare', 'StorageUpload', 'StorageVerify')][string]$Action = 'Probe',
+    [int]$RecoverySessionId = 0,
     [switch]$DisableClientPooling,
     # Npgsql reset batches are not suitable for transaction pooling; runtime uses
     # fixed per-owner roles, AutoPrepare0 and transaction-local state only.
@@ -34,9 +35,9 @@ try {
         Action = $Action; ProjectRef = $ProjectRef; Host = $DatabaseHost; Port = 5432
         Username = $DatabaseUser; Password = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($taskBstr)
         RuntimePooling = -not $DisableClientPooling.IsPresent
-        RuntimeNoReset = $TransactionPoolerCompatibility.IsPresent
+        RuntimeNoReset = $TransactionPoolerCompatibility.IsPresent; RecoverySessionId = $RecoverySessionId
     }
-    if ($Action -in @('Roles', 'Workflow', 'CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe')) {
+    if ($Action -in @('Roles', 'Workflow', 'CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe', 'CloudRecoveryPrepare', 'CloudRecoveryInspect')) {
         $taskPayload.RolePasswords = @{}
         foreach ($taskOwner in @('catalog','orders','customers','identity','billing')) {
             $taskRolePath = Join-Path (Split-Path $taskSecretPath) ("RuntimeRole-$taskOwner.dpapi")
@@ -58,7 +59,7 @@ try {
         }
     }
     $taskReceiptPath = Join-Path (Split-Path $taskSecretPath) 'storage-acceptance-receipt.txt'
-    if ($Action -in @('CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe')) {
+    if ($Action -in @('CloudHost', 'CloudHostAuth', 'CloudRecovery', 'CloudRecoveryProbe', 'CloudRecoveryPrepare')) {
         foreach ($taskName in @('CloudHostSigningKey','CloudHostDataProtectionCertificate','CloudHostAcceptancePassword','StorageServiceKey')) {
             $taskPath = Join-Path (Split-Path $taskSecretPath) ($taskName + '.dpapi')
             if (-not (Test-Path -LiteralPath $taskPath)) { throw 'CloudHost secret missing; use secure initialization/save helpers.' }
