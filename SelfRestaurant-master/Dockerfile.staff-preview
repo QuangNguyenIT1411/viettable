@@ -1,0 +1,31 @@
+# Optional same-origin Staff Preview. Default API-only deployment is unchanged.
+# Build context: SelfRestaurant-master (or prepare-staff-preview.ps1 output).
+FROM node:24-bookworm-slim AS staff
+WORKDIR /staff
+COPY src/Frontend/selfrestaurant-chef-web/ chef/
+COPY src/Frontend/selfrestaurant-cashier-web/ cashier/
+COPY src/Frontend/selfrestaurant-admin-web/ admin/
+RUN cd chef && npm ci && npm run build
+RUN cd cashier && npm ci && node --experimental-strip-types --test tests/staffRealtime.test.mjs && npm run build
+RUN cd admin && npm ci && npm run build
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS backend
+WORKDIR /src
+COPY src/Backend/ src/Backend/
+COPY src/Gateway/ src/Gateway/
+COPY src/Services/ src/Services/
+COPY src/Shared/ src/Shared/
+COPY sql/billing-owned-tables.sql sql/billing-owned-tables.sql
+RUN dotnet publish src/Backend/VietTable.CloudHost/VietTable.CloudHost.csproj -c Release -o /publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+COPY --from=backend /publish/ ./
+COPY --from=staff /staff/chef/dist/ ./wwwroot/chef-app/
+COPY --from=staff /staff/cashier/dist/ ./wwwroot/cashier-app/
+COPY --from=staff /staff/admin/dist/ ./wwwroot/admin-app/
+COPY certs/supabase-ca.crt /staging-ca/supabase-ca.crt
+ENV PORT=80 ASPNETCORE_ENVIRONMENT=Production CloudHost__ExposeStaffWeb=true
+USER app
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["dotnet", "VietTable.CloudHost.dll"]

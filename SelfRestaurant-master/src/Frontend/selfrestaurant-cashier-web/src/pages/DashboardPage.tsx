@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { HubConnectionBuilder, HubConnectionState } from "@microsoft/signalr";
+import { HubConnectionBuilder, HttpTransportType } from "@microsoft/signalr";
 import { Link } from "react-router-dom";
 import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { cashierApi } from "../lib/api";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
+import { bindStaffRealtime } from "../lib/staffRealtime";
 import { buildCashierTransferReference, buildCashierVietQrUrl, cashierQrBankInfo } from "../lib/vietQr";
 import type { CashierCheckoutResultDto, CashierDashboardDto, CashierReservationCheckInResultDto, ReservationDto } from "../lib/types";
 
@@ -211,31 +212,20 @@ export function DashboardPage({ onLogout }: Props) {
     if (!branchId) return;
 
     const connection = new HubConnectionBuilder()
-      .withUrl("/hubs/customer-notifications")
+      .withUrl("/hubs/customer-notifications", {
+        transport: HttpTransportType.WebSockets,
+        skipNegotiation: true,
+      })
       .withAutomaticReconnect()
       .build();
-    const refreshDashboard = () => void loadDashboard(true);
-
-    connection.on("cashierDashboardChanged", refreshDashboard);
-    connection
-      .start()
-      .then(() => {
-        if (connection.state === HubConnectionState.Connected) {
-          return connection.invoke("SubscribeBranch", branchId);
-        }
-      })
-      .catch((err) => {
+    return bindStaffRealtime(
+      connection,
+      branchId,
+      () => void loadDashboard(true),
+      (err) => {
         setError(err instanceof Error ? err.message : "Không thể kết nối cập nhật realtime thu ngân.");
-      });
-
-    return () => {
-      connection.off("cashierDashboardChanged", refreshDashboard);
-      if (connection.state === HubConnectionState.Connected) {
-        void connection.invoke("UnsubscribeBranch", branchId).finally(() => void connection.stop());
-        return;
-      }
-      void connection.stop();
-    };
+      },
+    );
   }, [dashboard?.staff.branchId]);
 
   useEffect(() => {

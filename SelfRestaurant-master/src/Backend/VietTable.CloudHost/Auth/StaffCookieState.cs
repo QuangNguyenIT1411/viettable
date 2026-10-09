@@ -37,7 +37,7 @@ public interface IStaffCookieValidator
     Task<string?> VersionAsync(int employeeId, string role, int branch, CancellationToken ct);
 }
 
-public sealed class StaffCookieMiddleware(RequestDelegate next)
+public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment environment)
 {
     public async Task InvokeAsync(HttpContext context, IStaffCookieValidator validator)
     {
@@ -58,10 +58,7 @@ public sealed class StaffCookieMiddleware(RequestDelegate next)
         // JWT endpoints are unaffected. SameSite=Lax and this check stop cross-site POSTs.
         if (context.Request.Path.StartsWithSegments("/api/gateway") && context.Request.Method is not ("GET" or "HEAD" or "OPTIONS"))
         {
-            var origin = context.Request.Headers.Origin.FirstOrDefault();
-            if (context.Request.Headers["Sec-Fetch-Site"] == "cross-site" ||
-                (!string.IsNullOrWhiteSpace(origin) && (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
-                !string.Equals(uri.Authority, context.Request.Host.Value, StringComparison.OrdinalIgnoreCase) || uri.Scheme != context.Request.Scheme)))
+            if (!CloudStaffOriginPolicy.IsAllowed(context.Request, environment.IsDevelopment()))
             { context.Response.StatusCode = 403; return; }
         }
         context.Response.OnStarting(async () =>
@@ -76,5 +73,25 @@ public sealed class StaffCookieMiddleware(RequestDelegate next)
                 new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8) });
         });
         await next(context);
+    }
+}
+
+public static class CloudStaffOriginPolicy
+{
+    public static bool IsAllowed(HttpRequest request, bool development)
+    {
+        if (request.Headers["Sec-Fetch-Site"] == "cross-site") return false;
+        var origins = request.Headers.Origin;
+        // CLI/server callers can omit Origin; cookie auth/role checks still apply.
+        if (origins.Count == 0) return true;
+        if (origins.Count != 1 || string.IsNullOrWhiteSpace(origins[0])) return false;
+        // CloudHost is publicly HTTPS-only. Its TLS edge talks HTTP to the
+        // container; do not trust arbitrary X-Forwarded-* headers to authorize.
+        var expectedScheme = development ? request.Scheme : Uri.UriSchemeHttps;
+        return Uri.TryCreate(origins[0], UriKind.Absolute, out var origin)
+            && origin.Scheme == expectedScheme
+            && string.Equals(origin.Authority, request.Host.Value, StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrEmpty(origin.UserInfo)
+            && origin.AbsolutePath == "/" && string.IsNullOrEmpty(origin.Query) && string.IsNullOrEmpty(origin.Fragment);
     }
 }

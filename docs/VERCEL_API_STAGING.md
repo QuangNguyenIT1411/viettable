@@ -8,6 +8,14 @@ Phase D targets only `VietTable.CloudHost` in the Vercel project `viettable-api`
 
 Do not deploy the Chef, Cashier, Admin, or Customer frontends in this phase. Do not change Android's default API URL, configure Railway, or deploy application code to Production. Production must remain the harmless bootstrap.
 
+**Staff preparation follow-up — 10/10/2026:** backend acceptance changes are committed as `8de8b67`.
+Three Staff SPAs now have an isolated, same-origin container/Preview preparation path; the default API-only
+deployment configuration is unchanged and no Staff deployment was executed. See
+[STAFF_WEB_CLOUD_PREPARATION.md](STAFF_WEB_CLOUD_PREPARATION.md) for build/dry-run evidence,
+the browser HTTPS Origin bug reproduced on the existing Preview and its tested (not yet deployed) fix,
+Cashier reconnect recovery, and the Preview-only exposure gate. Automatic scheduling remains plan-only:
+[AUTOMATIC_RECOVERY_PLAN.md](AUTOMATIC_RECOVERY_PLAN.md).
+
 ## Local preparation evidence
 
 - `Dockerfile.vercel` publishes the .NET 8 `VietTable.CloudHost` only. It reads Vercel's `PORT`, binds to `0.0.0.0`, runs as the non-root `app` user, and contains no staff frontend bundles.

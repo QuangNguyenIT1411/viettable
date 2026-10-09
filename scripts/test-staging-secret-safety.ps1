@@ -6,7 +6,10 @@ $taskRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $taskStore = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'VietTable\staging-secrets'
 $taskCandidates = @((git -C $taskRoot diff --name-only HEAD), (git -C $taskRoot ls-files --others --exclude-standard)) |
     ForEach-Object { $_ } | Where-Object { $_ -and -not $_.StartsWith('.idea/') } | Sort-Object -Unique
-$taskFiles = @($taskCandidates | Where-Object { [IO.Path]::GetExtension($_) -in @('.cs','.csproj','.ps1','.md','.toml','.json','.yml','.yaml') })
+$taskFiles = @($taskCandidates | Where-Object {
+    [IO.Path]::GetExtension($_) -in @('.cs','.csproj','.ps1','.md','.toml','.json','.yml','.yaml','.ts','.tsx','.mjs','.html','.css','.dockerignore') -or
+    [IO.Path]::GetFileName($_).StartsWith('Dockerfile') -or [IO.Path]::GetFileName($_) -eq '.vercelignore'
+})
 $taskScanned = 0
 foreach ($taskSecretFile in Get-ChildItem -LiteralPath $taskStore -Filter '*.dpapi' -File) {
     $taskSecure = ConvertTo-SecureString ([IO.File]::ReadAllText($taskSecretFile.FullName))
