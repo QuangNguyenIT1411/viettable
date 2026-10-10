@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([string]$ApkPath)
 
 $ErrorActionPreference = 'Stop'
 $taskRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -7,16 +7,40 @@ $taskStore = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'V
 $taskCandidates = @((git -C $taskRoot diff --name-only HEAD), (git -C $taskRoot ls-files --others --exclude-standard)) |
     ForEach-Object { $_ } | Where-Object { $_ -and -not $_.StartsWith('.idea/') } | Sort-Object -Unique
 $taskFiles = @($taskCandidates | Where-Object {
-    [IO.Path]::GetExtension($_) -in @('.cs','.csproj','.ps1','.md','.toml','.json','.yml','.yaml','.ts','.tsx','.mjs','.html','.css','.dockerignore') -or
+    [IO.Path]::GetExtension($_) -in @('.cs','.csproj','.ps1','.md','.toml','.json','.yml','.yaml','.ts','.tsx','.mjs','.html','.css','.dockerignore','.gradle','.java','.xml') -or
     [IO.Path]::GetFileName($_).StartsWith('Dockerfile') -or [IO.Path]::GetFileName($_) -eq '.vercelignore'
 })
 $taskScanned = 0
+$taskApkEntries = @()
+if ($ApkPath) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $taskArchive = [IO.Compression.ZipFile]::OpenRead([IO.Path]::GetFullPath($ApkPath))
+    try {
+        foreach ($taskEntry in $taskArchive.Entries) {
+            if (-not $taskEntry.Length) { continue }
+            $taskStream = $taskEntry.Open()
+            $taskMemory = New-Object IO.MemoryStream
+            try {
+                $taskStream.CopyTo($taskMemory)
+                $taskBytes = $taskMemory.ToArray()
+                $taskApkEntries += @([Text.Encoding]::UTF8.GetString($taskBytes), [Text.Encoding]::Unicode.GetString($taskBytes))
+            }
+            finally { $taskStream.Dispose(); $taskMemory.Dispose() }
+        }
+    }
+    finally { $taskArchive.Dispose() }
+}
 foreach ($taskSecretFile in Get-ChildItem -LiteralPath $taskStore -Filter '*.dpapi' -File) {
     $taskSecure = ConvertTo-SecureString ([IO.File]::ReadAllText($taskSecretFile.FullName))
     $taskPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($taskSecure)
     $taskPlain = $null
     try {
         $taskPlain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($taskPointer)
+        foreach ($taskEntryText in $taskApkEntries) {
+            if ($taskEntryText.Contains($taskPlain)) {
+                throw 'Secret material detected in APK (value redacted).'
+            }
+        }
         foreach ($taskRelative in $taskFiles) {
             $taskAbsolute = Join-Path $taskRoot $taskRelative
             if ((Test-Path -LiteralPath $taskAbsolute -PathType Leaf) -and
@@ -41,4 +65,10 @@ foreach ($taskRelative in $taskFiles) {
         throw "Potential backend key/JWT in candidate file: $taskRelative (value redacted)."
     }
 }
-Write-Output "PASS: candidate text files scanned=$($taskFiles.Count); DPAPI secret values checked=$taskScanned; no secret/JWT match. .idea excluded."
+foreach ($taskEntryText in $taskApkEntries) {
+    if ($taskEntryText -match 'sb_secret_[A-Za-z0-9_-]{15,}' -or
+        $taskEntryText -match 'eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}') {
+        throw 'Potential backend key/JWT in APK (value redacted).'
+    }
+}
+Write-Output "PASS: candidate text files scanned=$($taskFiles.Count); APK entry encodings checked=$($taskApkEntries.Count); DPAPI secret values checked=$taskScanned; no secret/JWT match. .idea excluded."

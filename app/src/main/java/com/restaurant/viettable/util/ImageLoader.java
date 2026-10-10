@@ -8,6 +8,7 @@ import android.util.LruCache;
 import android.widget.ImageView;
 
 import com.restaurant.viettable.R;
+import com.restaurant.viettable.BuildConfig;
 import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.model.FoodItem;
 
@@ -104,7 +105,7 @@ public class ImageLoader {
             URL url = new URL(urlString);
             conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(6000);
-            conn.setReadTimeout(6000);
+            conn.setReadTimeout(BuildConfig.IMAGE_READ_TIMEOUT_MS);
             conn.setInstanceFollowRedirects(true);
             conn.setRequestProperty("User-Agent", "VietTable-Android");
             conn.connect();

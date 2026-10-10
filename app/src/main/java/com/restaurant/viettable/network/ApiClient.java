@@ -134,6 +134,10 @@ public final class ApiClient {
                 }
                 mainHandler.post(() -> callback.onError(error));
             } catch (Exception error) {
+                if (BuildConfig.DEBUG) {
+                    Log.w("VietTableApi", "Request transport/parse failure; exception="
+                            + error.getClass().getSimpleName());
+                }
                 if (googleAuthRequest) {
                     Log.e(GOOGLE_AUTH_TAG, "Gateway auth request failed before a classified API response; exception="
                             + error.getClass().getName());
@@ -161,7 +165,7 @@ public final class ApiClient {
         connection.setInstanceFollowRedirects(false);
         connection.setRequestMethod(method);
         connection.setConnectTimeout(10_000);
-        connection.setReadTimeout(20_000);
+        connection.setReadTimeout(BuildConfig.API_READ_TIMEOUT_MS);
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
         connection.setRequestProperty("X-Correlation-Id", "android-" + UUID.randomUUID());
@@ -176,6 +180,10 @@ public final class ApiClient {
         }
 
         int status = connection.getResponseCode();
+        if (BuildConfig.DEBUG) {
+            Log.d("VietTableApi", "HTTP response; host=" + target.getHost()
+                    + "; method=" + method + "; status=" + status);
+        }
         if (BuildConfig.DEBUG && "POST".equals(method) && GOOGLE_AUTH_PATH.equals(path)) {
             Log.d(GOOGLE_AUTH_TAG, "Gateway auth HTTP response received; status=" + status);
         }

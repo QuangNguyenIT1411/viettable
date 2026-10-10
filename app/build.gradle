@@ -4,6 +4,8 @@ plugins {
 
 def configuredApiUrl = providers.gradleProperty('VIETTABLE_API_BASE_URL').orElse('')
 def releaseApiUrl = configuredApiUrl.get()
+// Public origin only. Preview protection credentials must never be compiled into Android.
+def cloudPreviewApiUrl = 'https://viettable-staging-hienkhanhvu981.vercel.app'
 def validateReleaseApiUrl = tasks.register('validateReleaseApiUrl') {
     inputs.property('apiUrl', releaseApiUrl)
     doLast {
@@ -41,11 +43,23 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         def googleWebClientId = providers.gradleProperty('VIETTABLE_GOOGLE_WEB_CLIENT_ID').orElse('').get().trim()
         buildConfigField 'String', 'GOOGLE_WEB_CLIENT_ID', groovy.json.JsonOutput.toJson(googleWebClientId)
+        buildConfigField 'int', 'API_READ_TIMEOUT_MS', '20000'
+        buildConfigField 'int', 'IMAGE_READ_TIMEOUT_MS', '6000'
     }
 
     buildTypes {
         debug {
             buildConfigField 'String', 'API_BASE_URL', groovy.json.JsonOutput.toJson(configuredApiUrl.get() ?: 'http://10.0.2.2:5100')
+        }
+        cloudPreview {
+            initWith debug
+            matchingFallbacks = ['debug']
+            buildConfigField 'String', 'API_BASE_URL', groovy.json.JsonOutput.toJson(cloudPreviewApiUrl)
+            // Samsung measured a 25.4 s cold response, followed by sub-second warm responses.
+            // Allow serverless startup without replaying non-idempotent auth/payment mutations.
+            buildConfigField 'int', 'API_READ_TIMEOUT_MS', '60000'
+            buildConfigField 'int', 'IMAGE_READ_TIMEOUT_MS', '60000'
+            // No debug source-set inheritance: main's system-CA, HTTPS-only policy applies.
         }
         release {
             debuggable false
