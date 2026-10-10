@@ -63,7 +63,7 @@ public class ResDetailFragment extends BaseFragment {
             binding.tvDetailResId.setText("#" + reservation.getId());
             binding.tvDetailBranch.setText(reservation.getBranchName());
             binding.tvDetailDateTime.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));
-            binding.tvDetailTable.setText("Bàn " + reservation.getTableId() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
+            binding.tvDetailTable.setText(reservation.getTableLabel() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
             binding.tvDetailStatusBadge.setText(reservation.getStatusDisplayText());
             binding.tvDetailStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);
             switch (reservation.getStatus()) {

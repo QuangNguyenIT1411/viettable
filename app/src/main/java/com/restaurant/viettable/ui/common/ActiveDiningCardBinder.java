@@ -23,7 +23,7 @@ public class ActiveDiningCardBinder {
         }
 
         binding.getRoot().setVisibility(View.VISIBLE);
-        binding.tvDiningTable.setText(session.getTableId() + " • " + session.getBranchName());
+        binding.tvDiningTable.setText(session.getTableLabel() + " • " + session.getBranchName());
 
         if (session.getStatus() == DiningSession.Status.PAYMENT_REQUESTED) {
             binding.tvDiningBadge.setText("Đang yêu cầu thanh toán");

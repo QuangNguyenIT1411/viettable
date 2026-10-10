@@ -46,7 +46,7 @@ public class PaymentCheckoutFragment extends BaseFragment {
         DiningSession session = appStateManager.getActiveDiningSession();
         List<String> unfinishedNames = new ArrayList<>();
         if (session != null) {
-            binding.tvCheckoutTable.setText(session.getTableId() + " - " + session.getBranchName());
+            binding.tvCheckoutTable.setText(session.getTableLabel() + " - " + session.getBranchName());
             binding.tvCheckoutSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + DisplayFormatters.dateTime(session.getStartTime()));
             binding.tvCheckoutOrderCount.setText(session.getOrders().size() + " đợt");
 

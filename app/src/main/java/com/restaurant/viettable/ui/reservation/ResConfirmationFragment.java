@@ -59,7 +59,7 @@ public class ResConfirmationFragment extends BaseFragment {
             binding.tvConfirmCode.setText("#" + reservation.getId());
             binding.tvConfirmBranch.setText(reservation.getBranchName() + " (" + reservation.getBranchAddress() + ")");
             binding.tvConfirmTimeDate.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));
-            binding.tvConfirmTableArea.setText("Bàn " + reservation.getTableId() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
+            binding.tvConfirmTableArea.setText(reservation.getTableLabel() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
 
             if (reservation.getDepositAmount() > 0) {
                 binding.tvConfirmDeposit.setText("Tiền cọc: Đã thanh toán " + String.format(java.util.Locale.GERMANY, "%,dđ", reservation.getDepositAmount()));

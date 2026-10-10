@@ -77,7 +77,7 @@ public class OnsiteStatusFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (invoice != null) {
-            binding.tvOnsiteLocation.setText(location + " (" + invoice.getTableId() + ")");
+            binding.tvOnsiteLocation.setText(location + " (" + invoice.getTableLabel() + ")");
             binding.tvOnsiteMethod.setText(invoice.getPaymentMethod());
             binding.tvOnsiteTotal.setText(invoice.getFormattedFinalTotal());
         }

@@ -45,7 +45,7 @@ public class DineinCartFragment extends BaseFragment {
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
-            binding.tvDineinCartTable.setText("Gửi tới: " + session.getTableId() + " • " + session.getBranchName());
+            binding.tvDineinCartTable.setText("Gửi tới: " + session.getTableLabel() + " • " + session.getBranchName());
         }
 
         List<CartItem> cartItems = appStateManager.getCartItems();

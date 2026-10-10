@@ -109,7 +109,7 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         if (upcomingRes != null) {
             binding.cardUpcomingReservation.setVisibility(View.VISIBLE);
             binding.tvResCode.setText("#" + upcomingRes.getId());
-            binding.tvResDateTime.setText(DisplayFormatters.date(upcomingRes.getDate()) + " • " + upcomingRes.getGuestCount() + " khách • Bàn " + upcomingRes.getTableId());
+            binding.tvResDateTime.setText(DisplayFormatters.date(upcomingRes.getDate()) + " • " + upcomingRes.getGuestCount() + " khách • " + upcomingRes.getTableLabel());
             binding.tvResBranchName.setText(upcomingRes.getBranchName());
 
             final Reservation resToOpen = upcomingRes;

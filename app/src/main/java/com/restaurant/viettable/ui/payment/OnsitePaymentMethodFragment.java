@@ -82,6 +82,7 @@ public class OnsitePaymentMethodFragment extends BaseFragment {
                     "Chưa chọn",
                     "Vừa xong"
             );
+            updated.setTableLabel(invoice.getTableLabel());
             navigateTo(splitPart == null ? PaymentLocationFragment.newInstance(updated, selectedMethod)
                     : PaymentLocationFragment.newInstanceForSplit(updated, selectedMethod, splitBill, splitPart));
         });

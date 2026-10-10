@@ -52,8 +52,8 @@ public class DiningSessionHistoryAdapter extends RecyclerView.Adapter<DiningSess
         void bind(DiningSessionHistoryGroup group, SessionOrderAdapter.OnOrderClickListener listener) {
             DiningSessionSummary session = group.getSession();
             String sessionId = session == null ? group.getOrders().get(0).getDiningSessionId() : session.getId();
-            String table = session == null || session.getTableId().isEmpty()
-                    ? group.getOrders().get(0).getTableId() : "Bàn " + session.getTableId();
+            String table = session == null || session.getTableLabel().isEmpty()
+                    ? group.getOrders().get(0).getTableLabel() : session.getTableLabel();
             binding.tvHistorySessionTitle.setText("Phiên #" + (sessionId == null ? "—" : sessionId)
                     + " • " + (table == null || table.trim().isEmpty() ? "Chưa rõ bàn" : table));
             binding.tvHistorySessionBranch.setText(group.getBranchName() == null || group.getBranchName().isEmpty()

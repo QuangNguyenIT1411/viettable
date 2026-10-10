@@ -194,7 +194,7 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
             binding.progressSession.setVisibility(View.GONE);
             binding.emptySessionState.setVisibility(View.GONE);
             binding.sessionContent.setVisibility(View.VISIBLE);
-            binding.tvSessionTable.setText(session.getTableId());
+            binding.tvSessionTable.setText(session.getTableLabel());
             binding.tvSessionBranch.setText(session.getBranchName());
             binding.tvSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + DisplayFormatters.dateTime(session.getStartTime()));
 

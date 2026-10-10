@@ -88,7 +88,7 @@ public class InvoiceFragment extends BaseFragment {
         }
 
         binding.tvInvoiceBranch.setText(session.getBranchName());
-        binding.tvInvoiceSessionInfo.setText(session.getTableId() + " • Phiên #" + session.getId() + " • " + DisplayFormatters.dateTime(session.getStartTime()));
+        binding.tvInvoiceSessionInfo.setText(session.getTableLabel() + " • Phiên #" + session.getId() + " • " + DisplayFormatters.dateTime(session.getStartTime()));
 
         subtotal = serverQuote.getSubtotal();
         serviceFee = serverQuote.getServiceFee();

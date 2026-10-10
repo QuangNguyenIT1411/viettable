@@ -52,7 +52,7 @@ public class PreorderConfirmFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (reservation != null) {
-            binding.tvResCode.setText("#" + reservation.getId() + " (" + reservation.getTableId() + ")");
+            binding.tvResCode.setText("#" + reservation.getId() + " (" + reservation.getTableLabel() + ")");
         }
 
         List<CartItem> preorders = appStateManager.getCartItems();

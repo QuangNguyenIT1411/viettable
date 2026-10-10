@@ -42,7 +42,7 @@ public class CallStaffFragment extends BaseFragment {
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
-            binding.tvStaffTableInfo.setText("Yêu cầu từ: " + session.getTableId() + " • " + session.getBranchName());
+            binding.tvStaffTableInfo.setText("Yêu cầu từ: " + session.getTableLabel() + " • " + session.getBranchName());
         }
 
         binding.btnViewServiceHistory.setOnClickListener(v -> {

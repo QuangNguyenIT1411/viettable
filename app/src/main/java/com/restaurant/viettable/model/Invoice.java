@@ -43,6 +43,9 @@ public class Invoice implements Serializable {
     public String getDiningSessionId() { return diningSessionId; }
     public String getBranchName() { return branchName; }
     public String getTableId() { return tableId; }
+    private String tableLabel = "Chưa có thông tin bàn";
+    public String getTableLabel() { return tableLabel; }
+    public void setTableLabel(String label) { tableLabel = label; }
     public long getSubtotal() { return subtotal; }
     public long getServiceFee() { return serviceFee; }
     public long getTax() { return tax; }

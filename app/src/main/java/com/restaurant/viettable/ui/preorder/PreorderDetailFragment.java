@@ -59,7 +59,7 @@ public class PreorderDetailFragment extends BaseFragment {
         binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
 
         if (reservation != null) {
-            binding.tvResInfo.setText("Mã: #" + reservation.getId() + " • Bàn " + reservation.getTableId() + " • " + reservation.getTimeSlot() + " - " + DisplayFormatters.date(reservation.getDate()));
+            binding.tvResInfo.setText("Mã: #" + reservation.getId() + " • " + reservation.getTableLabel() + " • " + reservation.getTimeSlot() + " - " + DisplayFormatters.date(reservation.getDate()));
         }
 
         setupRecyclerView();

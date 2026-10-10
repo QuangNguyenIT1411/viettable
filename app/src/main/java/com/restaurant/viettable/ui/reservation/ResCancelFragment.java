@@ -60,7 +60,7 @@ public class ResCancelFragment extends BaseFragment {
 
         if (reservation != null) {
             binding.tvCancelResCode.setText("Mã đặt bàn: #" + reservation.getId());
-            binding.tvCancelResSummary.setText(reservation.getBranchName() + " • " + reservation.getTimeSlot() + ", " + DisplayFormatters.date(reservation.getDate()) + " • Bàn " + reservation.getTableId());
+            binding.tvCancelResSummary.setText(reservation.getBranchName() + " • " + reservation.getTimeSlot() + ", " + DisplayFormatters.date(reservation.getDate()) + " • " + reservation.getTableLabel());
 
             if (reservation.getDepositAmount() > 0) {
                 binding.tvRefundDetails.setText("Tiền cọc " + String.format(java.util.Locale.GERMANY, "%,dđ", reservation.getDepositAmount()) + " sẽ được hoàn trả về tài khoản ban đầu trong 1-3 ngày làm việc theo chính sách hoàn cọc.");

@@ -58,8 +58,8 @@ public class ResHistoryAdapter extends RecyclerView.Adapter<ResHistoryAdapter.Re
             binding.tvHistResId.setText("#" + r.getId());
             binding.tvHistBranch.setText(r.getBranchName());
             binding.tvHistDateTime.setText(r.getTimeSlot() + " • " + DisplayFormatters.date(r.getDate()));
-            String table = r.getTableId() == null || r.getTableId().trim().isEmpty()
-                    || "0".equals(r.getTableId()) ? "Chưa xếp bàn" : "Bàn " + r.getTableId();
+            String table = r.getTableLabel() == null || r.getTableLabel().trim().isEmpty()
+                    || "0".equals(r.getTableLabel()) ? "Chưa xếp bàn" : r.getTableLabel();
             binding.tvHistDetails.setText(table + " • " + r.getGuestCount() + " khách"
                     + (r.getAreaName() == null || r.getAreaName().isEmpty() ? "" : " • " + r.getAreaName()));
             binding.tvHistStatusBadge.setText(r.getStatusDisplayText());

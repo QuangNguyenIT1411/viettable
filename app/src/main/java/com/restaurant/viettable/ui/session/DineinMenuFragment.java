@@ -49,7 +49,7 @@ public class DineinMenuFragment extends BaseFragment implements AppStateManager.
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
-            binding.tvTableContext.setText(session.getTableId() + " • " + session.getBranchName());
+            binding.tvTableContext.setText(session.getTableLabel() + " • " + session.getBranchName());
         }
 
         // Setup tabs

@@ -182,6 +182,15 @@ project automation-bypass API for this rollback. API mutation output must not be
 
 ## Next acceptance
 
+2026-10-10 follow-up from `ece04cb`: table-ID display fixed without a backend/alias change.
+Samsung preserved session 20/order 38 and now displays Bàn 2 for table ID 37. Independent Small_Phone
+emulator completed session 22 → order 40 → service request 22 → ONSITE payment 21 → invoice 21 → CLOSED,
+showing real Bàn 3 for table ID 38. Automatic success and populated invoice history/detail accepted on
+emulator, not on Samsung. Staff transitions were authenticated API actions, not browser acceptance.
+See `FULL_CLOUD_E2E_AUTOMATED_ACCEPTANCE.md` for precise UI/API/event evidence and new limitations:
+session-history HTTP 503, Chef status WSS delivery unproven, and QA credential tool-output exposure
+(rotation pending). Latest status remains **ANDROID CLOUD E2E: PARTIAL**.
+
 Native connectivity and the new cloud read budget are verified; optimize server cold-start separately
 if needed, and configure staging Google if Google is required.
 Use the customer already registered through Samsung UI; finish the actual QR → Chef → Cashier → invoice

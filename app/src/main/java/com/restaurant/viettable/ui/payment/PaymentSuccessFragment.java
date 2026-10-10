@@ -61,7 +61,7 @@ public class PaymentSuccessFragment extends BaseFragment {
             binding.tvSuccessAmount.setText(invoice.getFormattedFinalTotal());
             binding.tvSuccessInvoiceId.setText("#" + invoice.getId());
             binding.tvSuccessMethod.setText(invoice.getPaymentMethod());
-            binding.tvSuccessBranch.setText(invoice.getTableId() + " • " + invoice.getBranchName());
+            binding.tvSuccessBranch.setText(invoice.getTableLabel() + " • " + invoice.getBranchName());
         }
 
         binding.btnReviewMeal.setOnClickListener(v -> {

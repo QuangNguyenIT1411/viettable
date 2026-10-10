@@ -30,7 +30,7 @@ public class InvoiceHistoryAdapter extends RecyclerView.Adapter<InvoiceHistoryAd
         holder.binding.tvHistoryInvoiceCode.setText(invoice.getInvoiceCode() + " • Phiên " + invoice.getDiningSessionId());
         holder.binding.tvHistoryInvoiceStatus.setText(statusLabel(invoice.getPaymentStatus()));
         holder.binding.tvHistoryInvoiceMeta.setText(DisplayFormatters.dateTime(invoice.getIssuedAtUtc()) + " • "
-                + invoice.getBranchName() + " • " + invoice.getTableId());
+                + invoice.getBranchName() + " • " + invoice.getTableLabel());
         holder.binding.tvHistoryInvoicePayment.setText("Thanh toán: " + paymentLabel(invoice));
         holder.binding.tvHistoryInvoiceTotal.setText(String.format(Locale.GERMANY, "Tổng cộng  %,dđ", invoice.getTotalAmount()));
         holder.binding.cardInvoiceHistory.setOnClickListener(v -> { if (listener != null) listener.onInvoiceClick(invoice); });

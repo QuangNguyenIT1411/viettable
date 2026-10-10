@@ -17,7 +17,7 @@ public class DiningSession implements Serializable {
     private String id;
     private String branchId;
     private String branchName;
-    private String tableId; // e.g. "Bàn B12"
+    private String tableId; // Internal API identity; never a display number.
     private Status status;
     private String reservationId;
     private String customerName;
@@ -51,6 +51,9 @@ public class DiningSession implements Serializable {
     public String getBranchId() { return branchId; }
     public String getBranchName() { return branchName; }
     public String getTableId() { return tableId; }
+    private String tableLabel = "Chưa có thông tin bàn";
+    public String getTableLabel() { return tableLabel; }
+    public void setTableLabel(String label) { tableLabel = label; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public String getReservationId() { return reservationId; }

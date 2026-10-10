@@ -64,7 +64,7 @@ public class PaymentTypeFragment extends BaseFragment {
 
         if (invoice != null) {
             binding.tvPaymentTypeGrandTotal.setText(splitPart == null ? invoice.getFormattedFinalTotal() : splitPart.getFormattedAmount());
-            binding.tvPaymentTypeTable.setText(invoice.getTableId() + " • " + invoice.getBranchName());
+            binding.tvPaymentTypeTable.setText(invoice.getTableLabel() + " • " + invoice.getBranchName());
         }
 
         binding.cardPayOnline.setOnClickListener(v -> {

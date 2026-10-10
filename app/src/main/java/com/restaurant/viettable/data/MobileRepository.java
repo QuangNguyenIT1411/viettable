@@ -61,6 +61,69 @@ public final class MobileRepository {
     private final java.util.Map<String, List<Callback<Void>>> menuRequests = new java.util.HashMap<>();
     private final List<Callback<List<Branch>>> branchRequests = new ArrayList<>();
     private boolean branchesLoading;
+    private final TableNumberDirectory tableNumbers = new TableNumberDirectory();
+    private final Set<String> tableBranchesLoaded = new HashSet<>();
+    private final java.util.Map<String, List<Runnable>> tableRequests = new java.util.HashMap<>();
+    private final java.util.Map<String, String> qrTableLabels = new java.util.HashMap<>();
+    private final java.util.Map<String, String> qrBranches = new java.util.HashMap<>();
+
+    public String tableLabel(String branchId, String tableId) { return tableNumbers.label(branchId, tableId); }
+    public String qrTableLabel(String code) { return qrTableLabels.getOrDefault(code, "Chưa có thông tin bàn"); }
+    public String qrBranchName(String code) { return qrBranches.getOrDefault(code, "Chưa có thông tin chi nhánh"); }
+
+    // Enrich display metadata via the existing Gateway Catalog endpoint. A failed metadata GET must
+    // never hide a successful business mutation or cause a POST replay; labels then remain unknown.
+    private ApiClient.Callback tableAware(ApiClient.Callback callback) {
+        return new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                Set<String> branches = new HashSet<>();
+                collectTableBranches(body, branches);
+                if (branches.isEmpty()) { callback.onSuccess(body); return; }
+                int[] remaining = {branches.size()};
+                for (String branch : branches) loadTableNumbers(branch, () -> {
+                    if (--remaining[0] == 0) callback.onSuccess(body);
+                });
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        };
+    }
+
+    private void collectTableBranches(Object body, Set<String> branches) {
+        if (body instanceof JSONArray) {
+            JSONArray rows = (JSONArray) body;
+            for (int i = 0; i < rows.length(); i++) collectTableBranches(rows.opt(i), branches);
+        } else if (body instanceof JSONObject) {
+            JSONObject row = (JSONObject) body;
+            if (row.optInt("branchId") > 0) branches.add(String.valueOf(row.optInt("branchId")));
+            java.util.Iterator<String> keys = row.keys();
+            while (keys.hasNext()) collectTableBranches(row.opt(keys.next()), branches);
+        }
+    }
+
+    private void loadTableNumbers(String branchId, Runnable done) {
+        if (tableBranchesLoaded.contains(branchId)) { done.run(); return; }
+        List<Runnable> pending = tableRequests.get(branchId);
+        if (pending != null) { pending.add(done); return; }
+        pending = new ArrayList<>(); pending.add(done); tableRequests.put(branchId, pending);
+        api().get("/api/mobile/v1/branches/" + branchId + "/table-layout", false, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONArray tables = ((JSONObject) body).optJSONArray("tables");
+                if (tables != null) {
+                    for (int i = 0; i < tables.length(); i++) {
+                        JSONObject table = tables.optJSONObject(i);
+                        if (table != null) tableNumbers.put(branchId, String.valueOf(table.optInt("tableId")), table.optInt("tableNumber"));
+                    }
+                    tableBranchesLoaded.add(branchId);
+                }
+                finish();
+            }
+            @Override public void onError(ApiException error) { finish(); }
+            private void finish() {
+                List<Runnable> callbacks = tableRequests.remove(branchId);
+                if (callbacks != null) for (Runnable callback : callbacks) callback.run();
+            }
+        });
+    }
     private ApiClient api() { return ApiClient.getInstance(); }
 
     public static MobileRepository getInstance() { return INSTANCE; }
@@ -345,7 +408,7 @@ public final class MobileRepository {
     }
 
     public void loadReservations(Callback<List<Reservation>> callback) {
-        api().get("/api/mobile/v1/reservations?limit=100", true, new ApiClient.Callback() {
+        api().get("/api/mobile/v1/reservations?limit=100", true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 JSONArray rows = ((JSONObject) body).optJSONArray("items");
                 List<Reservation> values = new ArrayList<>();
@@ -354,7 +417,7 @@ public final class MobileRepository {
                 callback.onSuccess(values);
             }
             @Override public void onError(ApiException error) { callback.onError(error); }
-        });
+        }));
     }
 
     public void createReservation(ReservationDraft draft, Callback<Reservation> callback) {
@@ -365,14 +428,14 @@ public final class MobileRepository {
                     .put("note", draft.getNote());
             int selectedTable = Integer.parseInt(draft.getTableId());
             body.put("tableId", selectedTable > 0 ? selectedTable : JSONObject.NULL);
-            api().post("/api/mobile/v1/reservations", body, true, key("reservation"), new ApiClient.Callback() {
+            api().post("/api/mobile/v1/reservations", body, true, key("reservation"), tableAware(new ApiClient.Callback() {
                 @Override public void onSuccess(Object value) {
                     Reservation reservation = parseReservation((JSONObject) value);
                     state.upsertReservation(reservation);
                     callback.onSuccess(reservation);
                 }
                 @Override public void onError(ApiException error) { callback.onError(error); }
-            });
+            }));
         } catch (Exception e) { callback.onError(new ApiException(0, "invalid_reservation_time", "Ngày giờ đặt bàn không hợp lệ.", null)); }
     }
 
@@ -397,8 +460,11 @@ public final class MobileRepository {
                     List<AvailableTable> values = new ArrayList<>();
                     if (rows != null) for (int i = 0; i < rows.length(); i++) {
                         JSONObject row = rows.optJSONObject(i);
-                        if (row != null) values.add(new AvailableTable(String.valueOf(row.optInt("tableId")),
+                        if (row != null) {
+                            tableNumbers.put(draft.getBranch().getId(), String.valueOf(row.optInt("tableId")), row.optInt("tableNumber"));
+                            values.add(new AvailableTable(String.valueOf(row.optInt("tableId")),
                                 row.optInt("tableNumber"), row.optInt("numberOfSeats")));
+                        }
                     }
                     callback.onSuccess(values);
                 }
@@ -411,12 +477,12 @@ public final class MobileRepository {
 
     public void cancelReservation(Reservation reservation, Callback<Reservation> callback) {
         api().post("/api/mobile/v1/reservations/" + reservation.getId() + "/cancel", new JSONObject(), true, null,
-                new ApiClient.Callback() {
+                tableAware(new ApiClient.Callback() {
                     @Override public void onSuccess(Object body) {
                         Reservation updated = parseReservation((JSONObject) body); state.upsertReservation(updated); callback.onSuccess(updated);
                     }
                     @Override public void onError(ApiException error) { callback.onError(error); }
-                });
+                }));
     }
 
     public void updateReservation(Reservation reservation, String date, String time, int partySize,
@@ -427,14 +493,14 @@ public final class MobileRepository {
             int tableId = Integer.parseInt(reservation.getTableId());
             body.put("tableId", tableId > 0 ? tableId : JSONObject.NULL);
             api().put("/api/mobile/v1/reservations/" + reservation.getId(), body, true,
-                    key("reservation-update"), new ApiClient.Callback() {
+                    key("reservation-update"), tableAware(new ApiClient.Callback() {
                         @Override public void onSuccess(Object value) {
                             Reservation updated = parseReservation((JSONObject) value);
                             state.upsertReservation(updated);
                             callback.onSuccess(updated);
                         }
                         @Override public void onError(ApiException error) { callback.onError(error); }
-                    });
+                    }));
         } catch (Exception e) {
             callback.onError(new ApiException(0, "invalid_reservation_time", "Ngày giờ đặt bàn không hợp lệ.", null));
         }
@@ -513,7 +579,19 @@ public final class MobileRepository {
             JSONObject body = new JSONObject().put("qrCode", qrCode);
             Reservation upcoming = state.getUpcomingReservation();
             if (upcoming != null) body.put("reservationId", Integer.parseInt(upcoming.getId()));
-            api().post("/api/mobile/v1/check-ins/qr/validate", body, true, null, objectCallback(callback));
+            api().post("/api/mobile/v1/check-ins/qr/validate", body, true, null, tableAware(new ApiClient.Callback() {
+                @Override public void onSuccess(Object body) {
+                    JSONObject row = (JSONObject) body;
+                    String branch = String.valueOf(row.optInt("branchId"));
+                    String table = String.valueOf(row.optInt("tableId"));
+                    tableNumbers.put(branch, table, row.optInt("tableNumber"));
+                    qrTableLabels.put(qrCode, tableLabel(branch, table));
+                    Branch selected = state.findBranch(branch);
+                    qrBranches.put(qrCode, selected == null ? "Chưa có thông tin chi nhánh" : selected.getName());
+                    callback.onSuccess(row);
+                }
+                @Override public void onError(ApiException error) { callback.onError(error); }
+            }));
         } catch (Exception e) { callback.onError(jsonError()); }
     }
 
@@ -534,7 +612,7 @@ public final class MobileRepository {
     }
 
     public void loadActiveSession(Callback<DiningSession> callback) {
-        api().get("/api/mobile/v1/dining-sessions/active", true, new ApiClient.Callback() {
+        api().get("/api/mobile/v1/dining-sessions/active", true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 DiningSession session = parseSession((JSONObject) body); state.setActiveDiningSession(session);
                 loadOrders("active", new Callback<List<Order>>() {
@@ -546,7 +624,7 @@ public final class MobileRepository {
                 if (error.getStatusCode() == 404) { state.setActiveDiningSession(null); callback.onSuccess(null); }
                 else callback.onError(error);
             }
-        });
+        }));
     }
 
     public void submitCurrentCart(Callback<Order> callback) {
@@ -561,12 +639,12 @@ public final class MobileRepository {
                     .put("note", cart.getOptionsSummary()));
             JSONObject body = new JSONObject().put("items", items);
             api().post("/api/mobile/v1/dining-sessions/" + session.getId() + "/orders", body, true, key("order"),
-                    new ApiClient.Callback() {
+                    tableAware(new ApiClient.Callback() {
                         @Override public void onSuccess(Object value) {
                             Order order = parseOrder((JSONObject) value); state.addServerOrder(order); state.clearCart(); callback.onSuccess(order);
                         }
                         @Override public void onError(ApiException error) { callback.onError(error); }
-                    });
+                    }));
         } catch (Exception e) { callback.onError(jsonError()); }
     }
 
@@ -577,14 +655,14 @@ public final class MobileRepository {
     }
 
     public void loadOrders(String scope, Callback<List<Order>> callback) {
-        api().get("/api/mobile/v1/orders?scope=" + scope, true, new ApiClient.Callback() {
+        api().get("/api/mobile/v1/orders?scope=" + scope, true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 JSONArray rows = (JSONArray) body; List<Order> values = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) values.add(parseOrder(rows.optJSONObject(i)));
                 state.replaceOrders(scope, values); callback.onSuccess(values);
             }
             @Override public void onError(ApiException error) { callback.onError(error); }
-        });
+        }));
     }
 
     public void confirmOrderItemReceived(int orderId, int itemId, Callback<Boolean> callback) {
@@ -770,14 +848,14 @@ public final class MobileRepository {
         DiningSession session = state.getActiveDiningSession();
         if (session == null && currentQuote == null) { callback.onError(new ApiException(0, "session_required", "Không tìm thấy phiên thanh toán.", null)); return; }
         int sessionId = session != null ? Integer.parseInt(session.getId()) : currentQuote.optInt("diningSessionId");
-        api().get("/api/mobile/v1/dining-sessions/" + sessionId + "/invoice", true, new ApiClient.Callback() {
+        api().get("/api/mobile/v1/dining-sessions/" + sessionId + "/invoice", true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) { callback.onSuccess(invoiceFromIssued((JSONObject) body)); }
             @Override public void onError(ApiException error) { callback.onError(error); }
-        });
+        }));
     }
 
     public void loadInvoiceHistory(Callback<List<InvoiceHistoryItem>> callback) {
-        api().get("/api/mobile/v1/invoices?limit=100", true, new ApiClient.Callback() {
+        api().get("/api/mobile/v1/invoices?limit=100", true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 JSONArray rows = ((JSONObject) body).optJSONArray("items");
                 List<InvoiceHistoryItem> invoices = new ArrayList<>();
@@ -788,16 +866,16 @@ public final class MobileRepository {
                 callback.onSuccess(invoices);
             }
             @Override public void onError(ApiException error) { callback.onError(error); }
-        });
+        }));
     }
 
     public void loadInvoiceHistoryItem(int invoiceId, Callback<InvoiceHistoryItem> callback) {
-        api().get("/api/mobile/v1/invoices/" + invoiceId, true, new ApiClient.Callback() {
+        api().get("/api/mobile/v1/invoices/" + invoiceId, true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 callback.onSuccess(parseInvoiceHistoryItem((JSONObject) body));
             }
             @Override public void onError(ApiException error) { callback.onError(error); }
-        });
+        }));
     }
 
     private InvoiceHistoryItem parseInvoiceHistoryItem(JSONObject row) {
@@ -816,13 +894,15 @@ public final class MobileRepository {
             if (total == 0) total = jsonLong(line, "unitPrice", "UnitPrice") * quantity;
             lines.add(new InvoiceHistoryItem.Line(name, quantity, total));
         }
-        return new InvoiceHistoryItem(row.optInt("invoiceId"), row.optString("invoiceCode"),
+        InvoiceHistoryItem invoice = new InvoiceHistoryItem(row.optInt("invoiceId"), row.optString("invoiceCode"),
                 row.optInt("checkoutQuoteId"), row.optInt("paymentId"), row.optInt("diningSessionId"),
                 row.optString("diningSessionCode"), branch == null ? "Chi nhánh " + branchId : branch.getName(),
-                tableId > 0 ? "Bàn " + tableId : "Không gắn bàn", Math.round(row.optDouble("subtotal")),
+                tableId > 0 ? String.valueOf(tableId) : "", Math.round(row.optDouble("subtotal")),
                 Math.round(row.optDouble("discount")), Math.round(row.optDouble("totalAmount")),
                 row.optString("issuedAtUtc"), row.optString("paymentCode"), row.optString("paymentChannel"),
                 row.optString("paymentMethod"), row.optString("paymentLocation"), row.optString("paymentStatus"), lines);
+        invoice.setTableLabel(tableLabel(String.valueOf(branchId), invoice.getTableId()));
+        return invoice;
     }
 
     private static String jsonString(JSONObject row, String... keys) {
@@ -992,6 +1072,7 @@ public final class MobileRepository {
         SignalRManager.getInstance().stopAndClear();
         api().clearSession();
         state.clearAuthenticatedData();
+        tableNumbers.clear(); tableBranchesLoaded.clear(); qrTableLabels.clear(); qrBranches.clear();
         currentQuote = null; currentSplitBill = null; currentPaymentId = 0;
     }
 
@@ -1038,27 +1119,31 @@ public final class MobileRepository {
         if (tableId <= 0 && assignedTables != null && assignedTables.length() > 0) {
             tableId = assignedTables.optJSONObject(0) == null ? 0 : assignedTables.optJSONObject(0).optInt("tableId");
         }
-        return new Reservation(String.valueOf(row.optInt("reservationId")), branchId,
+        Reservation reservation = new Reservation(String.valueOf(row.optInt("reservationId")), branchId,
                 branch == null ? "Chi nhánh " + branchId : branch.getName(), branch == null ? "" : branch.getAddress(),
                 date, time, row.optInt("partySize"), "", tableId > 0 ? String.valueOf(tableId) : "", note,
                 new ArrayList<>(), 0, reservationStatus(row.optString("status")), row.optJSONArray("preOrderItems") != null && row.optJSONArray("preOrderItems").length() > 0,
                 row.optString("customerName"), row.optString("phoneNumber"));
+        reservation.setTableLabel(tableLabel(branchId, reservation.getTableId()));
+        return reservation;
     }
 
     private DiningSession parseSession(JSONObject row) {
         String branchId = String.valueOf(row.optInt("branchId")); Branch branch = state.findBranch(branchId);
         User user = state.getCurrentUser();
-        return new DiningSession(String.valueOf(row.optInt("diningSessionId")), branchId,
-                branch == null ? "Chi nhánh " + branchId : branch.getName(), "Bàn " + row.optInt("tableId"),
+        DiningSession session = new DiningSession(String.valueOf(row.optInt("diningSessionId")), branchId,
+                branch == null ? "Chi nhánh " + branchId : branch.getName(), String.valueOf(row.optInt("tableId")),
                 sessionStatus(row.optString("status")), row.isNull("reservationId") ? null : String.valueOf(row.optInt("reservationId")),
                 user == null ? "Khách hàng" : user.getFullName(), row.optString("startedAtUtc"), new ArrayList<>(), new ArrayList<>());
+        session.setTableLabel(tableLabel(branchId, session.getTableId()));
+        return session;
     }
 
     private ApiClient.Callback sessionCallback(Callback<DiningSession> callback) {
-        return new ApiClient.Callback() {
+        return tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) { DiningSession session = parseSession((JSONObject) body); state.setActiveDiningSession(session); callback.onSuccess(session); }
             @Override public void onError(ApiException error) { callback.onError(error); }
-        };
+        });
     }
 
     private Order parseOrder(JSONObject row) {
@@ -1073,7 +1158,8 @@ public final class MobileRepository {
         JSONObject sessionRow = row.optJSONObject("diningSession");
         String sessionId = row.isNull("diningSessionId") ? "" : String.valueOf(row.optInt("diningSessionId"));
         String branchName = activeSession == null ? "" : activeSession.getBranchName();
-        String tableName = row.isNull("tableId") ? "" : "Bàn " + row.optInt("tableId");
+        String tableIdValue = row.isNull("tableId") ? "" : String.valueOf(row.optInt("tableId"));
+        String tableDisplay = activeSession == null ? "Chưa có thông tin bàn" : activeSession.getTableLabel();
         DiningSessionSummary summary = null;
         if (sessionRow != null) {
             sessionId = String.valueOf(sessionRow.optInt("diningSessionId"));
@@ -1081,15 +1167,18 @@ public final class MobileRepository {
             Branch branch = state.findBranch(branchId);
             branchName = branch == null ? "Chi nhánh " + branchId : branch.getName();
             int tableId = sessionRow.optInt("tableId");
-            if (tableId > 0) tableName = "Bàn " + tableId;
+            tableIdValue = tableId > 0 ? String.valueOf(tableId) : "";
+            tableDisplay = tableLabel(branchId, tableIdValue);
             summary = new DiningSessionSummary(sessionId, sessionRow.optString("sessionCode"), branchId,
                     tableId > 0 ? String.valueOf(tableId) : "", sessionRow.optString("status"),
                     sessionRow.optString("startedAtUtc"), sessionRow.isNull("endedAtUtc") ? null : sessionRow.optString("endedAtUtc"));
+            summary.setTableLabel(tableDisplay);
         }
         Order order = new Order(String.valueOf(row.optInt("orderId")), sessionId,
-                branchName, tableName, Order.Type.DINE_IN,
+                branchName, tableIdValue, Order.Type.DINE_IN,
                 orderStatus(row.optString("status")), row.optString("orderTime"), items, Math.round(row.optDouble("subtotal")), "");
         order.setDiningSessionSummary(summary);
+        order.setTableLabel(tableDisplay);
         return order;
     }
 
@@ -1110,19 +1199,22 @@ public final class MobileRepository {
     private Invoice invoiceFromQuote(JSONObject quote) {
         DiningSession session = state.getActiveDiningSession(); long subtotal = Math.round(quote.optDouble("subtotal"));
         long voucher = Math.round(quote.optDouble("voucherDiscount")); long points = Math.round(quote.optDouble("pointsDiscount"));
-        return new Invoice("QUOTE-" + quote.optInt("checkoutQuoteId"), String.valueOf(quote.optInt("diningSessionId")),
+        Invoice invoice = new Invoice("QUOTE-" + quote.optInt("checkoutQuoteId"), String.valueOf(quote.optInt("diningSessionId")),
                 session == null ? "VietTable" : session.getBranchName(), session == null ? "" : session.getTableId(), subtotal,
                 0, 0, voucher, points, Math.round(quote.optDouble("totalAmount")), "Chưa chọn", "", quote.optString("expiresAtUtc"));
+        invoice.setTableLabel(session == null ? "Chưa có thông tin bàn" : session.getTableLabel());
+        return invoice;
     }
 
     private Invoice invoiceFromIssued(JSONObject value) {
         DiningSession session = state.getActiveDiningSession();
         Invoice invoice = new Invoice(value.optString("invoiceCode", String.valueOf(value.optInt("invoiceId"))),
                 String.valueOf(value.optInt("diningSessionId")), session == null ? "VietTable" : session.getBranchName(),
-                session == null ? "" : session.getTableId(), Math.round(value.optDouble("subtotal")), 0, 0,
+                session == null ? String.valueOf(value.optInt("tableId")) : session.getTableId(), Math.round(value.optDouble("subtotal")), 0, 0,
                 Math.round(value.optDouble("discount")), 0, Math.round(value.optDouble("totalAmount")),
                 "Đã thanh toán", "", value.optString("issuedAtUtc"));
         invoice.setBackendInvoiceId(value.optInt("invoiceId"));
+        invoice.setTableLabel(session == null ? tableLabel(String.valueOf(value.optInt("branchId")), String.valueOf(value.optInt("tableId"))) : session.getTableLabel());
         return invoice;
     }
 
@@ -1190,10 +1282,7 @@ public final class MobileRepository {
         try { return OrderItem.Status.valueOf(v); } catch (Exception e) { return OrderItem.Status.PENDING; }
     }
     private static String normalizeServiceType(String value) {
-        String lower = value == null ? "" : value.toLowerCase(Locale.ROOT);
-        if (lower.contains("nước")) return "WATER"; if (lower.contains("hủy")) return "CANCEL_ITEM";
-        if (lower.contains("bếp")) return "KITCHEN_REMINDER"; if (lower.contains("thanh toán")) return "PAYMENT_SUPPORT";
-        return "GENERAL_ASSISTANCE";
+        return ServiceRequestType.normalize(value);
     }
     private static String reservationInstant(ReservationDraft draft) {
         return reservationInstant(draft.getDate(), draft.getTimeSlot());

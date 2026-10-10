@@ -55,7 +55,8 @@ public class WalkinConfirmFragment extends BaseFragment {
             return;
         }
 
-        binding.tvWalkinTable.setText("Bàn " + tableCode);
+        binding.tvWalkinTable.setText(MobileRepository.getInstance().qrTableLabel(tableCode));
+        binding.tvWalkinArea.setText(MobileRepository.getInstance().qrBranchName(tableCode));
         binding.tvGuestCount.setText(String.valueOf(guestCount));
 
         binding.btnMinusGuest.setOnClickListener(v -> {

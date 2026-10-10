@@ -57,7 +57,7 @@ public class PreorderCartFragment extends BaseFragment {
         binding.btnBack.setOnClickListener(v -> navigateBack());
 
         if (reservation != null) {
-            binding.tvPreorderBoundNotice.setText("Gắn với: #" + reservation.getId() + " • Bàn " + reservation.getTableId() + " • " + reservation.getBranchName());
+            binding.tvPreorderBoundNotice.setText("Gắn với: #" + reservation.getId() + " • " + reservation.getTableLabel() + " • " + reservation.getBranchName());
         }
 
         List<CartItem> cartItems = appStateManager.getCartItems();

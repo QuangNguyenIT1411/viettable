@@ -26,6 +26,9 @@ public class DiningSessionSummary implements Serializable {
     public String getCode() { return code; }
     public String getBranchId() { return branchId; }
     public String getTableId() { return tableId; }
+    private String tableLabel = "Chưa có thông tin bàn";
+    public String getTableLabel() { return tableLabel; }
+    public void setTableLabel(String label) { tableLabel = label; }
     public String getStatus() { return status; }
     public String getStartedAtUtc() { return startedAtUtc; }
     public String getEndedAtUtc() { return endedAtUtc; }

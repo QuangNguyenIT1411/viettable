@@ -24,7 +24,7 @@ public class Reservation implements Serializable {
     private String timeSlot;
     private int guestCount;
     private String areaName; // Trong nhà, Ngoài trời, Phòng riêng, Gần cửa sổ
-    private String tableId;  // e.g. "B12"
+    private String tableId; // Internal API identity; display uses tableLabel.
     private String note;
     private List<String> specialTags; // Sinh nhật, Kỷ niệm, Tiếp khách, Cầu hôn
     private long depositAmount;
@@ -75,7 +75,10 @@ public class Reservation implements Serializable {
     public String getAreaName() { return areaName; }
     public void setAreaName(String areaName) { this.areaName = areaName; }
     public String getTableId() { return tableId; }
-    public String getTableNumber() { return tableId; }
+    private String tableLabel = "Chưa có thông tin bàn";
+    public String getTableLabel() { return tableLabel; }
+    public void setTableLabel(String label) { tableLabel = label; }
+    public String getTableNumber() { return tableLabel; }
     public void setTableId(String tableId) { this.tableId = tableId; }
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }

@@ -257,6 +257,111 @@ Các bước tạo/gọi món/thanh toán dưới đây dùng một phiên QA ri
 - [ ] Background/resume hoặc mất mạng/reconnect → REST resync đúng, không duplicate update.
 - [ ] Người dùng tự kiểm tra offline → Home có lỗi/Thử lại → phục hồi; chạy riêng Wi-Fi và mạng di động.
 
-Final: **ANDROID CLOUD E2E: PARTIAL** — independent Samsung cart/order/payment UI blocked by
+Historical result before the follow-up below: **ANDROID CLOUD E2E: PARTIAL** — independent Samsung cart/order/payment UI blocked by
 preservation constraint; staff browser actions and event-driven UI not accepted; physical camera,
 offline/retry and full network business acceptance unverified; raw table-ID display finding remains.
+
+## 2026-10-10 — Table number fix and isolated emulator follow-up
+
+Base: `ece04cb`, branch `cloud/postgres-migration`. Stable Preview unchanged.
+No backend source, deployment, Production bootstrap or Android origin changed.
+
+### Table display root cause and fix
+
+`MobileRepository.parseSession` and related order/invoice/reservation mappers built customer labels
+from internal `tableId`. Catalog already exposes the correct number through Gateway
+`GET /api/mobile/v1/branches/{branchId}/table-layout` (`tables[].tableId`, `tables[].tableNumber`).
+QR validation also returns `tableNumber`. No contract extension was necessary.
+
+Added branch-scoped `TableNumberDirectory`, coalesced Catalog metadata reads and separate model
+`tableLabel`. Mutation IDs remain raw identities. Unknown metadata displays an explicit unknown label,
+never an ID or fabricated number. Failed enrichment does not replay a successful mutation.
+Availability supplies real numbers for reservation drafts. Invoice method/location copies preserve labels.
+
+Updated Home/active card, QR walk-in/mismatch/check-in, session/menu/cart/current orders/order detail,
+grouped history, checkout/payment/success, invoice list/detail, reservation/preorder headings.
+Walk-in also replaces the static Quận 1 area text with the validated branch name.
+Notifications render server title/message; their Android model has no table-ID display field.
+No table-number regex or global ID arithmetic was introduced.
+
+Samsung SM-A528B after `install -r` and cold launch: Home and current orders show **Bàn 2** for
+branch 3/table ID 37; order 38 still CONFIRMED, one item, 35,000 VND. Login preserved.
+Emulator independently showed **Bàn 3** for branch 3/table ID 38 across QR, session, menu/cart,
+payment waiting and invoice history/detail. Reservation label changes are source/unit verified,
+not a new populated reservation UI acceptance.
+
+### Isolated business evidence
+
+Existing Small_Phone emulator, Android 37.1, `emulator-5554`; existing QA customer signed in through
+the actual password form. No new customer/staff account and no replacement of Samsung authentication.
+Direct HTTPS Preview, no ADB reverse, no Docker backend. Only the SDK test container ran locally.
+
+| Step | Result / evidence type |
+|---|---|
+| Customer login, branch/menu | Emulator UI PASS; selected Bình Thạnh and real Bánh mì ốp la 35,000 VND |
+| Camera permission denied | Emulator UI PASS; manual entry remained usable |
+| Manual QR / walk-in | Emulator UI PASS; validated existing free table, created session **22**, table ID **38**, displayed **Bàn 3** |
+| Cart/submit | Emulator UI PASS; one item, one submit, order/item **40**, CONFIRMED; REST/DB confirms one order |
+| Chef start/ready | Authenticated Chef **API PASS**, branch 3, item 40 PREPARING then READY; not browser UI acceptance |
+| Android order update | Emulator auto READY PASS via REST fallback; WSS creation event orderUpdated orderId=40 logged at 12:54:38.564, but start/ready event delivery not proven |
+| Customer receive | Emulator UI action PASS; REST item 40 SERVING; no other item altered |
+| WATER request | Emulator UI PASS; request **22**, OPEN, 12:58 Vietnam time |
+| Staff request handling | Cashier **API PASS**, ACKNOWLEDGED/COMPLETED; not browser UI acceptance |
+| Android service events | Emulator UI PASS, no refresh; CHỜ TIẾP NHẬN → ĐANG XỬ LÝ → ĐÃ HOÀN TẤT; requestId=22 events logged 12:58:54.296 / 12:59:25.367 / 12:59:46.070 |
+| Checkout/ONSITE | Emulator UI PASS; quote **27**, payment **21**, 35,000 VND, ONSITE/CASH/TABLE |
+| Cashier confirmation | API PASS, SUCCEEDED; emulator not touched after entering waiting screen |
+| Automatic success | Emulator UI PASS; success screen observed and captured about 10 seconds after confirm HTTP response (observation upper bound, not precise render latency) |
+| Invoice | API + emulator UI PASS; invoice **21**, `INV-4c5d4ccede1042e6b36c27beee35350f`, one item/35,000 VND |
+| Invoice history/detail | Emulator UI PASS; new invoice appears once; Bàn 3, time **13:02, 10/10/2026**, ONSITE/CASH/SUCCEEDED; detail opened |
+| Session/table cleanup | API/DB PASS; session 22 CLOSED/payment 21, order 40 inactive; table 38 physicallyAvailable/reservationAvailable true |
+| Populated session history | Not accepted: Gateway `orders?scope=history` returned HTTP **503 service_unavailable** in this run |
+
+Payment reference: `PAY-20261010060158-92725ADCAEA14FCB932EC`.
+No duplicate QA payment/invoice found in customer/branch API reads.
+These emulator outcomes do **not** establish Samsung business-flow PASS.
+
+### Additional reproducible findings
+
+1. **Fixed:** Service-request type fallback sent GENERAL_ASSISTANCE (HTTP 400); several other UI
+   choices also mapped to unsupported types. `ServiceRequestType` now maps existing choices to the
+   actual CALL_STAFF/WATER/UTENSILS/OTHER contract. Three unit tests cover all choices/default/codes.
+   WATER was accepted via UI; default/other mappings are unit verified, not a separate live mutation.
+2. **Fixed UI error handling:** Session-history read failed with 503 but previously showed only a
+   transient Toast and misleading empty-history message. Added loading/error/retry using the existing
+   history state views. Backend 503 is not fixed or hidden; no new records created to evade it.
+   Emulator on the final APK showed loading, then "Dịch vụ tạm thời không khả dụng." with "Thử tải lại";
+   pressing retry re-entered loading. This customer has 23 historical orders. Source ListOrders calls
+   MapOrder sequentially per order (status/items/Catalog lookups); repeated work is a possible timeout
+   contributor, not a confirmed root cause without server traces. A later direct detail diagnostic returned
+   401 with the expired short-lived QA token and is not counted as an authorized detail read.
+3. **Remaining, MEDIUM:** Rapid navigation during active-session/order hydration can show zero rounds/
+   subtotal in pre-checkout before REST hydration completes. Canonical checkout quote/invoice were
+   correctly 35,000 VND. This cached preflight timing issue is not claimed fixed by the table-label change.
+4. **Remaining:** WSS transport-unavailable/disconnect/retry observed. Connected at 12:50:16.244,
+   disconnected 12:55:25.798, recovered 12:58:10.476; REST resync 12:58:37.237 and later service
+   events accepted. No distinct-instance fan-out, duplicate-free reliability or bounded reconnect SLA claim.
+5. **Security incident:** An old UI-dump helper accidentally emitted a QA password once in tool output.
+   It was stopped and replaced by a helper excluding all EditText/password/credential fields; user was
+   notified. No value is recorded here/in source. Affected QA credential rotation remains required.
+   Passing source/APK scanning does not undo tool-output exposure.
+
+### Network/security/regression
+
+- Emulator-only Wi-Fi/data disabled for offline cold launch: real network error + Thử lại appeared.
+  Restored original network settings, tapped retry; Bình Thạnh/categories loaded again. Samsung network untouched.
+- Wrong-branch Cashier normal login 200; service complete request 22 and payment confirm 21 both **403**.
+  Customer staff-acknowledge request returned **401**; completed request/payment remained unchanged.
+- Fresh LOCAL/CLOUD build and unit run PASS: **51 tests, zero failures/errors** (two table tests, three type tests added).
+- Fresh read-only native `CloudPreviewConnectivityTest`: Samsung **2/2 PASS, 48.674 s**;
+  emulator **2/2 PASS, 51.174 s**. Isolated probe vault; no business writes/authentication replacement.
+- Fresh backend targeted contracts: **12/12 PASS**, filter MobileHistoryReadModelTests/MobileCheck/
+  ServiceRequest/Onsite, Linux .NET SDK test container only.
+- Fresh stable `/healthz` and `/readyz`: **200**, approximately 0.7/1.7 seconds.
+- No backend/web change: prior CloudHost/backend full suite and staff web builds are baselines, not rerun.
+- APK/source secret scan checks eleven DPAPI values; no secret/JWT matches. .idea excluded.
+- Final user fixture: **session 20 ACTIVE, order/item 38 CONFIRMED, one item 35,000 VND, PaymentId null**.
+  No logout, clear/uninstall, payment or business mutation against this fixture.
+
+Final follow-up: **ANDROID CLOUD E2E: PARTIAL** — table display and isolated emulator ONSITE/invoice
+flow accepted; populated session-history blocked by cloud HTTP 503; Chef start/ready WSS delivery and
+staff browser actions not proven, physical camera scan/full cellular business run unverified.

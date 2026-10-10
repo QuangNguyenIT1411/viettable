@@ -88,6 +88,7 @@ public class OnlinePaymentMethodFragment extends BaseFragment {
                     "Online",
                     "Vừa xong"
             );
+            updated.setTableLabel(invoice.getTableLabel());
             binding.btnSubmitOnlinePayment.setEnabled(false);
             if (splitPart == null) {
                 MobileRepository.getInstance().createPayment("ONLINE", "QR", null, new MobileRepository.Callback<PaymentInfo>() {

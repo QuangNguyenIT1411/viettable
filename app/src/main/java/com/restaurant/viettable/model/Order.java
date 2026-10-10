@@ -55,6 +55,9 @@ public class Order implements Serializable {
     public String getDiningSessionId() { return diningSessionId; }
     public String getBranchName() { return branchName; }
     public String getTableId() { return tableId; }
+    private String tableLabel = "Chưa có thông tin bàn";
+    public String getTableLabel() { return tableLabel; }
+    public void setTableLabel(String label) { tableLabel = label; }
     public Type getOrderType() { return orderType; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
@@ -71,7 +74,7 @@ public class Order implements Serializable {
 
     public String getCreatedAt() { return orderTime; }
     public String getFormattedTotalAmount() { return getFormattedTotal(); }
-    public String getTableNumber() { return tableId; }
+    public String getTableNumber() { return tableLabel; }
 
     public String getStatusDisplayText() {
         switch (status) {

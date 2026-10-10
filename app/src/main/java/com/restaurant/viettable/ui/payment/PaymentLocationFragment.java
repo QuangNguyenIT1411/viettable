@@ -100,6 +100,7 @@ public class PaymentLocationFragment extends BaseFragment {
                     selectedLocation,
                     "Vừa xong"
             );
+            updated.setTableLabel(invoice.getTableLabel());
 
             String method = "Tiền mặt".equals(paymentMethod) ? "CASH" : ("QR chuyển khoản".equals(paymentMethod) ? "QR" : "TRANSFER");
             String location = "Tại bàn".equals(selectedLocation) ? "TABLE" : "CASHIER";

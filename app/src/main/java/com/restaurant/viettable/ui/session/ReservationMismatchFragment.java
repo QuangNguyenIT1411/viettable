@@ -60,16 +60,19 @@ public class ReservationMismatchFragment extends BaseFragment {
             return;
         }
 
-        binding.tvScannedTable.setText("Bàn " + scannedTable);
-        binding.tvReservedTable.setText("Bàn " + reservedTable);
+        String scannedLabel = MobileRepository.getInstance().qrTableLabel(scannedTable);
+        Reservation upcoming = appStateManager.getUpcomingReservation();
+        String reservedLabel = upcoming == null ? "Chưa có thông tin bàn" : upcoming.getTableLabel();
+        binding.tvScannedTable.setText(scannedLabel);
+        binding.tvReservedTable.setText(reservedLabel);
 
         binding.btnRescan.setOnClickListener(v -> navigateBack());
 
         binding.btnSwitchToCurrentTable.setOnClickListener(v -> {
             com.restaurant.viettable.ui.common.DialogHelper.showConfirmDialog(
                     requireContext(),
-                    "Đổi sang bàn " + scannedTable + "?",
-                    "Hệ thống sẽ cập nhật đặt chỗ của bạn sang Bàn " + scannedTable + " và bắt đầu phiên dùng bữa.",
+                    "Đổi sang " + scannedLabel + "?",
+                    "Hệ thống sẽ cập nhật đặt chỗ của bạn sang " + scannedLabel + " và bắt đầu phiên dùng bữa.",
                     "Đồng ý đổi bàn",
                     (dialog, which) -> {
                         Reservation reservation = appStateManager.getUpcomingReservation();

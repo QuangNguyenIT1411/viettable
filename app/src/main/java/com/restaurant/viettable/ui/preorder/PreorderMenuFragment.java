@@ -64,7 +64,7 @@ public class PreorderMenuFragment extends BaseFragment implements AppStateManage
         binding.btnBack.setOnClickListener(v -> navigateBack());
 
         if (reservation != null) {
-            binding.tvPreorderResSummary.setText("Lịch đặt: #" + reservation.getId() + " • Bàn " + reservation.getTableId());
+            binding.tvPreorderResSummary.setText("Lịch đặt: #" + reservation.getId() + " • " + reservation.getTableLabel());
         }
 
         binding.tabLayoutPreorderCat.addTab(binding.tabLayoutPreorderCat.newTab().setText("Tất cả"));

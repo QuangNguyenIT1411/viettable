@@ -124,7 +124,7 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
             binding.contentCurrentOrders.setVisibility(View.VISIBLE);
             binding.bottomActions.setVisibility(View.VISIBLE);
             binding.layoutCurrentOrdersState.setVisibility(View.GONE);
-            binding.tvCurrentOrdersTable.setText(session.getTableId() + " • " + session.getBranchName());
+            binding.tvCurrentOrdersTable.setText(session.getTableLabel() + " • " + session.getBranchName());
 
             int totalItems = 0;
             for (Order o : session.getOrders()) {

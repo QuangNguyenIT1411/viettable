@@ -65,7 +65,7 @@ public class CheckinConfirmFragment extends BaseFragment {
         }
 
         if (res != null) {
-            binding.tvTableTitle.setText("Bàn " + res.getTableId());
+            binding.tvTableTitle.setText(res.getTableLabel());
             binding.tvTableSubtitle.setText(res.getAreaName() + " • " + res.getGuestCount() + " người • " + res.getBranchName());
             binding.tvCheckinResCode.setText("#" + res.getId());
             binding.tvCheckinTime.setText(res.getTimeSlot() + " - " + DisplayFormatters.date(res.getDate()));

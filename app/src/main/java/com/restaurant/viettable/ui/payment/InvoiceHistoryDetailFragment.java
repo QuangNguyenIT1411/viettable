@@ -71,7 +71,7 @@ public class InvoiceHistoryDetailFragment extends BaseFragment {
         String paymentMethod = (invoice.getPaymentChannel() == null ? "" : invoice.getPaymentChannel()) + "/"
                 + (invoice.getPaymentMethod() == null ? "" : invoice.getPaymentMethod());
         binding.tvInvoiceDetailMeta.setText("Thời gian: " + DisplayFormatters.dateTime(invoice.getIssuedAtUtc())
-                + "\nChi nhánh: " + invoice.getBranchName() + "\n" + invoice.getTableId()
+                + "\nChi nhánh: " + invoice.getBranchName() + "\n" + invoice.getTableLabel()
                 + " • Phiên " + invoice.getDiningSessionId() + " (" + invoice.getDiningSessionCode() + ")"
                 + "\nThanh toán: " + paymentMethod + " • " + paymentStatus
                 + "\nMã giao dịch: " + invoice.getPaymentCode());

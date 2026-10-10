@@ -54,6 +54,9 @@ public class InvoiceHistoryItem {
     public String getDiningSessionCode() { return diningSessionCode; }
     public String getBranchName() { return branchName; }
     public String getTableId() { return tableId; }
+    private String tableLabel = "Chưa có thông tin bàn";
+    public String getTableLabel() { return tableLabel; }
+    public void setTableLabel(String label) { tableLabel = label; }
     public long getSubtotal() { return subtotal; }
     public long getDiscount() { return discount; }
     public long getTotalAmount() { return totalAmount; }

@@ -41,6 +41,8 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
     private boolean invoiceHistoryLoading;
     private boolean invoiceHistoryLoaded;
     private String invoiceHistoryError;
+    private boolean sessionHistoryLoading;
+    private String sessionHistoryError;
 
     public static OrderHistoryFragment newInstance() {
         return new OrderHistoryFragment();
@@ -76,17 +78,17 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
         binding.btnEmptyScanQr.setOnClickListener(v -> {
             switchTab(R.id.nav_qr);
         });
-        binding.btnRetryHistoryInvoices.setOnClickListener(v -> loadInvoiceHistory());
+        binding.btnRetryHistoryInvoices.setOnClickListener(v -> {
+            if (binding.tabLayoutOrderHistory.getSelectedTabPosition() == 1) loadSessionHistory();
+            else loadInvoiceHistory();
+        });
 
         renderCurrentTab();
         MobileRepository.getInstance().loadActiveSession(new MobileRepository.Callback<DiningSession>() {
             @Override public void onSuccess(DiningSession value) { if (binding != null) renderCurrentTab(); }
             @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
         });
-        MobileRepository.getInstance().loadOrders("history", new MobileRepository.Callback<List<Order>>() {
-            @Override public void onSuccess(List<Order> value) { if (binding != null) renderCurrentTab(); }
-            @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
-        });
+        loadSessionHistory();
     }
 
     private void renderCurrentTab() {
@@ -148,10 +150,11 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
             } else {
                 binding.rvPastOrders.setVisibility(View.GONE);
                 binding.layoutEmptyPast.setVisibility(View.VISIBLE);
-                binding.ivHistoryEmptyIcon.setVisibility(View.VISIBLE);
-                binding.progressHistoryInvoices.setVisibility(View.GONE);
-                binding.tvHistoryEmptyMessage.setText("Chưa có lịch sử phiên dùng bữa");
-                binding.btnRetryHistoryInvoices.setVisibility(View.GONE);
+                binding.ivHistoryEmptyIcon.setVisibility(sessionHistoryLoading ? View.GONE : View.VISIBLE);
+                binding.progressHistoryInvoices.setVisibility(sessionHistoryLoading ? View.VISIBLE : View.GONE);
+                binding.tvHistoryEmptyMessage.setText(sessionHistoryLoading ? "Đang tải lịch sử phiên dùng bữa..."
+                        : sessionHistoryError != null ? sessionHistoryError : "Chưa có lịch sử phiên dùng bữa");
+                binding.btnRetryHistoryInvoices.setVisibility(sessionHistoryError != null ? View.VISIBLE : View.GONE);
             }
         } else {
             binding.containerActiveSession.setVisibility(View.GONE);
@@ -172,6 +175,25 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
                 binding.btnRetryHistoryInvoices.setVisibility(invoiceHistoryError != null ? View.VISIBLE : View.GONE);
             }
         }
+    }
+
+    private void loadSessionHistory() {
+        if (binding == null || sessionHistoryLoading) return;
+        sessionHistoryLoading = true;
+        sessionHistoryError = null;
+        renderCurrentTab();
+        MobileRepository.getInstance().loadOrders("history", new MobileRepository.Callback<List<Order>>() {
+            @Override public void onSuccess(List<Order> value) {
+                sessionHistoryLoading = false;
+                sessionHistoryError = null;
+                if (binding != null) renderCurrentTab();
+            }
+            @Override public void onError(ApiException error) {
+                sessionHistoryLoading = false;
+                sessionHistoryError = apiError(error);
+                if (binding != null) renderCurrentTab();
+            }
+        });
     }
 
     private void loadInvoiceHistory() {
