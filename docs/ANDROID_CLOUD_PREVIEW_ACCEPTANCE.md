@@ -5,6 +5,46 @@ Samsung native requests reproduced exceeding the old 20-second read budget; CLOU
 measured-cold-start-compatible 60-second budget. Main Samsung business E2E is not accepted.
 Do not substitute API-client/connectivity results for device business acceptance.
 
+## Remaining Android acceptance follow-up — base ae9cde8
+
+**ANDROID CLOUD E2E: PARTIAL**. Detailed device observations, the minimal invoice-state layout fix,
+and the remaining manual checklist are in `FULL_CLOUD_E2E_AUTOMATED_ACCEPTANCE.md`, section
+"Remaining Android acceptance follow-up". This supersedes the earlier 41-test count for the current
+Android build: LOCAL/CLOUD_PREVIEW builds and **46/46 unit tests** passed after the fix; fresh Samsung
+native connectivity tests passed **2/2 in 71.760 s**. No backend source/deployment changed.
+
+Samsung search/detail, current order read, history/invoice empty states, notification empty state,
+and background/foreground were directly exercised without replacing the user's login. SignalR logs
+show connected and REST resync after intermittent transport failures, but no new business event delivery
+was accepted. Session 20 remains ACTIVE; order/item 38 remain CONFIRMED; its PaymentId is null.
+Actual populated invoice/payment UI and independent Samsung QA session remain BLOCKED by account
+preservation. Offline/retry, physical QR camera, Wi-Fi and full cellular business flow remain UNVERIFIED.
+
+## Latest autonomous run — 2026-10-10
+
+See `FULL_CLOUD_E2E_AUTOMATED_ACCEPTANCE.md` for the new run, fixtures, regression results and
+explicit UI limitations. The sections below retain the earlier connectivity investigation as historical
+evidence, not a claim that realtime delivery passed in the latest run.
+
+- Samsung customer login, QR entry and order submission were established by the user's preceding
+  actions and staging records: session **20**, order/item **38**, Bình Thạnh/table **2**, 35,000 VND.
+  These records were preserved: session remains ACTIVE, item CONFIRMED, no payment created for it.
+- A separate existing QA customer completed session **21**, order/item **39**, service request **21**,
+  payment **20**, invoice **20**, via authenticated cloud APIs. This is not Samsung business UI acceptance.
+- Fresh Samsung native connectivity tests: **2/2 PASS**, 48.777 seconds. Actual installed `ApiClient`
+  received HTTPS health/Catalog responses; ADB reverse remained empty. No user token/session replacement.
+- Current default network snapshot was cellular; Wi-Fi was not active. Wi-Fi business acceptance and
+  complete cellular business acceptance remain UNVERIFIED. No network toggle was performed.
+- Negotiate returned 200, but negotiated WebSocket opening timed out in bounded Node and Windows
+  probes. A subsequent standard direct WebSocket (skip negotiation) successfully completed SignalR
+  JSON handshake, and a fresh direct reconnect also passed. A final fresh negotiated-path retest then
+  completed JSON handshake too; opening failure is intermittent, not a proven permanent WSS outage.
+  This does not establish event delivery,
+  Android realtime display, or multi-instance fan-out. No production transport workaround was added.
+- Android LOCAL/CLOUD_PREVIEW builds PASS; shared unit tests freshly rerun **41/41 PASS**.
+  CloudHost **48/48 PASS**; backend contracts **141 PASS, 1 SKIP**; three Staff builds PASS.
+- No new source fix, deployment, alias change, scheduler, database reset or push in this run.
+
 ## Approved origin and scope
 
 - Project: `viettable-api`, owner `hienkhanhvu981-7145`.
