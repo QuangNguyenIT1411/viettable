@@ -105,35 +105,25 @@ public sealed class CatalogController : ControllerBase
             .ToListAsync(cancellationToken);
 
         var allCategoryObjects = new List<object>();
+        var categoryIds = allCategories.Select(x => x.CategoryID).ToArray();
+        // One projected Catalog-owned read, not one remote DB round trip per category.
+        var allDishes = await _db.Dishes.AsNoTracking()
+            .Where(x => categoryIds.Contains(x.CategoryID) && (x.IsActive ?? true))
+            .OrderBy(x => x.Name)
+            .Select(x => new {
+                categoryId = x.CategoryID, dishId = x.DishID, name = x.Name,
+                description = x.Description, price = x.Price, image = x.Image, unit = x.Unit,
+                isVegetarian = x.IsVegetarian ?? false, isDailySpecial = x.IsDailySpecial ?? false,
+                available = x.Available ?? true,
+                ingredients = x.DishIngredients.Select(i => new {
+                    name = i.Ingredient.Name, quantity = i.QuantityPerDish, unit = i.Ingredient.Unit
+                }).ToList()
+            }).ToListAsync(cancellationToken);
         foreach (var category in allCategories)
         {
-            var dishes = await _db.Dishes
-                .AsNoTracking()
-                .Include(x => x.DishIngredients)
-                .ThenInclude(x => x.Ingredient)
-                .Where(x => x.CategoryID == category.CategoryID && (x.IsActive ?? true))
-                .OrderBy(x => x.Name)
-                .Select(x => new
-                {
-                    dishId = x.DishID,
-                    name = x.Name,
-                    description = x.Description,
-                    price = x.Price,
-                    image = x.Image,
-                    unit = x.Unit,
-                    isVegetarian = x.IsVegetarian ?? false,
-                    isDailySpecial = x.IsDailySpecial ?? false,
-                    available = x.Available ?? true,
-                    ingredients = x.DishIngredients
-                        .Select(i => new
-                        {
-                            name = i.Ingredient.Name,
-                            quantity = i.QuantityPerDish,
-                            unit = i.Ingredient.Unit,
-                        })
-                        .ToList(),
-                })
-                .ToListAsync(cancellationToken);
+            var dishes = allDishes.Where(x => x.categoryId == category.CategoryID)
+                .Select(x => new { x.dishId, x.name, x.description, x.price, x.image, x.unit,
+                    x.isVegetarian, x.isDailySpecial, x.available, x.ingredients }).ToList();
 
             if (dishes.Count > 0)
             {

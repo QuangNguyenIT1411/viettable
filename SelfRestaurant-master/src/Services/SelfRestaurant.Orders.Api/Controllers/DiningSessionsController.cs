@@ -368,11 +368,23 @@ public sealed class DiningSessionsController : ControllerBase
             ? new Dictionary<string, DiningSession>(StringComparer.Ordinal)
             : await _db.DiningSessions.AsNoTracking().Where(x => sessionCodes.Contains(x.SessionCode))
                 .ToDictionaryAsync(x => x.SessionCode, StringComparer.Ordinal, ct);
+        var orderIds = orders.Select(x => x.OrderID).ToArray();
+        var statusIds = orders.Select(x => x.StatusID).Distinct().ToArray();
+        var statuses = await _db.OrderStatus.AsNoTracking().Where(x => statusIds.Contains(x.StatusID))
+            .ToDictionaryAsync(x => x.StatusID, x => x.StatusCode, ct);
+        var rawItems = await _db.OrderItems.AsNoTracking().Where(x => orderIds.Contains(x.OrderID))
+            .OrderBy(x => x.ItemID).ToListAsync(ct);
+        var itemsByOrder = rawItems.ToLookup(x => x.OrderID);
+        // Refresh the owner-provided dish snapshot once for the whole bounded page.
+        var dishes = rawItems.Count == 0 ? Array.Empty<CatalogApiClient.DishSnapshotResponse>()
+            : await _catalog.GetDishesAsync(rawItems.Select(x => x.DishID).Distinct(), ct)
+                ?? Array.Empty<CatalogApiClient.DishSnapshotResponse>();
         foreach (var order in orders)
         {
             var session = string.IsNullOrWhiteSpace(order.DiningSessionCode)
                 ? null : sessions.GetValueOrDefault(order.DiningSessionCode);
-            result.Add(await MapOrder(order, ct, session));
+            result.Add(await MapOrder(order, ct, session, dishes,
+                statuses.GetValueOrDefault(order.StatusID) ?? "PENDING", itemsByOrder[order.OrderID].ToArray(), true));
         }
         return Ok(result);
     }
@@ -470,18 +482,19 @@ public sealed class DiningSessionsController : ControllerBase
     }
 
     private async Task<MobileOrderResponse> MapOrder(OrderEntity order, CancellationToken ct, DiningSession? session = null,
-        IReadOnlyList<CatalogApiClient.DishSnapshotResponse>? validatedDishes = null, string? knownStatus = null)
+        IReadOnlyList<CatalogApiClient.DishSnapshotResponse>? validatedDishes = null, string? knownStatus = null,
+        IReadOnlyList<OrderItems>? knownItems = null, bool sessionResolved = false)
     {
         var status = knownStatus ?? await _db.OrderStatus.AsNoTracking().Where(x => x.StatusID == order.StatusID)
             .Select(x => x.StatusCode).FirstOrDefaultAsync(ct) ?? "PENDING";
-        var rawItems = await _db.OrderItems.AsNoTracking().Where(x => x.OrderID == order.OrderID)
+        var rawItems = knownItems ?? await _db.OrderItems.AsNoTracking().Where(x => x.OrderID == order.OrderID)
             .OrderBy(x => x.ItemID).ToListAsync(ct);
         var dishes = validatedDishes ?? await _catalog.GetDishesAsync(rawItems.Select(x => x.DishID).Distinct(), ct)
             ?? Array.Empty<CatalogApiClient.DishSnapshotResponse>();
         var names = dishes.ToDictionary(x => x.DishId, x => x.Name);
         var items = rawItems.Select(x => new MobileOrderItemResponse(x.ItemID, x.DishID,
             names.GetValueOrDefault(x.DishID) ?? $"Món #{x.DishID}", x.Quantity, x.UnitPrice, x.LineTotal, x.Note, x.StatusCode)).ToArray();
-        session ??= await _db.DiningSessions.AsNoTracking()
+        if (!sessionResolved) session ??= await _db.DiningSessions.AsNoTracking()
             .FirstOrDefaultAsync(x => x.SessionCode == order.DiningSessionCode, ct);
         var sessionSummary = session is null ? null : new DiningSessionSummaryResponse(session.DiningSessionId,
             session.SessionCode, session.BranchId, session.TableId, session.Status, session.StartedAtUtc, session.EndedAtUtc);

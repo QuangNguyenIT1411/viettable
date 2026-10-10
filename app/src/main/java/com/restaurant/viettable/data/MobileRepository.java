@@ -61,6 +61,25 @@ public final class MobileRepository {
     private final java.util.Map<String, List<Callback<Void>>> menuRequests = new java.util.HashMap<>();
     private final List<Callback<List<Branch>>> branchRequests = new ArrayList<>();
     private boolean branchesLoading;
+    private final List<Callback<DiningSession>> activeSessionRequests = new ArrayList<>();
+    private final PublicCatalogCache publicCatalog = new PublicCatalogCache();
+
+    public void initializePublicCatalog(android.content.Context context, Runnable ready) {
+        publicCatalog.initialize(context, () -> {
+            long restoredAt = android.os.SystemClock.elapsedRealtime();
+            Object branches = publicCatalog.read("branches");
+            if (branches instanceof JSONArray) applyBranches((JSONArray) branches);
+            Branch selected = state.getSelectedBranch();
+            if (selected != null) {
+                Object menu = publicCatalog.read("menu_" + selected.getId());
+                if (menu instanceof JSONObject) applyMenu(selected.getId(), (JSONObject) menu);
+            }
+            android.util.Log.i("CatalogPerf", "restore branch=" + (selected == null ? "none" : selected.getId())
+                    + " categories=" + state.getCategories().size() + " dishes=" + state.getFoodItems().size()
+                    + " mapMs=" + (android.os.SystemClock.elapsedRealtime() - restoredAt));
+            ready.run();
+        });
+    }
     private final TableNumberDirectory tableNumbers = new TableNumberDirectory();
     private final Set<String> tableBranchesLoaded = new HashSet<>();
     private final java.util.Map<String, List<Runnable>> tableRequests = new java.util.HashMap<>();
@@ -198,17 +217,16 @@ public final class MobileRepository {
     }
 
     public void refreshBootstrap(Callback<Void> callback) {
+        // Private profile refresh must not gate anonymous Catalog reads/rendering.
+        loadProfile(new Callback<User>() {
+            @Override public void onSuccess(User value) {}
+            @Override public void onError(ApiException error) {
+                if (error.getStatusCode() == 401) state.setLoggedIn(false);
+            }
+        });
         loadBranches(new Callback<List<Branch>>() {
             @Override public void onSuccess(List<Branch> value) {
-                loadProfile(new Callback<User>() {
-                    @Override public void onSuccess(User value) {
-                        loadSelectedBranchMenu(callback);
-                    }
-                    @Override public void onError(ApiException error) {
-                        if (error.getStatusCode() == 401) state.setLoggedIn(false);
-                        finishError(callback, error);
-                    }
-                });
+                loadSelectedBranchMenu(callback);
             }
             @Override public void onError(ApiException error) { finishError(callback, error); }
         });
@@ -217,7 +235,7 @@ public final class MobileRepository {
     private void loadSelectedBranchMenu(Callback<Void> callback) {
         Branch selected = state.getSelectedBranch();
         if (selected == null) { finishSuccess(callback, null); return; }
-        loadMenu(selected.getId(), new Callback<Void>() {
+        loadMenu(selected.getId(), true, new Callback<Void>() {
             @Override public void onSuccess(Void value) { loadFavorites(new Callback<Void>() {
                 @Override public void onSuccess(Void ignored) {
                     loadReservations(new Callback<List<Reservation>>() {
@@ -242,7 +260,15 @@ public final class MobileRepository {
         branchesLoading = true;
         api().get("/api/mobile/v1/branches", false, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
-                JSONArray rows = (JSONArray) body;
+                publicCatalog.write("branches", body);
+                List<Branch> branches = applyBranches((JSONArray) body);
+                finishBranchRequests(branches, null);
+            }
+            @Override public void onError(ApiException error) { finishBranchRequests(null, error); }
+        });
+    }
+
+    private List<Branch> applyBranches(JSONArray rows) {
                 List<Branch> branches = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
@@ -254,10 +280,7 @@ public final class MobileRepository {
                     branches.add(branch);
                 }
                 state.replaceBranches(branches);
-                finishBranchRequests(branches, null);
-            }
-            @Override public void onError(ApiException error) { finishBranchRequests(null, error); }
-        });
+                return branches;
     }
 
     private void finishBranchRequests(List<Branch> branches, ApiException error) {
@@ -271,6 +294,17 @@ public final class MobileRepository {
     }
 
     public void loadMenu(String branchId, Callback<Void> callback) {
+        loadMenu(branchId, false, callback);
+    }
+
+    public void loadMenu(String branchId, boolean forceRefresh, Callback<Void> callback) {
+        Object cached = publicCatalog.read("menu_" + branchId);
+        if (cached instanceof JSONObject && !branchId.equals(state.getCatalogBranchId()))
+            applyMenu(branchId, (JSONObject) cached);
+        if (!forceRefresh && publicCatalog.fresh("menu_" + branchId)) {
+            finishSuccess(callback, null);
+            return;
+        }
         if (menuRequests.containsKey(branchId)) {
             menuRequests.get(branchId).add(callback);
             if (!state.isCatalogLoading()) state.beginCatalogLoad(branchId);
@@ -286,8 +320,22 @@ public final class MobileRepository {
         api().get("/api/mobile/v1/branches/" + branchId + "/menu", false, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 JSONObject response = (JSONObject) body;
+                if (response.optJSONArray("categories") == null) { onError(jsonError()); return; }
+                publicCatalog.write("menu_" + branchId, response);
+                applyMenu(branchId, response);
+                finishMenuRequest(branchId, null);
+            }
+            @Override public void onError(ApiException error) {
+                state.failCatalogLoad(branchId, error.getMessage());
+                finishMenuRequest(branchId, error);
+            }
+        });
+    }
+
+    private void applyMenu(String branchId, JSONObject response) {
+                long startedAt = android.os.SystemClock.elapsedRealtime();
                 JSONArray categoryRows = response.optJSONArray("categories");
-                if (categoryRows == null) { onError(jsonError()); return; }
+                if (categoryRows == null) return;
                 List<Category> categories = new ArrayList<>();
                 List<FoodItem> foods = new ArrayList<>();
                 if (categoryRows != null) for (int i = 0; i < categoryRows.length(); i++) {
@@ -305,21 +353,13 @@ public final class MobileRepository {
                     }
                 }
                 boolean applied = state.replaceBranchCatalog(branchId, categories, foods);
+                android.util.Log.i("CatalogPerf", "map branch=" + branchId + " categories=" + categories.size()
+                        + " dishes=" + foods.size() + " applied=" + applied + " mapMs="
+                        + (android.os.SystemClock.elapsedRealtime() - startedAt));
                 if (com.restaurant.viettable.BuildConfig.DEBUG)
                     android.util.Log.d("CatalogLoad", "menu success branch=" + branchId
                             + " categories=" + categories.size() + " dishes=" + foods.size()
                             + " applied=" + applied + " elapsedMs=" + (android.os.SystemClock.elapsedRealtime() - startedAt));
-                finishMenuRequest(branchId, null);
-            }
-            @Override public void onError(ApiException error) {
-                if (com.restaurant.viettable.BuildConfig.DEBUG)
-                    android.util.Log.d("CatalogLoad", "menu error branch=" + branchId
-                            + " http=" + error.getStatusCode() + " elapsedMs="
-                            + (android.os.SystemClock.elapsedRealtime() - startedAt));
-                state.failCatalogLoad(branchId, error.getMessage());
-                finishMenuRequest(branchId, error);
-            }
-        });
     }
 
     private void finishMenuRequest(String branchId, ApiException error) {
@@ -612,19 +652,29 @@ public final class MobileRepository {
     }
 
     public void loadActiveSession(Callback<DiningSession> callback) {
+        activeSessionRequests.add(callback);
+        if (activeSessionRequests.size() > 1) return;
         api().get("/api/mobile/v1/dining-sessions/active", true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 DiningSession session = parseSession((JSONObject) body); state.setActiveDiningSession(session);
                 loadOrders("active", new Callback<List<Order>>() {
-                    @Override public void onSuccess(List<Order> value) { callback.onSuccess(state.getActiveDiningSession()); }
-                    @Override public void onError(ApiException error) { callback.onSuccess(session); }
+                    @Override public void onSuccess(List<Order> value) { finishActiveSession(state.getActiveDiningSession(), null); }
+                    @Override public void onError(ApiException error) { finishActiveSession(session, null); }
                 });
             }
             @Override public void onError(ApiException error) {
-                if (error.getStatusCode() == 404) { state.setActiveDiningSession(null); callback.onSuccess(null); }
-                else callback.onError(error);
+                if (error.getStatusCode() == 404) { state.setActiveDiningSession(null); finishActiveSession(null, null); }
+                else finishActiveSession(null, error);
             }
         }));
+    }
+
+    private void finishActiveSession(DiningSession session, ApiException error) {
+        List<Callback<DiningSession>> callbacks = new ArrayList<>(activeSessionRequests);
+        activeSessionRequests.clear();
+        for (Callback<DiningSession> callback : callbacks) {
+            if (error == null) finishSuccess(callback, session); else finishError(callback, error);
+        }
     }
 
     public void submitCurrentCart(Callback<Order> callback) {

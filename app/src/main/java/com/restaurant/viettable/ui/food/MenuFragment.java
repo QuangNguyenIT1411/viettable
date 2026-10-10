@@ -50,7 +50,7 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
         binding.tvMenuBranch.setOnClickListener(v -> navigateTo(new ChangeBranchFragment()));
         binding.btnRetryMenuCatalog.setOnClickListener(v -> {
             if (appStateManager.getSelectedBranch() == null) navigateTo(new ChangeBranchFragment());
-            else loadMenu();
+            else loadMenu(true);
         });
 
         if (appStateManager.getSelectedBranch() != null) {
@@ -105,8 +105,12 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
     }
 
     private void loadMenu() {
+        loadMenu(false);
+    }
+
+    private void loadMenu(boolean retry) {
         if (binding != null && appStateManager.getSelectedBranch() != null) {
-            MobileRepository.getInstance().loadMenu(appStateManager.getSelectedBranch().getId(), new MobileRepository.Callback<Void>() {
+            MobileRepository.getInstance().loadMenu(appStateManager.getSelectedBranch().getId(), retry, new MobileRepository.Callback<Void>() {
                 @Override public void onSuccess(Void value) {
                     if (binding == null) return;
                     renderMenu();

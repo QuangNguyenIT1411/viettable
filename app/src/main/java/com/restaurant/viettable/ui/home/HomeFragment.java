@@ -163,7 +163,7 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         if (appStateManager.isCatalogLoading()) return;
         if (!retry && (branch.getId().equals(appStateManager.getCatalogBranchId())
                 || appStateManager.getCatalogError() != null)) return;
-        MobileRepository.getInstance().loadMenu(branch.getId(), new MobileRepository.Callback<Void>() {
+        MobileRepository.getInstance().loadMenu(branch.getId(), retry, new MobileRepository.Callback<Void>() {
             @Override public void onSuccess(Void value) { if (binding != null) setupViews(); }
             @Override public void onError(ApiException error) { if (binding != null) renderCatalogState(); }
         });

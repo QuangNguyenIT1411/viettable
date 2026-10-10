@@ -17,6 +17,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.lang.ref.WeakReference;
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ImageLoader {
 
@@ -24,6 +33,12 @@ public class ImageLoader {
     private final LruCache<String, Bitmap> memoryCache;
     private final ExecutorService executor;
     private final Handler mainHandler;
+    private File diskCache;
+    private final Map<String, List<WeakReference<ImageView>>> pending = new HashMap<>();
+
+    public void initialize(android.content.Context context) {
+        diskCache = new File(context.getApplicationContext().getCacheDir(), "public_images_v1");
+    }
 
     private ImageLoader() {
         int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
@@ -83,19 +98,59 @@ public class ImageLoader {
         }
 
         imageView.setTag(url);
-
+        List<WeakReference<ImageView>> targets = pending.get(url);
+        if (targets != null) { targets.add(new WeakReference<>(imageView)); return; }
+        targets = new ArrayList<>();
+        targets.add(new WeakReference<>(imageView));
+        pending.put(url, targets);
         executor.execute(() -> {
-            Bitmap downloaded = downloadBitmap(url);
+            File file = imageFile(url);
+            Bitmap downloaded = null;
+            if (file != null && file.isFile() && System.currentTimeMillis() - file.lastModified() < 7 * 24 * 60 * 60 * 1000L)
+                downloaded = BitmapFactory.decodeFile(file.getAbsolutePath());
+            if (downloaded == null) {
+                downloaded = downloadBitmap(url);
+                if (downloaded != null && file != null) {
+                    try {
+                        if (diskCache.isDirectory() || diskCache.mkdirs()) {
+                            trimDiskCache();
+                            try (FileOutputStream out = new FileOutputStream(file)) {
+                                downloaded.compress(Bitmap.CompressFormat.JPEG, 85, out);
+                            }
+                        }
+                    } catch (Exception ignored) { /* Network image remains usable if disk is full. */ }
+                }
+            }
+            Bitmap result = downloaded;
             if (downloaded != null) {
                 memoryCache.put(url, downloaded);
-                mainHandler.post(() -> {
-                    Object tag = imageView.getTag();
-                    if (url.equals(tag)) {
-                        imageView.setImageBitmap(downloaded);
-                    }
-                });
             }
+            mainHandler.post(() -> {
+                List<WeakReference<ImageView>> views = pending.remove(url);
+                if (views == null || result == null) return;
+                for (WeakReference<ImageView> reference : views) {
+                    ImageView target = reference.get();
+                    if (target != null && url.equals(target.getTag())) target.setImageBitmap(result);
+                }
+            });
         });
+    }
+
+    private File imageFile(String url) {
+        if (diskCache == null) return null;
+        try {
+            StringBuilder name = new StringBuilder();
+            for (byte b : MessageDigest.getInstance("SHA-256").digest(url.getBytes(StandardCharsets.UTF_8)))
+                name.append(String.format(java.util.Locale.ROOT, "%02x", b));
+            return new File(diskCache, name + ".jpg");
+        } catch (Exception ignored) { return null; }
+    }
+
+    private synchronized void trimDiskCache() {
+        File[] files = diskCache.listFiles((dir, name) -> name.matches("[a-f0-9]{64}\\.jpg"));
+        if (files == null || files.length < 64) return;
+        java.util.Arrays.sort(files, java.util.Comparator.comparingLong(File::lastModified));
+        for (int i = 0; i <= files.length - 64; i++) files[i].delete();
     }
 
     private Bitmap downloadBitmap(String urlString) {

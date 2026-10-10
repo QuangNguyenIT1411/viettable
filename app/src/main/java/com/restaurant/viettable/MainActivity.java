@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         insetsController.setAppearanceLightStatusBars(true);
 
         ApiClient.initialize(getApplicationContext());
+        com.restaurant.viettable.util.ImageLoader.getInstance().initialize(getApplicationContext());
         ApiClient.getInstance().setSessionInvalidatedListener(this::showExpiredSession);
         SignalRManager.getInstance().initialize();
         appStateManager = AppStateManager.getInstance();
@@ -55,9 +56,9 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         appStateManager.setLoggedIn(MobileRepository.getInstance().hasSession());
         appStateManager.addListener(this);
 
-        if (appStateManager.isLoggedIn()) {
-            MobileRepository.getInstance().refreshBootstrap(null);
-        }
+        MobileRepository.getInstance().initializePublicCatalog(getApplicationContext(), () -> {
+            if (appStateManager.isLoggedIn()) MobileRepository.getInstance().refreshBootstrap(null);
+        });
 
         setupSystemBarsAndInsets();
         setupBottomNavigation();

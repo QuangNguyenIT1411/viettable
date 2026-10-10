@@ -35,6 +35,8 @@ public final class ApiClient {
     private final Runnable invalidateAppSession;
     private volatile Runnable sessionInvalidatedListener;
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    // Anonymous Catalog reads must not queue behind slow history/auth refresh requests.
+    private final ExecutorService publicExecutor = Executors.newFixedThreadPool(2);
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private ApiClient(Context context) {
@@ -113,7 +115,8 @@ public final class ApiClient {
                          String idempotencyKey, Callback callback) {
         boolean googleAuthRequest = BuildConfig.DEBUG && "POST".equals(method) && GOOGLE_AUTH_PATH.equals(path);
         if (googleAuthRequest) Log.d(GOOGLE_AUTH_TAG, "Gateway auth request queued; method=POST path=" + GOOGLE_AUTH_PATH);
-        executor.execute(() -> {
+        boolean publicRead = !authenticated && "GET".equals(method);
+        (publicRead ? publicExecutor : executor).execute(() -> {
             try {
                 String attemptedToken = authenticated ? getAccessToken() : "";
                 try {
@@ -169,6 +172,8 @@ public final class ApiClient {
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
         connection.setRequestProperty("X-Correlation-Id", "android-" + UUID.randomUUID());
+        boolean catalogTiming = "GET".equals(method) && path.matches("/api/mobile/v1/branches(?:/[0-9]+/menu)?");
+        long requestStarted = android.os.SystemClock.elapsedRealtime();
         if (authenticated) {
             if (!token.isEmpty()) connection.setRequestProperty("Authorization", "Bearer " + token);
         }
@@ -180,6 +185,7 @@ public final class ApiClient {
         }
 
         int status = connection.getResponseCode();
+        long headersAt = android.os.SystemClock.elapsedRealtime();
         if (BuildConfig.DEBUG) {
             Log.d("VietTableApi", "HTTP response; host=" + target.getHost()
                     + "; method=" + method + "; status=" + status);
@@ -190,6 +196,9 @@ public final class ApiClient {
         String text = read(status >= 200 && status < 300 ? connection.getInputStream() : connection.getErrorStream());
         connection.disconnect();
         Object parsed = text.isEmpty() ? new JSONObject() : new JSONTokener(text).nextValue();
+        if (catalogTiming) Log.i("CatalogPerf", "http path=" + path + " status=" + status
+                + " ttfbMs=" + (headersAt - requestStarted) + " totalMs="
+                + (android.os.SystemClock.elapsedRealtime() - requestStarted) + " chars=" + text.length());
         if (status < 200 || status >= 300) {
             JSONObject error = parsed instanceof JSONObject ? (JSONObject) parsed : new JSONObject();
             throw new ApiException(status, error.optString("code", "request_failed"),
