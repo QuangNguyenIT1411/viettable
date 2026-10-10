@@ -1,5 +1,8 @@
 package com.restaurant.viettable.data;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import com.restaurant.viettable.BuildConfig;
 import com.restaurant.viettable.model.*;
 
 import java.util.ArrayList;
@@ -16,6 +19,44 @@ public class AppStateManager {
 
     private User currentUser;
     private Branch selectedBranch;
+    private SharedPreferences branchPreferences;
+    private String restoredBranchId;
+    private String catalogBranchId;
+    private String loadingCatalogBranchId;
+    private String catalogError;
+
+    public void initializeBranchSelection(Context context) {
+        // Selection is non-sensitive and isolated by Gateway environment; tokens use their own vault.
+        branchPreferences = context.getApplicationContext().getSharedPreferences(
+                "branch_selection_" + Integer.toHexString(BuildConfig.API_BASE_URL.hashCode()), Context.MODE_PRIVATE);
+        restoredBranchId = branchPreferences.getString("selectedBranchId", null);
+    }
+
+    public String getCatalogBranchId() { return catalogBranchId; }
+    public String getCatalogError() { return catalogError; }
+    public boolean isCatalogLoading() {
+        return selectedBranch != null && selectedBranch.getId().equals(loadingCatalogBranchId);
+    }
+    public void beginCatalogLoad(String branchId) {
+        if (selectedBranch == null || !selectedBranch.getId().equals(branchId)) return;
+        loadingCatalogBranchId = branchId;
+        catalogError = null;
+        notifyStateChanged();
+    }
+    public void failCatalogLoad(String branchId, String message) {
+        if (selectedBranch == null || !selectedBranch.getId().equals(branchId)) return;
+        loadingCatalogBranchId = null;
+        catalogError = message;
+        notifyStateChanged();
+    }
+    public boolean replaceBranchCatalog(String branchId, List<Category> values, List<FoodItem> foods) {
+        if (selectedBranch == null || !selectedBranch.getId().equals(branchId)) return false;
+        catalogBranchId = branchId;
+        loadingCatalogBranchId = null;
+        catalogError = null;
+        replaceCatalog(values, foods);
+        return true;
+    }
     private final List<Branch> branches = new ArrayList<>();
     private final List<Category> categories = new ArrayList<>();
     private final List<FoodItem> foodItems = new ArrayList<>();
@@ -68,8 +109,15 @@ public class AppStateManager {
         if (selectedBranch != null && !selectedBranch.getId().equals(branch.getId())) {
             // If branch changes, clear cart
             cartItems.clear();
+            categories.clear();
+            foodItems.clear();
+            catalogBranchId = null;
+            loadingCatalogBranchId = null;
+            catalogError = null;
         }
         this.selectedBranch = branch;
+        restoredBranchId = branch.getId();
+        if (branchPreferences != null) branchPreferences.edit().putString("selectedBranchId", restoredBranchId).apply();
         notifyStateChanged();
     }
 
@@ -83,12 +131,19 @@ public class AppStateManager {
     public List<Order> getPastOrders() { return pastOrders; }
 
     public void replaceBranches(List<Branch> values) {
-        String selectedId = selectedBranch == null ? null : selectedBranch.getId();
+        String selectedId = selectedBranch == null ? restoredBranchId : selectedBranch.getId();
         branches.clear();
         branches.addAll(values);
         selectedBranch = null;
         for (Branch branch : branches) if (branch.getId().equals(selectedId)) selectedBranch = branch;
         if (selectedBranch == null && !branches.isEmpty()) selectedBranch = branches.get(0);
+        if (selectedBranch == null || (catalogBranchId != null && !selectedBranch.getId().equals(catalogBranchId))) {
+            categories.clear();
+            foodItems.clear();
+            catalogBranchId = null;
+            loadingCatalogBranchId = null;
+            catalogError = null;
+        }
         notifyStateChanged();
     }
 

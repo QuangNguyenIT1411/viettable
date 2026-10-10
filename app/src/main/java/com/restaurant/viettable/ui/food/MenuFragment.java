@@ -20,6 +20,8 @@ import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.session.DineinCartFragment;
 import com.restaurant.viettable.ui.home.SearchFragment;
+import com.restaurant.viettable.R;
+import com.restaurant.viettable.ui.branch.ChangeBranchFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,7 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
     private FragmentMenuBinding binding;
     private final List<FoodItem> displayedFoods = new ArrayList<>();
     private FoodAdapter adapter;
+    private boolean renderingTabs;
 
     @Nullable
     @Override
@@ -44,6 +47,11 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
         binding.btnSearchMenu.setOnClickListener(v -> navigateTo(new SearchFragment()));
+        binding.tvMenuBranch.setOnClickListener(v -> navigateTo(new ChangeBranchFragment()));
+        binding.btnRetryMenuCatalog.setOnClickListener(v -> {
+            if (appStateManager.getSelectedBranch() == null) navigateTo(new ChangeBranchFragment());
+            else loadMenu();
+        });
 
         if (appStateManager.getSelectedBranch() != null) {
             binding.tvMenuBranch.setText(appStateManager.getSelectedBranch().getName());
@@ -92,17 +100,16 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
 
         updateCartBottomBar();
 
-        if (appStateManager.getSelectedBranch() != null) {
+        renderMenu();
+        loadMenu();
+    }
+
+    private void loadMenu() {
+        if (binding != null && appStateManager.getSelectedBranch() != null) {
             MobileRepository.getInstance().loadMenu(appStateManager.getSelectedBranch().getId(), new MobileRepository.Callback<Void>() {
                 @Override public void onSuccess(Void value) {
                     if (binding == null) return;
-                    binding.tabLayoutCategories.removeAllTabs();
-                    binding.tabLayoutCategories.addTab(binding.tabLayoutCategories.newTab().setText("Tất cả"));
-                    for (Category category : appStateManager.getCategories())
-                        binding.tabLayoutCategories.addTab(binding.tabLayoutCategories.newTab().setText(category.getName()));
-                    displayedFoods.clear();
-                    displayedFoods.addAll(appStateManager.getFoodItems());
-                    adapter.notifyDataSetChanged();
+                    renderMenu();
                     if (MobileRepository.getInstance().hasSession()) {
                         MobileRepository.getInstance().loadFavorites(new MobileRepository.Callback<Void>() {
                             @Override public void onSuccess(Void ignored) {}
@@ -110,12 +117,42 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
                         });
                     }
                 }
-                @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
+                @Override public void onError(ApiException error) { if (binding != null) renderMenu(); }
             });
         }
     }
 
+    private void renderMenu() {
+        if (binding == null || adapter == null) return;
+        binding.tvMenuBranch.setText(appStateManager.getSelectedBranch() == null
+                ? getString(R.string.catalog_select_branch) : appStateManager.getSelectedBranch().getName());
+        int position = Math.max(0, binding.tabLayoutCategories.getSelectedTabPosition());
+        renderingTabs = true;
+        binding.tabLayoutCategories.removeAllTabs();
+        binding.tabLayoutCategories.addTab(binding.tabLayoutCategories.newTab().setText("Tất cả"));
+        for (Category category : appStateManager.getCategories())
+            binding.tabLayoutCategories.addTab(binding.tabLayoutCategories.newTab().setText(category.getName()));
+        position = Math.min(position, appStateManager.getCategories().size());
+        binding.tabLayoutCategories.selectTab(binding.tabLayoutCategories.getTabAt(position));
+        renderingTabs = false;
+        filterByCategory(position);
+        boolean loading = appStateManager.isCatalogLoading();
+        String error = appStateManager.getCatalogError();
+        boolean empty = appStateManager.getFoodItems().isEmpty();
+        binding.layoutMenuState.setVisibility(loading || error != null || empty ? View.VISIBLE : View.GONE);
+        binding.progressMenuCatalog.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.tvMenuCatalogState.setText(loading ? getString(R.string.catalog_loading) : error != null ? error
+                : appStateManager.getSelectedBranch() == null ? getString(R.string.catalog_select_branch)
+                : getString(R.string.catalog_empty));
+        binding.btnRetryMenuCatalog.setVisibility(!loading && (error != null || appStateManager.getSelectedBranch() == null)
+                ? View.VISIBLE : View.GONE);
+        binding.btnRetryMenuCatalog.setText(appStateManager.getSelectedBranch() == null
+                ? R.string.catalog_select_branch : R.string.catalog_retry);
+        binding.rvMenuFoods.setVisibility(empty ? View.GONE : View.VISIBLE);
+    }
+
     private void filterByCategory(int position) {
+        if (renderingTabs || adapter == null || position < 0 || position > appStateManager.getCategories().size()) return;
         displayedFoods.clear();
         if (position == 0) {
             displayedFoods.addAll(appStateManager.getFoodItems());
@@ -147,6 +184,7 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
     public void onStateChanged() {
         if (isAdded()) {
             updateCartBottomBar();
+            renderMenu();
         }
     }
 

@@ -438,6 +438,30 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <ProgressBar
+            android:id="@+id/progressCatalog"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+        <TextView
+            android:id="@+id/tvCatalogState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:gravity="center"
+            android:accessibilityLiveRegion="polite"
+            android:textColor="@color/text_primary"
+            android:visibility="gone" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRetryCatalog"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/catalog_retry"
+            android:visibility="gone" />
+
         <!-- Category Section -->
         <LinearLayout
             android:layout_width="match_parent"

@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         ApiClient.getInstance().setSessionInvalidatedListener(this::showExpiredSession);
         SignalRManager.getInstance().initialize();
         appStateManager = AppStateManager.getInstance();
+        appStateManager.initializeBranchSelection(getApplicationContext());
         appStateManager.setLoggedIn(MobileRepository.getInstance().hasSession());
         appStateManager.addListener(this);
 

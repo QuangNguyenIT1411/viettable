@@ -121,6 +121,23 @@
         android:textSize="14sp"
         android:textStyle="bold" />
 
+    <TextView
+        android:id="@+id/tvBranchChoiceState"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:gravity="center"
+        android:accessibilityLiveRegion="polite"
+        android:textColor="@color/text_primary"
+        android:visibility="gone" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRetryBranchChoice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/catalog_retry"
+        android:visibility="gone" />
+
     <!-- Other Branches List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvOtherBranches"

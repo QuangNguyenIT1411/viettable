@@ -245,4 +245,8 @@
     <string name="state_no_notifications">Bạn chưa có thông báo nào trong mục này.</string>
     <string name="state_no_reservations">Bạn chưa có lịch đặt bàn trong mục này.</string>
     <string name="state_no_active_session">Bạn chưa có phiên dùng bữa đang hoạt động.</string>
+    <string name="catalog_select_branch">Chọn chi nhánh để xem thực đơn</string>
+    <string name="catalog_loading">Đang tải danh mục và món ăn…</string>
+    <string name="catalog_empty">Chi nhánh này chưa có món ăn.</string>
+    <string name="catalog_retry">Thử lại</string>
 </resources>

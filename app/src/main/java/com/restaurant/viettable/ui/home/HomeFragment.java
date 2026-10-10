@@ -29,6 +29,7 @@ import com.restaurant.viettable.ui.preorder.PreorderMenuFragment;
 import com.restaurant.viettable.ui.reservation.ResDetailFragment;
 import com.restaurant.viettable.ui.session.DineinMenuFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.network.ApiException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,8 @@ import java.util.List;
 public class HomeFragment extends BaseFragment implements AppStateManager.StateChangeListener {
 
     private FragmentHomeBinding binding;
+    private boolean loadingBranches;
+    private String branchError;
 
     public static HomeFragment newInstance() {
         return new HomeFragment();
@@ -54,6 +57,8 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         super.onViewCreated(view, savedInstanceState);
         appStateManager.addListener(this);
         setupViews();
+        binding.btnRetryCatalog.setOnClickListener(v -> loadCatalog(true));
+        loadCatalog(false);
     }
 
     private void setupViews() {
@@ -61,9 +66,8 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
 
         // 1. Header Branch
         Branch branch = appStateManager.getSelectedBranch();
-        if (branch != null) {
-            binding.tvHeaderBranchName.setText(branch.getName());
-        }
+        if (branch != null) branchError = null;
+        binding.tvHeaderBranchName.setText(branch == null ? getString(R.string.catalog_select_branch) : branch.getName());
         binding.btnHeaderBranch.setOnClickListener(v -> navigateTo(new ChangeBranchFragment()));
         binding.btnHeaderSearch.setOnClickListener(v -> navigateTo(new SearchFragment()));
         binding.btnHeaderNotification.setOnClickListener(v -> navigateTo(new NotificationFragment()));
@@ -129,6 +133,53 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
 
         // 6. Food Sections
         setupFoodRecyclers();
+        renderCatalogState();
+    }
+
+    private void loadCatalog(boolean retry) {
+        if (binding == null || loadingBranches) return;
+        Branch branch = appStateManager.getSelectedBranch();
+        if (branch == null) {
+            if (!appStateManager.getBranches().isEmpty()) return;
+            if (!retry && branchError != null) return;
+            loadingBranches = true;
+            branchError = null;
+            renderCatalogState();
+            MobileRepository.getInstance().loadBranches(new MobileRepository.Callback<List<Branch>>() {
+                @Override public void onSuccess(List<Branch> branches) {
+                    loadingBranches = false;
+                    if (binding == null) return;
+                    setupViews();
+                    loadCatalog(false);
+                }
+                @Override public void onError(ApiException error) {
+                    loadingBranches = false;
+                    branchError = apiError(error);
+                    if (binding != null) renderCatalogState();
+                }
+            });
+            return;
+        }
+        if (appStateManager.isCatalogLoading()) return;
+        if (!retry && (branch.getId().equals(appStateManager.getCatalogBranchId())
+                || appStateManager.getCatalogError() != null)) return;
+        MobileRepository.getInstance().loadMenu(branch.getId(), new MobileRepository.Callback<Void>() {
+            @Override public void onSuccess(Void value) { if (binding != null) setupViews(); }
+            @Override public void onError(ApiException error) { if (binding != null) renderCatalogState(); }
+        });
+    }
+
+    private void renderCatalogState() {
+        if (binding == null) return;
+        boolean loading = loadingBranches || appStateManager.isCatalogLoading();
+        String error = branchError != null ? branchError : appStateManager.getCatalogError();
+        boolean empty = appStateManager.getFoodItems().isEmpty();
+        binding.progressCatalog.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.tvCatalogState.setVisibility(loading || error != null || empty ? View.VISIBLE : View.GONE);
+        binding.tvCatalogState.setText(loading ? getString(R.string.catalog_loading)
+                : error != null ? error : appStateManager.getSelectedBranch() == null
+                ? getString(R.string.catalog_select_branch) : getString(R.string.catalog_empty));
+        binding.btnRetryCatalog.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
     }
 
     private void setupCategories() {
@@ -198,6 +249,7 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
     public void onStateChanged() {
         if (isAdded()) {
             setupViews();
+            loadCatalog(false);
         }
     }
 
