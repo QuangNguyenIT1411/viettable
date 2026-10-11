@@ -2095,6 +2095,7 @@ public sealed class OrdersController : ControllerBase
         var orders = await _db.Orders
             .AsNoTracking()
             .Include(o => o.Status)
+            .AsSingleQuery()
             .Where(o => o.TableID != null && branchTableIds.Contains(o.TableID.Value) && o.OrderTime >= fromDate)
             .OrderByDescending(o => o.CompletedTime ?? o.OrderTime)
             .Take(take)
@@ -2107,6 +2108,12 @@ public sealed class OrdersController : ControllerBase
                 tableId = o.TableID,
                 statusCode = o.Status.StatusCode,
                 statusName = o.Status.StatusName,
+                // Page orders first; project their items in the same owner query.
+                // Keep chef-item filtering after the order page, as before.
+                items = _db.OrderItems.Where(i => i.OrderID == o.OrderID
+                    && (!employeeId.HasValue || employeeId.Value <= 0 || i.ChefId == employeeId.Value))
+                    .Select(i => new { orderId = i.OrderID, dishId = i.DishID,
+                        quantity = i.Quantity, note = i.Note, chefId = i.ChefId }).ToList(),
             })
             .ToListAsync(cancellationToken);
 
@@ -2125,28 +2132,7 @@ public sealed class OrdersController : ControllerBase
                 ?.FirstOrDefault()?.Name ?? $"Chi nhánh {branchId}"
             : string.Empty;
 
-        var orderIds = filteredOrders.Select(o => o.orderId).ToList();
-        
-        // Query OrderItems and filter by ChefId if specified
-        var itemsQuery = _db.OrderItems
-            .AsNoTracking()
-            .Where(i => orderIds.Contains(i.OrderID));
-        
-        if (employeeId.HasValue && employeeId.Value > 0)
-        {
-            itemsQuery = itemsQuery.Where(i => i.ChefId == employeeId.Value);
-        }
-        
-        var items = await itemsQuery
-            .Select(i => new
-            {
-                orderId = i.OrderID,
-                dishId = i.DishID,
-                quantity = i.Quantity,
-                note = i.Note,
-                chefId = i.ChefId,
-            })
-            .ToListAsync(cancellationToken);
+        var items = orders.SelectMany(o => o.items).ToList();
         
         // If filtering by chef, only include orders that have at least one item from this chef
         if (employeeId.HasValue && employeeId.Value > 0)

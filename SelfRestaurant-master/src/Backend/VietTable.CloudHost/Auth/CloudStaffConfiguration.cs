@@ -44,6 +44,8 @@ public static class CloudStaffConfiguration
     }
     private sealed class StaffValidator(CloudIdentityBoundary identity) : IStaffCookieValidator
     {
+        public Task<string?> ValidateVersionAsync(int id, string role, int branch, string hash, CancellationToken ct) =>
+            identity.ValidateStaffVersionAsync(id, role, branch, hash, ct);
         public Task<string?> VersionAsync(int id, string role, int branch, CancellationToken ct) => identity.StaffVersionAsync(id, role, branch, ct);
         public Task<bool> IsRevokedAsync(string hash, CancellationToken ct) => identity.StaffTicketRevokedAsync(hash, ct);
         public Task RevokeAsync(string hash, DateTimeOffset expiry, CancellationToken ct) => identity.RevokeStaffTicketAsync(hash, expiry, ct);

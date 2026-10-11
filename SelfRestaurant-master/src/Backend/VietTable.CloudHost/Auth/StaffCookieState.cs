@@ -42,7 +42,8 @@ public interface IStaffCookieValidator
     Task RevokeAsync(string ticketHash, DateTimeOffset expiry, CancellationToken ct);
     async Task<string?> ValidateVersionAsync(int employeeId, string role, int branch, string ticketHash, CancellationToken ct)
     {
-        // The CloudHost implementation uses separate Identity scopes. Neither live
+        // Compatibility fallback for validators with independent owner scopes.
+        // CloudHost overrides this with one live Identity statement; neither
         // revocation nor role/branch/version validation is cached or skipped.
         var revoked = IsRevokedAsync(ticketHash, ct);
         var version = VersionAsync(employeeId, role, branch, ct);

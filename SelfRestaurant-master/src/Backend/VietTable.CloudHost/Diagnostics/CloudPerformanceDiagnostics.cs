@@ -69,6 +69,8 @@ public sealed class CloudPerformanceDiagnostics : IObserver<DiagnosticListener>,
         private string provider = "unobserved";
         private int disposed;
         private readonly System.Collections.Concurrent.ConcurrentDictionary<string, long> phases = new();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ReadTotals> reads = new();
+        private sealed record ReadTotals(long QueryTicks, long ConnectionTicks, int Queries);
         internal Measurement(string owner, string phase, Measurement? linkedParent = null)
         {
             // The caller supplies fixed module/phase names, not user identifiers.
@@ -90,13 +92,23 @@ public sealed class CloudPerformanceDiagnostics : IObserver<DiagnosticListener>,
         {
             // Fixed code-owned names only. Nested/parallel durations are sums,
             // not additive wall-clock partitions.
-            if (name is "staff-auth" or "cookie-authenticate" or "live-staff-validation" or "action" or "result")
+            if (name is "staff-auth" or "cookie-authenticate" or "live-staff-validation" or "action" or "result" || IsRead(name))
                 phases.AddOrUpdate(name, ticks, (_, previous) => previous + ticks);
             parent?.RecordPhase(name, ticks);
         }
+        private static bool IsRead(string name) => name is "read-chef-orders" or "read-chef-history"
+            or "read-orders-cashier" or "read-billing-cashier" or "read-cashier-report" or "read-invoices";
+        private void RecordRead(string name, ReadTotals value)
+        {
+            reads.AddOrUpdate(name, value, (_, previous) => new(previous.QueryTicks + value.QueryTicks,
+                previous.ConnectionTicks + value.ConnectionTicks, previous.Queries + value.Queries));
+            parent?.RecordRead(name, value);
+        }
         public string ServerTiming => FormattableString.Invariant(
             $"app-preheaders;dur={clock.Elapsed.TotalMilliseconds:F1}, sql-sum;dur={TimeSpan.FromTicks(Interlocked.Read(ref queryTicks)).TotalMilliseconds:F1}, connect-sum;dur={TimeSpan.FromTicks(Interlocked.Read(ref connectionTicks)).TotalMilliseconds:F1}, sql-count;desc=\"{Volatile.Read(ref queries)}\", context-count;desc=\"{Volatile.Read(ref contexts)}\"")
-            + string.Concat(phases.OrderBy(x => x.Key).Select(x => FormattableString.Invariant($", {x.Key}-sum;dur={TimeSpan.FromTicks(x.Value).TotalMilliseconds:F1}")));
+            + string.Concat(phases.OrderBy(x => x.Key).Select(x => FormattableString.Invariant($", {x.Key}-sum;dur={TimeSpan.FromTicks(x.Value).TotalMilliseconds:F1}")))
+            + string.Concat(reads.OrderBy(x => x.Key).Select(x => FormattableString.Invariant(
+                $", {x.Key}-sql;dur={TimeSpan.FromTicks(x.Value.QueryTicks).TotalMilliseconds:F1}, {x.Key}-connect;dur={TimeSpan.FromTicks(x.Value.ConnectionTicks).TotalMilliseconds:F1}, {x.Key}-count;desc=\"{x.Value.Queries}\"")));
         public string Summary => FormattableString.Invariant(
             $"CloudPerformance owner={owner} phase={phase} elapsedMs={clock.ElapsedMilliseconds} queryCount={queries} queryMs={TimeSpan.FromTicks(queryTicks).TotalMilliseconds:F1} connectionCount={connections} connectionMs={TimeSpan.FromTicks(connectionTicks).TotalMilliseconds:F1} contextCount={contexts} provider={provider}");
         public void Dispose()
@@ -104,6 +116,8 @@ public sealed class CloudPerformanceDiagnostics : IObserver<DiagnosticListener>,
             if (Interlocked.Exchange(ref disposed, 1) != 0) return;
             clock.Stop(); Current.Value = parent;
             parent?.RecordPhase(phase, clock.Elapsed.Ticks);
+            if (IsRead(phase)) parent?.RecordRead(phase, new(Interlocked.Read(ref queryTicks),
+                Interlocked.Read(ref connectionTicks), Volatile.Read(ref queries)));
             Console.WriteLine(Summary);
         }
     }

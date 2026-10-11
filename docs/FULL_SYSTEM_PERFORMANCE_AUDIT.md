@@ -860,3 +860,197 @@ instance/request identifiers for the next failure instead of hiding evidence.
 diagnostics tested, but first requests remain high, historical failure cause and
 final WSS/Recovery/Samsung/browser gates are not fully established. Vercel skills
 guided explicit Preview targeting and withholding alias promotion until acceptance.
+
+## L. First authenticated request and per-read investigation — 2026-10-12
+
+Base: `59f1f9a`. Stable alias is unchanged. No user order/payment/session mutation,
+app-data clear, recovery scheduler, Production deployment, push or paid scaling.
+
+### Verified causes, not additive guesses
+
+Baseline Chef request `d9e22e4302204c0d9b0648601513e4e0`, instance
+`9288b1ac4cf341e0b0ed2e461c08886d`, sequence 1:
+
+- HTTP 14.348261 s; process age at entry 7,329 ms; app preheaders 5,975.2 ms.
+- Cookie decode 11.7 ms; live staff validation 1,657.0 ms; total auth 1,673.5 ms.
+- SQL count 31, SQL sum 6,683.6 ms, connection sum 3,905.7 ms.
+- MVC result sum 81.9 ms (formatting/buffering, NOT isolated serialization).
+
+Diagnostic Preview `dpl_FJq2SsG65RoA8hWKwif898XPYTfz`, target Preview:
+`https://viettable-9f8mi4209-hienkhanhvu981-7145.vercel.app`.
+Its first Chef request `baef0e35d64f4be0ac35655ad5fac208`, instance
+`f8ee846b3cc64dc085792bbf40fe83ba`, sequence 1:
+
+- HTTP 12.238744 s; process age 6,713 ms; app 4,263.6 ms.
+- Cookie 10.6 ms; live validation 349.8 ms; auth total 365.1 ms.
+- SQL count 30, SQL sum 6,250.1 ms, connection sum 2,561.0 ms.
+- Chef history 3,083.9 ms / 11 commands; active orders 3,617.9 ms / 11 commands.
+- Result sum 88.3 ms. Context initialization count 0 at request scope.
+
+These are individual cold observations, not equal-size cold cohorts or a cold
+latency percentile. The full HTTP time includes startup/edge/network outside the
+request scope. Nested action/SQL/connection durations overlap; do NOT add them.
+Npgsql connection acquisition includes pool/network/TLS; their individual costs
+and PostgreSQL CPU are still not independently measured.
+
+Health on instance `0593c9c5f5bf441f948ea29d00b4ba2b` reports listener ready
+7,266.6 ms; five parallel schema-validation durations sum to 21,679.8 ms.
+Each owner's bootstrap calls validation before listening. Source inspection did
+not find a dashboard calling it again. Mandatory schema checks remain intact;
+there is no justified duplicate-validation removal or auth TTL cache.
+
+### Safe changes
+
+- Identity-owned live validation now projects role/branch/version and an `EXISTS`
+  revocation check in one statement. Active flag, ordinal role equality, branch,
+  expiration and identical auth-version hashing remain enforced every request.
+  No credential/session cache was added. Login/logout paths retain their checks.
+- Preview telemetry adds fixed-name per-read elapsed/SQL/connection/count totals
+  for Chef orders/history, Cashier Orders/Billing/report and invoice history.
+  No SQL text, parameters, credentials, cookies or payloads are logged.
+- Chef history projects the paged Orders and associated OrderItems in one owner
+  query. Branch filtering is before the order page; Chef item filtering still
+  filters eligible orders AFTER that page. Empty orders and response fields remain.
+
+Warm diagnostic Chef: app 2,900.8 ms; history 2,650.5 ms, 9 commands,
+SQL 1,844.5 ms; active orders 2,309.0 ms, 9 commands, SQL 1,873.7 ms.
+Warm Cashier: app 3,004.2 ms; Billing queue 2,705.7 ms, 13 nested commands,
+SQL 2,652.7 ms; Orders subread 1,873.1 ms / 9 commands; report 209.7 ms / 1 command.
+Billing totals INCLUDE the nested Orders read, not additional independent work.
+This locates the warm bottleneck in chained owner reads, not JSON rendering.
+Starting Billing's queue API concurrently with its Bills query is unsafe as-is:
+OrdersApiClient also upserts snapshots with the same scoped Billing DbContext.
+No unsafe parallel EF access or speculative index was introduced.
+
+### Stability protocol and honest failures
+
+All API timings are curl response times, not CLI setup, browser render or Samsung
+data-ready time. Retain instance, request ID, HTTP/curl status and UTC timestamps.
+Percentiles are nearest-rank successful responses, errors counted separately.
+
+A REPL verifier binding lost its bearer before one cohort: 80 history probes
+returned 401 before business SQL (not a reproduced Invoice History exception).
+That cohort is retained as VERIFIER ERROR, not included in authenticated latency.
+The corrected verifier holds deployment-specific credentials in an object in RAM.
+No token was printed, saved or embedded in arguments. Separate authenticated
+cohorts are run rather than retrying these responses and hiding the failures.
+
+Baseline populated history: 20 invoices reads, 20 successes, p50 0.857743 s,
+p95 1.092180 s; 20 order reads, 20 successes, p50 3.017972 s, p95 3.510497 s.
+Earlier this turn, another baseline completed 20/20 each: invoice p50 0.920336 s,
+p95 1.200598 s; orders p50 3.020882 s, p95 3.981680 s. That earlier cohort's RAM
+samples were lost in a tool-kernel interruption; do not use it for paired inference.
+The old historical invoice failure remains UNVERIFIED, not declared fixed.
+
+### Runtime boundaries
+
+- Diagnostic health/readiness 200. Wrong-role Chef/Admin reads and unauthenticated
+  invoice/recovery reads reject with 401. No authorized global cleanup was run.
+- Supabase Storage actual Catalog image: 302 to Supabase, then 200 image/jpeg,
+  123,302 bytes. Redirect alone is not the acceptance.
+- Authenticated customer WSS handshake then fresh reconnect succeed on instances
+  `1f3d48e101554ad99fe1e7a261ad560f` and `12279f093f5b430da88a728fbe7defb9`.
+  No mutation/event was generated: event delivery/fan-out is NOT newly accepted.
+  Two earlier missing-bearer attempts were 401, recorded as verifier auth errors.
+- User's browser tab remains on older `kud4i8fl9` Preview. Dashboard and populated
+  Chef History visibly loaded there; new `9f8mi4209` tab remains Login. This is not
+  final-candidate UI/performance acceptance. API QA re-login can invalidate older
+  QA cookies: Identity StaffLogin updates UpdatedAt, included in auth-version.
+- ADB lists emulator only; Samsung restore/populated histories are BLOCKED by
+  device connection. APK/data unchanged, Samsung stable alias unchanged.
+
+### Tests newly run
+
+CloudHost 74/74 PASS, including live version/revocation/active/role/branch tests,
+per-read nested timing counts, empty history orders, multiple items and Chef-item
+filtering. MobileHistoryReadModelTests rerun: 4/4 PASS. Benchmark metadata/timeout/
+percentile suite 4/4 PASS. Secret scan: 13 candidate text files / 12 DPAPI values
+PASS; git diff --check PASS. Android unchanged:
+previous builds/unit/emulator results are reused, not new Samsung acceptance.
+
+### Final Preview and paired measurements
+
+Final deployment `dpl_rJisdME9DaUh9LJ294uHb8PfxjV1`, READY, verified
+`target=preview`:
+`https://viettable-g2k4k721z-hienkhanhvu981-7145.vercel.app`.
+CLI executed from filtered source context:
+`vercel deploy . --target preview --scope hienkhanhvu981-7145 --yes`.
+Remote build/publish of CloudHost and all three staff frontends succeeded.
+
+| Dashboard API | Before n | Before p50 / p95 (s) | Final n | Final p50 / p95 (s) | Errors before / after |
+|---|---:|---:|---:|---:|---:|
+| Chef | 5 | 3.639759 / 14.348261 | 5 | 3.453763 / 5.400702 | 0/5 / 0/5 |
+| Cashier | 5 | 3.506332 / 3.764970 | 5 | 3.513057 / 12.955851 | 0/5 / 0/5 |
+| Admin | 5 | 1.346270 / 2.207049 | 5 | 1.312245 / 3.270796 | 0/5 / 0/5 |
+
+These equal-size cohorts INCLUDE first-route/process switches. Before Chef had
+a new process; final Chef was first route AFTER login startup on the same process.
+Final Cashier sample 4 switches to a new process. Thus p95 improvement/regression
+is NOT a controlled cold-start treatment effect. Cashier warm has not materially
+improved; Chef p50 improvement is modest (~5.1%), not proof a smooth UI.
+
+Final Chef instance `a0e94f8d34f0484a9dd4c58aef11f58f`, all five responses:
+5.400702, 3.480455, 3.403510, 3.360982, 3.453763 s. Last four repeat the process:
+history count 8 (previously 9), overall count 25 (previously 27), history SQL
+1,653–1,679 ms, app 2,775–2,858 ms. Extra connection waits 1,806–1,830 ms summed
+over overlapping work remain; the separate pool/TLS wait decomposition is unknown.
+
+Final Cashier: 3.946215, 3.423627, 3.411718, 12.955851, 3.513057 s.
+Sample 4: instance `15157a4d48f34508a9a623c6ddd55c6d`, sequence 1, age 7,354 ms,
+app 4,404.2 ms; auth 373.7 ms (cookie 10.4 / live 359.0), SQL sum 4,159.9 ms,
+connections sum 1,338.7 ms, result sum 109.6 ms. Warm still has 17 commands,
+app ~2,939–3,091 ms, Billing queue ~2,723–2,844 ms. No claim cold is solved.
+
+| History API | Before n | Before p50 / p95 (s) | Diagnostic-after n | After p50 / p95 (s) | Errors |
+|---|---:|---:|---:|---:|---:|
+| Invoices | 20 | 0.857743 / 1.092180 | 20 | 0.871283 / 2.113984 | 0/20 each |
+| Orders | 20 | 3.017972 / 3.510497 | 20 | 3.122405 / 3.317888 | 0/20 each |
+
+History-after uses `9f8mi4209`, before uses `8wtuspd9f`. Customer history source
+is unchanged by the final Chef-history projection; final-candidate history smoke
+is separately recorded, not relabeled as a final 20-read cohort. Before instance
+`447d1148e451498f8f129f203d8dda0e`; all after reads instance
+`cbae1f15b0674bbba9e75fe7500b6f72`. After first invoice took 9.109301 s on sequence
+1 / process age 7,182 ms: app 892.3 ms and SQL 205.9 ms / one query. The 2.113984 s
+outlier at sequence 19 had app 405.7 ms, SQL 199.1 ms, no connection wait; delay
+was outside the measured application interval, not a slow invoice SQL statement.
+All 80 authenticated history responses across these two cohorts were successful;
+the original historical failure remains unproven/unfixed, not concealed by retries.
+
+Every history response time (seconds), preserving order, with the instance mapping
+above; failures zero and no automatic retry:
+
+- Before invoices: 1.244432, .845481, .845541, .903778, 1.092180, .858417,
+  .925810, .857714, .847185, .857743, 1.003353, .851219, .959138, .847954,
+  .835538, .917176, .847527, .967446, .839424, .873238.
+- Before orders: 3.510497, 3.263037, 3.025523, 3.017972, 4.192194, 3.110938,
+  2.954092, 2.947329, 2.957381, 3.083220, 3.056951, 2.941338, 2.955244,
+  2.993596, 3.125580, 3.006875, 3.058964, 3.000449, 3.051850, 2.969369.
+- After invoices: 9.109301, .853937, .856525, .846411, .868009, .838489,
+  .947384, .876614, .974576, 2.113984, .860601, .882333, 1.521275, .977679,
+  .839020, .946237, .847818, .925818, .814237, .871283.
+- After orders: 3.647001, 3.154683, 3.090401, 3.123925, 3.085312, 3.131188,
+  3.071873, 3.248634, 3.119453, 3.110409, 3.242929, 3.053699, 3.317888,
+  3.081252, 3.165952, 3.122405, 3.063604, 3.078795, 3.206538, 3.163104.
+
+Final health 200 / readiness 200, listener ready 6,997.4 ms on instance
+`586fe4a26959443b9fca20d33f9fed2d`. Final authenticated Chef/Cashier/Admin APIs
+5/5 each; wrong-role reads 401. Final invoice/order/menu smoke 200
+(1.407233 / 3.187488 / 1.538686 s), invoice payload 13 items. Final WSS handshake
+and reconnect both succeed on `a0e94f8d34f0484a9dd4c58aef11f58f`.
+This does not assert new event delivery or recovery-cleanup acceptance.
+
+One intermediate Chef benchmark cohort was 5/5 rejected after the user logged
+into that QA account on the older Preview. StaffLogin's UpdatedAt/version change
+explains invalidation; those 401s are not treated as fast dashboard reads. Final
+authenticated cohort was rerun with a fresh legitimate QA cookie before UI handoff.
+
+**VIETTABLE REAL-WORLD PERFORMANCE: PARTIAL**. Auth first-use and Chef history
+reads were reduced safely, but first-process and warm dashboard latency remain
+material, historical invoice failure is unreproduced, and final staff browser,
+Samsung and non-mutating recovery/event-delivery gates are not all accepted.
+Stable alias is deliberately NOT changed. No claim of a fixed platform limit:
+network/TLS/pool subcomponents need deeper evidence before further changes.
+Read-only alias inspection confirms it still resolves to Preview
+`dpl_4CiTfSuo4LhKb2fjFJSX4zaWKTgH` (`viettable-o9udbp2p9`), not either new candidate.
+Final browser tab was opened on `g2k4k721z` and is still at Chef Login at handoff.

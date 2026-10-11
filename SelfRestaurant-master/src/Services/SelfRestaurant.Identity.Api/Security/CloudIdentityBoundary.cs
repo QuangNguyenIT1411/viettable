@@ -46,6 +46,25 @@ public sealed class CloudIdentityBoundary(IServiceScopeFactory scopes) : IXmlRep
             employee.Password + "|" + employee.RoleID + "|" + employee.BranchID + "|" + employee.UpdatedAt?.Ticks)));
     }
 
+    // Live validation remains mandatory on every request. A single Identity-owned
+    // statement observes role/branch/version AND revocation; no TTL/auth cache.
+    public async Task<string?> ValidateStaffVersionAsync(int employeeId, string role, int branch, string hash, CancellationToken ct)
+    {
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        var now = DateTime.UtcNow;
+        var employee = await db.Employees.AsNoTracking()
+            .Where(x => x.EmployeeID == employeeId && x.IsActive == true)
+            .Select(x => new { x.Password, x.RoleID, x.BranchID, x.UpdatedAt,
+                RoleCode = x.Role.RoleCode,
+                Revoked = db.CloudStaffRevocations.Any(ticket => ticket.TicketHash == hash && ticket.ExpiresAtUtc > now) })
+            .SingleOrDefaultAsync(ct);
+        // Keep ordinal role equality independent of a database's collation.
+        if (employee is null || employee.Revoked || employee.BranchID != branch || employee.RoleCode != role) return null;
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
+            employee.Password + "|" + employee.RoleID + "|" + employee.BranchID + "|" + employee.UpdatedAt?.Ticks)));
+    }
+
     public IReadOnlyCollection<XElement> GetAllElements()
     {
         using var scope = scopes.CreateScope();

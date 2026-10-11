@@ -50,4 +50,18 @@ public sealed class StartupPhaseDiagnosticsTests
         using var independent = CloudPerformanceDiagnostics.Begin("Gateway", "independent");
         Assert.Contains("sql-count;desc=\"0\"", independent.ServerTiming);
     }
+
+    [Fact]
+    public void Read_timings_keep_nested_sql_counts_without_exposing_action_input()
+    {
+        using var parent = CloudPerformanceDiagnostics.Begin("Gateway", "request");
+        using (var read = CloudPerformanceDiagnostics.Begin("MVC", "read-chef-orders"))
+        {
+            using var nested = CloudPerformanceDiagnostics.Begin("Catalog", "action");
+            nested.RecordQuery(TimeSpan.FromMilliseconds(12));
+        }
+        Assert.Contains("read-chef-orders-count;desc=\"1\"", parent.ServerTiming);
+        Assert.Contains("read-chef-orders-sql;dur=12.0", parent.ServerTiming);
+        Assert.Contains("sql-count;desc=\"1\"", parent.ServerTiming);
+    }
 }
