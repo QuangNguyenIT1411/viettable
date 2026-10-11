@@ -31,10 +31,15 @@ public static class CatalogDbBootstrapper
         ILogger logger,
         CancellationToken cancellationToken = default)
     {
+        using var contextTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Catalog", "context-resolution");
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        contextTiming?.Dispose();
 
-        if (db.Database.IsNpgsql())
+        using var providerTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Catalog", "context-provider-init");
+        var isPostgres = db.Database.IsNpgsql();
+        providerTiming?.Dispose();
+        if (isPostgres)
         {
             await SelfRestaurant.CloudCompatibility.PostgresBootstrap.ValidateOrMigrateAsync(db,
                 scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(), cancellationToken);

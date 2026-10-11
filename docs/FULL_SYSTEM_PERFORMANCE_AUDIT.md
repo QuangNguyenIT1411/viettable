@@ -469,3 +469,122 @@ UNVERIFIED this round. No successful API read is substituted for these acceptanc
 
 **VIETTABLE FULL SYSTEM PERFORMANCE: PARTIAL. Stable alias unchanged; no Production,
 keep-alive, paid scaling, automatic recovery scheduler, database reset or push.**
+
+## I. Startup root-cause investigation — 2026-10-11 (PARTIAL)
+
+This round is restricted to CloudHost startup and read-only candidate verification.
+No Android/React source was changed. The existing `.idea` changes and pending
+static-routing work were preserved.
+
+### Direct runtime evidence
+
+Candidate 1: `dpl_FDDjds177Qt6EpQ2h1FHPhckQ4yR`,
+`https://viettable-f1bau7tkq-hienkhanhvu981-7145.vercel.app`.
+Final candidate: `dpl_CMLqcKJCqQN1SbHmKt3GpNmeoLhC`,
+`https://viettable-cmi9haokw-hienkhanhvu981-7145.vercel.app`.
+Both inspected as **target=preview, READY**. Deploy command was
+`vercel deploy . --target preview --scope hienkhanhvu981-7145 --yes` from
+separately prepared, reviewed, linked contexts; no Production or alias operation.
+
+Preview health exposes fixed-name numeric `Server-Timing` phase metadata to
+provide direct measurements despite the CLI runtime log reads still returning
+zero records. No SQL, parameters, identity, cookie, token, certificate content or
+connection string is projected to that header. Modules also log these phases.
+
+| Final candidate phase | Catalog | Orders | Customers | Identity | Billing |
+|---|---:|---:|---:|---:|---:|
+| CreateBuilder (ms) | 81.2 | 3.6 | 2.4 | 1.7 | 2.4 |
+| Registrations/config (ms) | 27.2 | 2.2 | 1.1 | 7.6 | 1.9 |
+| builder.Build (ms) | 33.7 | 6.2 | 28.6 | 1.6 | 2.3 |
+| DbContext resolution (ms) | 128.0 | 2.3 | 1.9 | 2.0 | 2.2 |
+| Database/provider initialization (ms) | 894.8 | 108.5 | 112.9 | 113.6 | 87.0 |
+| Bootstrap total (ms) | 5363.0 | 4202.4 | 4030.4 | 4137.1 | 4191.3 |
+
+PostgreSQL pending-migrations I/O totaled **20294.9 ms across five overlapping
+module checks**; schema validation total was 20417.6 ms. They are nested durations,
+not additional wall-clock time. The earlier instrumented candidate independently
+showed similar bootstrap (3984.7–5380.5 ms) and pending-migrations I/O total 20102.7 ms.
+Gateway CreateBuilder/build/registrations were 3.8/11.4/50.1 ms. Identity JWT
+registration was 5.8 ms (included in registrations, not added again).
+
+**Proven cause:** each PostgreSQL bootstrap calls `GetPendingMigrationsAsync`
+even when apply-migrations is false. Resolving DbContext is eager but does not itself
+prove a connection. Provider/context initialization and actual schema I/O are now
+measured separately. The preceding sequential application startup waited for five
+approximately four-second schema checks. DI registration and builder.Build are
+not the principal measured bottleneck. Seed/migration execution was not removed
+or made implicit; production/migration/seed composition remains sequential.
+
+**Fix:** all five independent owner modules start their required schema checks
+concurrently only under the safe Preview/Postgres/no-migration/None-seed guard.
+Gateway does not start until all owners finish. A required owner's failure fails
+the composition; readiness checks remain real database checks. No security check,
+schema validation, TLS policy, ownership boundary, pool limit or timeout was skipped.
+
+### Startup benchmark and remaining measurement limits
+
+- Before: direct preceding application-listener measurements **22.524 / 23.317 s**;
+  first-request HTTP totals typically 24–30 s (section H).
+- After: first instrumented candidate health HTTP **9.048 s**; a fresh-instance
+  health on final candidate **8.731 s**. These demonstrate reduced observed startup
+  request latency, not exact .NET-only wall-clock duration. A 0.585 s initial read
+  of final candidate was already warm and is explicitly excluded from cold samples.
+- Final readiness: **200**, 1.903 s on a warm sample.
+- ApplicationStarted/main-entry logs and a direct listener-ready timing were added,
+  but the listener-ready/certificate-registration values were absent from the served
+  header in this round. Their runtime execution/projection remains **UNVERIFIED**;
+  no exact new application critical-path total is invented from nested durations.
+- Process creation, pre-Main .NET runtime, platform/container provisioning, isolated
+  Npgsql pool wait, pooler wait, TLS and DataProtection initialization remain individually
+  **UNVERIFIED**. Connection duration in EF instrumentation combines pool/network/TLS.
+  Runtime `iad1` and Supabase Sydney are unchanged; geography is not a measured TLS cause.
+
+### Read-only regression / warm API evidence
+
+QA credentials stayed in DPAPI and process-memory stdin only. No password of
+`chef_hung` or the Samsung account was read/guessed/reset. A mistaken diagnostic
+Chef login URL returned 404; source inspection corrected it to the existing shared
+staff login route, producing 200 and a real cookie. The 404 is not an app regression.
+
+| Read | Previous warm median | New subsequent samples | Interpretation |
+|---|---:|---|---|
+| Chef dashboard | 3.868 s | 3.652 / 3.529 s | Candidate 1; n=2 median 3.591 s, not a full performance acceptance |
+| Cashier dashboard | 4.740 s | 3.880 / 3.759 s | Final candidate; n=2 median 3.819 s |
+| Admin dashboard | 1.971 s | 1.541 / 1.466 s | Final candidate; n=2 median 1.503 s |
+
+Initial authenticated reads (Chef 7.764 s; Cashier 7.367 s; Admin 3.905 s) are not
+mixed into those subsequent-read medians. Final candidate Chef login/dashboard
+returned 200 (dashboard sample 6.575 s); Chef credential on Cashier dashboard
+returned 401. Recovery without credential returned 401; it was not executed.
+Mobile hub negotiate without JWT returned 401; this is an auth gate test, **not WSS PASS**.
+Chef/Cashier/Admin positive logins and dashboard reads used their actual QA roles.
+
+Catalog image returned 302 to the existing Supabase public storage origin, whose
+HEAD returned **200 image/jpeg**. This proves media-read regression only, not upload
+or all Storage operations. No orders, sessions, payments, invoices, reservations
+or business-state mutations were submitted. Session #20 / order #38 were not changed.
+
+### Tests and source boundaries
+
+CloudHost tests rerun after source changes: **63/63 PASS** using Docker SDK.
+Coverage includes five guarded startup configurations, independent startup/order,
+required-owner failure, metadata-only diagnostics, cookie revocation/fail-closed
+validation, existing logout/replay, origin and module-transport regression tests.
+Secret scan: **24 candidate text files, 12 DPAPI values, PASS**; values never printed.
+`git diff --check`: PASS. Android 54 tests/emulator 3 tests and three staff builds
+from section H are **reused**, not rerun or turned into new Samsung/browser acceptance.
+
+Runtime-tested startup/instrumentation source and targeted tests can be committed;
+pending staff routing/private cache-header work remains outside that commit.
+The working-tree Preview includes those preserved pending changes as well, so its
+deployment is not asserted to be identical to a clean commit-only build.
+
+### Final acceptance boundaries
+
+**CLOUDHOST STARTUP OPTIMIZATION: PARTIAL.** Root cause and observed HTTP improvement
+are supported by runtime phase evidence, but exact new listener-ready timing,
+authenticated WSS/reconnect, Staff browser UI, durable recovery execution and full
+Samsung session/history performance acceptance remain unverified. Warm SQL/auth/
+serialization breakdown still lacks correlated runtime logs; no speculative query
+plan/index/cache/pool fix was applied. Stable alias stays unchanged. No Production,
+automatic recovery scheduler, database reset, Samsung logout/data clear or push.

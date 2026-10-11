@@ -17,9 +17,12 @@ public static async Task<WebApplication> BuildAsync(string[] args,
     WebApplicationOptions? options = null, Action<WebApplicationBuilder>? configure = null,
     Action<WebApplication>? configurePipeline = null)
 {
+using var createBuilderTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Identity", "create-builder");
 var builder = options is null
     ? WebApplication.CreateBuilder(args)
     : WebApplication.CreateBuilder(options);
+createBuilderTiming?.Dispose();
+using var registrationTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Identity", "registrations");
 configure?.Invoke(builder);
 SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 
@@ -35,6 +38,7 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
+using var jwtTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Identity", "jwt-registration");
 builder.Services.Configure<MobileJwtOptions>(builder.Configuration.GetSection(MobileJwtOptions.SectionName));
 builder.Services.AddSingleton<MobileTokenService>();
 var mobileJwt = builder.Configuration.GetSection(MobileJwtOptions.SectionName).Get<MobileJwtOptions>()
@@ -59,6 +63,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+jwtTiming?.Dispose();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -108,7 +113,10 @@ builder.Services.AddHttpClient<CatalogApiClient>(http =>
     http.Timeout = TimeSpan.FromSeconds(10);
 });
 
+registrationTiming?.Dispose();
+using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Identity", "builder-build");
 var app = builder.Build();
+buildTiming?.Dispose();
 
 if (app.Environment.IsDevelopment())
 {
@@ -116,7 +124,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-await IdentityDbBootstrapper.EnsureReadyAsync(app.Services, app.Logger);
+using (SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Identity", "bootstrap"))
+    await IdentityDbBootstrapper.EnsureReadyAsync(app.Services, app.Logger);
 
 app.Use(async (context, next) =>
 {

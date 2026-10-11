@@ -7,6 +7,7 @@ internal static class DatabaseProvider
 {
     public static void Configure(DbContextOptionsBuilder options, IConfiguration configuration, string owner)
     {
+        using var optionsTiming = CloudHosting.Measure(owner, "database-options-no-io");
         var provider = configuration["Database:Provider"] ?? "SqlServer";
         var connection = configuration.GetConnectionString(owner + "Db");
         if (provider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))

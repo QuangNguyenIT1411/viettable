@@ -12,10 +12,15 @@ public static class BillingDbBootstrapper
         ILogger logger,
         CancellationToken cancellationToken = default)
     {
+        using var contextTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "context-resolution");
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<BillingDbContext>();
+        contextTiming?.Dispose();
 
-        if (db.Database.IsNpgsql())
+        using var providerTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "context-provider-init");
+        var isPostgres = db.Database.IsNpgsql();
+        providerTiming?.Dispose();
+        if (isPostgres)
         {
             await SelfRestaurant.CloudCompatibility.PostgresBootstrap.ValidateOrMigrateAsync(db,
                 scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>(), cancellationToken);

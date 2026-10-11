@@ -40,12 +40,23 @@ public interface IStaffCookieValidator
     Task<string?> VersionAsync(int employeeId, string role, int branch, CancellationToken ct);
     Task<bool> IsRevokedAsync(string ticketHash, CancellationToken ct);
     Task RevokeAsync(string ticketHash, DateTimeOffset expiry, CancellationToken ct);
+    async Task<string?> ValidateVersionAsync(int employeeId, string role, int branch, string ticketHash, CancellationToken ct)
+    {
+        // The CloudHost implementation uses separate Identity scopes. Neither live
+        // revocation nor role/branch/version validation is cached or skipped.
+        var revoked = IsRevokedAsync(ticketHash, ct);
+        var version = VersionAsync(employeeId, role, branch, ct);
+        await Task.WhenAll(revoked, version);
+        return await revoked ? null : await version;
+    }
 }
 
 public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment environment)
 {
     public async Task InvokeAsync(HttpContext context, IStaffCookieValidator validator, IOptionsMonitor<CookieAuthenticationOptions> options)
     {
+        using var authMeasurement = VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.HasScope
+            ? VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.Begin("Gateway", "staff-auth") : null;
         var auth = await context.AuthenticateAsync(StaffCookieState.Scheme);
         var cookieOptions = options.Get(StaffCookieState.Scheme);
         var ticket = cookieOptions.CookieManager.GetRequestCookie(context, cookieOptions.Cookie.Name!);
@@ -55,9 +66,9 @@ public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment
         string? version = null;
         if (id is > 0)
         {
-            if (ticketHash is not null && !await validator.IsRevokedAsync(ticketHash, context.RequestAborted))
-                version = await validator.VersionAsync(id.Value, state.GetString(SessionKeys.EmployeeRoleCode) ?? "",
-                    state.GetInt32(SessionKeys.EmployeeBranchId) ?? 0, context.RequestAborted);
+            if (ticketHash is not null)
+                version = await validator.ValidateVersionAsync(id.Value, state.GetString(SessionKeys.EmployeeRoleCode) ?? "",
+                    state.GetInt32(SessionKeys.EmployeeBranchId) ?? 0, ticketHash, context.RequestAborted);
             if (version is null || version != auth.Principal?.FindFirst("auth-version")?.Value) state.Clear();
         }
         context.Items[StaffIdentityState.ItemKey] = state;
@@ -89,6 +100,7 @@ public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment
             await context.SignInAsync(StaffCookieState.Scheme, state.Principal(current),
                 new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8) });
         });
+        authMeasurement?.Dispose(); // Do not include dashboard execution in auth timing.
         await next(context);
     }
 }

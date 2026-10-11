@@ -13,9 +13,12 @@ public static async Task<WebApplication> BuildAsync(string[] args,
     WebApplicationOptions? options = null, Action<WebApplicationBuilder>? configure = null,
     Action<WebApplication>? configurePipeline = null)
 {
+using var createBuilderTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Orders", "create-builder");
 var builder = options is null
     ? WebApplication.CreateBuilder(args)
     : WebApplication.CreateBuilder(options);
+createBuilderTiming?.Dispose();
+using var registrationTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Orders", "registrations");
 configure?.Invoke(builder);
 SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 
@@ -69,7 +72,10 @@ builder.Services.AddTransient<PaymentCompletedConsumerService>();
 if (builder.Configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") ?? true)
     builder.Services.AddHostedService<PaymentCompletedConsumerService>();
 
+registrationTiming?.Dispose();
+using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Orders", "builder-build");
 var app = builder.Build();
+buildTiming?.Dispose();
 
 if (app.Environment.IsDevelopment())
 {
@@ -77,7 +83,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-await OrdersDbBootstrapper.EnsureReadyAsync(app.Services, app.Logger);
+using (SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Orders", "bootstrap"))
+    await OrdersDbBootstrapper.EnsureReadyAsync(app.Services, app.Logger);
 
 app.Use(async (context, next) =>
 {

@@ -14,9 +14,12 @@ public static async Task<WebApplication> BuildAsync(string[] args,
     WebApplicationOptions? options = null, Action<WebApplicationBuilder>? configure = null,
     Action<WebApplication>? configurePipeline = null)
 {
+using var createBuilderTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "create-builder");
 var builder = options is null
     ? WebApplication.CreateBuilder(args)
     : WebApplication.CreateBuilder(options);
+createBuilderTiming?.Dispose();
+using var registrationTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "registrations");
 configure?.Invoke(builder);
 SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 
@@ -76,7 +79,10 @@ builder.Services.AddScoped<BusinessAuditLogger>();
 builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("Payments:VnPay"));
 builder.Services.AddSingleton<IPaymentProvider, VnPayPaymentProvider>();
 
+registrationTiming?.Dispose();
+using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "builder-build");
 var app = builder.Build();
+buildTiming?.Dispose();
 
 if (app.Environment.IsDevelopment())
 {
@@ -84,7 +90,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-await BillingDbBootstrapper.EnsureReadyAsync(app.Services, app.Logger);
+using (SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "bootstrap"))
+    await BillingDbBootstrapper.EnsureReadyAsync(app.Services, app.Logger);
 
 app.Use(async (context, next) =>
 {

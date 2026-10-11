@@ -17,15 +17,25 @@ using VietTable.CloudHost.Diagnostics;
 using VietTable.CloudHost.Realtime;
 
 // One public listener. Module containers are owned/disposed with this process.
+var mainEntryClock = System.Diagnostics.Stopwatch.StartNew();
+Console.WriteLine("CloudHostTiming phase=main-entry");
 var config = new ConfigurationBuilder().AddEnvironmentVariables().AddCommandLine(args).Build();
+Console.WriteLine($"CloudHostTiming phase=configuration elapsedMs={mainEntryClock.ElapsedMilliseconds}");
 var router = new ModuleRouter();
-var modules = new List<WebApplication>();
+var modules = new System.Collections.Concurrent.ConcurrentDictionary<string, WebApplication>();
+var owners = new[] { "Catalog", "Orders", "Customers", "Identity", "Billing" };
+var servers = owners.ToDictionary(owner => owner, _ => new ModuleServer());
+foreach (var owner in owners) router.Register(owner, servers[owner]);
+using var performanceDiagnostics = config["VERCEL_ENV"] == "preview" ? new CloudPerformanceDiagnostics() : null;
+var startupClock = System.Diagnostics.Stopwatch.StartNew();
+var firstIncomingRequest = 0;
 try
 {
-    foreach (var owner in new[] { "Catalog", "Orders", "Customers", "Identity", "Billing" })
+    async Task<WebApplication> InitializeOwnerAsync(string owner)
     {
-        var server = new ModuleServer();
-        router.Register(owner, server);
+        var server = servers[owner];
+        using var startupMeasurement = performanceDiagnostics is not null
+            ? CloudPerformanceDiagnostics.Begin(owner, "startup") : null;
         var options = new WebApplicationOptions {
             ApplicationName = "SelfRestaurant." + owner + ".Api", Args = args,
             EnvironmentName = config["ASPNETCORE_ENVIRONMENT"] ?? "Production" };
@@ -45,6 +55,7 @@ try
             builder.Services.AddSingleton<IServer>(server);
             builder.Services.AddSingleton<IHttpMessageHandlerBuilderFilter>(new ModuleClientFilter(router));
         }
+        var moduleClock = System.Diagnostics.Stopwatch.StartNew();
         var module = owner switch {
             "Catalog" => await CatalogModule.BuildAsync(args, options, Configure, ModuleDiagnostics.Configure),
             "Orders" => await OrdersModule.BuildAsync(args, options, Configure, ModuleDiagnostics.Configure),
@@ -52,14 +63,22 @@ try
             "Identity" => await IdentityModule.BuildAsync(args, options, Configure, ModuleDiagnostics.Configure),
             "Billing" => await BillingModule.BuildAsync(args, options, Configure, ModuleDiagnostics.Configure),
             _ => throw new InvalidOperationException("Unknown module.") };
-        modules.Add(module);
+        modules[owner] = module;
+        Console.WriteLine($"CloudHostTiming module={owner} phase=build elapsedMs={moduleClock.ElapsedMilliseconds}");
+        moduleClock.Restart();
         await module.StartAsync();
+        Console.WriteLine($"CloudHostTiming module={owner} phase=start elapsedMs={moduleClock.ElapsedMilliseconds}");
         Console.WriteLine("CloudHostTransport started-module=" + owner);
+        return module;
     }
-    var identityBoundary = new CloudIdentityBoundary(modules.Single(x =>
-        x.Environment.ApplicationName == "SelfRestaurant.Identity.Api").Services.GetRequiredService<IServiceScopeFactory>());
+    // Preview runtime only: no migrations/seeds or persistent workers run here.
+    // Production and explicit migration/seed composition keep the previous order.
+    var parallelStartup = ModuleStartup.CanInitializeInParallel(config);
+    Console.WriteLine("CloudHostTiming startup-mode=" + (parallelStartup ? "parallel" : "sequential"));
+    await ModuleStartup.InitializeAsync(owners, InitializeOwnerAsync, parallelStartup);
+    var identityBoundary = new CloudIdentityBoundary(modules["Identity"].Services.GetRequiredService<IServiceScopeFactory>());
     var recovery = new CloudRecoveryCoordinator(
-        modules[0].Services, modules[1].Services, modules[2].Services, modules[4].Services);
+        modules["Catalog"].Services, modules["Orders"].Services, modules["Customers"].Services, modules["Billing"].Services);
     var gateway = await GatewayModule.BuildAsync(args, new WebApplicationOptions {
         ApplicationName = typeof(GatewayModule).Assembly.FullName, Args = args,
         EnvironmentName = config["ASPNETCORE_ENVIRONMENT"] ?? "Production" }, builder => {
@@ -71,7 +90,9 @@ try
                 builder.Configuration["Services:" + target] = "http://" + target + ".module.invalid";
             builder.Services.AddSingleton<IHttpMessageHandlerBuilderFilter>(new ModuleClientFilter(router));
         }, builder => {
+            var securityClock = System.Diagnostics.Stopwatch.StartNew();
             CloudStaffConfiguration.Configure(builder, identityBoundary);
+            performanceDiagnostics?.RecordStartupPhase("Gateway-security-certificate-registration", securityClock.Elapsed.TotalMilliseconds);
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton<RealtimeDiagnostics>();
             builder.Services.AddSingleton(typeof(SupabasePrivateBackplane<>));
@@ -81,6 +102,8 @@ try
         },
         app => {
             app.Use(async (context, next) => {
+                if (Interlocked.Exchange(ref firstIncomingRequest, 1) == 0)
+                    Console.WriteLine($"CloudHostTiming phase=first-incoming-request elapsedMs={mainEntryClock.ElapsedMilliseconds}");
                 var media = CloudPublicMedia.Resolve(app.Configuration, context.Request.Path.Value ?? "");
                 if (media is not null && (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)))
                 {
@@ -90,8 +113,12 @@ try
                 await next();
             });
             app.Use(async (context, next) => {
+                using var measurement = performanceDiagnostics is not null
+                    ? CloudPerformanceDiagnostics.Begin("Gateway", "request") : null;
                 // Opaque process identifier; also present on WebSocket upgrade responses.
                 context.Response.Headers["X-VietTable-Instance"] = app.Services.GetRequiredService<RealtimeDiagnostics>().InstanceId;
+                if (performanceDiagnostics is not null && context.Request.Path == "/healthz")
+                    context.Response.Headers["Server-Timing"] = performanceDiagnostics.StartupServerTiming;
                 await next();
             });
             app.Use(async (context,next) => {
@@ -134,11 +161,18 @@ try
         return processed ? Results.Ok(new { status = "processed" })
             : Results.Accepted(value: new { status = "already_running" });
     });
-    modules.Add(gateway);
+    modules["Gateway"] = gateway;
+    gateway.Lifetime.ApplicationStarted.Register(() => {
+        performanceDiagnostics?.RecordStartupPhase("application-listener-ready", mainEntryClock.Elapsed.TotalMilliseconds);
+        Console.WriteLine($"CloudHostTiming phase=listener-ready elapsedMs={startupClock.ElapsedMilliseconds}");
+    });
     await gateway.RunAsync();
 }
 finally
 {
-    foreach (var module in modules.AsEnumerable().Reverse())
-    { await module.StopAsync(); await module.DisposeAsync(); }
+    foreach (var owner in owners.Append("Gateway").Reverse())
+    {
+        if (!modules.TryGetValue(owner, out var module)) continue;
+        await module.StopAsync(); await module.DisposeAsync();
+    }
 }

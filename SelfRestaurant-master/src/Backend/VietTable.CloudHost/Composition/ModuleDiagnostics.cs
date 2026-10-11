@@ -3,6 +3,9 @@ namespace VietTable.CloudHost.Composition;
 public static class ModuleDiagnostics
 {
     public static void Configure(WebApplication app) => app.Use(async (context,next) => {
+        using var measurement = app.Configuration["VERCEL_ENV"] == "preview"
+            ? VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.Begin(
+                app.Environment.ApplicationName?.Split('.').Reverse().Skip(1).FirstOrDefault() ?? "module", "request") : null;
         try { await next(); }
         catch(Exception error) {
             var cause=error.GetBaseException();
