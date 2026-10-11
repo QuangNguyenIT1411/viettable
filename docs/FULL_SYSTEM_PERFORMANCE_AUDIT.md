@@ -1054,3 +1054,160 @@ network/TLS/pool subcomponents need deeper evidence before further changes.
 Read-only alias inspection confirms it still resolves to Preview
 `dpl_4CiTfSuo4LhKb2fjFJSX4zaWKTgH` (`viettable-o9udbp2p9`), not either new candidate.
 Final browser tab was opened on `g2k4k721z` and is still at Chef Login at handoff.
+
+## M. Focused stabilization — 2026-10-12 (acceptance incomplete)
+
+Base: `4d4abf6`. Existing routing/Gateway/test edits and both `.idea` edits
+are preserved and are not part of this change. No stable alias promotion.
+
+### Measured critical path on g2k4k721z
+
+Chef process `9073b60f13fc4b9c8b3181d5a22731a9`, request sequence 1:
+HTTP 14.090390 s, process age at request 6,942 ms, app-preheaders 5,670.5 ms,
+cookie 10.2 ms, live validation 353.7 ms, staff auth 367.7 ms.
+Chef history 5,002.0 ms / 15 nested commands / SQL sum 3,183.1 ms /
+connection sum 1,300.7 ms; active queue 4,484.8 ms / 16 nested commands /
+SQL sum 3,420.2 ms / connection sum 263.4 ms. Whole-request count 39.
+Parallel/nested SQL durations are not additive wall time. The residual outside
+app-preheaders is not proven to be exclusively application startup or TLS.
+
+The next Chef read on the same instance was 3.380230 s: app 2,873.8 ms,
+history 2,620.5 ms / 8 commands, active queue 2,628.1 ms / 9 commands,
+overall count 25. It is one warm sample, not a sufficient improvement cohort.
+
+Cashier warm example: HTTP 3.480005 s, app 3,025.8 ms, Billing queue 2,780.3 ms
+including Orders 1,929.6 ms. Billing nested count 13 includes Orders count 9;
+do not add these counts. Report runs independently (228.1 ms / one command).
+Billing first reads active billed IDs, then Orders live queue plus its Billing
+snapshot persistence, then Customers batch. Orders reads branch table scope,
+orders, items, Catalog live dishes and persists Orders snapshots. Commands in
+warm traces average roughly one remote DB roundtrip, not a measured PostgreSQL
+engine-only time. Some repeated Cashier reads have connection duration spikes
+around 1.3 s; the existing connection measurement cannot distinguish pool wait
+from TLS/network. Parallelizing Billing SQL with its OrdersApiClient is unsafe:
+that client also writes through the same scoped BillingDbContext.
+
+### Controlled reads, no retry
+
+All samples below target g2k4k721z, not the new candidate.
+`groupByProcess` keeps sequence-1 requests, first observed route, repeated
+same-instance route, instance switches and failures in separate cohorts.
+Missing instance metadata is unclassified. Failed authentication cannot prime
+a warm route. An instance switch is not claimed to be a new-process cold start.
+
+| API / cohort | n | p50 s | p95 s | Failed |
+|---|---:|---:|---:|---:|
+| Chef new-process first | 1 | 14.090390 | 14.090390 | 0 |
+| Chef same-process repeated | 1 | 3.380230 | 3.380230 | 0 |
+| Cashier same-process repeated | 6 | 3.540547 | 5.135390 | 0 |
+| Admin same-process repeated | 6 | 1.334878 | 1.530844 | 0 |
+| Invoice history same-process repeated | 15 | 0.914574 | 1.686554 | 0 |
+| Invoice history new-process first | 2 | 8.586282 | 8.892026 | 0 |
+| Invoice history instance switches | 2 | 0.817648 | 0.962059 | 0 |
+| Order history same-process repeated | 11 | 3.087103 | 4.423759 | 0 |
+| Order history new-process first | 1 | 11.561667 | 11.561667 | 0 |
+| Order history instance switches | 7 | 3.055731 | 3.340781 | 0 |
+
+Invoice 20/20 and Order 20/20 populated reads succeeded. Each also has one
+first-observed-route sample, excluded from the warm rows. Instances observed:
+`9073b60f13fc4b9c8b3181d5a22731a9`, `ce7e8731d3384b57ae25699bbc322b74`,
+`4896118dbe3643339affa66616d17a39`, `a80cbd3c964242e08ed4fe2e2a700c25`,
+and Orders additionally `ef0c33bae476447da10a7bc69241a92a`.
+The earlier Invoice failure is not reproduced or claimed fixed.
+Five Chef probes returned 401 after the user's legitimate Chef login changed
+the live auth version; retained as auth failures, never counted as fast reads.
+
+### Minimal change and verification
+
+Chef active queue and Orders' Cashier queue project each order's items in the
+same AsSingleQuery owner read, removing one sequential order-items read from
+each route. Branch/status predicates, empty orders, item ordering, item status,
+prices, session grouping and live Catalog authority are preserved. No private
+cache, schema-check removal, auth bypass or shared-DbContext parallel work.
+Fixture regression verifies empty orders, branch exclusion, item order/status,
+Cashier amounts/quantities. CloudHost 75/75 PASS, history contract 4/4 PASS,
+benchmark helper 6/6 PASS, git diff --check PASS. InMemory fixture tests alone
+do not prove Npgsql translation or faster deployed requests.
+
+### Runtime gates
+
+- Chef UI login/dashboard/History: observed on g2k4k721z, Bình Thạnh,
+  populated History and item summaries. Read-only navigation, no business action.
+- Cashier/Admin browser UI: not yet observed in this round; API is not UI proof.
+- Samsung: ADB lists emulator-5554 only, blocked by physical-device connection.
+  App data, account and URL unchanged; no reverse tunnel created.
+- Correct-route WSS handshake/reconnect: 2/2 on
+  `a80cbd3c964242e08ed4fe2e2a700c25`, 1,263 / 1,073 ms. Event delivery and
+  multi-instance fan-out remain UNVERIFIED. Two initial verifier probes used
+  the wrong hub path and got 404; not a server regression.
+- QA customer has no active session (404). Reads of protected session #20 and
+  order #38 with that different customer token return 403. Neither was mutated.
+- Recovery endpoint always invokes includeIdleCleanup=true, without a fixture
+  scope. It was not invoked: global cleanup could affect the protected session.
+- Storage: new candidate menu 200, image redirect 302 to Supabase, public asset
+  200 image/jpeg, 123,302 bytes. No secret or temporary asset persisted.
+
+Preview candidate `dpl_7MxW7oBh8H1DCYmPSefcYX7Hf8fE`,
+`https://viettable-k8j32aegw-hienkhanhvu981-7145.vercel.app`, explicitly inspected
+as target=preview and subsequently READY. CLI returned exit 1 while the server
+was still BUILDING; later server inspection and actual runtime requests confirm
+deployment success. Health/readiness both 200. Stable alias was not promoted.
+
+### Deployed projection and comparable warm cohorts
+
+Npgsql runtime translation succeeded (both dashboard APIs 200). Chef active
+queue commands decreased 9 to 8, overall Dashboard 25 to 24. Cashier Orders
+commands decreased 9 to 8, nested Billing 13 to 12, overall 17 to 16 on ordinary
+warm reads. Occasional snapshot refresh still adds two commands. Nested counts
+must not be added together. No business transition was performed.
+
+Controlled read-only baseline recheck and candidate, six successful repeated
+same-process reads each, no retries; first-observed-route reads excluded:
+
+| API | Before n | Before p50 / p95 s | After n | After p50 / p95 s | Failures |
+|---|---:|---:|---:|---:|---:|
+| Chef | 6 | 3.455059 / 3.531444 | 6 | 3.461527 / 3.801705 | 0 / 0 |
+| Cashier | 6 | 3.457076 / 3.539001 | 6 | 3.276659 / 3.920328 | 0 / 0 |
+| Admin (unchanged route) | 6 | 1.334878 / 1.530844 | 6 | 1.363326 / 1.603643 | 0 / 0 |
+
+Chef/Cashier recheck baseline instance:
+`4f3dac0f5db5476dbaba7b9a83c308b1`; candidate instance:
+`dfb0ce919fa94e68acaf2cdbd360affb`. These sequential small cohorts use the
+same QA identities/data but different processes; not a randomized causal study.
+Cashier p50 improves about 0.180 s (5.2%), not p95. Chef median is unchanged:
+History remains approximately 2.54–2.76 s, SQL sum 1.65–1.68 s and connection
+sum 0.67–0.85 s. Active queue is approximately 2.35–2.56 s. Warm Cashier
+critical Billing chain is approximately 2.54–2.56 s including Orders 1.69 s,
+with SQL sum approximately 2.51–2.52 s. Remote sequential roundtrips remain.
+
+Candidate sequence-1 Cashier request: 13.698746 s HTTP, app-preheaders 5.4156 s,
+cookie 10.1 ms, live validation 367.2 ms, staff auth 381.3 ms; SQL count 18,
+sum 3.8593 s, connection sum 1.2702 s. Listener-ready telemetry 6.6129 s.
+Five module bootstrap checks run concurrently; their durations cannot be summed
+as wall time. Migration-check I/O sum 20.6505 s across modules, schema validation
+sum 20.7023 s. Catalog provider initialization 832 ms is before listener ready.
+The remaining HTTP interval is not fully attributed. This is Cashier, whereas
+the earlier sequence-1 sample is Chef: not a paired cold improvement claim.
+Mandatory checks remain; first-request latency is not solved.
+
+New candidate WSS connects and reconnects 2/2 (2,869 / 9,554 ms) on instances
+`dfb0ce919fa94e68acaf2cdbd360affb` and
+`be244387e177492dbab31a96fdb86ca9`. Distinct reconnect instances are not proof
+of event fan-out. Staff hub accepts Cashier QA branch 3 subscription and rejects
+branch 2 with Forbidden branch subscription. Chef-to-Admin, Chef-to-Cashier,
+Cashier-to-Chef protected API reads and unauthenticated recovery each return 401.
+Event delivery and isolated authenticated recovery remain UNVERIFIED.
+
+Cashier/Admin browser acceptance remains pending safe credential handoff; the
+user does not have Cashier credentials. Legitimate QA API login succeeded, but
+is not UI proof. Samsung is still disconnected. No user account/session data
+was cleared; protected session #20/order #38 were not changed.
+
+Secret scan of these five changed files: zero QA-secret matches and zero JWT
+patterns. CloudHost 75/75, history contracts 4/4, benchmark helper 6/6 are new
+test results. Android builds/unit results are baseline reused, not Samsung proof.
+
+**VIETTABLE REAL-WORLD PERFORMANCE: PARTIAL**. Deployed projection and grouped
+measurements are verified; substantial first/warm latency, final Cashier/Admin
+UI, Samsung, actual WSS events and isolated recovery acceptance remain open.
+Stable alias remains unchanged. No Production deployment or Git push.

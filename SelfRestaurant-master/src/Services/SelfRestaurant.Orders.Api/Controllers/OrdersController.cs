@@ -1339,6 +1339,7 @@ public sealed class OrdersController : ControllerBase
                 && o.TableID != null
                 && branchTableIds.Contains(o.TableID.Value)
                 && ActiveCashierStatuses.Contains(o.Status.StatusCode))
+            .AsSingleQuery()
             .OrderBy(o => o.OrderTime)
             .Select(o => new
             {
@@ -1350,27 +1351,15 @@ public sealed class OrdersController : ControllerBase
                 customerId = o.CustomerID,
                 statusCode = o.Status.StatusCode,
                 statusName = o.Status.StatusName,
+                items = _db.OrderItems.Where(i => i.OrderID == o.OrderID)
+                    .OrderBy(i => i.ItemID)
+                    .Select(i => new { itemId = i.ItemID, orderId = i.OrderID,
+                        dishId = i.DishID, quantity = i.Quantity, unitPrice = i.UnitPrice,
+                        lineTotal = i.LineTotal, note = i.Note, statusCode = i.StatusCode }).ToList(),
             })
             .ToListAsync(cancellationToken);
 
-        var orderIds = orders.Select(o => o.orderId).ToList();
-        var items = await _db.OrderItems
-            .AsNoTracking()
-            .Where(i => orderIds.Contains(i.OrderID))
-            .OrderBy(i => i.OrderID)
-            .ThenBy(i => i.ItemID)
-            .Select(i => new
-            {
-                itemId = i.ItemID,
-                orderId = i.OrderID,
-                dishId = i.DishID,
-                quantity = i.Quantity,
-                unitPrice = i.UnitPrice,
-                lineTotal = i.LineTotal,
-                note = i.Note,
-                statusCode = i.StatusCode,
-            })
-            .ToListAsync(cancellationToken);
+        var items = orders.SelectMany(o => o.items).OrderBy(i => i.orderId).ThenBy(i => i.itemId).ToList();
 
         var tableLookup = (await _catalogApi.GetTablesAsync(
                 orders.Where(x => x.tableId.HasValue).Select(x => x.tableId!.Value),
@@ -1853,6 +1842,7 @@ public sealed class OrdersController : ControllerBase
         }
 
         var orders = await query
+            .AsSingleQuery()
             .OrderBy(o => o.OrderTime)
             .Select(o => new
             {
@@ -1862,6 +1852,11 @@ public sealed class OrdersController : ControllerBase
                 statusCode = o.Status.StatusCode,
                 statusName = o.Status.StatusName,
                 orderTime = o.OrderTime,
+                items = _db.OrderItems.Where(i => i.OrderID == o.OrderID)
+                    .OrderBy(i => i.ItemID)
+                    .Select(i => new { orderId = i.OrderID, itemId = i.ItemID,
+                        dishId = i.DishID, quantity = i.Quantity, note = i.Note,
+                        statusCode = i.StatusCode }).ToList(),
             })
             .ToListAsync(cancellationToken);
 
@@ -1871,21 +1866,9 @@ public sealed class OrdersController : ControllerBase
             ?? Array.Empty<CatalogApiClient.TableSnapshotResponse>())
             .ToDictionary(x => x.TableId);
 
-        var orderIds = orders.Select(o => o.orderId).ToList();
-        var items = await _db.OrderItems
-            .AsNoTracking()
-            .Where(i => orderIds.Contains(i.OrderID))
-            .OrderBy(i => i.ItemID)
-            .Select(i => new
-            {
-                orderId = i.OrderID,
-                itemId = i.ItemID,
-                dishId = i.DishID,
-                quantity = i.Quantity,
-                note = i.Note,
-                statusCode = i.StatusCode,
-            })
-            .ToListAsync(cancellationToken);
+        // Preserve item order and empty orders while removing the second
+        // sequential Orders read. Catalog remains the live dish authority.
+        var items = orders.SelectMany(o => o.items).ToList();
 
         var dishLookup = (await _catalogApi.GetDishesAsync(items.Select(x => x.dishId).Distinct(), cancellationToken)
             ?? Array.Empty<CatalogApiClient.DishSnapshotResponse>())

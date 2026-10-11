@@ -34,6 +34,36 @@ export function summarize(samples) {
     p50: percentile(0.5), p95: percentile(0.95) };
 }
 
+// Do not infer a warm route from process age or from a successful health call.
+// A route must already have succeeded on the same deployment/instance in this
+// observed cohort. Cross-instance and first-process samples remain separate.
+export function groupByProcess(samples) {
+  const groups = { firstProcess: [], firstObservedRoute: [], warmSameProcess: [],
+    crossInstance: [], failed: [], unclassified: [] };
+  const seenRoutes = new Set();
+  const previousInstances = new Map();
+  for (const sample of samples) {
+    if (!(sample.exit === 0 && sample.http >= 200 && sample.http < 300 && sample.error === null)) {
+      groups.failed.push(sample);
+      continue;
+    }
+    if (!sample.instance || !sample.sequence) {
+      groups.unclassified.push(sample);
+      continue;
+    }
+    const route = JSON.stringify([sample.deployment, sample.path]);
+    const identity = JSON.stringify([sample.deployment, sample.path, sample.instance]);
+    const previous = previousInstances.get(route);
+    if (sample.sequence === 1) groups.firstProcess.push(sample);
+    else if (previous && previous !== sample.instance) groups.crossInstance.push(sample);
+    else if (seenRoutes.has(identity)) groups.warmSameProcess.push(sample);
+    else groups.firstObservedRoute.push(sample);
+    seenRoutes.add(identity);
+    previousInstances.set(route, sample.instance);
+  }
+  return groups;
+}
+
 export async function previewRequest({ nodeExecutable, vercelEntrypoint, cwd, deployment, path,
   cookie, token, body }) {
   const url = new URL(deployment);
