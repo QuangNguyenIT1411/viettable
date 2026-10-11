@@ -40,6 +40,10 @@ public sealed class ChefHistoryBranchPageTests
         Assert.Equal(1, payload.GetArrayLength());
         Assert.Equal(1, payload[0].GetProperty("OrderId").GetInt32());
         Assert.Equal("Bàn 2", payload[0].GetProperty("TableName").GetString());
+        Assert.False(payload[0].TryGetProperty("BranchName", out _));
+        var internalResult = await controller.GetInternalChefHistory(3, null, cancellationToken: CancellationToken.None);
+        var internalPayload = JsonSerializer.SerializeToElement(Assert.IsType<OkObjectResult>(internalResult.Result).Value);
+        Assert.Equal("Fixture branch", internalPayload.GetProperty("items")[0].GetProperty("BranchName").GetString());
     }
 
     private sealed class NoRemoteReads : HttpMessageHandler

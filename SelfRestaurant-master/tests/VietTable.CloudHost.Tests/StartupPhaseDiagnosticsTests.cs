@@ -18,4 +18,36 @@ public sealed class StartupPhaseDiagnosticsTests
         Assert.DoesNotContain("Password", diagnostics.StartupServerTiming);
         Assert.DoesNotContain("test-not-a-real-secret", diagnostics.StartupServerTiming);
     }
+
+    [Fact]
+    public void Nested_metrics_are_counted_once_in_parent_and_remain_payload_free()
+    {
+        using var parent = CloudPerformanceDiagnostics.Begin("Gateway", "request");
+        using (var child = CloudPerformanceDiagnostics.Begin("Identity", "staff-auth"))
+        {
+            child.RecordQuery(TimeSpan.FromMilliseconds(17));
+            child.RecordConnection(TimeSpan.FromMilliseconds(5));
+            child.RecordContext("Npgsql.EntityFrameworkCore.PostgreSQL");
+        }
+        Assert.Contains("sql-sum;dur=17.0", parent.ServerTiming);
+        Assert.Contains("connect-sum;dur=5.0", parent.ServerTiming);
+        Assert.Contains("sql-count;desc=\"1\"", parent.ServerTiming);
+        Assert.Contains("staff-auth-sum;dur=", parent.ServerTiming);
+        Assert.DoesNotContain("Npgsql", parent.ServerTiming);
+    }
+
+    [Fact]
+    public async Task Parallel_scopes_aggregate_without_sharing_request_context()
+    {
+        using var parent = CloudPerformanceDiagnostics.Begin("Gateway", "request");
+        await Task.WhenAll(Enumerable.Range(0, 4).Select(async _ => {
+            using var child = CloudPerformanceDiagnostics.Begin("Orders", "action");
+            await Task.Yield();
+            child.RecordQuery(TimeSpan.FromMilliseconds(3));
+        }));
+        Assert.Contains("sql-sum;dur=12.0", parent.ServerTiming);
+        Assert.Contains("sql-count;desc=\"4\"", parent.ServerTiming);
+        using var independent = CloudPerformanceDiagnostics.Begin("Gateway", "independent");
+        Assert.Contains("sql-count;desc=\"0\"", independent.ServerTiming);
+    }
 }

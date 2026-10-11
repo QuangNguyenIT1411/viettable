@@ -56,6 +56,8 @@ public sealed class CloudPerformanceDiagnostics : IObserver<DiagnosticListener>,
         lock (subscriptions) foreach (var subscription in subscriptions) subscription.Dispose();
     }
     public static Measurement Begin(string owner, string phase) => new(owner, phase);
+    internal static Measurement? CurrentMeasurement => Current.Value;
+    internal static Measurement BeginLinked(Measurement parent) => new("Module", "dispatch", parent);
     public static bool HasScope => Current.Value is not null;
     public sealed class Measurement : IDisposable
     {
@@ -66,28 +68,42 @@ public sealed class CloudPerformanceDiagnostics : IObserver<DiagnosticListener>,
         private int queries, connections, contexts;
         private string provider = "unobserved";
         private int disposed;
-        internal Measurement(string owner, string phase)
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, long> phases = new();
+        internal Measurement(string owner, string phase, Measurement? linkedParent = null)
         {
             // The caller supplies fixed module/phase names, not user identifiers.
             this.owner = owner; this.phase = phase;
-            parent = Current.Value; Current.Value = this;
+            parent = linkedParent ?? Current.Value; Current.Value = this;
         }
         public void RecordQuery(TimeSpan duration)
-        { Interlocked.Increment(ref queries); Interlocked.Add(ref queryTicks, duration.Ticks); }
+        { Interlocked.Increment(ref queries); Interlocked.Add(ref queryTicks, duration.Ticks); parent?.RecordQuery(duration); }
         public void RecordConnection(TimeSpan duration)
-        { Interlocked.Increment(ref connections); Interlocked.Add(ref connectionTicks, duration.Ticks); }
+        { Interlocked.Increment(ref connections); Interlocked.Add(ref connectionTicks, duration.Ticks); parent?.RecordConnection(duration); }
         public void RecordContext(string? name)
         {
             Interlocked.Increment(ref contexts);
             provider = name == "Npgsql.EntityFrameworkCore.PostgreSQL" ? "Postgres"
                 : name == "Microsoft.EntityFrameworkCore.SqlServer" ? "SqlServer" : "other";
+            parent?.RecordContext(name);
         }
+        private void RecordPhase(string name, long ticks)
+        {
+            // Fixed code-owned names only. Nested/parallel durations are sums,
+            // not additive wall-clock partitions.
+            if (name is "staff-auth" or "cookie-authenticate" or "live-staff-validation" or "action" or "result")
+                phases.AddOrUpdate(name, ticks, (_, previous) => previous + ticks);
+            parent?.RecordPhase(name, ticks);
+        }
+        public string ServerTiming => FormattableString.Invariant(
+            $"app-preheaders;dur={clock.Elapsed.TotalMilliseconds:F1}, sql-sum;dur={TimeSpan.FromTicks(Interlocked.Read(ref queryTicks)).TotalMilliseconds:F1}, connect-sum;dur={TimeSpan.FromTicks(Interlocked.Read(ref connectionTicks)).TotalMilliseconds:F1}, sql-count;desc=\"{Volatile.Read(ref queries)}\", context-count;desc=\"{Volatile.Read(ref contexts)}\"")
+            + string.Concat(phases.OrderBy(x => x.Key).Select(x => FormattableString.Invariant($", {x.Key}-sum;dur={TimeSpan.FromTicks(x.Value).TotalMilliseconds:F1}")));
         public string Summary => FormattableString.Invariant(
             $"CloudPerformance owner={owner} phase={phase} elapsedMs={clock.ElapsedMilliseconds} queryCount={queries} queryMs={TimeSpan.FromTicks(queryTicks).TotalMilliseconds:F1} connectionCount={connections} connectionMs={TimeSpan.FromTicks(connectionTicks).TotalMilliseconds:F1} contextCount={contexts} provider={provider}");
         public void Dispose()
         {
             if (Interlocked.Exchange(ref disposed, 1) != 0) return;
             clock.Stop(); Current.Value = parent;
+            parent?.RecordPhase(phase, clock.Elapsed.Ticks);
             Console.WriteLine(Summary);
         }
     }

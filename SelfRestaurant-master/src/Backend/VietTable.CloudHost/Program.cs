@@ -29,6 +29,7 @@ foreach (var owner in owners) router.Register(owner, servers[owner]);
 using var performanceDiagnostics = config["VERCEL_ENV"] == "preview" ? new CloudPerformanceDiagnostics() : null;
 var startupClock = System.Diagnostics.Stopwatch.StartNew();
 var firstIncomingRequest = 0;
+var requestSequence = 0L;
 try
 {
     async Task<WebApplication> InitializeOwnerAsync(string owner)
@@ -54,6 +55,8 @@ try
                 builder.Configuration["Services:" + target] = "http://" + target + ".module.invalid";
             builder.Services.AddSingleton<IServer>(server);
             builder.Services.AddSingleton<IHttpMessageHandlerBuilderFilter>(new ModuleClientFilter(router));
+            if (performanceDiagnostics is not null)
+                builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options => options.Filters.Add<RequestPhaseFilter>());
         }
         var moduleClock = System.Diagnostics.Stopwatch.StartNew();
         var module = owner switch {
@@ -94,6 +97,8 @@ try
             CloudStaffConfiguration.Configure(builder, identityBoundary);
             performanceDiagnostics?.RecordStartupPhase("Gateway-security-certificate-registration", securityClock.Elapsed.TotalMilliseconds);
             builder.Services.AddHttpContextAccessor();
+            if (performanceDiagnostics is not null)
+                builder.Services.Configure<Microsoft.AspNetCore.Mvc.MvcOptions>(options => options.Filters.Add<RequestPhaseFilter>());
             builder.Services.AddSingleton<RealtimeDiagnostics>();
             builder.Services.AddSingleton(typeof(SupabasePrivateBackplane<>));
             builder.Services.AddSingleton(typeof(HubLifetimeManager<>), typeof(DiagnosticHubLifetimeManager<>));
@@ -119,6 +124,23 @@ try
                 context.Response.Headers["X-VietTable-Instance"] = app.Services.GetRequiredService<RealtimeDiagnostics>().InstanceId;
                 if (performanceDiagnostics is not null && context.Request.Path == "/healthz")
                     context.Response.Headers["Server-Timing"] = performanceDiagnostics.StartupServerTiming;
+                if (measurement is not null)
+                {
+                    var requestId = Guid.NewGuid().ToString("N");
+                    var sequence = Interlocked.Increment(ref requestSequence);
+                    context.Response.Headers["X-VietTable-Request"] = requestId;
+                    context.Response.Headers["X-VietTable-Request-Sequence"] = sequence.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    context.Response.Headers["X-VietTable-Process-Age-Ms"] = mainEntryClock.ElapsedMilliseconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    context.Response.OnStarting(() => {
+                        if (context.Request.Path != "/healthz")
+                            context.Response.Headers["Server-Timing"] = measurement.ServerTiming;
+                        return Task.CompletedTask;
+                    });
+                    context.Response.OnCompleted(() => {
+                        Console.WriteLine($"CloudPerformance completion request={requestId} sequence={sequence} status={context.Response.StatusCode} aborted={context.RequestAborted.IsCancellationRequested} {measurement.Summary}");
+                        return Task.CompletedTask;
+                    });
+                }
                 await next();
             });
             app.Use(async (context,next) => {

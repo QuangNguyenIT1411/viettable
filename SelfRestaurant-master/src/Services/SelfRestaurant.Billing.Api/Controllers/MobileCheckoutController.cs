@@ -270,18 +270,19 @@ public sealed class MobileCheckoutController : ControllerBase
     {
         if (customerId <= 0 || limit is < 1 or > 100)
             return BadRequest(new { code = "validation_failed", message = "Thông tin lịch sử hóa đơn không hợp lệ." });
-        var invoices = await _db.Invoices.AsNoTracking().Where(x => x.CustomerId == customerId)
-            .OrderByDescending(x => x.IssuedAtUtc).ThenByDescending(x => x.InvoiceId).Take(limit).ToArrayAsync(ct);
-        var quoteIds = invoices.Select(x => x.CheckoutQuoteId).Distinct().ToArray();
-        var paymentIds = invoices.Select(x => x.PaymentId).Distinct().ToArray();
-        var quotes = quoteIds.Length == 0 ? new Dictionary<int, CheckoutQuote>()
-            : await _db.CheckoutQuotes.AsNoTracking().Where(x => quoteIds.Contains(x.CheckoutQuoteId))
-                .ToDictionaryAsync(x => x.CheckoutQuoteId, ct);
-        var payments = paymentIds.Length == 0 ? new Dictionary<int, Payment>()
-            : await _db.Payments.AsNoTracking().Where(x => paymentIds.Contains(x.PaymentId))
-                .ToDictionaryAsync(x => x.PaymentId, ct);
-        var items = invoices.Select(invoice => MapCustomerInvoice(invoice,
-            quotes.GetValueOrDefault(invoice.CheckoutQuoteId), payments.GetValueOrDefault(invoice.PaymentId))).ToArray();
+        // One Billing-owned read rather than three sequential database round trips.
+        // Apply ownership/page first; left joins preserve legacy missing metadata.
+        var page = _db.Invoices.AsNoTracking().Where(x => x.CustomerId == customerId)
+            .OrderByDescending(x => x.IssuedAtUtc).ThenByDescending(x => x.InvoiceId).Take(limit);
+        var invoices = await (
+            from invoice in page
+            join quote in _db.CheckoutQuotes.AsNoTracking() on invoice.CheckoutQuoteId equals quote.CheckoutQuoteId into quotes
+            from quote in quotes.DefaultIfEmpty()
+            join payment in _db.Payments.AsNoTracking() on invoice.PaymentId equals payment.PaymentId into payments
+            from payment in payments.DefaultIfEmpty()
+            orderby invoice.IssuedAtUtc descending, invoice.InvoiceId descending
+            select new { invoice, quote, payment }).ToArrayAsync(ct);
+        var items = invoices.Select(row => MapCustomerInvoice(row.invoice, row.quote, row.payment)).ToArray();
         return Ok(new { items, nextCursor = (string?)null });
     }
 

@@ -57,7 +57,10 @@ public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment
     {
         using var authMeasurement = VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.HasScope
             ? VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.Begin("Gateway", "staff-auth") : null;
-        var auth = await context.AuthenticateAsync(StaffCookieState.Scheme);
+        AuthenticateResult auth;
+        using (var cookieTiming = VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.HasScope
+            ? VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.Begin("Gateway", "cookie-authenticate") : null)
+            auth = await context.AuthenticateAsync(StaffCookieState.Scheme);
         var cookieOptions = options.Get(StaffCookieState.Scheme);
         var ticket = cookieOptions.CookieManager.GetRequestCookie(context, cookieOptions.Cookie.Name!);
         var ticketHash = string.IsNullOrEmpty(ticket) ? null : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ticket)));
@@ -67,8 +70,12 @@ public sealed class StaffCookieMiddleware(RequestDelegate next, IHostEnvironment
         if (id is > 0)
         {
             if (ticketHash is not null)
+            {
+                using var validationTiming = VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.HasScope
+                    ? VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.Begin("Gateway", "live-staff-validation") : null;
                 version = await validator.ValidateVersionAsync(id.Value, state.GetString(SessionKeys.EmployeeRoleCode) ?? "",
                     state.GetInt32(SessionKeys.EmployeeBranchId) ?? 0, ticketHash, context.RequestAborted);
+            }
             if (version is null || version != auth.Principal?.FindFirst("auth-version")?.Value) state.Clear();
         }
         context.Items[StaffIdentityState.ItemKey] = state;

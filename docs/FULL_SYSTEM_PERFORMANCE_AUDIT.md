@@ -699,3 +699,164 @@ customer has empty histories, so QA API populated results are reported separatel
 
 **REAL-WORLD PERFORMANCE: PARTIAL.** Two proven source defects fixed and tested,
 bounded runtime reads recorded, no fabricated end-user speedup or full stability PASS.
+
+## K. First authenticated request and invoice stability — 2026-10-11
+
+### Preview provenance and measurement boundaries
+
+- Diagnostic Preview: `dpl_95hNudshZN6ZHBTHJZqZG2Uy62oh`,
+  `https://viettable-kud4i8fl9-hienkhanhvu981-7145.vercel.app`.
+- Final candidate: `dpl_2awYCDKUP8SBiHBDC3QQGmDfokKi`,
+  `https://viettable-8wtuspd9f-hienkhanhvu981-7145.vercel.app`.
+  Vercel inspect confirmed **target=preview, READY**. Stable alias unchanged.
+- Preview-only request/instance/sequence/process-age headers and Server-Timing
+  expose fixed timing metadata, not SQL, cookies, JWTs or response payloads.
+  Module dispatch explicitly links timing while retaining ExecutionContext
+  suppression and HttpContext/identity isolation.
+- Authentication is split into cookie authentication and live staff validation.
+  MVC action/result, query count, SQL duration and connection duration are observed.
+  Nested/parallel `*-sum` values overlap and MUST NOT be added as wall-clock phases.
+  `app-preheaders` ends before response completion; completion is logged separately.
+  Result formatting is not a separately isolated JSON serialization benchmark.
+  Context count remained zero in these samples; EF first-model cost is unproven.
+- The old REPL verifier retained an earlier deployment in a closure. Those probes
+  were excluded from candidate comparisons. The checked-in verifier requires an
+  explicit target/context per call and retains curl failure codes/timings while
+  discarding raw stderr. Credentials/body stay in memory only, never artifacts.
+
+### First request: what the evidence does and does not prove
+
+On the final candidate, authenticated Chef returned 200 in **13.826579 s** on
+instance `d29faaccb3b04e6f888a72b34b8f85a9`, request sequence 1, process age at
+entry **7.221 s**. Application preheaders took **5.639 s**, live staff validation
+**1.636 s**, cookie authentication **10.6 ms**, connection-duration sum **3.885 s**,
+31 SQL commands. Its immediate same-instance repeat took **3.487836 s**, app
+**3.103 s**, live validation **214 ms**, 27 commands.
+
+Cashier sequence 1 on `fe2105cff865402d8fb61604751f191d` took **16.275006 s**,
+process age **7.930 s**, app **7.288 s**, live validation **1.625 s**, cookie auth
+**15.6 ms**, connection sum **2.497 s**, 20 commands. Same-instance repeats were
+**3.575665 / 3.521925 s**, with 18 commands and connection sum **0.6 ms**.
+Warm connection acquisition is therefore not the dominant Cashier cost.
+
+Health on that instance reports application-listener-ready **7.805 s**. Per-owner
+bootstrap phases run concurrently; the 22.3 s schema-validation sum is NOT a
+22.3 s startup wall time. On the diagnostic Preview, health/readiness followed by
+Chef on the same instance took **10.510 s / 6.839 s** respectively (Chef was the
+first authenticated dashboard, not a new process), then **4.061 / 3.821 / 3.813 s**.
+
+Conclusion: process startup plus first-route/live-validation/connection work
+accounts for substantial first-request delay. Cookie decoding alone does not.
+JIT/model/TLS/pool/server-execution subcosts are not independently isolated, so
+the entire 15 seconds cannot honestly be attributed to one of them or to Supabase.
+No claim that the high first-request latency has been eliminated.
+
+### Warm API and bounded repeated-read results
+
+All times below are curl HTTP response time, excluding Vercel CLI setup time;
+NOT browser render or Samsung data-ready time. Nearest-rank percentiles use all
+successful responses, failures remain in the denominator. Small sample p95 is
+the maximum, not a production SLO. Staff and customer reads used two bounded
+concurrent lanes, not a load test; instance switching is retained, not discarded.
+
+| Final candidate route | n | p50 seconds | p95 seconds | Errors |
+|---|---:|---:|---:|---:|
+| Chef dashboard, cold/first-route/warm mixed | 4 | 3.487836 | 13.826579 | 0/4 |
+| Cashier dashboard, cold/first-route/warm mixed | 4 | 3.575665 | 16.275006 | 0/4 |
+| Admin dashboard, cold/first-route/warm mixed | 4 | 1.472445 | 12.101410 | 0/4 |
+| Order history, 23 orders | 4 | 2.964849 | 3.219259 | 0/4 |
+| Invoice history, 13 invoices | 8 | 0.849133 | 1.089491 | 0/8 |
+
+Every final sample, in execution order (seconds):
+
+- Chef: 6.075112, 13.826579, 3.487836, 3.198296. First two were first
+  dashboard use on distinct processes; remaining two revisit those processes.
+- Cashier: 3.591445, 16.275006, 3.575665, 3.521925. Second switches to a new
+  process; final two are same-process warm. First is first Cashier route on an
+  already-running process.
+- Admin: 12.101410, 2.259919, 1.472445, 1.341766. First is a new process;
+  second is first Admin use on a different, already-running process.
+- Orders: 3.219259, 3.054972, 2.964849, 2.916433 (two instances).
+- Invoices: 1.089491, 0.874667, 0.847601, 0.811400, 0.849133, 0.835027,
+  0.854877, 0.925530. First seven share one instance; last switches to another.
+  Every response contained 13 invoices; no retry was used.
+
+Warm Chef still makes **27 commands**, SQL sum ~5.6 s (parallel), app ~2.8–3.1 s.
+Warm Cashier makes **18 commands**, SQL sum ~3.9 s, app ~3.1 s. Live staff
+validation ~210–215 ms, cookie authentication ~1–3 ms. Individual SQL duration
+includes database/network round-trip, not PostgreSQL CPU alone. Runtime iad1 and
+database Sydney make distance a plausible contributor, not an independently
+measured SQL-engine diagnosis. Dashboard query chains remain a bottleneck.
+
+### Invoice optimization and historical failure
+
+The diagnostic Preview proved three sequential Billing reads: invoices, quotes,
+payments. One customer-scoped paged read with left joins now replaces them,
+preserving ordering, optional legacy metadata and response mapping. No cross-DB
+read or auth relaxation was added. Runtime proves query count **3 → 1**.
+
+| Invoice API | n | p50 | p95 | Failures |
+|---|---:|---:|---:|---:|
+| Diagnostic Preview, before join | 6 | 1.025494 s | 1.422177 s | 0/6 |
+| Final Preview, after join | 8 | 0.849133 s | 1.089491 s | 0/8 |
+
+p50 improves ~17.2%, p95 ~23.4% in these bounded samples. Before samples:
+1.422177, 0.994708, 1.085620, 1.025494, 1.118117, 0.980214 s. App duration
+falls from ~630–676 ms warm to ~442–450 ms, SQL sum ~612 ms to ~216 ms.
+Public Chef history also skips an unused branch-name lookup; internal history
+retains it. This does not resolve the whole dashboard latency.
+
+The earlier failed Invoice History request has no retained HTTP/curl status or
+exception in the old helper. A bounded invocation-log lookup returned no records.
+It was NOT reproduced in 8 earlier baseline + 6 diagnostic + 8 final reads.
+This is **22 successful bounded reads**, not proof the historical error is fixed.
+Root cause remains **UNVERIFIED**; neither a Supabase failure nor a network timeout
+is asserted. The new verifier retains HTTP/curl code, timing, timestamp and
+instance/request identifiers for the next failure instead of hiding evidence.
+
+### Actual UI, security and acceptance boundaries
+
+- User logged into the diagnostic Chef browser; real dashboard showed Bình Thạnh,
+  one pending Bàn 2 order and the existing item. No business button was clicked.
+  Later API re-login of the same QA account caused the old browser's live session
+  to be rejected; its cached card plus login-required message is NOT a fresh UI
+  acceptance. Final candidate authenticated Chef/Cashier/Admin APIs returned 200.
+  Final authenticated Cashier/Admin browser and browser render timings remain
+  UNVERIFIED. User-facing Chef browser login needs renewal after QA API login.
+- Final wrong-role reads (Cashier → Chef, Chef → Admin) and unauthenticated
+  invoice list returned **401**. These are read-route negative checks, NOT full
+  branch-mutation acceptance. Five initial probes using an old Chef cookie were
+  401; excluded from authenticated dashboard latency and explicitly retained as
+  credential rejection, not mislabeled server 5xx.
+- Final health **200**, readiness **200**, branches **200**, branch 3 menu **200**.
+  A Catalog image-path probe returned **302**, zero response-body bytes; final
+  Supabase image-byte delivery was not verified by that probe, so Storage is not
+  marked PASS from the redirect alone.
+  Recovery without authorization **401**; authorized global cleanup was not run
+  because it can expire the protected user session. Durable recovery unit
+  regression is separate from new cloud runtime acceptance.
+- Authenticated WSS/reconnect on this final candidate and populated Samsung
+  History/restore acceptance remain **UNVERIFIED**. Android source/APK unchanged;
+  Samsung still uses the unchanged stable alias. No user order/session/payment
+  mutation, app-data clear, automatic recovery scheduler or credential reset.
+- Consequently stable alias is NOT promoted despite successful API benchmarks.
+
+### Tests and release decision
+
+- Newly executed CloudHost suite: **71/71 PASS**, including linked timing/context
+  isolation, parallel counts, customer invoice paging/left joins and Chef history.
+- MobileHistoryReadModelTests rerun after invoice change: **4/4 PASS**.
+- Benchmark metadata/failure/percentile Node tests: **4/4 PASS**.
+- Preview remote build/publish: PASS (CloudHost and three staff frontends).
+- Android unchanged: previous LOCAL/CLOUD_PREVIEW builds, 54 unit and 3 emulator
+  tests reused; no new Samsung populated-history acceptance is claimed.
+- Secret scan and diff check run before commit.
+  Secret scan result: **17 candidate text files / 12 DPAPI values PASS**; no JWT
+  match. Node benchmark tests were rerun **4/4 PASS** after final measurements.
+  `.idea` and the pre-existing
+  routing/Gateway changes excluded from this performance commit. No push.
+
+**VIETTABLE REAL-WORLD PERFORMANCE: PARTIAL** — invoice read cost reduced and
+diagnostics tested, but first requests remain high, historical failure cause and
+final WSS/Recovery/Samsung/browser gates are not fully established. Vercel skills
+guided explicit Preview targeting and withholding alias promotion until acceptance.

@@ -1923,7 +1923,8 @@ public sealed class OrdersController : ControllerBase
         [FromQuery] int take = 50,
         CancellationToken cancellationToken = default)
     {
-        var payload = await BuildChefHistoryAsync(branchId, null, 365, Math.Clamp(take, 1, 200), cancellationToken);
+        var payload = await BuildChefHistoryAsync(branchId, null, 365, Math.Clamp(take, 1, 200), cancellationToken,
+            includeBranchName: false);
 
         return Ok(payload.Select(o => new
         {
@@ -2081,7 +2082,8 @@ public sealed class OrdersController : ControllerBase
         int? employeeId,
         int days,
         int take,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeBranchName = true)
     {
         days = Math.Clamp(days, 1, 365);
         take = Math.Clamp(take, 1, 500);
@@ -2116,8 +2118,12 @@ public sealed class OrdersController : ControllerBase
             ?? Array.Empty<CatalogApiClient.TableSnapshotResponse>())
             .ToDictionary(x => x.TableId);
 
-        var branchName = (await _catalogApi.GetBranchesAsync(new[] { branchId }, cancellationToken))
-            ?.FirstOrDefault()?.Name ?? $"Chi nhánh {branchId}";
+        // Public Chef history does not project BranchName. Retain it for the
+        // internal history contract, without paying an unused Catalog read.
+        var branchName = includeBranchName
+            ? (await _catalogApi.GetBranchesAsync(new[] { branchId }, cancellationToken))
+                ?.FirstOrDefault()?.Name ?? $"Chi nhánh {branchId}"
+            : string.Empty;
 
         var orderIds = filteredOrders.Select(o => o.orderId).ToList();
         

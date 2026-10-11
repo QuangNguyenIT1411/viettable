@@ -104,7 +104,14 @@ public sealed class ModuleServer : IServer
         // A nested module request must not clear/replace the Gateway's holder when
         // its DefaultHttpContextFactory creates/disposes a different context.
         // Only explicit request headers/body cross this module boundary.
-        using (ExecutionContext.SuppressFlow()) return Task.Run(() => invoke(request, ct), ct);
+        // Link timing metadata explicitly without inheriting HttpContextAccessor,
+        // identity, or any other ambient state across the ownership boundary.
+        var measurement = VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.CurrentMeasurement;
+        using (ExecutionContext.SuppressFlow()) return Task.Run(async () => {
+            using var linked = measurement is null ? null
+                : VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.BeginLinked(measurement);
+            return await invoke(request, ct);
+        }, ct);
     }
     public Task StopAsync(CancellationToken ct) { dispatch = null; return Task.CompletedTask; }
     public void Dispose() => dispatch = null;

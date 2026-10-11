@@ -87,6 +87,8 @@ public sealed class CloudHostCompositionTests
         builder.Services.AddHttpContextAccessor();
         await using var app = builder.Build();
         app.MapPost("/echo", async (HttpContext context, ScopeMarker scope) => {
+            using var timing = VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.Begin("Test", "action");
+            timing.RecordQuery(TimeSpan.FromMilliseconds(2));
             var payload = await context.Request.ReadFromJsonAsync<Payload>();
             context.Response.OnStarting(() => { context.Response.Headers["X-Module"]="private"; return Task.CompletedTask; });
             return Results.Json(new {payload!.Value, scope.Id},statusCode:201);
@@ -97,10 +99,13 @@ public sealed class CloudHostCompositionTests
             { BaseAddress=new Uri("http://test.module.invalid") };
         var accessor = new HttpContextAccessor();
         var outer = new DefaultHttpContext(); accessor.HttpContext=outer;
+        using var requestTiming = VietTable.CloudHost.Diagnostics.CloudPerformanceDiagnostics.Begin("Gateway", "request");
         using var first = await client.PostAsJsonAsync("/echo",new Payload("real pipeline"));
         using var second = await client.PostAsJsonAsync("/echo",new Payload("second request"));
         Assert.Equal(HttpStatusCode.Created,first.StatusCode);
         Assert.Same(outer,accessor.HttpContext);
+        Assert.Contains("sql-sum;dur=4.0", requestTiming.ServerTiming);
+        Assert.Contains("sql-count;desc=\"2\"", requestTiming.ServerTiming);
         Assert.Equal("private",first.Headers.GetValues("X-Module").Single());
         var one=await first.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         var two=await second.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
