@@ -2087,10 +2087,13 @@ public sealed class OrdersController : ControllerBase
         take = Math.Clamp(take, 1, 500);
         var fromDate = DateTime.Today.AddDays(-days);
 
+        // Apply branch scope before the page limit; other branches must not consume
+        // this chef's history window or be materialized for in-memory filtering.
+        var branchTableIds = await _catalogApi.GetBranchTableIdsAsync(branchId, cancellationToken) ?? Array.Empty<int>();
         var orders = await _db.Orders
             .AsNoTracking()
             .Include(o => o.Status)
-            .Where(o => o.TableID != null && o.OrderTime >= fromDate)
+            .Where(o => o.TableID != null && branchTableIds.Contains(o.TableID.Value) && o.OrderTime >= fromDate)
             .OrderByDescending(o => o.CompletedTime ?? o.OrderTime)
             .Take(take)
             .Select(o => new
@@ -2105,10 +2108,7 @@ public sealed class OrdersController : ControllerBase
             })
             .ToListAsync(cancellationToken);
 
-        var branchTableIds = await _catalogApi.GetBranchTableIdsAsync(branchId, cancellationToken) ?? Array.Empty<int>();
-        var filteredOrders = orders
-            .Where(o => o.tableId.HasValue && branchTableIds.Contains(o.tableId.Value))
-            .ToList();
+        var filteredOrders = orders;
 
         var tableLookup = (await _catalogApi.GetTablesAsync(
                 filteredOrders.Where(x => x.tableId.HasValue).Select(x => x.tableId!.Value),

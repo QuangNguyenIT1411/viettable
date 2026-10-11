@@ -239,10 +239,6 @@ public sealed class CatalogApiClient : ICatalogReadModel
 
     private async Task<IReadOnlyList<DishSnapshotResponse>?> GetDishesCoreAsync(int[] ids, string query, CancellationToken cancellationToken)
     {
-        var cached = await _db.CatalogDishSnapshots.AsNoTracking()
-            .Where(x => ids.Contains(x.DishId))
-            .ToListAsync(cancellationToken);
-
         try
         {
             var remote = await _http.GetFromJsonAsync<IReadOnlyList<DishSnapshotResponse>>($"/api/internal/dishes:batch?{query}", cancellationToken);
@@ -256,6 +252,11 @@ public sealed class CatalogApiClient : ICatalogReadModel
         {
         }
 
+        // Live Catalog is authoritative. Read the local fallback only when it is needed;
+        // the successful upsert already reads the same snapshots once.
+        var cached = await _db.CatalogDishSnapshots.AsNoTracking()
+            .Where(x => ids.Contains(x.DishId))
+            .ToListAsync(cancellationToken);
         return cached.Select(Map).ToArray();
     }
 

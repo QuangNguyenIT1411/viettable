@@ -588,3 +588,114 @@ Samsung session/history performance acceptance remain unverified. Warm SQL/auth/
 serialization breakdown still lacks correlated runtime logs; no speculative query
 plan/index/cache/pool fix was applied. Stable alias stays unchanged. No Production,
 automatic recovery scheduler, database reset, Samsung logout/data clear or push.
+
+## J. Real-world request round — 2026-10-11
+
+Scope: continue the preserved working tree without changing runtime/language/hosting,
+paid plans, Production, Android URL, Session #20 or Order #38. Measurements below
+are real HTTP reads with normal QA authentication; credentials remained in RAM/DPAPI.
+They are not substituted for browser dashboard or Samsung populated-history acceptance.
+
+### Verified findings and minimal fixes
+
+1. Orders' live dish batch performed an eager no-tracking snapshot query, then a
+   second tracked query for upsert after Catalog succeeded. The first result was
+   unused on success. Move that query to the fallback path: still prefer live
+   availability, still persist snapshots, still propagate PostgreSQL concurrency
+   conflicts, and still use Orders-owned fallback on Catalog failure. No TTL change.
+2. Chef history applied `Take(take)` across all branches before filtering the Chef's
+   branch in memory. Other branches could consume its page and suppress valid
+   history. Apply the Catalog-resolved branch table IDs in SQL before ordering/limit.
+   No cross-database read or branch authorization bypass was introduced.
+3. Runtime instance turnover is directly observed. Dashboard batches were served
+   by `2b9be50cc99644a8a19456bfb0a52d21`, then
+   `97a9ae0bf4ec47aa8e85251fcf97a2af`. Those successive requests are NOT classified
+   as warm. Immediate repeated Chef calls on `c8f3ac1154da4badb345e17762a9297d`
+   were 15.059454 then 3.678678 s. This proves new-process request latency is
+   materially different from same-process reuse; it does not identify the platform
+   lifecycle policy or isolate every first-read DB/JIT/cache cost.
+
+The dish optimization saves one successful-path query (execution test), but its
+first before/after latency sample did not improve: 23-order baseline reads were
+4.060149 / 3.534154 / 3.531126 s; intermediate Preview reads were
+4.543024 / 3.661279 / 3.694338 s, same 15,083 bytes. No significant speedup is claimed.
+
+### Final Preview and bounded read measurements
+
+Final deployment: `dpl_GuudSyxMQNLEMcBfv6rTA5Y7RLs3`,
+https://viettable-k6nf4m9yh-hienkhanhvu981-7145.vercel.app,
+inspected `target=preview`, `READY`. Command: `vercel deploy . --target preview
+--scope hienkhanhvu981-7145 --yes` from the reviewed isolated staff context.
+It includes preserved pending routing/Gateway changes, not only the new Orders diff.
+Intermediate deployment: `dpl_A8SjAZChAcZ52ogp2yNwjPDR97WM`.
+No Production deploy or alias assignment was executed.
+
+- Final `/healthz`: 200, first observed total HTTP 8.456293 s.
+- Final `/readyz`: 200, total HTTP 1.963191 s.
+- These HTTP timings include platform/network. New .NET-only listener-ready wall
+  time remains UNVERIFIED; do not compare 8.456 directly with old .NET-only 22–23 s.
+- Final Chef history (40 records, 10,540 bytes, same instance
+  `98a3333df6b244c4a2f9bd98276e48ab`): 13.944071, 3.174056, 3.221177 s.
+- Final Chef dashboard immediate pair: 200, 15.059454 / 3.678678 s, same instance.
+- Final Cashier dashboard immediate pair: 200, 15.081156 / 4.376009 s.
+- Final Admin dashboard immediate pair: 200, 4.313128 / 1.400648 s.
+  Cashier/Admin pairs shared `82eb1c48b57f407d80d0179d9d6b8fb1`.
+- Final customer history same-instance pair: 200, 11.940078 / 3.423984 s,
+  23 orders, 15,083 bytes, `1bfd3d0113ea4b75891fd6e7fbb49f22`.
+- Final invoice history: 200, 1.362376 s, 13 invoices, 9,723 bytes, same instance.
+  The following protected request failed; raw output was suppressed and no sample
+  was fabricated. Continuous-use stability is not accepted from these reads alone.
+- History responses now observed `Cache-Control: no-store, no-cache,
+  must-revalidate, max-age=0`; this narrows the previous cache-header limitation
+  for the two measured routes, not all private routes/assets/errors.
+- An expired QA JWT produced three 401s during an earlier invoice probe; those
+  were excluded, followed by legitimate login (200). Neither Samsung login nor
+  `chef_hung` was changed. Authenticated invoice reads on intermediate Preview were
+  10.558963 / 1.250951 / 1.217963 s, 9,723 bytes.
+
+### Requested experience table — layer boundaries are mandatory
+
+| Function | Before | After / latest actual evidence | Improvement accepted? |
+|---|---|---|---|
+| CloudHost cold startup | .NET listener 22.524–23.317 s; earlier HTTP 24–30 s | Final first HTTP 8.456 s; .NET listener wall UNVERIFIED | HTTP reduction observed; no .NET-only percentage |
+| Chef Web load | Prior API warm median 3.868 s; full browser UI unmeasured | Same-instance API repeat 3.679 s; first 15.059 s | Small API sample only; browser UI UNVERIFIED |
+| Cashier Web load | Prior API warm median 4.740 s | Same-instance API repeat 4.376 s; first 15.081 s | Small API sample only; browser UI UNVERIFIED |
+| Admin Web load | Prior API warm median 1.971 s | Same-instance API repeat 1.401 s; prior read 4.313 s | Small API sample only; browser UI UNVERIFIED |
+| Android open app | Previous Samsung Activity timing ~1.11 s, not data-ready | This round HOT bring-to-front 226 ms, not cold launch | NOT COMPARABLE; no paired cold-launch acceptance |
+| Android restore session | Previous Samsung card median 6.813 s, metadata 8.502 s, coarse observation | Existing stable-alias card Bàn 2/Bình Thạnh/payment-requested visible after history tab switch | No fresh startup-restore improvement measured |
+| Android Order History | Populated QA API baseline subsequent median 3.534 s | Final QA API same-instance repeat 3.424 s, 23 orders | Small API sample; populated Samsung UI UNVERIFIED |
+| Android Invoice History | Prior QA API median 1.598 s | Final QA API 1.362 s, 13 invoices; next request failed | Small API sample; populated Samsung UI UNVERIFIED |
+
+Browser was inspected through Computer Use: existing Chef tab remains the real
+login page on the earlier Preview, not a dashboard. No secret was injected into
+browser automation logs and no dashboard UI PASS is claimed. Independent API
+work continued. Samsung was brought forward without force-stop/data clear/logout;
+its existing invoice-history view showed the real empty state. Switching to the
+active tab showed `Bàn 2 • Chi nhánh Bình Thạnh`, payment-requested, one round.
+No button submitting/cancelling orders, requests, payments or sessions was used.
+Samsung uses the unchanged stable alias, not the protected new candidate. Its
+customer has empty histories, so QA API populated results are reported separately.
+
+### Regression and remaining work
+
+- New execution tests: live Catalog authoritative/persisted with exactly one
+  query compilation, fallback only after HTTP and only requested IDs, empty IDs
+  issue no HTTP/query; two-branch Chef history keeps its own item at `take=1`.
+  EF InMemory 8.0.11 is test-only, matching existing EF version; it is not production
+  fake data and is not a PostgreSQL query-plan benchmark.
+- CloudHost tests rerun: **67/67 PASS** (Docker .NET 8 SDK).
+- MobileHistoryReadModelTests rerun: **4/4 PASS** (Docker).
+- Remote Chef/Cashier/Admin builds and CloudHost publish: **PASS** on final Preview.
+- Android source/APK unchanged: prior LOCAL/CLOUD_PREVIEW builds, 54 unit tests and
+  3 emulator tests are reused, NOT rerun or called new device acceptance.
+- Secret scan: **8 candidate text files / 12 DPAPI values PASS** before final docs;
+  rerun after audit update before commit. No credentials/logs/screenshots in commit.
+- `git diff --check`: PASS; two existing `.idea` changes preserved/excluded.
+- Private-route/CDN negative-cache acceptance and full Staff UI authenticated
+  navigation remain incomplete; preserved routing changes are not committed here.
+- Stable alias unchanged; no claim that Samsung received these backend fixes.
+- High first reads/process turnover, warm Cashier ~4.4 s, populated device histories,
+  authenticated WSS/reconnect and continuous-use failure diagnosis remain open.
+
+**REAL-WORLD PERFORMANCE: PARTIAL.** Two proven source defects fixed and tested,
+bounded runtime reads recorded, no fabricated end-user speedup or full stability PASS.
