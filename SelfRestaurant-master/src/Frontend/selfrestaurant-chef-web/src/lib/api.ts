@@ -122,7 +122,7 @@ export const chefApi = {
       method: "POST",
       body: JSON.stringify({}),
     }),
-  getDashboard: () => request<ChefDashboardDto>("/api/gateway/staff/chef/dashboard"),
+  getDashboard: (signal?: AbortSignal) => request<ChefDashboardDto>("/api/gateway/staff/chef/dashboard", { signal }),
   getCategories: () => request<ChefCategoryDto[]>("/api/gateway/staff/chef/categories"),
   startOrder: (orderId: number) =>
     request<{ success: boolean; message: string }>(`/api/gateway/staff/chef/orders/${orderId}/start`, {

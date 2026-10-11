@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cashierApi, type OnsitePayment } from "../lib/api";
+import { useControlledRead } from "../lib/useControlledRead";
 
 const labels: Record<string, string> = { PENDING: "Chờ thu tiền", SUCCEEDED: "Đã thu tiền", FAILED: "Thất bại", CANCELLED: "Đã hủy", EXPIRED: "Hết hạn" };
 
@@ -10,18 +11,16 @@ export function OnsitePaymentsPanel() {
   const [busy, setBusy] = useState<number | null>(null);
   const submitting = useRef(false);
   const mounted = useRef(false);
-  const refresh = async () => {
-    try { const result = await cashierApi.getOnsitePayments(); if (mounted.current) { setPayments(result); setError(""); } }
-    catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Không tải được giao dịch."); }
-    finally { if (mounted.current) setLoading(false); }
-  };
+  const refresh = useControlledRead({
+    read: signal => cashierApi.getOnsitePayments(signal),
+    apply: result => { setPayments(result); setError(""); },
+    error: e => setError(e instanceof Error ? e.message : "Không tải được giao dịch."),
+    settled: () => setLoading(false),
+    interval: 5000,
+  });
   useEffect(() => {
     mounted.current = true;
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => { await refresh(); if (!cancelled) timer = setTimeout(poll, 5000); };
-    void poll();
-    return () => { cancelled = true; mounted.current = false; clearTimeout(timer); };
+    return () => { mounted.current = false; };
   }, []);
   const confirm = async (payment: OnsitePayment) => {
     if (submitting.current) return;

@@ -528,7 +528,14 @@ public sealed class StaffCashierGatewayController : ControllerBase
 
     private async Task<CashierDashboardDto> BuildDashboardAsync(int branchId, StaffSessionUserDto staff, bool includeBills, DateOnly? billsDate, CancellationToken cancellationToken)
     {
-        var orders = await _billingClient.GetCashierOrdersAsync(branchId, cancellationToken);
+        // Independent downstream requests own separate request-scoped DbContexts.
+        // Start all three before awaiting, retaining the same authorization and projection.
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var ordersTask = _billingClient.GetCashierOrdersAsync(branchId, cancellationToken);
+        var tablesTask = _catalogClient.GetBranchTablesAsync(branchId, cancellationToken);
+        var reportTask = _billingClient.GetBranchReportAsync(branchId, today, cancellationToken);
+        await Task.WhenAll(ordersTask, tablesTask, reportTask);
+        var orders = await ordersTask;
         var orderCards = orders.Select(o => new CashierOrderCardDto(
             o.OrderId,
             o.OrderCode ?? $"ORD{o.OrderId}",
@@ -549,7 +556,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
         var orderById = orderCards.ToDictionary(o => o.OrderId);
         IReadOnlyList<CashierTableDto> tableCards;
 
-        var tables = await _catalogClient.GetBranchTablesAsync(branchId, cancellationToken);
+        var tables = await tablesTask;
         if (tables?.Tables is { Count: > 0 })
         {
             tableCards = tables.Tables.Select(t =>
@@ -579,8 +586,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
                 .ToArray();
         }
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var todayReport = await _billingClient.GetBranchReportAsync(branchId, today, cancellationToken);
+        var todayReport = await reportTask;
         var todayOrders = todayReport?.BillCount ?? orderCards.Length;
         var todayRevenue = todayReport?.TotalRevenue ?? orderCards.Sum(x => x.Items.Sum(i => i.LineTotal));
 

@@ -2,6 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAppDialog } from "../components/AppDialog";
 import { chefApi } from "../lib/api";
+import { useControlledRead } from "../lib/useControlledRead";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type {
   ChefDashboardDto,
@@ -192,31 +193,13 @@ export function DashboardPage({ onLogout }: Props) {
 
   const pageMode = location.pathname.toLowerCase().includes("/staff/chef/history") ? "history" : "index";
 
-  async function load(options?: { silent?: boolean }) {
-    const silent = options?.silent ?? false;
-    if (!silent) {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      const dashboard = await chefApi.getDashboard();
-      setData(normalizeChefDashboard(dashboard));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu bếp.");
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
-    }
-  }
-
-  useEffect(() => {
-    void load();
-    const timer = window.setInterval(() => {
-      void load({ silent: true });
-    }, 4000);
-    return () => window.clearInterval(timer);
-  }, []);
+  const load = useControlledRead({
+    read: signal => chefApi.getDashboard(signal),
+    apply: dashboard => { setData(normalizeChefDashboard(dashboard)); setError(null); },
+    error: err => setError(err instanceof Error ? err.message : "Không thể tải dữ liệu bếp."),
+    settled: () => setLoading(false),
+    interval: 4000,
+  });
 
   useEffect(() => {
     setActiveTab(location.hash.toLowerCase() === "#menu" ? "menu" : "orders");

@@ -5,6 +5,7 @@ import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { cashierApi } from "../lib/api";
+import { useControlledRead } from "../lib/useControlledRead";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import { bindStaffRealtime } from "../lib/staffRealtime";
 import { buildCashierTransferReference, buildCashierVietQrUrl, cashierQrBankInfo } from "../lib/vietQr";
@@ -169,21 +170,14 @@ export function DashboardPage({ onLogout }: Props) {
     window.sessionStorage.removeItem(getCheckoutStorageKey(orderId));
   }
 
-  async function loadDashboard(silent = false) {
-    if (!silent) {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      setDashboard(await cashierApi.getDashboard());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu thu ngân.");
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
-    }
-  }
+  const refreshDashboard = useControlledRead({
+    read: signal => cashierApi.getDashboard(signal),
+    apply: value => { setDashboard(value); setError(null); },
+    error: err => setError(err instanceof Error ? err.message : "Không thể tải dữ liệu thu ngân."),
+    settled: () => setLoading(false),
+    interval: 0,
+  });
+  async function loadDashboard(_silent = false) { await refreshDashboard(); }
 
   async function loadReservations(branchId: number, status = reservationStatus) {
     setReservationsLoading(true);
@@ -196,10 +190,6 @@ export function DashboardPage({ onLogout }: Props) {
       setReservationsLoading(false);
     }
   }
-
-  useEffect(() => {
-    void loadDashboard();
-  }, []);
 
   useEffect(() => {
     const branchId = dashboard?.staff.branchId;

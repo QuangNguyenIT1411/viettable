@@ -42,6 +42,7 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
     private boolean invoiceHistoryLoaded;
     private String invoiceHistoryError;
     private boolean sessionHistoryLoading;
+    private boolean sessionHistoryLoaded;
     private String sessionHistoryError;
 
     public static OrderHistoryFragment newInstance() {
@@ -65,6 +66,7 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 renderCurrentTab();
+                if (tab.getPosition() == 1 && !sessionHistoryLoaded && !sessionHistoryLoading) loadSessionHistory();
                 if (tab.getPosition() == 2 && !invoiceHistoryLoaded && !invoiceHistoryLoading) loadInvoiceHistory();
             }
 
@@ -88,7 +90,7 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
             @Override public void onSuccess(DiningSession value) { if (binding != null) renderCurrentTab(); }
             @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
         });
-        loadSessionHistory();
+        // Do not fetch closed-session history while the customer is viewing the active tab.
     }
 
     private void renderCurrentTab() {
@@ -185,6 +187,7 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
         MobileRepository.getInstance().loadOrders("history", new MobileRepository.Callback<List<Order>>() {
             @Override public void onSuccess(List<Order> value) {
                 sessionHistoryLoading = false;
+                sessionHistoryLoaded = true;
                 sessionHistoryError = null;
                 if (binding != null) renderCurrentTab();
             }

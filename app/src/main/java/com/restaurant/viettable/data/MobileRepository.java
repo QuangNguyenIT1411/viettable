@@ -62,6 +62,9 @@ public final class MobileRepository {
     private final List<Callback<List<Branch>>> branchRequests = new ArrayList<>();
     private boolean branchesLoading;
     private final List<Callback<DiningSession>> activeSessionRequests = new ArrayList<>();
+    private final java.util.Map<String, List<Callback<List<Order>>>> orderRequests = new java.util.HashMap<>();
+    private final List<Callback<Void>> bootstrapRequests = new ArrayList<>();
+    private boolean bootstrapLoading;
     private final PublicCatalogCache publicCatalog = new PublicCatalogCache();
 
     public void initializePublicCatalog(android.content.Context context, Runnable ready) {
@@ -217,18 +220,48 @@ public final class MobileRepository {
     }
 
     public void refreshBootstrap(Callback<Void> callback) {
-        // Private profile refresh must not gate anonymous Catalog reads/rendering.
+        bootstrapRequests.add(callback);
+        if (bootstrapLoading) return;
+        bootstrapLoading = true;
+        // These reads are independent. A Catalog/favorites/reservations failure must never
+        // prevent REST from restoring (or clearing) the actual dining session.
+        int[] remaining = {4};
+        ApiException[] firstError = {null};
+        Callback<Void> completed = new Callback<Void>() {
+            @Override public void onSuccess(Void value) { finish(null); }
+            @Override public void onError(ApiException error) { finish(error); }
+            private void finish(ApiException error) {
+                if (error != null && firstError[0] == null) firstError[0] = error;
+                if (--remaining[0] != 0) return;
+                List<Callback<Void>> callbacks = new ArrayList<>(bootstrapRequests);
+                bootstrapRequests.clear();
+                bootstrapLoading = false;
+                for (Callback<Void> item : callbacks) {
+                    if (firstError[0] == null) finishSuccess(item, null);
+                    else finishError(item, firstError[0]);
+                }
+            }
+        };
+        loadActiveSession(new Callback<DiningSession>() {
+            @Override public void onSuccess(DiningSession value) { completed.onSuccess(null); }
+            @Override public void onError(ApiException error) { completed.onError(error); }
+        });
+        loadReservations(new Callback<List<Reservation>>() {
+            @Override public void onSuccess(List<Reservation> value) { completed.onSuccess(null); }
+            @Override public void onError(ApiException error) { completed.onError(error); }
+        });
         loadProfile(new Callback<User>() {
-            @Override public void onSuccess(User value) {}
+            @Override public void onSuccess(User value) { completed.onSuccess(null); }
             @Override public void onError(ApiException error) {
                 if (error.getStatusCode() == 401) state.setLoggedIn(false);
+                completed.onError(error);
             }
         });
         loadBranches(new Callback<List<Branch>>() {
             @Override public void onSuccess(List<Branch> value) {
-                loadSelectedBranchMenu(callback);
+                loadSelectedBranchMenu(completed);
             }
-            @Override public void onError(ApiException error) { finishError(callback, error); }
+            @Override public void onError(ApiException error) { completed.onError(error); }
         });
     }
 
@@ -237,17 +270,8 @@ public final class MobileRepository {
         if (selected == null) { finishSuccess(callback, null); return; }
         loadMenu(selected.getId(), true, new Callback<Void>() {
             @Override public void onSuccess(Void value) { loadFavorites(new Callback<Void>() {
-                @Override public void onSuccess(Void ignored) {
-                    loadReservations(new Callback<List<Reservation>>() {
-                        @Override public void onSuccess(List<Reservation> value) {
-                            loadActiveSession(new Callback<DiningSession>() {
-                                @Override public void onSuccess(DiningSession session) { finishSuccess(callback, null); }
-                                @Override public void onError(ApiException error) { finishError(callback, error); }
-                            });
-                        }
-                        @Override public void onError(ApiException error) { finishError(callback, error); }
-                    });
-                }
+                // Favorites decorate menu instances, so only this dependency remains ordered.
+                @Override public void onSuccess(Void ignored) { finishSuccess(callback, null); }
                 @Override public void onError(ApiException error) { finishError(callback, error); }
             }); }
             @Override public void onError(ApiException error) { finishError(callback, error); }
@@ -654,9 +678,18 @@ public final class MobileRepository {
     public void loadActiveSession(Callback<DiningSession> callback) {
         activeSessionRequests.add(callback);
         if (activeSessionRequests.size() > 1) return;
-        api().get("/api/mobile/v1/dining-sessions/active", true, tableAware(new ApiClient.Callback() {
+        api().get("/api/mobile/v1/dining-sessions/active", true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 DiningSession session = parseSession((JSONObject) body); state.setActiveDiningSession(session);
+                // REST already verified this session. Catalog display metadata must
+                // not delay restoration or current-order reads; never infer a table
+                // number from its identity. Ignore enrichment of replaced sessions.
+                String branchId = String.valueOf(((JSONObject) body).optInt("branchId"));
+                loadTableNumbers(branchId, () -> {
+                    if (state.getActiveDiningSession() != session) return;
+                    session.setTableLabel(tableLabel(branchId, session.getTableId()));
+                    state.setActiveDiningSession(session);
+                });
                 loadOrders("active", new Callback<List<Order>>() {
                     @Override public void onSuccess(List<Order> value) { finishActiveSession(state.getActiveDiningSession(), null); }
                     @Override public void onError(ApiException error) { finishActiveSession(session, null); }
@@ -666,7 +699,7 @@ public final class MobileRepository {
                 if (error.getStatusCode() == 404) { state.setActiveDiningSession(null); finishActiveSession(null, null); }
                 else finishActiveSession(null, error);
             }
-        }));
+        });
     }
 
     private void finishActiveSession(DiningSession session, ApiException error) {
@@ -705,14 +738,25 @@ public final class MobileRepository {
     }
 
     public void loadOrders(String scope, Callback<List<Order>> callback) {
+        List<Callback<List<Order>>> pending = orderRequests.get(scope);
+        if (pending != null) { pending.add(callback); return; }
+        pending = new ArrayList<>(); pending.add(callback); orderRequests.put(scope, pending);
         api().get("/api/mobile/v1/orders?scope=" + scope, true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 JSONArray rows = (JSONArray) body; List<Order> values = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) values.add(parseOrder(rows.optJSONObject(i)));
-                state.replaceOrders(scope, values); callback.onSuccess(values);
+                state.replaceOrders(scope, values); finishOrderRequests(scope, values, null);
             }
-            @Override public void onError(ApiException error) { callback.onError(error); }
+            @Override public void onError(ApiException error) { finishOrderRequests(scope, null, error); }
         }));
+    }
+
+    private void finishOrderRequests(String scope, List<Order> orders, ApiException error) {
+        List<Callback<List<Order>>> callbacks = orderRequests.remove(scope);
+        if (callbacks == null) return;
+        for (Callback<List<Order>> callback : callbacks) {
+            if (error == null) finishSuccess(callback, orders); else finishError(callback, error);
+        }
     }
 
     public void confirmOrderItemReceived(int orderId, int itemId, Callback<Boolean> callback) {

@@ -9,9 +9,11 @@ $taskSourcePrefixes = @(
     'src/Frontend/selfrestaurant-chef-web/',
     'src/Frontend/selfrestaurant-cashier-web/',
     'src/Frontend/selfrestaurant-admin-web/'
+    'src/Frontend/shared/'
 )
 $taskExactFiles = @('sql/billing-owned-tables.sql', 'certs/supabase-ca.crt',
-    'Dockerfile.staff-preview', 'Dockerfile.staff-preview.dockerignore')
+    'Dockerfile.staff-preview', 'Dockerfile.staff-preview.dockerignore',
+    'src/Frontend/build-staff-static.mjs')
 $taskCandidates = @(git -C $taskRoot ls-files --cached --others --exclude-standard -- SelfRestaurant-master)
 if ($LASTEXITCODE -ne 0) { throw 'Cannot enumerate reviewed repository source.' }
 $taskFiles = @($taskCandidates | Sort-Object -Unique | ForEach-Object {

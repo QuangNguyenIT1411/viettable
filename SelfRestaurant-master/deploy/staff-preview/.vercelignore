@@ -18,6 +18,9 @@
 !/src/Shared/**
 !/src/Frontend
 /src/Frontend/*
+!/src/Frontend/shared
+!/src/Frontend/shared/**
+!/src/Frontend/build-staff-static.mjs
 !/src/Frontend/selfrestaurant-chef-web
 !/src/Frontend/selfrestaurant-chef-web/**
 !/src/Frontend/selfrestaurant-cashier-web
@@ -35,6 +38,7 @@
 **/obj
 **/node_modules
 **/dist
+**/staff-public
 **/*.tsbuildinfo
 **/*.dpapi
 **/*.pfx

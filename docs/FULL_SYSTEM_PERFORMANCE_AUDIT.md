@@ -227,3 +227,245 @@ Health at end: `/healthz` 200 `status=ok`, total 0.521 s;
    after sample and security regression remain required. No performance PASS yet.
 
 **Push: NO.**
+
+## G. Optimization continuation — 2026-10-11 (PARTIAL)
+
+The current candidate separates staff public bundles into a Vercel static service,
+coalesces Chef/Cashier reads, parallelizes independent Chef/Cashier dashboard HTTP
+reads, removes eager Admin section reads, and separates Android active-session
+bootstrap from unrelated catalog/profile/reservation work. Session history now
+loads when its tab is selected. These changes do not add business mutations.
+
+Latest candidate: `dpl_DbhjvMbVgY6hh4Y6iY8hDQPFHgie` at
+`https://viettable-qoq3x94f5-hienkhanhvu981-7145.vercel.app`.
+CLI inspection confirms **target=preview, Ready**. Health/readiness returned 200
+(`ok` / `ready`). Stable staging alias has NOT moved to this candidate.
+
+### Actual measurements (HTTP, not authenticated browser UI)
+
+| Scenario | Observed samples / seconds | Interpretation |
+|---|---|---|
+| Chef hashed JS, first static candidate | 1.202, 0.801, 0.964, 0.976, 0.561 | First MISS, four HIT; warm median 0.882 s vs earlier repeat 1.712 s. |
+| Chef dashboard, first static candidate | 30.209, 3.648, 4.283, 3.663, 5.840 | Four subsequent samples median 3.973 s; initial latency remains high. |
+| Cashier dashboard, latest candidate after parallel reads | 29.278, 4.667, 4.786, 4.626, 4.776 | Subsequent median 4.722 s; no convincing improvement over baseline 4.968 s median. |
+| Admin dashboard, first static candidate | 5.375, 2.051, 1.679, 1.662, 1.644 | Subsequent median 1.671 s; not a browser TTI measurement. |
+| QA order history, third candidate | 27.793, 3.858, 3.669, 3.853, 6.615 | Subsequent median 3.855 s vs baseline 3.758 s: no improvement proven. |
+| QA invoice history, third candidate | 2.835, 1.691, 1.682, 1.512, 1.515 | Subsequent median 1.598 s vs baseline 1.549 s: no improvement proven. |
+
+Hashed public staff JS responses show `X-VietTable-Static: staff`, immutable
+one-year caching, CDN HIT on repeated reads, and no CloudHost instance header.
+Staff deep links return HTML with no-store. Missing assets return 404 rather than
+SPA HTML. These establish static-service routing, not authenticated UI acceptance.
+
+**Unresolved cache acceptance:** authenticated/anonymous API and hub responses on
+the candidate still expose `public,max-age=0,must-revalidate` at the platform,
+despite no-store assertions passing in local module transport and configured
+private routing headers. No private-response CDN HIT was observed, but that does
+not prove no-store. Do not move the alias or claim private-cache acceptance yet.
+
+### Samsung and independent tests
+
+Updated CLOUD_PREVIEW APK installed without clearing app data or logging out.
+Two UIAutomator-observed force-stop launches reached Home/session card at
+4.766/32.903 s and 6.306/6.306 s respectively. Sampling has coarse observation
+bounds and no matched before baseline; n=2 does not establish performance PASS.
+The card shows Bình Thạnh, Bàn 2, and payment-requested text. This differs from
+the requested ACTIVE fixture expectation; no session/order/payment was changed
+to force a result. Canonical fixture verification remains outstanding.
+
+Android LOCAL/CLOUD builds and unit task passed in this round. CloudHost tests:
+49/49 PASS using the Docker SDK test host (Windows Application Control prevents
+the native test host). Shared controlled-read tests: 5 PASS; staff realtime tests:
+6 PASS; production-bundle tests: 3 PASS. All three staff web builds passed.
+Emulator real HTTPS connectivity/public-cache instrumentation: 3/3 PASS against
+the unchanged stable alias, not the protected new candidate. Prior candidate
+secret scan passed (24 candidate files, 2,608 APK encodings, 12 DPAPI values);
+it is not a new scan of this documentation addition.
+
+### Chef login investigation — local account versus staging
+
+The authenticated Admin employee search for `chef_hung` returns HTTP 200,
+`totalItems=0`. Source confirms this search includes inactive employees by default.
+Thus this deployed Identity employee list has no `chef_hung`; active/locked/role/
+branch details cannot be reported for a nonexistent staging account. No existing
+password was read, guessed, decrypted or reset. Identity staff login deliberately
+returns the same generic error for an absent active employee and a wrong password.
+
+Existing QA Chef `hostqa_8c074c45aa3ed29c022249edchef0` is employee #18, active,
+role `CHEF`, branch #3 (Bình Thạnh). Its authenticated Dashboard API returned 200;
+a fresh normal staff login using the rotated QA credential returned 200 and
+`success=true`. An initial diagnostic request had malformed double-encoded JSON
+and returned 400; correcting only the test request produced the successful login.
+The actual browser displays the Chef login form and has NOT reached an authenticated
+dashboard in this continuation. QA credentials remain in the DPAPI/RAM workflow;
+the browser tool currently has no secure DPAPI credential handoff, so credentials
+were not embedded in browser commands or injected as cookies to fabricate UI PASS.
+
+Cloud provider source uses the owning Identity connection with Npgsql when
+configured Postgres and expressly forbids falling back to the local SQL Server
+connection. This is source evidence; a fresh runtime provider/host diagnostic was
+not obtained in this continuation. Do not confuse source evidence or account
+presence with a direct runtime connection attestation.
+
+### Remaining acceptance boundaries
+
+- Authenticated Chef/Cashier/Admin browser UI and TTI: UNVERIFIED.
+- Candidate SignalR WSS/reconnect/branch isolation: UNVERIFIED this round.
+- Recovery/Storage business regression on candidate: not rerun.
+- Android populated History rendering and controlled n>=5 restoration: incomplete.
+- Cold-start latency around 28–30 s remains; only one Catalog build timing sample
+  (5.682 s) was collected, not a complete startup/SQL/pool breakdown.
+- Existing order-history source batches sessions/statuses/items and one Catalog
+  snapshot per bounded page; no new N+1/index/pool change was justified by this read.
+
+**VIETTABLE FULL SYSTEM PERFORMANCE: PARTIAL. No Production, database reset,
+automatic recovery scheduler, alias promotion, `.idea` edit or push.**
+
+Final continuation secret scan: PASS (26 candidate text files, 2,608 APK entry
+encodings, 12 DPAPI secret values; `.idea` excluded). Whitespace diff check: PASS.
+No commit yet: browser/runtime acceptance and complete source diff review remain
+open; the existing dirty source tree and staged `.idea/vcs.xml` are preserved.
+
+## H. Remaining bottlenecks continuation — 2026-10-11 (PARTIAL)
+
+### Startup evidence and safe candidate
+
+Complete application startup records were recovered for **two instances of the
+preceding qoq3x94f5 Preview**, superseding section G's single-module limitation:
+
+| Phase (ms) | Instance sample 1 | Instance sample 2 |
+|---|---:|---:|
+| Catalog build / start | 6344 / 57 | 5574 / 56 |
+| Orders build / start | 4166 / 19 | 4118 / 18 |
+| Customers build / start | 3824 / 11 | 3829 / 12 |
+| Identity build / start | 4117 / 77 | 4242 / 71 |
+| Billing build / start | 3997 / 14 | 3833 / 14 |
+| Application listener ready | 23317 | 22524 |
+
+This proves a substantial **application startup** bottleneck, not that platform
+initialization accounts for most of the 28–30 seconds. These build phases combine
+DI, application/module construction, EF model/bootstrap and any startup database
+work; they do not isolate those dimensions. Container/platform initialization,
+pool wait, transaction-pooler wait, TLS, JWT/DataProtection and serialization
+remain individually UNVERIFIED. Runtime deployment inspection reports `iad1`;
+the accepted Supabase project region is Sydney `ap-southeast-2`. Geographic distance
+is context, not measured attribution of query or TLS latency.
+
+A candidate now permits independent owner startup concurrently **only** for
+VERCEL_ENV=preview + Postgres + migrations disabled + seed profile None. Production
+and migration/seed runs retain sequential order. Preview-only EF metadata observers
+report query/connection count and elapsed duration without SQL, parameters, claims,
+headers, passwords or connection strings. Connection time is explicitly combined
+pool/network/TLS, not an isolated pool-wait measurement. Cookie revocation and
+role/branch/version checks execute concurrently in separate Identity scopes with
+no auth cache or skipped validation. These candidate changes remain uncommitted
+pending runtime telemetry/performance acceptance; unit success is not speedup proof.
+
+New deployment: `dpl_3ha9wsyqp1STNeCQiJE216fHTAwR`.
+URL: `https://viettable-o36qps373-hienkhanhvu981-7145.vercel.app`.
+Executed from the isolated reviewed context:
+`vercel deploy . --target preview --scope hienkhanhvu981-7145 --yes`.
+CLI inspection: **target preview, READY**. Build took approximately 122 s.
+Health returned HTTP 200/ok in 24.111 s; readiness HTTP 200/ready in 3.713 s.
+These HTTP totals do not establish startup phase timings on the new deployment.
+
+Bounded CLI log reads, including explicit deployment ID, returned zero records.
+The runtime-log connector independently returned scope authorization **403**.
+Therefore execution of the parallel-startup guard and new per-request EF/auth
+measurements has NOT been proven on the new deployment. No platform/env workaround
+or protection disable was introduced to manufacture telemetry.
+
+### Before/after measurements and limits
+
+| Scenario | Before | Latest observation | Evidence class |
+|---|---|---|---|
+| Cloud first request | 28–30 s | Health 24.111 s; valid Chef first request 29.516 s | HTTP; no consistent cold-start improvement proven |
+| Chef JS warm | 0.882 s median | 0.704 s median, four HIT reads | Actual deployed hash, HTTP/CDN, not browser TTI |
+| Chef dashboard warm | 3.973 s median | 3.868 s median | Authenticated API, n=4 subsequent samples |
+| Cashier dashboard warm | 4.722 s median | 4.740 s median | Authenticated API, n=4 subsequent samples |
+| Admin dashboard warm | 1.671 s median | 1.971 s median | Authenticated API, n=4 subsequent samples |
+| Samsung session card | 4.766 / 6.306 s (n=2) | 6.813 s median (n=5) | Coarse UIAutomator observation, not matched A/B |
+| Samsung table metadata | 32.903 / 6.306 s (n=2) | 8.502 s median (n=5) | Coarse UIAutomator observation, not matched A/B |
+| Populated order-history API | 3.758 s baseline median | Previous candidate 3.855 s median reused | No improvement proven; new batch harness timed out and results discarded |
+| Populated invoice-history API | 1.549 s baseline median | Previous candidate 1.598 s median reused | No improvement proven; not Samsung populated UI |
+
+Valid Chef samples were 29.516, 4.568, 3.876, 3.761, 3.861 s (41858 bytes).
+Cashier samples: 7.366, 4.758, 4.722, 4.794, 4.651 s (1834 bytes).
+Admin samples: 3.213, 1.809, 2.624, 1.858, 2.084 s (4393 bytes).
+An earlier Chef series returned 401 due to an obsolete QA cookie and is excluded
+from performance statistics. Fresh normal QA login restored 200; no cookie bypass.
+
+Five exact deployed Chef JS samples: 0.898 MISS, 0.874 HIT, 0.693 HIT, 0.551 HIT,
+0.715 HIT, HTTP 200, 277857 bytes, X-VietTable-Static=staff. The first test used a
+local-build hash and got 404; those reads are excluded, then the actual asset path
+was read from served HTML. Private API/hub cache acceptance from G is still open.
+
+### Android runtime acceptance (read-only, unchanged stable alias)
+
+Bootstrap independently starts active session, reservations, profile and
+branch/menu/favorites reads; bootstrap and per-scope order fetches are coalesced.
+Active-session REST now updates state and starts orders without waiting for the
+Catalog table directory. Table-label enrichment only applies to the same current
+session object, and never infers display number from table ID. Session history is
+lazy on its own tab; invoice history remains lazy. No fake snapshot permits mutation.
+
+| Samsung run | Card observed ms | Table label observed ms | Activity start ms |
+|---|---:|---:|---:|
+| 1 | 40039 | 40040 | 1108 |
+| 2 | 4852 | 29154 | 1139 |
+| 3 | 4727 | 8151 | 1105 |
+| 4 | 6813 | 6813 | 1111 |
+| 5 | 8502 | 8502 | 1100 |
+
+Run 2 directly demonstrates card availability independent of table metadata.
+The cold outlier remains unresolved; these are sampled upper bounds, not frame-level
+TTI or proof of uniform startup acceleration. Samsung's own Session History tab
+displayed loading then a genuine empty state. Populated Samsung history/detail
+performance remains UNVERIFIED; no business data was created to fill that screen.
+The Invoice History tab likewise showed real loading then `Chưa có hóa đơn đã
+phát hành`; this is empty-state evidence only, not populated invoice/detail PASS.
+
+Samsung continues to show Bình Thạnh/Bàn 2 and payment-requested text rather than
+the requested ACTIVE fixture expectation. No mutation/reset of session #20, order
+#38, payment/invoice or user account was made to force it back. Canonical ownership/
+state verification is still required; source/UI evidence is not a database audit.
+
+### Tests, source review and commit boundary
+
+- Android `assembleDebug`, `assembleCloudPreview`, `testDebugUnitTest`: PASS;
+  XML totals **54 tests, zero failures/errors**. Installed APK with update-only,
+  no logout/clear-data/ADB reverse.
+- Emulator HTTPS connectivity + public catalog cache: **3/3 PASS**, 32.942 s,
+  against unchanged stable alias, not candidate protected Preview.
+- CloudHost Docker SDK test host: **61/61 PASS**, including startup guard/order,
+  metadata-only diagnostics, concurrent cookie validation and fail-closed errors.
+- All three staff `npm run build`: rerun PASS. Shared controlled-read tests:
+  **5/5 PASS**, no overlapping polls, event coalescing, visibility resume, cleanup
+  and error backoff. Earlier realtime 6/6 and production-bundle 3/3 are reused.
+- React source review checked effect cleanup, latest callbacks, stale section/list
+  generation guards and no mutation retries. No framework/architecture migration.
+- Final candidate/APK secret scan: PASS, **32 candidate text files, 2608 APK entry
+  encodings, 12 DPAPI values**, with values never printed and `.idea` excluded.
+  `git diff --check`: PASS.
+- Source review does not justify an index/pool/timeout change. History is batched;
+  a prefetch of dish snapshots before successful live Catalog lookup is a remaining
+  redundant-read candidate, not a proven or implemented optimization in this round.
+
+Commit boundary: Android bootstrap/history and staff controlled-read/dashboard
+changes with their required build inputs and targeted tests may be preserved as
+tested source; browser acceptance and latency objectives remain PARTIAL. Startup,
+auth timing and static-routing candidate work stays in the working tree where
+runtime evidence is missing. Existing staged `.idea/vcs.xml` and modified
+`.idea/misc.xml` are left exactly outside the task commit.
+
+### Remaining blockers
+
+Cold-start improvement and per-request DB/auth breakdown are not yet proven;
+Cashier remains approximately 4.74 s, above the reference target. Authenticated
+Chef/Cashier/Admin browser TTI is **UI BLOCKED/UNVERIFIED** (no supported secret-safe
+DPAPI handoff to browser). Populated Samsung histories/details, candidate WSS/
+reconnect, Storage, durable recovery and role/branch runtime regression remain
+UNVERIFIED this round. No successful API read is substituted for these acceptances.
+
+**VIETTABLE FULL SYSTEM PERFORMANCE: PARTIAL. Stable alias unchanged; no Production,
+keep-alive, paid scaling, automatic recovery scheduler, database reset or push.**

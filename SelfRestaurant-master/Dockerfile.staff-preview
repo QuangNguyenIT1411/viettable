@@ -5,6 +5,8 @@ WORKDIR /staff
 COPY src/Frontend/selfrestaurant-chef-web/ chef/
 COPY src/Frontend/selfrestaurant-cashier-web/ cashier/
 COPY src/Frontend/selfrestaurant-admin-web/ admin/
+COPY src/Frontend/shared/ /staff/shared/
+RUN node --experimental-strip-types --test shared/controlledRead.test.mjs
 RUN cd chef && npm ci && npm run build
 RUN cd cashier && npm ci && node --experimental-strip-types --test tests/staffRealtime.test.mjs && npm run build
 RUN cd admin && npm ci && npm run build

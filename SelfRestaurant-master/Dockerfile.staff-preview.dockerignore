@@ -10,6 +10,8 @@
 !src/Shared/
 !src/Shared/**
 !src/Frontend/
+!src/Frontend/shared/
+!src/Frontend/shared/**
 !src/Frontend/selfrestaurant-chef-web/
 !src/Frontend/selfrestaurant-chef-web/**
 !src/Frontend/selfrestaurant-cashier-web/

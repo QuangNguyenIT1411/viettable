@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AdminLayout } from "../components/AdminLayout";
 import { AdminPagination } from "../components/AdminPagination";
@@ -125,6 +125,11 @@ export function AdminConsolePage({ onLogout }: Props) {
   const [dishIngredientPageSize, setDishIngredientPageSize] = useState<(typeof DISH_INGREDIENT_PAGE_SIZE_OPTIONS)[number]>(10);
   const [tableSummaryItems, setTableSummaryItems] = useState<AdminTableDto[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const dishRead = useRef(0);
+  const tableRead = useRef(0);
+  const sectionRead = useRef(0);
+  const initializedSection = useRef<SectionKey | null>(null);
   const { confirm, Dialog } = useAppDialog();
 
   const section = resolveSection(location.pathname);
@@ -197,7 +202,7 @@ export function AdminConsolePage({ onLogout }: Props) {
     };
   }, [dishIngredientEditor, dishIngredientQueryId, isDishIngredientsPage]);
 
-  async function loadTableSummaryData(scopedBranchId?: number) {
+  async function loadTableSummaryData(scopedBranchId: number | undefined, readId: number) {
     const firstPage = await adminApi.getTables("", scopedBranchId, 1, 100);
     const items = [...firstPage.tables.items];
     if (firstPage.tables.totalPages > 1) {
@@ -208,25 +213,19 @@ export function AdminConsolePage({ onLogout }: Props) {
       );
       extraPages.forEach((pageResult) => items.push(...pageResult.tables.items));
     }
-    setTableSummaryItems(items);
+    if (sectionRead.current === readId) setTableSummaryItems(items);
   }
 
-  async function loadStaticData() {
-    const [session, nextDashboard, nextCategories, nextReports] = await Promise.all([
-      adminApi.getSession(),
-      adminApi.getDashboard(),
-      adminApi.getCategories(),
-      adminApi.getReports(),
-    ]);
-    const nextStaff = session.staff ?? null;
+  async function loadStaticData(readId: number) {
+    const nextDashboard = await adminApi.getDashboard();
+    if (sectionRead.current !== readId) return null;
+    const nextStaff = nextDashboard.staff;
     setStaff(nextStaff);
     if (nextStaff) {
       setTableBranchFilter(String(nextStaff.branchId));
       setReportBranchFilter(String(nextStaff.branchId));
     }
     setDashboard(nextDashboard);
-    setCategories(nextCategories);
-    setReports(nextReports);
     setSettingsDraft({
       name: nextDashboard.settings.name,
       phone: nextDashboard.settings.phone ?? "",
@@ -236,6 +235,7 @@ export function AdminConsolePage({ onLogout }: Props) {
   }
 
   async function loadDishesData() {
+    const readId = ++dishRead.current;
     const nextDishes = await adminApi.getDishes(
       dishSearch,
       dishCategoryFilter !== "ALL" ? Number(dishCategoryFilter) : undefined,
@@ -244,10 +244,10 @@ export function AdminConsolePage({ onLogout }: Props) {
       false,
       dishOnlyVegetarian,
     );
-    setDishes(nextDishes);
+    if (readId === dishRead.current) setDishes(nextDishes);
   }
 
-  async function loadDishUnitsData() {
+  async function loadDishUnitsData(readId: number) {
     const firstPage = await adminApi.getUnits("", 1, 100, false);
     const items = [...firstPage.items];
     if (firstPage.totalPages > 1) {
@@ -258,10 +258,11 @@ export function AdminConsolePage({ onLogout }: Props) {
       );
       extraPages.forEach((pageResult) => items.push(...pageResult.items));
     }
-    setDishUnits(items);
+    if (sectionRead.current === readId) setDishUnits(items);
   }
 
   async function loadTablesPageData() {
+    const readId = ++tableRead.current;
     const scopedBranchId = staff?.branchId ?? (tableBranchFilter !== "ALL" ? Number(tableBranchFilter) : undefined);
     const nextTables = await adminApi.getTables(
       tableSearch,
@@ -269,45 +270,70 @@ export function AdminConsolePage({ onLogout }: Props) {
       tablePage,
       TABLE_PAGE_SIZE,
     );
-    setTablesData(nextTables);
+    if (readId === tableRead.current) setTablesData(nextTables);
   }
 
   async function loadAll(showSpinner = true) {
+    const readId = ++sectionRead.current;
     if (showSpinner) {
       setLoading(true);
     }
     setError(null);
     try {
-      const nextStaff = await loadStaticData();
+      const nextStaff = await loadStaticData(readId);
+      if (sectionRead.current !== readId) return;
       await Promise.all([
-        loadDishesData(),
-        loadDishUnitsData(),
-        loadTablesPageData(),
-        loadTableSummaryData(nextStaff?.branchId),
+        section === "categories" ? adminApi.getCategories().then(value => {
+          if (sectionRead.current === readId) setCategories(value);
+        }) : Promise.resolve(),
+        section === "reports" ? adminApi.getReports().then(value => {
+          if (sectionRead.current === readId) setReports(value);
+        }) : Promise.resolve(),
+        section === "dishes" ? loadDishUnitsData(readId) : Promise.resolve(),
+        section === "overview" ? loadTableSummaryData(nextStaff?.branchId, readId) : Promise.resolve(),
       ]);
+      if (sectionRead.current !== readId) return;
+      initializedSection.current = section;
       setInitialized(true);
+      setRefreshVersion(value => value + 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu quản trị.");
+      if (sectionRead.current === readId) setError(err instanceof Error ? err.message : "Không thể tải dữ liệu quản trị.");
     } finally {
-      if (showSpinner) {
+      if (showSpinner && sectionRead.current === readId) {
         setLoading(false);
       }
     }
   }
 
   useEffect(() => {
+    setInitialized(false);
     void loadAll();
-  }, []);
+    return () => {
+      // Ignore late list responses after navigation/unmount, including StrictMode cleanup.
+      sectionRead.current++;
+      initializedSection.current = null;
+      dishRead.current++;
+      tableRead.current++;
+    };
+  }, [section]);
 
   useEffect(() => {
-    if (!initialized) return;
-    void loadDishesData().catch((err) => setError(err instanceof Error ? err.message : "Không thể tải danh sách món ăn."));
-  }, [initialized, dishSearch, dishCategoryFilter, dishOnlyVegetarian, dishPage]);
+    if (!initialized || section !== "dishes" || initializedSection.current !== section) return;
+    const readId = dishRead.current + 1;
+    void loadDishesData().catch((err) => {
+      if (dishRead.current === readId) setError(err instanceof Error ? err.message : "Không thể tải danh sách món ăn.");
+    });
+    return () => { dishRead.current++; };
+  }, [initialized, section, refreshVersion, dishSearch, dishCategoryFilter, dishOnlyVegetarian, dishPage]);
 
   useEffect(() => {
-    if (!initialized) return;
-    void loadTablesPageData().catch((err) => setError(err instanceof Error ? err.message : "Không thể tải danh sách bàn."));
-  }, [initialized, staff?.branchId, tableSearch, tableBranchFilter, tablePage]);
+    if (!initialized || section !== "tables" || initializedSection.current !== section) return;
+    const readId = tableRead.current + 1;
+    void loadTablesPageData().catch((err) => {
+      if (tableRead.current === readId) setError(err instanceof Error ? err.message : "Không thể tải danh sách bàn.");
+    });
+    return () => { tableRead.current++; };
+  }, [initialized, section, refreshVersion, staff?.branchId, tableSearch, tableBranchFilter, tablePage]);
 
   useEffect(() => {
     const flash = (location.state as { message?: string } | null)?.message;
@@ -766,7 +792,10 @@ export function AdminConsolePage({ onLogout }: Props) {
 
   if (loading) return <div className="screen-message">Đang tải khu quản trị...</div>;
   if (error && !dashboard) return <div className="screen-message error-box">{error}</div>;
-  if (!dashboard || !categories || !dishes || !tablesData || !reports) return null;
+  if (!dashboard) return <div className="screen-message">Đang tải khu quản trị...</div>;
+  if ((section === "categories" && !categories) || (section === "dishes" && !dishes)
+    || (section === "tables" && !tablesData) || (section === "reports" && !reports))
+    return <div className="screen-message">{error ?? "Đang tải dữ liệu..."}</div>;
 
   return (
     <AdminLayout
@@ -844,7 +873,7 @@ export function AdminConsolePage({ onLogout }: Props) {
         </section>
       ) : null}
 
-      {section === "categories" ? (
+      {section === "categories" && categories ? (
         <section className="panel">
           {isCategoryUnitsPage ? (
             <>
@@ -1027,7 +1056,7 @@ export function AdminConsolePage({ onLogout }: Props) {
         </section>
       ) : null}
 
-      {section === "dishes" ? (
+      {section === "dishes" && dishes ? (
         <section className="panel">
           <div className="toolbar-card">
             <div><strong>Quản lý món ăn</strong><div className="muted">Quản lý món ăn, hình ảnh và thành phần món ăn.</div></div>
@@ -1291,7 +1320,7 @@ export function AdminConsolePage({ onLogout }: Props) {
         </section>
       ) : null}
 
-      {section === "tables" ? (
+      {section === "tables" && tablesData ? (
         <section className="panel">
           <div className="toolbar-card">
             <div><strong>{"Qu\u1ea3n l\u00fd b\u00e0n & m\u00e3 QR"}</strong><div className="muted">{"Qu\u1ea3n l\u00fd b\u00e0n \u0103n v\u00e0 m\u00e3 QR."}</div></div>
@@ -1472,7 +1501,7 @@ export function AdminConsolePage({ onLogout }: Props) {
         </section>
       ) : null}
 
-      {section === "reports" ? (
+      {section === "reports" && reports ? (
         <section className="panel-grid">
           {isRevenuePage ? (
             <article className="panel">

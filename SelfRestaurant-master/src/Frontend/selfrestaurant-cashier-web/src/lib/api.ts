@@ -36,7 +36,7 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
 }
 
 export const cashierApi = {
-  getOnsitePayments: () => request<OnsitePayment[]>("/api/gateway/staff/cashier/onsite-payments"),
+  getOnsitePayments: (signal?: AbortSignal) => request<OnsitePayment[]>("/api/gateway/staff/cashier/onsite-payments", { signal }),
   confirmOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
     `/api/gateway/staff/cashier/onsite-payments/${id}/confirm`, { method: "POST", body: "{}" }),
   getSession: () => request<StaffSessionDto>("/api/gateway/staff/cashier/session"),
@@ -46,8 +46,8 @@ export const cashierApi = {
       body: JSON.stringify({ username, password }),
     }),
   logout: () => request<{ success: boolean; nextPath?: string }>("/api/gateway/staff/cashier/auth/logout", { method: "POST", body: JSON.stringify({}) }),
-  getDashboard: () => request<CashierDashboardDto>("/api/gateway/staff/cashier/dashboard"),
-  getServiceRequests: () => request<StaffServiceRequestDto[]>("/api/gateway/staff/cashier/service-requests"),
+  getDashboard: (signal?: AbortSignal) => request<CashierDashboardDto>("/api/gateway/staff/cashier/dashboard", { signal }),
+  getServiceRequests: (signal?: AbortSignal) => request<StaffServiceRequestDto[]>("/api/gateway/staff/cashier/service-requests", { signal }),
   acknowledgeServiceRequest: (id: number) => request<StaffServiceRequestDto>(`/api/gateway/staff/cashier/service-requests/${id}/acknowledge`, { method: "POST", body: "{}" }),
   completeServiceRequest: (id: number) => request<StaffServiceRequestDto>(`/api/gateway/staff/cashier/service-requests/${id}/complete`, { method: "POST", body: "{}" }),
   getHistory: () => request<CashierHistoryDto>("/api/gateway/staff/cashier/history"),

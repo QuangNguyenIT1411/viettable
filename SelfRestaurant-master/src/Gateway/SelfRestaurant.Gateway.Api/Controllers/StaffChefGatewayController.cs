@@ -685,10 +685,17 @@ public sealed class StaffChefGatewayController : ControllerBase
 
     private async Task<ChefDashboardDto> BuildDashboardAsync(StaffSessionUserDto staff, int historyTake, CancellationToken cancellationToken)
     {
-        var orders = await _ordersClient.GetChefOrdersAsync(staff.BranchId, null, cancellationToken);
-        var history = await _ordersClient.GetChefHistoryAsync(staff.BranchId, historyTake, cancellationToken);
-        var menu = await BuildMenuAsync(staff.BranchId, staff.BranchName, cancellationToken);
-        var ingredients = await GetAllActiveIngredientsAsync(cancellationToken);
+        // Independent HTTP reads, each downstream owns its request-scoped DbContext.
+        // Fixed fan-out of four; do not parallelize queries on a shared DbContext or raise pools.
+        var ordersTask = _ordersClient.GetChefOrdersAsync(staff.BranchId, null, cancellationToken);
+        var historyTask = _ordersClient.GetChefHistoryAsync(staff.BranchId, historyTake, cancellationToken);
+        var menuTask = BuildMenuAsync(staff.BranchId, staff.BranchName, cancellationToken);
+        var ingredientsTask = GetAllActiveIngredientsAsync(cancellationToken);
+        await Task.WhenAll(ordersTask, historyTask, menuTask, ingredientsTask);
+        var orders = await ordersTask;
+        var history = await historyTask;
+        var menu = await menuTask;
+        var ingredients = await ingredientsTask;
 
         var pending = orders.Where(x =>
                 string.Equals(x.StatusCode, "PENDING", StringComparison.OrdinalIgnoreCase) ||

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useControlledRead } from "../lib/useControlledRead";
 import { cashierApi } from "../lib/api";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { StaffServiceRequestDto } from "../lib/types";
@@ -10,16 +11,12 @@ export function ServiceRequestsPanel({ tables = [] }: { tables?: CashierDashboar
   const [requests, setRequests] = useState<StaffServiceRequestDto[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
-  const inFlight = useRef(false);
-  const load = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    try { setRequests(await cashierApi.getServiceRequests()); setError(""); }
-    catch (e) { setError(e instanceof Error ? e.message : "Không tải được yêu cầu phục vụ."); }
-    finally { inFlight.current = false; }
-  }, []);
-
-  useEffect(() => { void load(); const timer = window.setInterval(() => void load(), 5000); return () => window.clearInterval(timer); }, [load]);
+  const load = useControlledRead({
+    read: signal => cashierApi.getServiceRequests(signal),
+    apply: value => { setRequests(value); setError(""); },
+    error: e => setError(e instanceof Error ? e.message : "Không tải được yêu cầu phục vụ."),
+    interval: 5000,
+  });
 
   async function act(item: StaffServiceRequestDto, action: "acknowledge" | "complete") {
     setBusy(item.serviceRequestId);
