@@ -1418,3 +1418,46 @@ tests, PowerShell/Node syntax; candidate/test APK build. Native tests 0/2 PASS;
 one earlier startup instrumentation crash retained as harness failure, cause
 unproven. Existing frontend/Android unit suites reused explicitly.
 **FINAL Q1 ACCEPTANCE / PERFORMANCE: PARTIAL. Stable alias not promoted. Push NO.**
+
+## 2026-10-12 — UI critical-path follow-up (candidate protection bypassed only locally)
+
+Cashier candidate, same authenticated browser tab, three reload observations
+(from reload to actual Quận 1 table data / payment row):
+
+| Sample | Shell | Dashboard loading | Tables usable | Payment row visible |
+|---|---:|---:|---:|---:|
+| 1 | 0.520s | 0.874s | 5.378s | 6.278s |
+| 2 | 0.372s | 0.756s | 2.006s | 2.951s |
+| 3 | 0.415s | 0.865s | 2.100s | 2.946s |
+
+Dashboard p50 2.100s/p95 5.378s; payment p50 2.951s/p95 6.278s,
+0/3 observed failures. Earlier candidate p50 12.177s/p95 12.836s was a
+different warm/process cohort, **not a controlled before/after**. Source shows
+`getSession` gates the Dashboard route, then Dashboard fetch runs; payment and
+service panels load independently. Browser `PerformanceResourceTiming`/network
+waterfall was not available through the permitted read-only UI surface, so these
+milestones cannot apportion all backend versus JS time. No Cashier source was
+changed; do not claim a Cashier optimization or stable-alias readiness.
+
+Android Home on the isolated Emulator, existing cached 10 categories/52 dishes:
+instrumented `setupViews()` was called 9 times during one cold-launch window,
+totalling about **355 ms** of main-thread work (18–88 ms per call) before the
+targeted change. The three food adapters and category chips were rebuilt even
+for session/profile notifications. The same fixture after preserving adapters
+and rebuilding only when Catalog objects change made 10 calls totalling about
+**40 ms** (0–16 ms per call). This is evidence of reduced main-thread jank,
+not a comparable whole-app-load benchmark: process, network and serverless
+conditions differed. One cold Activity launch was 4.478s before and 2.882s
+after, but is **not** attributed to this fix without matched samples. Native
+adapter-stability instrumentation 1/1 PASS; debug and CLOUD_PREVIEW builds plus
+54 unit tests PASS. No source change to server-side session retrieval or table
+metadata. Safe debug telemetry now separates active-session HTTP response,
+immediate card state, and order completion, but Samsung measurements could not
+be collected because Windows/ADB did not enumerate the phone.
+
+Q1 Emulator authenticated Catalog/Identity and populated completed history
+passed through the local test-only bridge (details in
+[Q1_CLOUD_E2E_ACCEPTANCE.md](Q1_CLOUD_E2E_ACCEPTANCE.md)). There is no new
+Samsung p50, populated active-session restore, candidate/stable paired browser
+waterfall, negative cross-customer event-delivery, or scoped recovery result.
+The stable alias remains unchanged; performance/release status remains PARTIAL.

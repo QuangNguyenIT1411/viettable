@@ -324,3 +324,39 @@ native Android gate blocked, populated Q1 UI/restore and negative delivery incom
 scoped recovery unavailable, and tail/UI latency not proven improved. Commit only
 validated inspection/test helpers and audit documents; exclude old routing/Gateway,
 bootstrap/account-provisioning edits, `.idea`, APKs and temporary artifacts. Push NO.
+
+## 2026-10-12 — protected candidate on isolated Emulator (follow-up)
+
+The Vercel 401 is Deployment Protection, before VietTable Identity. A debug-only
+QA APK on `Small_Phone` used `http://127.0.0.1:48127`, forwarded with ADB reverse to
+a local bridge bound exclusively to Windows loopback. The bridge uses the short-lived
+Vercel CLI trusted OIDC token in **process memory**, adds it only on the outbound
+request to the exact candidate, and supports the SignalR WebSocket route. No bypass
+credential is in the APK, Gradle config, URL, Git or logs; Vercel Authentication
+and the stable alias were unchanged. This is **not** a public-cloud APK fix: the
+ordinary CLOUD_PREVIEW APK still receives the candidate protection 401.
+
+Native test `LoopbackPreviewConnectivityTest`: 1/1 PASS. `/healthz` and branches
+returned 200; deliberately empty Identity login reached VietTable validation 400,
+not the Vercel login page. Anonymous WSS through the bridge returned backend 401;
+bridge health remained 200 after rejection. Authenticated WSS through this bridge
+was not exercised, so its event delivery is UNVERIFIED.
+
+Native `Q1PreviewReadOnlyUiTest`: 1/1 PASS on the isolated Emulator using the
+existing Q1 customer QA fixture via one-shot loopback DPAPI handoff. Real UI login,
+branch selection Quận 1, Home 10 categories/52 dishes, Menu, completed session
+#24 and invoice `INV-17aeec74d2ca432d847b7c01e606172e` appeared. Gateway
+Catalog/Identity returned 200. Active-session endpoint returned 404 for this
+closed QA fixture as expected, so **populated active-session restore is unverified**.
+The test triggers native view actions in `ActivityScenario`; emulator window focus
+was unstable, so it is not physical touchscreen acceptance. It made no new order,
+payment or session and did not touch Samsung data.
+
+Existing WSS authorization/reconnect 17/17 and prior cross-instance positive
+delivery remain valid baseline. A negative **cross-customer payload-delivery**
+experiment is still UNVERIFIED: subscription denial alone does not prove it.
+Scoped recovery is BLOCKED because the available manual endpoint includes global
+idle cleanup; no recovery job was run. Samsung could not be measured this follow-up:
+Windows/ADB listed only `emulator-5554` despite USB reauthorization. Candidate is
+still **not eligible for stable-alias promotion**. No Preview redeployment,
+Production deployment, database reset or push occurred.

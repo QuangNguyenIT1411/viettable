@@ -1,5 +1,6 @@
 package com.restaurant.viettable.data;
 
+import com.restaurant.viettable.BuildConfig;
 import com.restaurant.viettable.network.ApiClient;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.network.SignalRManager;
@@ -678,9 +679,14 @@ public final class MobileRepository {
     public void loadActiveSession(Callback<DiningSession> callback) {
         activeSessionRequests.add(callback);
         if (activeSessionRequests.size() > 1) return;
+        long started = android.os.SystemClock.elapsedRealtime();
         api().get("/api/mobile/v1/dining-sessions/active", true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
+                if (BuildConfig.DEBUG) android.util.Log.i("SessionPerf", "active responseMs="
+                        + (android.os.SystemClock.elapsedRealtime() - started));
                 DiningSession session = parseSession((JSONObject) body); state.setActiveDiningSession(session);
+                if (BuildConfig.DEBUG) android.util.Log.i("SessionPerf", "active card stateMs="
+                        + (android.os.SystemClock.elapsedRealtime() - started));
                 // REST already verified this session. Catalog display metadata must
                 // not delay restoration or current-order reads; never infer a table
                 // number from its identity. Ignore enrichment of replaced sessions.
@@ -691,11 +697,18 @@ public final class MobileRepository {
                     state.setActiveDiningSession(session);
                 });
                 loadOrders("active", new Callback<List<Order>>() {
-                    @Override public void onSuccess(List<Order> value) { finishActiveSession(state.getActiveDiningSession(), null); }
+                    @Override public void onSuccess(List<Order> value) {
+                        if (BuildConfig.DEBUG) android.util.Log.i("SessionPerf", "orders completionMs="
+                                + (android.os.SystemClock.elapsedRealtime() - started));
+                        finishActiveSession(state.getActiveDiningSession(), null);
+                    }
                     @Override public void onError(ApiException error) { finishActiveSession(session, null); }
                 });
             }
             @Override public void onError(ApiException error) {
+                if (BuildConfig.DEBUG) android.util.Log.i("SessionPerf", "active status="
+                        + error.getStatusCode() + " responseMs="
+                        + (android.os.SystemClock.elapsedRealtime() - started));
                 if (error.getStatusCode() == 404) { state.setActiveDiningSession(null); finishActiveSession(null, null); }
                 else finishActiveSession(null, error);
             }
