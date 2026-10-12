@@ -37,4 +37,6 @@ public sealed record CheckoutContextResponse(
     string StatusCode,
     string StatusName,
     bool IsActive,
-    decimal Subtotal);
+    decimal Subtotal,
+    int? DiningSessionId = null,
+    int? DiningSessionCustomerId = null);

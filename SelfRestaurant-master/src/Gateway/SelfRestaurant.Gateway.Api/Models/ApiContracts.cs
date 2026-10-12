@@ -260,7 +260,8 @@ public sealed record CashierCheckoutRequest(
     int PointsUsed = 0,
     string PaymentMethod = "CASH",
     decimal PaymentAmount = 0,
-    string? IdempotencyKey = null);
+    string? IdempotencyKey = null,
+    int? BranchId = null);
 
 public sealed record CashierCheckoutResponse(
     string BillCode,
@@ -270,7 +271,10 @@ public sealed record CashierCheckoutResponse(
     int PointsEarned,
     int CustomerPoints,
     string? CustomerName,
-    int PointsBefore);
+    int PointsBefore,
+    int? MobilePaymentId = null,
+    int? CustomerId = null,
+    int? DiningSessionId = null);
 
 public sealed record CashierBillSummaryDto(
     int BillId,

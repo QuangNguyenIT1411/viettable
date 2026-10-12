@@ -68,6 +68,31 @@ public sealed class MobileEngagementB7Tests
         Assert.Contains("payment.CustomerId, payment.DiningSessionId", billing, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Dashboard_checkout_settles_app_sessions_through_the_mobile_invoice_path()
+    {
+        var cashier = Read("src/Services/SelfRestaurant.Billing.Api/Controllers/CashierController.cs");
+        var mobileBranch = cashier.IndexOf("return await CheckoutMobileSessionAsync(command, request, initialOrder, cancellationToken);", StringComparison.Ordinal);
+        Assert.True(mobileBranch > 0);
+        // The app-session branch runs before any legacy bill can be created.
+        Assert.True(mobileBranch < cashier.IndexOf("_db.Bills.Add(bill);", StringComparison.Ordinal));
+        Assert.Contains("_mobileSettlement.SettleAsync(", cashier, StringComparison.Ordinal);
+        Assert.Contains("MobilePaymentId: result.PaymentId", cashier, StringComparison.Ordinal);
+
+        var settlement = Read("src/Services/SelfRestaurant.Billing.Api/Infrastructure/Payments/CashierMobileSettlementService.cs");
+        Assert.Contains("PaymentFinalizationService.LockQuoteAsync(db, quote.CheckoutQuoteId, ct)", settlement, StringComparison.Ordinal);
+        Assert.Contains("finalization.ConfirmAsync(paymentId, employeeId, branchId, null, ct)", settlement, StringComparison.Ordinal);
+        Assert.Contains("$\"cashier:{commandKey}:pay\"", settlement, StringComparison.Ordinal);
+        Assert.Contains("$\"cashier:{commandKey}:quote\"", settlement, StringComparison.Ordinal);
+
+        var orders = Read("src/Services/SelfRestaurant.Orders.Api/Controllers/OrdersController.cs");
+        Assert.Contains("diningSessionCustomerId = mobileSession?.CustomerId", orders, StringComparison.Ordinal);
+
+        var gateway = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/StaffCashierGatewayController.cs");
+        Assert.Contains("BranchId: staff.BranchId", gateway, StringComparison.Ordinal);
+        Assert.Contains("await NotifyCustomerPaymentAsync(payerId, mobilePaymentId, paidSessionId, response.TotalAmount, cancellationToken);", gateway, StringComparison.Ordinal);
+    }
+
     private static string Read(string relativePath)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

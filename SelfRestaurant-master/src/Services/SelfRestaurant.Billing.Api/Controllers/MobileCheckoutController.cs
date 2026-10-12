@@ -366,7 +366,7 @@ public sealed class MobileCheckoutController : ControllerBase
         return (quote, null);
     }
 
-    private static Payment NewPayment(CheckoutQuote q, string channel, string method, string? location, string key, string hash, int attempt, decimal amount)
+    internal static Payment NewPayment(CheckoutQuote q, string channel, string method, string? location, string key, string hash, int attempt, decimal amount)
     { var now = DateTime.UtcNow; return new Payment { PaymentCode = Code("PAY"), CheckoutQuoteId = q.CheckoutQuoteId, DiningSessionId = q.DiningSessionId,
         CustomerId = q.CustomerId, Amount = amount, Channel = channel.Trim().ToUpperInvariant(), Method = method.Trim().ToUpperInvariant(),
         Location = string.IsNullOrWhiteSpace(location) ? null : location.Trim().ToUpperInvariant(), Status = "PENDING", AttemptNumber = attempt,
@@ -443,7 +443,7 @@ public sealed class MobileCheckoutController : ControllerBase
         };
     }
     private static long Money(decimal value) => checked((long)Math.Round(value, 0, MidpointRounding.AwayFromZero));
-    private static string Code(string prefix) => $"{prefix}-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..Math.Min(40, prefix.Length + 1 + 14 + 1 + 32)].ToUpperInvariant();
+    internal static string Code(string prefix) => $"{prefix}-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}"[..Math.Min(40, prefix.Length + 1 + 14 + 1 + 32)].ToUpperInvariant();
     private static bool ValidCommand(int customerId, string? key, string? hash) => customerId > 0 && !string.IsNullOrWhiteSpace(key) && key.Length <= 140 && !string.IsNullOrWhiteSpace(hash) && hash.Length == 64;
     private ActionResult Validation() => BadRequest(new { code = "validation_failed", message = "Dữ liệu không hợp lệ." });
     private ActionResult IdempotencyConflict() => Conflict(new { code = "idempotency_conflict", message = "Idempotency key đã được dùng với dữ liệu khác." });

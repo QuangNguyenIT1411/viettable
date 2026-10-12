@@ -48,6 +48,7 @@ builder.Services.AddAuthentication("CashierService").AddJwtBearer("CashierServic
 });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<PaymentFinalizationService>();
+builder.Services.AddScoped<CashierMobileSettlementService>();
 builder.Services.AddTransient<PaymentReconciliationWorker>();
 if (builder.Configuration.GetValue<bool?>("Runtime:LegacyPersistentWorkers") ?? true)
     builder.Services.AddHostedService<PaymentReconciliationWorker>();

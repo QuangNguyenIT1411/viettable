@@ -80,6 +80,12 @@ public sealed class StaffCashierGatewayController : ControllerBase
             || !payment.TryGetProperty("paymentId", out var paymentValue) || !paymentValue.TryGetInt32(out var paymentId)
             || !payment.TryGetProperty("diningSessionId", out var session) || !session.TryGetInt32(out var diningSessionId)) return;
         var amount = payment.TryGetProperty("amount", out var amountValue) && amountValue.TryGetDecimal(out var parsed) ? parsed : 0m;
+        await NotifyCustomerPaymentAsync(customerId, paymentId, diningSessionId, amount, ct);
+    }
+
+    // Shared by the onsite-payments panel and the dashboard "Thanh toán" button so both notify identically.
+    private async Task NotifyCustomerPaymentAsync(int customerId, int paymentId, int diningSessionId, decimal amount, CancellationToken ct)
+    {
         try { await _customersClient.AddPaymentSucceededNotificationAsync(customerId, paymentId, diningSessionId, amount, ct); }
         catch (Exception ex) { _logger.LogWarning(ex, "Payment {PaymentId} notification deferred.", paymentId); }
         try
@@ -463,11 +469,17 @@ public sealed class StaffCashierGatewayController : ControllerBase
                 PointsUsed: Math.Max(0, request.PointsUsed),
                 PaymentMethod: string.IsNullOrWhiteSpace(request.PaymentMethod) ? "CASH" : request.PaymentMethod.Trim().ToUpperInvariant(),
                 PaymentAmount: Math.Max(0, request.PaymentAmount),
-                IdempotencyKey: request.IdempotencyKey), cancellationToken);
+                IdempotencyKey: request.IdempotencyKey,
+                BranchId: staff.BranchId), cancellationToken);
 
             if (response is null)
             {
                 return Error("checkout_failed", "Không nhận được phản hồi thanh toán.", 502);
+            }
+
+            if (response.MobilePaymentId is int mobilePaymentId && response.CustomerId is int payerId && response.DiningSessionId is int paidSessionId)
+            {
+                await NotifyCustomerPaymentAsync(payerId, mobilePaymentId, paidSessionId, response.TotalAmount, cancellationToken);
             }
 
             await _customerNotificationsHub.Clients

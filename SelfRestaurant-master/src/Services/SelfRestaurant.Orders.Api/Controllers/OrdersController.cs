@@ -1526,8 +1526,18 @@ public sealed class OrdersController : ControllerBase
             .Select(x => x.StatusName)
             .FirstOrDefaultAsync(cancellationToken) ?? order.statusName;
 
+        // App (B4) dining session owning this order, if any: Billing settles those through the mobile invoice path.
+        var mobileSession = string.IsNullOrWhiteSpace(order.diningSessionCode)
+            ? null
+            : await _db.DiningSessions.AsNoTracking()
+                .Where(x => x.SessionCode == order.diningSessionCode)
+                .Select(x => new { x.DiningSessionId, x.CustomerId })
+                .FirstOrDefaultAsync(cancellationToken);
+
         return Ok(new
         {
+            diningSessionId = mobileSession?.DiningSessionId,
+            diningSessionCustomerId = mobileSession?.CustomerId,
             order.orderId,
             order.orderCode,
             order.diningSessionCode,

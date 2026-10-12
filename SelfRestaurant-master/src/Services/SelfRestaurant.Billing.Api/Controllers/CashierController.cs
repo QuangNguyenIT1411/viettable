@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using SelfRestaurant.Billing.Api.Infrastructure.Auditing;
 using SelfRestaurant.Billing.Api.Infrastructure;
 using SelfRestaurant.Billing.Api.Infrastructure.Eventing;
+using SelfRestaurant.Billing.Api.Infrastructure.Payments;
 using SelfRestaurant.Billing.Api.Persistence;
 using SelfRestaurant.Billing.Api.Persistence.Entities;
 
@@ -22,9 +23,11 @@ public sealed class CashierController : ControllerBase
     private readonly IIntegrationEventPublisher _eventPublisher;
     private readonly BusinessAuditLogger _auditLogger;
     private readonly IHostEnvironment _environment;
+    private readonly CashierMobileSettlementService _mobileSettlement;
 
-    public CashierController(BillingDbContext db, CustomersApiClient customersApi, OrdersApiClient ordersApi, IIntegrationEventPublisher eventPublisher, BusinessAuditLogger auditLogger, IHostEnvironment environment)
+    public CashierController(BillingDbContext db, CustomersApiClient customersApi, OrdersApiClient ordersApi, IIntegrationEventPublisher eventPublisher, BusinessAuditLogger auditLogger, IHostEnvironment environment, CashierMobileSettlementService mobileSettlement)
     {
+        _mobileSettlement = mobileSettlement;
         _db = db;
         _customersApi = customersApi;
         _ordersApi = ordersApi;
@@ -133,6 +136,11 @@ public sealed class CashierController : ControllerBase
         {
             await MarkCheckoutCommandFailedAsync(command, "Không tìm thấy đơn hàng.", cancellationToken);
             return NotFound(new { message = "Không tìm thấy đơn hàng." });
+        }
+
+        if (initialOrder.DiningSessionId is > 0 && initialOrder.DiningSessionCustomerId is > 0)
+        {
+            return await CheckoutMobileSessionAsync(command, request, initialOrder, cancellationToken);
         }
 
         if (!string.IsNullOrWhiteSpace(initialOrder.DiningSessionCode)
@@ -566,6 +574,51 @@ public sealed class CashierController : ControllerBase
         });
     }
 
+    // App dining sessions are settled through the mobile invoice path (same as the onsite panel): no legacy
+    // bill, no second payment. Discounts and points belong to the customer's quote in the app.
+    private async Task<ActionResult<CheckoutResponse>> CheckoutMobileSessionAsync(
+        CheckoutCommands command, CheckoutRequest request, CheckoutContextResponse order, CancellationToken cancellationToken)
+    {
+        async Task<ActionResult<CheckoutResponse>> Fail(int status, string code, string message)
+        {
+            await MarkCheckoutCommandFailedAsync(command, message, cancellationToken);
+            return StatusCode(status, new { code, message });
+        }
+
+        if (request.EmployeeId <= 0) return await Fail(400, "missing_employee", "Thiếu thông tin nhân viên thu ngân.");
+        var branchId = order.BranchId ?? 0;
+        if (branchId <= 0 || (request.BranchId is > 0 && request.BranchId != branchId))
+            return await Fail(403, "branch_mismatch", "Đơn hàng không thuộc chi nhánh của thu ngân hiện tại.");
+        if (request.Discount > 0 || request.PointsUsed > 0)
+            return await Fail(409, "mobile_discount_in_app", "Phiên dùng ứng dụng: giảm giá và điểm do khách chọn trong ứng dụng. Hãy để trống giảm giá và điểm.");
+        var method = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "CASH" : request.PaymentMethod.Trim().ToUpperInvariant();
+        if (method == "CARD") method = "QR";
+        if (method is not ("CASH" or "QR" or "TRANSFER")) return await Fail(400, "invalid_payment_method", "Phương thức thanh toán không hợp lệ.");
+
+        MobileSettlementResult result;
+        try
+        {
+            result = await _mobileSettlement.SettleAsync(order.DiningSessionId!.Value, order.DiningSessionCustomerId!.Value, branchId,
+                request.EmployeeId, method, request.PaymentAmount, command.IdempotencyKey, cancellationToken);
+        }
+        catch (PaymentDomainException ex) { return await Fail(ex.Status, ex.Code, ex.Message); }
+
+        command.OrderId = order.OrderId;
+        command.DiningSessionCode = order.DiningSessionCode;
+        command.BillCode = result.InvoiceCode;
+        command.TotalAmount = result.TotalAmount;
+        command.ChangeAmount = result.ChangeAmount;
+        command.PointsUsed = result.PointsUsed;
+        command.PointsEarned = 0;
+        command.Status = "COMPLETED";
+        command.CompletedAtUtc = DateTime.UtcNow;
+        command.Error = null;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return Ok(new CheckoutResponse(result.InvoiceCode, result.TotalAmount, result.ChangeAmount, result.PointsUsed, 0, 0, null, 0,
+            MobilePaymentId: result.PaymentId, CustomerId: result.CustomerId, DiningSessionId: result.DiningSessionId));
+    }
+
     private async Task<string> GenerateBillCodeAsync(CancellationToken cancellationToken)
     {
         var dateCode = DateTime.Now.ToString("yyyyMMdd");
@@ -690,6 +743,13 @@ public sealed class CashierController : ControllerBase
                             CustomerName: command.CustomerName,
                             PointsBefore: command.PointsBefore ?? 0));
                     }
+                }
+
+                // Mobile-session settlement stores the invoice code without a legacy bill.
+                if (!string.IsNullOrWhiteSpace(command.BillCode))
+                {
+                    return Ok(new CheckoutResponse(command.BillCode, command.TotalAmount ?? 0, command.ChangeAmount ?? 0,
+                        command.PointsUsed ?? 0, command.PointsEarned ?? 0, command.CustomerPoints ?? 0, command.CustomerName, command.PointsBefore ?? 0));
                 }
 
                 return Ok(new CheckoutResponse(string.Empty, 0, 0, 0, 0, 0, null, 0));
@@ -820,7 +880,8 @@ public sealed class CashierController : ControllerBase
         int PointsUsed = 0,
         string PaymentMethod = "CASH",
         decimal PaymentAmount = 0,
-        string? IdempotencyKey = null);
+        string? IdempotencyKey = null,
+        int? BranchId = null);
 
     public sealed record CheckoutResponse(
         string BillCode,
@@ -830,5 +891,8 @@ public sealed class CashierController : ControllerBase
         int PointsEarned,
         int CustomerPoints,
         string? CustomerName,
-        int PointsBefore);
+        int PointsBefore,
+        int? MobilePaymentId = null,
+        int? CustomerId = null,
+        int? DiningSessionId = null);
 }

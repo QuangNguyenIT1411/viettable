@@ -1,5 +1,7 @@
 # CLAUDE.md — VietTable
 
+Luôn trả lời chủ dự án bằng tiếng Việt, dễ hiểu.
+
 > File này được Claude Code đọc tự động mỗi phiên. Giữ ngắn gọn; chi tiết nằm trong `docs/`.
 > Các mục ghi `TODO:` là thông tin chủ dự án cần điền. Nếu gặp `TODO:` liên quan tới việc đang làm, **hỏi chủ dự án, không tự đoán**.
 

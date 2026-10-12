@@ -199,7 +199,8 @@ Production đã deploy: `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN`, domain `https://viet
 ### 2c. Lần deploy gộp tiếp theo (đề xuất, 🔒 chưa duyệt)
 
 Gồm: trang chủ `/` (3.3) + biến `Authentication__Google__ClientId` (đã có trên Production, `docs/plans/GOOGLE_LOGIN.md`) +
-sửa lỗi sau test demo 12/10/2026 (thông báo thanh toán, nhãn tiếng Việt, mã đơn ngắn, nhãn bếp). Không có migration DB.
+sửa lỗi sau test demo 12/10/2026 (thông báo thanh toán, nhãn tiếng Việt, mã đơn ngắn, nhãn bếp) + nút "Thanh toán" trên
+dashboard thu ngân dùng chung đường thanh toán ứng dụng cho phiên app (hóa đơn + thông báo giống hệt). Không có migration DB.
 Các bước: `scripts\prepare-staff-preview.ps1` (thư mục upload mới) → link `viet-table/viettable` → xóa `.env.local` nếu CLI tự tạo →
 `docker build` thử → `deploy --prod` → `inspect` (syd1) → đo `/healthz`, `/readyz`, `/` → build + cài APK `cloudProd` mới (🔒 riêng).
 
