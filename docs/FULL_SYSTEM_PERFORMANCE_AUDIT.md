@@ -1211,3 +1211,154 @@ test results. Android builds/unit results are baseline reused, not Samsung proof
 measurements are verified; substantial first/warm latency, final Cashier/Admin
 UI, Samsung, actual WSS events and isolated recovery acceptance remain open.
 Stable alias remains unchanged. No Production deployment or Git push.
+
+## N. Final validation on existing Preview — 2026-10-12
+
+Base `15799ed`; no application source change or deployment in this round.
+Candidate remains `dpl_7MxW7oBh8H1DCYmPSefcYX7Hf8fE`,
+`https://viettable-k8j32aegw-hienkhanhvu981-7145.vercel.app`.
+Stable comparison uses `https://viettable-staging-hienkhanhvu981.vercel.app`.
+Health 200 (8.752099 s), readiness 200 (2.383921 s), menu 200 (2.097715 s).
+
+### Actual browser acceptance, not shell/API substitution
+
+Candidate shared staff login is visibly rendered. Chef on the older g2k4k721z
+tab initially retains populated History but displays an authentication error
+after the earlier legitimate QA API login changed its auth version. Reload
+removes that retained view and redirects to Login. This is not a fresh UI PASS.
+Candidate Chef/Cashier/Admin login and usable-dashboard acceptance: BLOCKED
+on safe credential handoff. Current browser tools cannot directly read the
+DPAPI vault and fill the form without placing plaintext in automation input.
+No plaintext credential was embedded in browser automation code, written to a
+file or handed through a clipboard/chat. API credentials remain in RAM/stdin.
+Minimum prerequisite: user signs in manually on the candidate using the
+existing authorized QA credential through their local secure mechanism.
+The user chose manual sign-in, not clipboard handoff; at the final observation
+the candidate is still on Login. No further API staff re-login is performed
+after handoff, to avoid invalidating the user's new browser cookie.
+
+Browser read-only evaluation does not expose Navigation/Resource Timing.
+Time to meaningful content, usable dashboard, rendering and navigation latency
+therefore remain UNVERIFIED; HTTP shell/asset timings below are not UI timings.
+Source inspection finds History uses the full dashboard read and its 4-second
+controlled polling interval, including unrelated active queue/menu/ingredients.
+The controlled reader prevents overlap, coalesces events and pauses while hidden.
+No unsupported claim of zero duplicate browser requests or smoother UI is made.
+
+### Stable versus candidate: bounded reads, no retry
+
+Thirty valid dashboard reads succeeded, 15 per target, five per role. The
+stable deployment lacks request-sequence metadata, so those samples remain
+UNCLASSIFIED for cold/warm, even when the instance identifier repeats. Do not
+interpret the mixed stable p95 as warm p95 or compute a causal improvement.
+
+| Target / role / cohort | n | p50 s | p95 s | Failed |
+|---|---:|---:|---:|---:|
+| Stable Chef / unclassified | 5 | 7.897283 | 35.981400 | 0 |
+| Stable Cashier / unclassified | 5 | 4.623462 | 6.203472 | 0 |
+| Stable Admin / unclassified | 5 | 1.626533 | 26.642089 | 0 |
+| Candidate Chef / sequence 1 | 1 | 13.011102 | 13.011102 | 0 |
+| Candidate Chef / warm same-process repeats | 3 | 3.587792 | 3.613534 | 0 |
+| Candidate Chef / instance switch | 1 | 4.883765 | 4.883765 | 0 |
+| Candidate Cashier / first observed route | 1 | 3.543556 | 3.543556 | 0 |
+| Candidate Cashier / warm same-process repeats | 4 | 3.334457 | 3.626921 | 0 |
+| Candidate Admin / sequence 1 | 1 | 10.127820 | 10.127820 | 0 |
+| Candidate Admin / warm same-process repeats | 4 | 1.400182 | 2.761509 | 0 |
+
+Stable instances: Chef/Cashier `8afd05392a4741cd8e523786ee35dda4`,
+Admin `3d005821e9f249089154799d985b566e`.
+Candidate Chef `597b85d21af14b2c969e6e5345114d93` then
+`5678d09512c4406b8e9626b2b33df9f3`; Cashier the latter;
+Admin `7dd6194dc4a54515a2721d6c921b300a`.
+Small descriptive cohorts, not sufficient to establish stable tail latency.
+The initial verifier used a nonexistent staff/admin route (ten 404s across
+targets); corrected to `/api/gateway/admin/dashboard` and retained separately
+as verifier errors, not discarded runtime failures. Two table-discovery probes
+also used unsupported routes before the verified Admin table endpoint.
+
+### Real WSS events and reconnect — isolated fixture
+
+Existing QA customer, branch 3, Catalog-available Table 1 (ID 36), new Session
+23, Order 41, ServiceRequest 23. Protected Session 20/Order 38 are not used.
+Two initial customer sockets receive CONFIRMED/OPEN once each. Socket B is
+closed deliberately and reconnected before staff transitions.
+
+Socket A: `5678d09512c4406b8e9626b2b33df9f3`.
+Reconnected B and staff mutation publisher:
+`9baa2add3a4a45fb8a07a4c74f8a3930`.
+Both receive orderUpdated PREPARING/READY and serviceRequestUpdated
+ACKNOWLEDGED/COMPLETED exactly once per transition. REST order detail confirms
+READY before customer confirms receipt. Distinct simultaneous receiver/publisher
+instances prove cross-instance delivery for this bounded fixture, not load or
+long-duration stability. Service UpdatedAtUtc-to-local-receipt durations:
+OPEN 618 ms; ACKNOWLEDGED A/B 598/595 ms; COMPLETED A/B 533/532 ms.
+These include clocks and DB-to-publish time, not pure broker latency.
+Bounded invocation-log queries did not yield usable event-ID traces; event-ID
+correlation and publish-to-receive timing remain UNVERIFIED. Socket A later
+closed after successful event delivery; close cause was not captured by this
+verifier. All remaining sockets are explicitly closed; no continuous stability
+or automatic reconnect policy claim is made from this short native-client test.
+
+Customer JWT staff mutation: 401. Existing branch-2 Cashier list excludes the
+fixture; direct completion by ID returns 403. Canonical request stays COMPLETED.
+Different-customer reads of protected Session 20/Order 38 return 403. A separate
+different-customer WSS observer was not run, so WSS customer isolation is not
+newly accepted solely from those REST checks.
+
+Fixture closed through real customer checkout and QA Cashier ONSITE confirmation:
+5,000 VND, Payment 22 SUCCEEDED, Invoice 22 total 5,000 VND / Session 23,
+Session 23 CLOSED, Table 36 AVAILABLE. No fake payment state or SQL mutation.
+This is API/WSS acceptance, not staff UI or Samsung acceptance.
+Final customer-scoped history reads initially returned 401 using an access token
+that expired at 02:19:02 UTC (09:19:02 Vietnam); the check was at 02:22:03 UTC.
+Normal refresh-token API returned 200. Afterwards Orders history returned 200
+in 6.017182 s, 24 rows including Order 41; invoice list returned 200 in 1.006840 s.
+Its actual `{items,nextCursor}` envelope contains 14 invoices and Invoice 22
+exactly once. Expired-token attempts are retained as auth failures, not a claimed
+Invoice transient failure or hidden retry. These single reads are not p50/p95.
+
+Chef-start request sequence 2: 11.983196 s, preheaders 11.5324 s, SQL sum
+8.3478 s / 39 commands, connection sum 1.4 ms. Chef-ready sequence 3:
+17.980589 s, TTFB 14.038407 s, preheaders 13.5370 s, SQL sum 10.9827 s /
+52 commands, connection sum 1.7 ms. These are authenticated mutations, not
+Dashboard samples. Source includes a full active-queue branch check, two order
+detail reads in ready broadcasts and awaited non-idle recovery after ready.
+The ready response completes about 3.942 s after TTFB. These serial reads and
+recovery are investigation targets; their individual contribution is not yet
+isolated, and recovery was not removed or moved to unsafe fire-and-forget work.
+
+### Routing, cache, Storage and recovery
+
+Candidate preparation copies match both existing uncommitted runtime files:
+staff-preview/vercel.json and GatewayModule.cs. Test files are excluded from
+deployment input. These three existing edits remain untouched and uncommitted.
+Public JS returns immutable max-age=31536000. Repeat Chef JS request is 200,
+0.493300 s, x-vercel-cache HIT, x-viettable-static staff, no app instance header:
+direct CDN evidence. Public HTML is no-store/no-cache; authenticated API is
+no-store/no-cache and protected ownership failures are cache BYPASS. HTML first
+probe: Chef 1.716136 s, Cashier 0.408055 s, Admin 0.476638 s; JS first probe:
+1.204684/0.829220/0.923717 s respectively. Single HTTP probes, not browser render.
+Supabase image redirect 302 then 200 image/jpeg, 123,302 bytes, new test.
+
+Standalone recovery/cleanup remains BLOCKED: the public endpoint always runs
+includeIdleCleanup=true with no fixture scope. It is not invoked. The normal
+successful QA ready/payment paths run existing non-idle recovery; this is not
+an isolated recovery fault-injection or global cleanup acceptance. No unattended
+scheduler enabled. Stable alias is NOT promoted.
+
+### Android and tests
+
+Samsung absent; ADB lists emulator-5554 only. Emulator installed CLOUD_PREVIEW
+CloudPreviewConnectivityTest: 2/2 PASS (54.06 s suite elapsed), public native
+HTTPS and actual ApiClient reads, anonymous auth rejection. No reinstall, app
+data clear or reverse tunnel. This does not substitute for Samsung launch,
+active-session restore or populated history UI acceptance.
+New targeted routing/realtime diagnostics/private-backplane tests: 17/17 PASS.
+Previous 75/75 CloudHost, 4/4 history contracts, 6/6 benchmark helper, Android
+build/unit and populated history reads are explicitly reused baseline results.
+
+**VIETTABLE REAL-WORLD PERFORMANCE: PARTIAL**. Bounded real event/reconnect and
+cross-instance delivery, role/branch protection, CDN and fixture closure are
+verified. Real authenticated candidate Staff UI, Samsung, scoped recovery,
+event-ID logs and stable tail latency remain incomplete. No source optimization,
+redeploy, alias promotion, reset, Production deployment or Git push this round.
