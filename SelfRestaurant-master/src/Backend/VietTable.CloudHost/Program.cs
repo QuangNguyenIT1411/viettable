@@ -74,8 +74,8 @@ try
         Console.WriteLine("CloudHostTransport started-module=" + owner);
         return module;
     }
-    // Preview runtime only: no migrations/seeds or persistent workers run here.
-    // Production and explicit migration/seed composition keep the previous order.
+    // Vercel preview/production runtime only: no migrations/seeds or persistent workers run here.
+    // Non-Vercel hosts and explicit migration/seed composition keep the previous order.
     var parallelStartup = ModuleStartup.CanInitializeInParallel(config);
     Console.WriteLine("CloudHostTiming startup-mode=" + (parallelStartup ? "parallel" : "sequential"));
     await ModuleStartup.InitializeAsync(owners, InitializeOwnerAsync, parallelStartup);

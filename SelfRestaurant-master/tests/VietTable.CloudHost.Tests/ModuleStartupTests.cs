@@ -8,12 +8,16 @@ namespace VietTable.CloudHost.Tests;
 public sealed class ModuleStartupTests
 {
     [Theory]
-    [InlineData("production", "Postgres", "None", "false", false)]
+    [InlineData("production", "Postgres", "None", "false", true)]
+    [InlineData("production", "Postgres", "None", "true", false)]
+    [InlineData("production", "Postgres", "Demo", "false", false)]
+    [InlineData("development", "Postgres", "None", "false", false)]
+    [InlineData(null, "Postgres", "None", "false", false)]
     [InlineData("preview", "Postgres", "None", "false", true)]
     [InlineData("preview", "Postgres", "None", "true", false)]
     [InlineData("preview", "Postgres", "Demo", "false", false)]
     [InlineData("preview", "SqlServer", "None", "false", false)]
-    public void MigrationSeedAndProductionCompositionRemainSequential(string env, string provider, string seed, string migrate, bool expected)
+    public void MigrationSeedAndNonVercelCompositionRemainSequential(string? env, string provider, string seed, string migrate, bool expected)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> {
             ["VERCEL_ENV"] = env, ["Database:Provider"] = provider,
