@@ -1362,3 +1362,59 @@ cross-instance delivery, role/branch protection, CDN and fixture closure are
 verified. Real authenticated candidate Staff UI, Samsung, scoped recovery,
 event-ID logs and stable tail latency remain incomplete. No source optimization,
 redeploy, alias promotion, reset, Production deployment or Git push this round.
+
+## 2026-10-12 — final Q1 validation, no speculative optimization
+
+Evidence: [Q1_CLOUD_E2E_ACCEPTANCE.md](Q1_CLOUD_E2E_ACCEPTANCE.md), final-validation
+section. Candidate `k8j32aegw`, READY/preview; stable alias unchanged.
+
+| Real observation | n | p50 | nearest-rank p95 | Failures / limits |
+|---|---:|---:|---:|---|
+| Cashier candidate reload -> tables usable (browser) | 3 | 12.177s | 12.836s | 0/3; process class unmeasured |
+| Samsung stable cold launch -> cached real Home categories/dishes | 3 | 5.094s | 5.208s | 0/3; ADB observation overhead included |
+| Samsung stable Activity launch only | 3 | 1.421s | 1.442s | Not whole-screen readiness |
+| Samsung stable active card from cold launch | 3 | Unavailable | Unavailable | Not observed by 17.184–17.678s; later card appeared |
+| Candidate native connectivity on emulator | 2 tests | N/A | N/A | 2/2 FAIL: Vercel Authentication 401 |
+| Stable invoice API, same-instance repeats | 2 | 1.408024s | 1.476473s | 0/2; sequence absent |
+| Stable Order History API, same-instance repeats | 2 | 3.388319s | 3.455104s | 0/2; sequence absent |
+| Candidate Order History API, warm same-process | 1 | 3.646636s | 3.646636s | 0/1; insufficient percentile evidence |
+| Candidate Order History API, new-process sequence 1 | 1 | 14.239192s | 14.239192s | 0/1; no cold distribution claim |
+
+Three invoice and three Order History reads on each origin succeeded, exact QA
+invoice 23/10,000 VND and orders 42/43 preserved: 12/12, error rate 0 in this small
+sample. Candidate invoice samples span different instances, 1.231292/1.728532/
+13.119496s; do not pool as warm. Last sample sequence 5: SQL 210.2ms, application
+preheaders 333.6ms, HTTP total 13.119496s. The unmeasured residual is substantial,
+but platform/network attribution is **not proven**. Stable first observed QA login
+27.573458s is an API observation, not browser Login-to-Dashboard timing.
+
+Old Chef/Admin browser measurements remain historical baseline; no matched
+stable/candidate authenticated UI benchmark or defensible improvement percentage.
+Cashier 3.522/3.636/3.489s observations still showing loading were excluded from
+usable timings. Request duplication and frame-accurate meaningful paint unmeasured.
+No SQL/cache/index/timeout/business-runtime change was made to chase these samples.
+
+Native candidate blocker is established before application auth: ordinary system
+TLS health expected 200 but got 401; actual ApiClient reports Protected by Vercel
+Authentication. No bypass credential shipped, no Deployment Protection change,
+and no Samsung install/logout/data clear. Emulator APK origin was overridden only
+by an uncommitted temporary Gradle init artifact. QA native login/history cannot
+be accepted on this protected candidate as currently configured.
+
+Read-only Supabase inspection also resolves the protected-state discrepancy:
+Session 20 PAYMENT_REQUESTED since 2026-10-10 19:51:18 Vietnam; Order/item 38 READY,
+latest READY audit 2026-10-12 00:50:30 Vietnam; 35,000 VND, table 37 OCCUPIED,
+no payment/invoice. Android READY -> aggregate IN_PROGRESS explains ĐANG XỬ LÝ.
+These are real historical changes, not corrected or overwritten in this round.
+
+Recovery inspection QA24 settled=true, invoiceCount=1, pendingReady=0. Global
+manual/fault recovery still BLOCKED because no narrow session scope; no invocation
+or unattended scheduler. Negative WSS subscription controls PASS 17/17 including
+reconnect; negative cross-customer event delivery still UNVERIFIED. Positive
+cross-instance delivery/reconnect and Storage evidence reused from prior round.
+
+New executions: CloudPreparation build, 6 realtime diagnostics tests, 6 benchmark
+tests, PowerShell/Node syntax; candidate/test APK build. Native tests 0/2 PASS;
+one earlier startup instrumentation crash retained as harness failure, cause
+unproven. Existing frontend/Android unit suites reused explicitly.
+**FINAL Q1 ACCEPTANCE / PERFORMANCE: PARTIAL. Stable alias not promoted. Push NO.**

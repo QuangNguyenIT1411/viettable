@@ -24,15 +24,24 @@ internal static class RecoveryInspection
         var ids=await orders.Orders.AsNoTracking().Where(x=>x.DiningSessionCode==session.SessionCode).Select(x=>x.OrderID).ToArrayAsync();
         var events=await orders.OutboxEvents.AsNoTracking().Where(x=>x.EventName=="order.status-ready.v1").ToListAsync();
         var pending=events.Where(x=> {using var json=JsonDocument.Parse(x.PayloadJson);return ids.Contains(json.RootElement.GetProperty("orderId").GetInt32());}).ToArray();
-        var invoice=await billing.Invoices.AsNoTracking().SingleAsync(x=>x.DiningSessionId==session.DiningSessionId);
+        // A read-only inspection must also support an unpaid active session.
+        var invoice=await billing.Invoices.AsNoTracking().SingleOrDefaultAsync(x=>x.DiningSessionId==session.DiningSessionId);
+        var orderStates=await orders.Orders.AsNoTracking().Where(x=>ids.Contains(x.OrderID))
+            .Select(x=>new{x.OrderID,status=x.Status.StatusCode,x.OrderTime,x.CompletedTime}).ToArrayAsync();
+        var itemStates=await orders.OrderItems.AsNoTracking().Where(x=>ids.Contains(x.OrderID))
+            .Select(x=>new{x.OrderID,x.ItemID,x.StatusCode,x.Quantity,x.LineTotal}).ToArrayAsync();
+        var auditTimes=await orders.BusinessAuditLogs.AsNoTracking().Where(x=>x.OrderId.HasValue&&ids.Contains(x.OrderId.Value))
+            .OrderByDescending(x=>x.CreatedAtUtc).Take(20)
+            .Select(x=>new{x.ActionType,x.OrderId,x.OrderItemId,x.CreatedAtUtc}).ToArrayAsync();
         var payments=await billing.Payments.AsNoTracking().Where(x=>x.DiningSessionId==session.DiningSessionId).Select(x=>new{x.PaymentId,x.Status}).ToArrayAsync();
         var notificationCount=await customers.ReadyDishNotifications.AsNoTracking().CountAsync(x=>ids.Contains(x.OrderId));
         var table=await catalog.DiningTables.AsNoTracking().Where(x=>x.TableID==session.TableId).Select(x=>new{x.TableID,x.Status.StatusCode,x.CurrentOrderID}).SingleAsync();
         var invoiceCount=await billing.Invoices.CountAsync(x=>x.DiningSessionId==session.DiningSessionId);
         Console.WriteLine("RECOVERY_STATUS: "+JsonSerializer.Serialize(new {sessionId=session.DiningSessionId,session.Status,
             orderIds=ids,tableId=table.TableID,tableStatus=table.StatusCode,tableOrder=table.CurrentOrderID,
-            invoice.InvoiceId,invoice.TotalAmount,invoiceCount,payments,
-            settled=invoice.SettlementCompletedAtUtc.HasValue,invoice.RecoveryAttemptCount,
+            session.BranchId,session.StartedAtUtc,session.UpdatedAtUtc,session.PaymentRequestedAtUtc,session.EndedAtUtc,
+            orderStates,itemStates,auditTimes,InvoiceId=invoice?.InvoiceId,TotalAmount=invoice?.TotalAmount,invoiceCount,payments,
+            settled=invoice?.SettlementCompletedAtUtc.HasValue??false,RecoveryAttemptCount=invoice?.RecoveryAttemptCount,
             pendingReady=pending.Count(x=>x.Status=="PENDING"),readyEvents=pending.Length,notificationCount}));
     }
 }
