@@ -55,6 +55,15 @@ public sealed class StaffPreviewRoutingTests
                 Assert.Equal("staff-routing-test:" + role, await result.Content.ReadAsStringAsync());
                 Assert.Contains("no-cache", result.Headers.CacheControl!.ToString());
             }
+            using (var home = await client.GetAsync("http://gateway.module.invalid/"))
+            {
+                Assert.Equal(HttpStatusCode.OK, home.StatusCode);
+                Assert.Equal("text/html", home.Content.Headers.ContentType!.MediaType);
+                Assert.Contains("no-cache", home.Headers.CacheControl!.ToString());
+                var html = await home.Content.ReadAsStringAsync();
+                foreach (var link in new[] { "href=\"/app/admin/\">Admin<", "href=\"/app/chef/\">Bếp<", "href=\"/app/cashier/\">Thu ngân<" })
+                    Assert.Contains(link, html);
+            }
             using var customer = await client.GetAsync("http://gateway.module.invalid/Menu/FromQr?code=test");
             Assert.Equal(HttpStatusCode.NotFound, customer.StatusCode);
             foreach (var path in new[] { "/api/gateway/staff/chef/dashboard", "/api/mobile/v1/orders", "/hubs/mobile-notifications/negotiate" })

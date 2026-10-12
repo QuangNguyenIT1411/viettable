@@ -341,6 +341,15 @@ app.MapGet("/Admin/{*path}", (string? path) =>
 app.MapGet("/app/customer", () => Results.Redirect("/"));
 app.MapGet("/app/customer/{*path}", (string? path) => Results.Redirect(string.IsNullOrWhiteSpace(path) ? "/" : $"/{path}"));
 MapRootSpa(app, customerAppRoot);
+if (customerAppRoot is null && builder.Configuration.GetValue<bool?>("CloudHost:ExposeStaffWeb") != false)
+{
+    // Staff-only deployments have no customer web at "/": serve a static launcher for the three staff apps.
+    app.MapGet("/", (HttpContext context) =>
+    {
+        ApplyNoCacheHeaders(context.Response);
+        return Results.Content(StaffLauncherHtml, "text/html; charset=utf-8");
+    });
+}
 return Task.FromResult(app);
 
 }
@@ -411,6 +420,32 @@ static void UseRootSpaFiles(WebApplication app, string? root)
         OnPrepareResponse = context => ApplyNoCacheHeaders(context.Context.Response)
     });
 }
+
+const string StaffLauncherHtml = """
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VietTable</title>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#f6f4ef;color:#222}
+main{width:100%;max-width:360px;padding:16px;text-align:center}
+h1{margin:0 0 24px;font-size:28px}
+a{display:block;margin:12px 0;padding:16px;border-radius:10px;background:#b4232a;color:#fff;text-decoration:none;font-size:18px;font-weight:600}
+a:hover,a:focus{background:#8f1b21}
+</style>
+</head>
+<body>
+<main>
+<h1>VietTable</h1>
+<a href="/app/admin/">Admin</a>
+<a href="/app/chef/">Bếp</a>
+<a href="/app/cashier/">Thu ngân</a>
+</main>
+</body>
+</html>
+""";
 
 static void ApplyNoCacheHeaders(HttpResponse response)
 {

@@ -194,7 +194,7 @@ Production đã deploy: `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN`, domain `https://viet
 |---|---|---|---|
 | 3.1 | **Đo khởi động lạnh thật** | 👤 báo giờ → 🤖 đo | Để yên **> 10 phút** không có request (app thoát, tab web đóng). Đo **1 lần** `/healthz`, `/readyz`, `/api/mobile/v1/branches`, `/api/mobile/v1/branches/1/menu` bằng `curl.exe` ẩn danh. Không chạy vòng lặp |
 | 3.2 | **Theo dõi `/readyz` chậm ~7 s** | 🤖 | Lần đo sau deploy: `/readyz` 7,14 s và 7,50 s ở 2 lần đầu, 0,37 s ở lần 3; `/healthz` và menu < 1,2 s. Ghi lại trong lần đo 3.1; nếu vẫn chậm thì đọc code `/readyz` (kiểm tra DB của 5 module) và log Vercel trước khi sửa |
-| 3.3 | **Trang chủ ở `/`** | 🤖 sửa code + test, gom vào **lần deploy sau** (🔒) | Hiện `/` trả 404. Thêm trang tĩnh đơn giản có 3 nút: **Admin** → `/app/admin/`, **Bếp** → `/app/chef/`, **Thu ngân** → `/app/cashier/`. Không chứa dữ liệu hay bí mật |
+| 3.3 | **Trang chủ ở `/`** | 🤖 sửa code + test, gom vào **lần deploy sau** (🔒) | Hiện `/` trả 404. Thêm trang tĩnh đơn giản có 3 nút: **Admin** → `/app/admin/`, **Bếp** → `/app/chef/`, **Thu ngân** → `/app/cashier/`. Không chứa dữ liệu hay bí mật. **Code xong 12/10/2026, chưa deploy:** `GatewayModule` trả trang HTML tĩnh ở `/` khi không có customer web và staff web đang bật; test trong `StaffPreviewRoutingTests` |
 
 ## 3. Quay lại nếu hỏng
 
