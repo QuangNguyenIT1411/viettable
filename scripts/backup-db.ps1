@@ -10,7 +10,14 @@ $passwordFile = Join-Path $secrets 'DatabasePassword.dpapi'
 foreach ($required in $ca, $passwordFile) {
     if (-not (Test-Path -LiteralPath $required)) { throw "STOP: missing $(Split-Path $required -Leaf)" }
 }
-if ([IO.Path]::GetFullPath($OutputDirectory).StartsWith([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')), [StringComparison]::OrdinalIgnoreCase)) {
+function Test-InsideDirectory([string]$path, [string]$root) {
+    # Compare full paths with a trailing separator so "D:\a\VietTable-backups" is not inside "D:\a\VietTable".
+    $sep = [IO.Path]::DirectorySeparatorChar
+    $fullPath = [IO.Path]::GetFullPath($path).TrimEnd($sep) + $sep
+    $fullRoot = [IO.Path]::GetFullPath($root).TrimEnd($sep) + $sep
+    return $fullPath.StartsWith($fullRoot, [StringComparison]::OrdinalIgnoreCase)
+}
+if (Test-InsideDirectory $OutputDirectory (Join-Path $PSScriptRoot '..')) {
     throw 'STOP: output directory must be outside the repository.'
 }
 & docker version --format '{{.Server.Version}}' *> $null
