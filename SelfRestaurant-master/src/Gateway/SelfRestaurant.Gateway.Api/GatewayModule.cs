@@ -20,12 +20,12 @@ public static Task<WebApplication> BuildAsync(string[] args,
     WebApplicationOptions? options = null, Action<WebApplicationBuilder>? configure = null,
     Action<WebApplicationBuilder>? configureServices = null, Action<WebApplication>? configurePipeline = null)
 {
-using var createBuilderTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "create-builder");
+var createBuilderTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "create-builder");
 var builder = options is null
     ? WebApplication.CreateBuilder(args)
     : WebApplication.CreateBuilder(options);
 createBuilderTiming?.Dispose();
-using var registrationTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "registrations");
+var registrationTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "registrations");
 configure?.Invoke(builder);
 SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 SelfRestaurant.Gateway.Api.Infrastructure.Media.MediaStorageConfiguration.Configure(builder.Services, builder.Configuration);
@@ -205,7 +205,7 @@ builder.Services.AddScoped<CustomerDishRecommendationService>();
 
 configureServices?.Invoke(builder);
 registrationTiming?.Dispose();
-using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "builder-build");
+var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "builder-build");
 var app = builder.Build();
 buildTiming?.Dispose();
 

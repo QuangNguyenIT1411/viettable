@@ -31,7 +31,12 @@ Các giai đoạn nghiệp vụ B0–B7 (nguồn: `SelfRestaurant-master/docs/B*
 
 Luồng chính của khách: B1 đăng nhập → B3 chọn chi nhánh/đặt bàn → B4 quét QR mở phiên → B5 gọi món (Bếp xử lý) → B6 thanh toán (Thu ngân xác nhận) → hóa đơn → B7 đánh giá.
 
-**Mục tiêu hiện tại:** đưa candidate lên đủ điều kiện nghiệm thu toàn phần và release stable (xem `docs/acceptance/RELEASE_READINESS.md`).
+**Hiện trạng dữ liệu (chủ dự án xác nhận 12/10/2026):** VietTable **chưa có người dùng thật**. Toàn bộ dữ liệu trên
+stable/Supabase (kể cả Session #20, Order #38, Bàn 37) là **dữ liệu thử** do chủ dự án tạo.
+
+**Mục tiêu hiện tại:** đưa code mới nhất lên **stable** trên Vercel, chạy mượt, để chủ dự án test app Android + web trên stable.
+Môi trường QA riêng **tạm hoãn** (kế hoạch giữ tại `docs/plans/VT-HO-01_QA_ENV.md`). Tiêu chí nghiệm thu toàn phần cũ:
+`docs/acceptance/RELEASE_READINESS.md`.
 
 ## 2. Công nghệ
 
@@ -82,8 +87,9 @@ Kết quả tham chiếu tại lần nghiệm thu 12/10/2026 ghi trong ngoặc.
 gradlew.bat :app:assembleDebug :app:assembleCloudPreview :app:testDebugUnitTest
 
 # Host dotnet.exe KHÔNG có SDK → chạy trong container `viettable-cloudhost-sdk` (dotnet/sdk:8.0),
-# container mount thư mục SelfRestaurant-master (docker ps xác nhận 12/10/2026).
-# ⚠ CHƯA XÁC MINH: điểm mount bên trong (/workspace theo evidence) và cờ -w; evidence chỉ ghi lệnh rút gọn.
+# container mount thư mục SelfRestaurant-master tại /workspace (đã xác minh 12/10/2026).
+# Chạy từ PowerShell. Git Bash tự đổi "/workspace" thành đường dẫn Windows → lỗi "Cwd must be an absolute path"
+# (nếu buộc dùng Git Bash: đặt MSYS_NO_PATHCONV=1).
 # CloudHost tests (75/75 PASS; nếu thiếu EF InMemory: dotnet restore đúng project trước)
 docker exec -w /workspace viettable-cloudhost-sdk dotnet test tests/VietTable.CloudHost.Tests/VietTable.CloudHost.Tests.csproj --no-restore
 # Backend contract tests (143 PASS, 1 skipped)
@@ -95,8 +101,9 @@ npm.cmd run build
 ```
 
 ⚠ KHÔNG chạy nếu chưa hỏi: `scripts/*staging*`, `scripts/q1-*`, `scripts/*bootstrap*`, `scripts/provision-*`,
-`tools/SelfRestaurant.CloudPreparation`, `docker compose up` (có db-init), mọi lệnh `vercel`/`npx vercel`.
-Vercel CLI không nằm trong PATH; các script cũ gọi qua `npx vercel@62.4.0`.
+`tools/SelfRestaurant.CloudPreparation`, `docker compose up` (có db-init), mọi lệnh `vercel`/`npx vercel` ghi lên Cloud.
+Vercel CLI không nằm trong PATH; dùng `npx vercel@62.4.0` (đã đăng nhập sẵn). Lệnh Vercel **chỉ đọc** được phép:
+`whoami`, `ls`, `inspect`, `project ls`, `domains ls`.
 
 Chỉ chạy các lệnh **build, unit test, contract test** khi được phép ở Mục 6. Mọi lệnh có thể ghi vào DB, gọi Cloud thật hay deploy đều phải hỏi trước.
 
@@ -105,7 +112,7 @@ Chỉ chạy các lệnh **build, unit test, contract test** khi được phép 
 | Môi trường | Ghi chú |
 |---|---|
 | Local | TODO: cách chạy backend + DB local |
-| QA cô lập | TODO: có hay chưa; tài khoản/fixture QA nằm ở đâu (không ghi secret vào file này) |
+| QA cô lập | Chưa có; tạm hoãn (kế hoạch `docs/plans/VT-HO-01_QA_ENV.md`) |
 | Candidate Vercel | `dpl_7MxW7oBh8H1DCYmPSefcYX7Hf8fE` — Ready/Preview, **chưa đủ điều kiện release** |
 | Stable | Alias **không được đổi** nếu chưa có phê duyệt |
 
@@ -115,29 +122,28 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 
 > Chủ dự án cập nhật mục này mỗi khi mở/đóng việc. Mặc định là **CHỈ ĐỌC**.
 
-- Trạng thái: **ĐÓNG BĂNG — chỉ đọc** (theo biên bản bàn giao 12/10/2026)
-- Việc đang mở: _không có_
-- Branch làm việc: _không có_
-- Được phép: đọc code/tài liệu, `git status`, `git log`, `git diff`
-- TODO (chủ dự án): khi mở việc, ghi rõ ví dụ "Mở VT-HO-01 trên branch `fix/vt-ho-01`; được sửa code, chạy build + unit test; không deploy"
+- Trạng thái: **MỞ VIỆC** (từ 12/10/2026)
+- Việc đang mở: **Deploy code mới lên stable**
+- Branch làm việc: `qa/vt-ho-01` (commit trên máy, **không push** khi chưa hỏi)
+- Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
+- **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 
 **Git & release**
 - Không push, merge, reset, rebase, stash, discard thay đổi; không commit lên `main`.
-- Không đụng các thay đổi chưa commit sẵn có (`.idea`, routing/Gateway) — chúng không phải của bạn.
-- Không deploy candidate/production, không đổi stable alias.
-- Không tắt Vercel Deployment Protection; không nhúng OIDC/bypass token vào APK hoặc code client.
+- Không đụng các thay đổi chưa commit sẵn có (`.idea/*`, `tools/SelfRestaurant.CloudPreparation/Program.cs`,
+  `StagingAdminBootstrap.cs`, `scripts/*` chưa track, `docs/STAGING_STAFF_ACCESS.md`) — chúng không phải của bạn.
+- Không deploy, không đổi stable alias, không chạy migration DB nếu chưa được duyệt **cho lần đó**.
+- Không tắt Vercel Deployment Protection; không nhúng OIDC/bypass token hay bất kỳ secret nào vào APK hoặc code client.
 
-**Dữ liệu thật**
-- Không chạm **Dining Session #20** (`PAYMENT_REQUESTED`), **Order #38** (`READY`), **Bàn 37** (đang dùng).
-- Không tạo payment thật, không thanh toán/đóng/hủy phiên, không đổi trạng thái đơn.
-- Không chạy **recovery endpoint** (có cleanup toàn cục) hay bất kỳ script cleanup/ghi/xóa DB nào.
+**Dữ liệu (dữ liệu thử, nhưng vẫn là Cloud dùng chung)**
+- Session #20 / Order #38 / Bàn 37 là dữ liệu thử: được dùng khi test, nhưng thao tác ghi trên Cloud vẫn hỏi trước.
+- Không chạy **recovery endpoint** (có cleanup toàn cục) hay script cleanup/xóa DB hàng loạt.
 - Không chạy `tools/SelfRestaurant.CloudPreparation` (dưới mọi action) và các script gọi nó.
-- Chỉ test ghi dữ liệu trên QA fixture cô lập đã được chỉ định.
 
 **Thiết bị**
-- Không logout, clear data, uninstall hay cài đè app trên Samsung SM-A528B đang giữ phiên.
+- Samsung SM-A528B: được cài lại/cài đè app khi cần, nhưng **phải hỏi trước mỗi lần**.
 
 **File nhạy cảm**
 - Không mở, đọc, in hay commit `b64.txt`. Không đọc nội dung `%LOCALAPPDATA%\VietTable\staging-secrets\*`.
