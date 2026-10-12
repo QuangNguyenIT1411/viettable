@@ -45,8 +45,19 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
     private boolean sessionHistoryLoaded;
     private String sessionHistoryError;
 
+    private static final String ARG_INITIAL_TAB = "arg_initial_tab";
+    public static final int TAB_INVOICES = 2;
+
     public static OrderHistoryFragment newInstance() {
         return new OrderHistoryFragment();
+    }
+
+    public static OrderHistoryFragment newInstance(int initialTab) {
+        OrderHistoryFragment fragment = new OrderHistoryFragment();
+        Bundle args = new Bundle();
+        args.putInt(ARG_INITIAL_TAB, initialTab);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Nullable
@@ -76,6 +87,10 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
             @Override
             public void onTabReselected(TabLayout.Tab tab) {}
         });
+
+        int initialTab = getArguments() == null ? 0 : getArguments().getInt(ARG_INITIAL_TAB, 0);
+        TabLayout.Tab requestedTab = binding.tabLayoutOrderHistory.getTabAt(initialTab);
+        if (initialTab > 0 && requestedTab != null) requestedTab.select();
 
         binding.btnEmptyScanQr.setOnClickListener(v -> {
             switchTab(R.id.nav_qr);

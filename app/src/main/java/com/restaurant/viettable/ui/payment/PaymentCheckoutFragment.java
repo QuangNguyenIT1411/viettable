@@ -54,8 +54,8 @@ public class PaymentCheckoutFragment extends BaseFragment {
             for (Order o : session.getOrders()) {
                 for (OrderItem oi : o.getItems()) {
                     totalDishes += oi.getQuantity();
-                    if (oi.getStatus() != OrderItem.Status.SERVED) {
-                        unfinishedNames.add(oi.getFoodName() + " (" + oi.getStatus().name() + ")");
+                    if (oi.isKitchenUnfinished()) {
+                        unfinishedNames.add(oi.getFoodName() + " (" + oi.getStatusDisplayText() + ")");
                     }
                 }
             }

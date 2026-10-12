@@ -56,6 +56,18 @@ public sealed class MobileEngagementB7Tests
         Assert.Contains("entity.CustomerId != customerId", source, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Cashier_onsite_confirmation_notifies_the_paying_customer_without_failing_the_payment()
+    {
+        var gateway = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/StaffCashierGatewayController.cs");
+        Assert.Contains("if (paymentId is not null) await NotifyCustomerPaymentAsync(result, ct);", gateway, StringComparison.Ordinal);
+        Assert.Contains("_customersClient.AddPaymentSucceededNotificationAsync(customerId, paymentId, diningSessionId, amount, ct)", gateway, StringComparison.Ordinal);
+        Assert.Contains("MobileNotificationsHub.CustomerGroup(customerId))\n                .SendAsync(\"paymentUpdated\"", gateway.Replace("\r\n", "\n"), StringComparison.Ordinal);
+        Assert.Contains("status.GetString() != \"SUCCEEDED\"", gateway, StringComparison.Ordinal);
+        var billing = Read("src/Services/SelfRestaurant.Billing.Api/Controllers/CashierMobilePaymentsController.cs");
+        Assert.Contains("payment.CustomerId, payment.DiningSessionId", billing, StringComparison.Ordinal);
+    }
+
     private static string Read(string relativePath)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

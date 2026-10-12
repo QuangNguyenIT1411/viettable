@@ -53,6 +53,16 @@ public class OrderItem implements Serializable {
     public String getCreatedAt() { return statusTime; }
     public String getFormattedTotalPrice() { return getFormattedPrice(); }
 
+    /** The kitchen still has to cook it. READY means cooked (waiting for the customer to pick it up). */
+    public boolean isKitchenUnfinished() {
+        return status == Status.PENDING || status == Status.CONFIRMED || status == Status.PREPARING;
+    }
+
+    /** Customers may only ask to cancel a dish the kitchen has not finished. */
+    public boolean canRequestCancel() {
+        return isKitchenUnfinished();
+    }
+
     public String getStatusDisplayText() {
         switch (status) {
             case PENDING: return "Đã gửi";

@@ -35,7 +35,8 @@ public sealed class CashierMobilePaymentsController(BillingDbContext db, Payment
         try
         {
             var payment = await finalization.ConfirmAsync(paymentId, employeeId, branchId, null, ct);
-            return Ok(new { payment.PaymentId, payment.Status, payment.Amount, payment.CompletedAtUtc, payment.ConfirmedByEmployeeId });
+            return Ok(new { payment.PaymentId, payment.Status, payment.Amount, payment.CompletedAtUtc, payment.ConfirmedByEmployeeId,
+                payment.CustomerId, payment.DiningSessionId });
         }
         catch (PaymentDomainException ex)
         { return StatusCode(ex.Status, new { success = false, code = ex.Code, message = ex.Message, correlationId = HttpContext.TraceIdentifier }); }

@@ -55,6 +55,33 @@ public sealed class MobileEngagementController : ControllerBase
             nextCursor = hasMore ? rows[^1].ReadyDishNotificationId.ToString() : null });
     }
 
+    public const string PaymentSucceededEvent = "billing.payment-succeeded.v1";
+
+    // Inbox row for a collected payment. Payment rows have no order: OrderId is 0 and OrderItemId carries the
+    // PaymentId, so the existing (OrderId, OrderItemId, EventName) index makes the call idempotent per payment.
+    // TableId stays null so the legacy table-wide ready-dish feed can never show another customer's payment.
+    [HttpPost("customers/{customerId:int}/notifications/payment-succeeded")]
+    public async Task<ActionResult<object>> PaymentSucceeded(int customerId, PaymentSucceededRequest request, CancellationToken ct)
+    {
+        if (customerId <= 0 || request.PaymentId <= 0 || request.DiningSessionId <= 0 || request.Amount < 0) return Validation();
+        var existing = await _db.ReadyDishNotifications.AsNoTracking().FirstOrDefaultAsync(
+            x => x.OrderId == 0 && x.OrderItemId == request.PaymentId && x.EventName == PaymentSucceededEvent, ct);
+        if (existing is not null) return Ok(new { notificationId = existing.ReadyDishNotificationId, created = false });
+        var entity = new ReadyDishNotifications
+        {
+            OrderId = 0, OrderItemId = request.PaymentId, CustomerId = customerId,
+            EventName = PaymentSucceededEvent, Message = PaymentSucceededMessage(request.Amount, request.DiningSessionId),
+            Status = "OPEN", CreatedAtUtc = DateTime.UtcNow
+        };
+        _db.ReadyDishNotifications.Add(entity);
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { notificationId = entity.ReadyDishNotificationId, created = true });
+    }
+
+    public static string PaymentSucceededMessage(decimal amount, int diningSessionId) =>
+        // Vietnamese thousands separator without depending on ICU culture data in the container.
+        $"Thanh toán thành công {decimal.Round(amount).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.')}đ cho phiên #{diningSessionId}. Cảm ơn quý khách!";
+
     [HttpPost("customers/{customerId:int}/notifications/{notificationId:long}/read")]
     public async Task<ActionResult<object>> ReadNotification(int customerId, long notificationId, CancellationToken ct)
     {
@@ -145,6 +172,7 @@ public sealed class MobileEngagementController : ControllerBase
     private ActionResult IdempotencyConflict() => Conflict(new { code = "idempotency_conflict", message = "Idempotency key đã được dùng với dữ liệu khác." });
 
     public sealed record FavoriteRequest(string DishName);
+    public sealed record PaymentSucceededRequest(int PaymentId, int DiningSessionId, decimal Amount);
     public sealed record CreateReviewRequest(int InvoiceId, int DiningSessionId, int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls, string IdempotencyKey, string RequestHash);
     public sealed record UpdateReviewRequest(int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls);
     public sealed record CreateSupportRequest(string? Category, string? Subject, string? Message, int? OrderId, int? ReservationId, int? PaymentId, string IdempotencyKey, string RequestHash);

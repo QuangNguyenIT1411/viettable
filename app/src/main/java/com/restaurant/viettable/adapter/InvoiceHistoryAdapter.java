@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.restaurant.viettable.databinding.ItemInvoiceHistoryBinding;
 import com.restaurant.viettable.model.InvoiceHistoryItem;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.StatusLabels;
 
 import java.util.List;
 import java.util.Locale;
@@ -42,10 +43,12 @@ public class InvoiceHistoryAdapter extends RecyclerView.Adapter<InvoiceHistoryAd
         return status == null || status.isEmpty() ? "ĐÃ PHÁT HÀNH" : status;
     }
     private static String paymentLabel(InvoiceHistoryItem invoice) {
-        String value = (invoice.getPaymentChannel() == null ? "" : invoice.getPaymentChannel()) + "/"
-                + (invoice.getPaymentMethod() == null ? "" : invoice.getPaymentMethod());
-        if (invoice.getPaymentLocation() != null && !invoice.getPaymentLocation().isEmpty()) value += " • " + invoice.getPaymentLocation();
-        return value.equals("/") ? "Không rõ" : value;
+        String channel = StatusLabels.paymentChannel(invoice.getPaymentChannel());
+        String method = StatusLabels.paymentMethod(invoice.getPaymentMethod());
+        String value = channel.isEmpty() ? method : (method.isEmpty() ? channel : channel + " • " + method);
+        String location = StatusLabels.paymentLocation(invoice.getPaymentLocation());
+        if (!location.isEmpty()) value += " • " + location;
+        return value.isEmpty() ? "Không rõ" : value;
     }
 
     static final class ViewHolder extends RecyclerView.ViewHolder {

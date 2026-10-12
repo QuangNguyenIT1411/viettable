@@ -1034,7 +1034,7 @@ function OrderColumn({
                 <div className="order-ready-alert">
                   <i className="bi bi-bell-fill" />
                   <div>
-                    <strong>Đã báo phục vụ</strong>
+                    <strong>Đã báo khách nhận món</strong>
                   </div>
                 </div>
               ) : null}

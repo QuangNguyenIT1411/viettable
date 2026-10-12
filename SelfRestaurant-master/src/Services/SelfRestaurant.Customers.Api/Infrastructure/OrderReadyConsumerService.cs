@@ -129,7 +129,7 @@ public sealed class OrderReadyConsumerService : BackgroundService
                         CustomerId = payload.CustomerId,
                         TableId = payload.TableId,
                         EventName = item.EventName,
-                        Message = $"{dishName} đã sẵn sàng. Vui lòng đến nhận món cho đơn {payload.OrderCode}.",
+                        Message = ReadyMessage(dishName, payload.OrderId),
                         Status = "OPEN",
                         CreatedAtUtc = DateTime.UtcNow
                     });
@@ -192,6 +192,10 @@ public sealed class OrderReadyConsumerService : BackgroundService
             }
         }
     }
+
+    // Customers see the short order number, not the internal order code.
+    public static string ReadyMessage(string dishName, int orderId) =>
+        $"{dishName} đã sẵn sàng. Vui lòng đến nhận món cho đơn #{orderId}.";
 
     private sealed record OrderReadyPayload(
         int OrderId,

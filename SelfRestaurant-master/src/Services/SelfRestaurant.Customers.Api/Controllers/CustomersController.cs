@@ -587,7 +587,7 @@ public sealed class CustomersController : ControllerBase
 
         var query = _db.ReadyDishNotifications
             .AsNoTracking()
-            .Where(x => x.Status == normalizedStatus)
+            .Where(x => x.Status == normalizedStatus && x.EventName != MobileEngagementController.PaymentSucceededEvent)
             .AsQueryable();
 
         if (tableId is > 0)

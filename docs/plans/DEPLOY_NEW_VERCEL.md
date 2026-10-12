@@ -196,6 +196,13 @@ Production đã deploy: `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN`, domain `https://viet
 | 3.2 | **Theo dõi `/readyz` chậm ~7 s** | 🤖 | Lần đo sau deploy: `/readyz` 7,14 s và 7,50 s ở 2 lần đầu, 0,37 s ở lần 3; `/healthz` và menu < 1,2 s. Ghi lại trong lần đo 3.1; nếu vẫn chậm thì đọc code `/readyz` (kiểm tra DB của 5 module) và log Vercel trước khi sửa |
 | 3.3 | **Trang chủ ở `/`** | 🤖 sửa code + test, gom vào **lần deploy sau** (🔒) | Hiện `/` trả 404. Thêm trang tĩnh đơn giản có 3 nút: **Admin** → `/app/admin/`, **Bếp** → `/app/chef/`, **Thu ngân** → `/app/cashier/`. Không chứa dữ liệu hay bí mật. **Code xong 12/10/2026, chưa deploy:** `GatewayModule` trả trang HTML tĩnh ở `/` khi không có customer web và staff web đang bật; test trong `StaffPreviewRoutingTests` |
 
+### 2c. Lần deploy gộp tiếp theo (đề xuất, 🔒 chưa duyệt)
+
+Gồm: trang chủ `/` (3.3) + biến `Authentication__Google__ClientId` (đã có trên Production, `docs/plans/GOOGLE_LOGIN.md`) +
+sửa lỗi sau test demo 12/10/2026 (thông báo thanh toán, nhãn tiếng Việt, mã đơn ngắn, nhãn bếp). Không có migration DB.
+Các bước: `scripts\prepare-staff-preview.ps1` (thư mục upload mới) → link `viet-table/viettable` → xóa `.env.local` nếu CLI tự tạo →
+`docker build` thử → `deploy --prod` → `inspect` (syd1) → đo `/healthz`, `/readyz`, `/` → build + cài APK `cloudProd` mới (🔒 riêng).
+
 ## 3. Quay lại nếu hỏng
 
 - Project mới hỏng: stable cũ (`viettable-staging-hienkhanhvu981.vercel.app`) **vẫn chạy nguyên**. Cài lại APK `cloudPreview` để app

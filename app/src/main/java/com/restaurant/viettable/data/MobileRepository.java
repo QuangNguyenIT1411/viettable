@@ -26,6 +26,7 @@ import com.restaurant.viettable.model.SplitPaymentResult;
 import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.model.User;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.StatusLabels;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -461,8 +462,11 @@ public final class MobileRepository {
                 List<NotificationItem> values = new ArrayList<>();
                 if (rows != null) for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
+                    String type = row.optString("type");
                     values.add(new NotificationItem(String.valueOf(row.optLong("notificationId")),
-                            NotificationItem.Type.ORDER, "Món ăn đã sẵn sàng", row.optString("message"),
+                            StatusLabels.EVENT_PAYMENT_SUCCEEDED.equals(type) ? NotificationItem.Type.PAYMENT : NotificationItem.Type.ORDER,
+                            StatusLabels.notificationTitle(type),
+                            StatusLabels.notificationMessage(row.optString("message"), row.optLong("orderId")),
                             row.optString("createdAtUtc"), row.optBoolean("isRead")));
                 }
                 state.replaceNotifications(values);
@@ -1255,11 +1259,13 @@ public final class MobileRepository {
 
     private Order parseOrder(JSONObject row) {
         List<OrderItem> items = new ArrayList<>(); JSONArray itemRows = row.optJSONArray("items");
+        // Items carry no timestamp of their own: they were ordered together with their round.
+        String orderTime = row.optString("orderTime");
         if (itemRows != null) for (int i = 0; i < itemRows.length(); i++) {
             JSONObject item = itemRows.optJSONObject(i);
             items.add(new OrderItem(String.valueOf(item.optInt("itemId")), item.optString("dishName"),
                     Math.round(item.optDouble("unitPrice")), item.optInt("quantity"), item.optString("note"),
-                    orderItemStatus(item.optString("status")), ""));
+                    orderItemStatus(item.optString("status")), orderTime));
         }
         DiningSession activeSession = state.getActiveDiningSession();
         JSONObject sessionRow = row.optJSONObject("diningSession");

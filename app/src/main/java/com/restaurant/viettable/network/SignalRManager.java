@@ -46,6 +46,14 @@ public final class SignalRManager {
         public String updatedAtUtc;
     }
 
+    /** Sent on payment request (sessionId) and on cashier-confirmed payment (diningSessionId). */
+    public static final class PaymentUpdatedEvent {
+        public Integer diningSessionId;
+        public Integer sessionId;
+        public Integer paymentId;
+        public String status;
+    }
+
     private static final String TAG = "VietTableSignalR";
     private static final long[] RETRY_DELAYS_MS = { 2_000L, 5_000L, 10_000L, 30_000L };
     private static final SignalRManager INSTANCE = new SignalRManager();
@@ -131,6 +139,7 @@ public final class SignalRManager {
         current.on("orderUpdated", event -> handleOrderUpdated(current, event), OrderUpdatedEvent.class);
         current.on("serviceRequestUpdated", event -> handleServiceRequestUpdated(current, event),
                 ServiceRequestUpdatedEvent.class);
+        current.on("paymentUpdated", event -> handlePaymentUpdated(current, event), PaymentUpdatedEvent.class);
         current.onClosed(error -> main.post(() -> handleClosed(current, error)));
     }
 
@@ -298,6 +307,30 @@ public final class SignalRManager {
             if (!deduplicator.shouldProcess(signature, System.currentTimeMillis())) return;
             Log.i(TAG, "serviceRequestUpdated requestId=" + event.serviceRequestId);
             refreshServiceCanonical();
+        });
+    }
+
+    private void handlePaymentUpdated(HubConnection current, PaymentUpdatedEvent event) {
+        main.post(() -> {
+            if (!acceptsEvents(current) || event == null) return;
+            Integer eventSessionId = event.diningSessionId != null ? event.diningSessionId : event.sessionId;
+            String signature = "payment:" + eventSessionId + ":" + event.paymentId + ":" + event.status;
+            if (!deduplicator.shouldProcess(signature, System.currentTimeMillis())) return;
+            Log.i(TAG, "paymentUpdated sessionId=" + eventSessionId);
+            // The Hub group is per customer, so the inbox always belongs to this user.
+            MobileRepository.getInstance().loadNotifications(new MobileRepository.Callback<java.util.List<com.restaurant.viettable.model.NotificationItem>>() {
+                @Override public void onSuccess(java.util.List<com.restaurant.viettable.model.NotificationItem> value) {}
+                @Override public void onError(ApiException error) {}
+            });
+            DiningSession session = AppStateManager.getInstance().getActiveDiningSession();
+            int sessionId = parseId(session == null ? null : session.getId());
+            if (!RealtimeEventPolicy.appliesToService(sessionId, eventSessionId)) return;
+            // A paid session closes on the server; reloading it lets the app leave the dining screens.
+            MobileRepository.getInstance().loadActiveSession(new MobileRepository.Callback<DiningSession>() {
+                @Override public void onSuccess(DiningSession value) {}
+                @Override public void onError(ApiException error) {}
+            });
+            refreshOrdersCanonical();
         });
     }
 

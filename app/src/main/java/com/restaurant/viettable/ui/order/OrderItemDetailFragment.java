@@ -56,7 +56,8 @@ public class OrderItemDetailFragment extends BaseFragment {
         if (item != null) {
             binding.tvItemDetailName.setText(item.getFoodName());
             binding.tvItemDetailPrice.setText(item.getFormattedTotalPrice());
-            binding.tvItemDetailStatusBadge.setText("TRẠNG THÁI: " + item.getStatus().name());
+            binding.tvItemDetailStatusBadge.setText("TRẠNG THÁI: " + item.getStatusDisplayText().toUpperCase(new java.util.Locale("vi", "VN")));
+            binding.btnCancelItem.setVisibility(item.canRequestCancel() ? View.VISIBLE : View.GONE);
             binding.tvItemDetailQuantity.setText(item.getQuantity() + " phần");
             binding.tvItemDetailOptions.setText(item.getOptionsSummary());
             binding.tvItemDetailCreatedAt.setText(DisplayFormatters.dateTime(item.getCreatedAt()));
@@ -72,7 +73,7 @@ public class OrderItemDetailFragment extends BaseFragment {
         });
 
         binding.btnCancelItem.setOnClickListener(v -> {
-            if (item != null && (item.getStatus() == OrderItem.Status.READY || item.getStatus() == OrderItem.Status.SERVED)) {
+            if (item != null && !item.canRequestCancel()) {
                 com.restaurant.viettable.ui.common.DialogHelper.showInfoDialog(
                         requireContext(),
                         "Không thể hủy món",

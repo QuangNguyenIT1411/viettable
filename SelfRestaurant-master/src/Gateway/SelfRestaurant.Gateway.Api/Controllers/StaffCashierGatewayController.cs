@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Mvc;
 using SelfRestaurant.Gateway.Api.Hubs;
@@ -60,8 +61,33 @@ public sealed class StaffCashierGatewayController : ControllerBase
         var staff = RequireCashier();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
         if (staff.BranchId <= 0) return Error("branch_required", "Tài khoản chưa được gán chi nhánh.", 403);
-        try { return Ok(await _billingClient.CashierMobilePaymentAsync(staff, paymentId, ct)); }
+        try
+        {
+            var result = await _billingClient.CashierMobilePaymentAsync(staff, paymentId, ct);
+            if (paymentId is not null) await NotifyCustomerPaymentAsync(result, ct);
+            return Ok(result);
+        }
         catch (ApiClientException ex) { return Error(ex.Code ?? "cashier_payment_failed", ex.Message, ex.StatusCode); }
+    }
+
+    // Best effort after the payment is durably SUCCEEDED: an inbox row for the customer plus a realtime nudge.
+    // A failure here must never turn a collected payment into an error for the cashier.
+    private async Task NotifyCustomerPaymentAsync(JsonElement payment, CancellationToken ct)
+    {
+        if (payment.ValueKind != JsonValueKind.Object
+            || !payment.TryGetProperty("status", out var status) || status.GetString() != "SUCCEEDED"
+            || !payment.TryGetProperty("customerId", out var customer) || !customer.TryGetInt32(out var customerId) || customerId <= 0
+            || !payment.TryGetProperty("paymentId", out var paymentValue) || !paymentValue.TryGetInt32(out var paymentId)
+            || !payment.TryGetProperty("diningSessionId", out var session) || !session.TryGetInt32(out var diningSessionId)) return;
+        var amount = payment.TryGetProperty("amount", out var amountValue) && amountValue.TryGetDecimal(out var parsed) ? parsed : 0m;
+        try { await _customersClient.AddPaymentSucceededNotificationAsync(customerId, paymentId, diningSessionId, amount, ct); }
+        catch (Exception ex) { _logger.LogWarning(ex, "Payment {PaymentId} notification deferred.", paymentId); }
+        try
+        {
+            await _mobileNotificationsHub.Clients.Group(MobileNotificationsHub.CustomerGroup(customerId))
+                .SendAsync("paymentUpdated", new { diningSessionId, paymentId, status = "SUCCEEDED" }, ct);
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "Payment {PaymentId} realtime update deferred.", paymentId); }
     }
 
     [HttpPost("auth/login")]

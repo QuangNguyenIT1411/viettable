@@ -19,6 +19,7 @@ import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.profile.CustomerVoucherFragment;
 import com.restaurant.viettable.ui.order.CurrentOrdersFragment;
+import com.restaurant.viettable.ui.order.OrderHistoryFragment;
 import com.restaurant.viettable.ui.reservation.ResHistoryFragment;
 
 import java.util.ArrayList;
@@ -61,6 +62,8 @@ public class NotificationFragment extends BaseFragment {
                 navigateTo(new ResHistoryFragment());
             } else if (item.getType() == NotificationItem.Type.ORDER) {
                 navigateTo(new CurrentOrdersFragment());
+            } else if (item.getType() == NotificationItem.Type.PAYMENT) {
+                navigateTo(OrderHistoryFragment.newInstance(OrderHistoryFragment.TAB_INVOICES));
             } else if (item.getType() == NotificationItem.Type.PROMOTION) {
                 navigateTo(new CustomerVoucherFragment());
             }
