@@ -20,9 +20,12 @@ public static Task<WebApplication> BuildAsync(string[] args,
     WebApplicationOptions? options = null, Action<WebApplicationBuilder>? configure = null,
     Action<WebApplicationBuilder>? configureServices = null, Action<WebApplication>? configurePipeline = null)
 {
+using var createBuilderTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "create-builder");
 var builder = options is null
     ? WebApplication.CreateBuilder(args)
     : WebApplication.CreateBuilder(options);
+createBuilderTiming?.Dispose();
+using var registrationTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "registrations");
 configure?.Invoke(builder);
 SelfRestaurant.CloudCompatibility.CloudHosting.Configure(builder);
 SelfRestaurant.Gateway.Api.Infrastructure.Media.MediaStorageConfiguration.Configure(builder.Services, builder.Configuration);
@@ -201,7 +204,10 @@ builder.Services.AddHttpClient("Gemini", http =>
 builder.Services.AddScoped<CustomerDishRecommendationService>();
 
 configureServices?.Invoke(builder);
+registrationTiming?.Dispose();
+using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Gateway", "builder-build");
 var app = builder.Build();
+buildTiming?.Dispose();
 
 if (!string.IsNullOrWhiteSpace(knownProxyText))
     app.UseForwardedHeaders();
@@ -260,6 +266,8 @@ if (app.Configuration.GetValue<bool?>("HttpsRedirection:Enabled") ?? false)
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/app", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) ||
+        context.Request.Path.StartsWithSegments("/hubs", StringComparison.OrdinalIgnoreCase) ||
         context.Request.Path.StartsWithSegments("/images", StringComparison.OrdinalIgnoreCase))
     {
         context.Response.OnStarting(() =>

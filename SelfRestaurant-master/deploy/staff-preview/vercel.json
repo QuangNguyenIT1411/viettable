@@ -1,13 +1,35 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
+    "staff": {
+      "root": "src/Frontend",
+      "framework": "vite",
+      "installCommand": "node --version",
+      "buildCommand": "node build-staff-static.mjs",
+      "outputDirectory": "staff-public",
+      "routes": [
+        { "src": "^/app/(?:chef|cashier|admin)/.*$", "headers": { "X-VietTable-Static": "staff" }, "continue": true },
+        { "src": "^/app/(?:chef|cashier|admin)/assets/[^/]+-[A-Za-z0-9_-]{8,}\\.(?:js|css)$", "headers": { "Cache-Control": "public, max-age=31536000, immutable" }, "continue": true },
+        { "src": "^/app/(?:chef|cashier|admin)/index.html$", "headers": { "Cache-Control": "no-store" }, "continue": true },
+        { "handle": "filesystem" },
+        { "src": "^/app/(?:chef|cashier|admin)/assets/.*$", "status": 404 },
+        { "src": "^/app/chef(?:/.*)?$", "dest": "/app/chef/index.html", "headers": { "Cache-Control": "no-store" } },
+        { "src": "^/app/cashier(?:/.*)?$", "dest": "/app/cashier/index.html", "headers": { "Cache-Control": "no-store" } },
+        { "src": "^/app/admin(?:/.*)?$", "dest": "/app/admin/index.html", "headers": { "Cache-Control": "no-store" } }
+      ]
+    },
     "api": {
       "root": ".",
       "runtime": "container",
       "entrypoint": "Dockerfile"
     }
   },
+  "headers": [
+    { "source": "/api/:path*", "headers": [ { "key": "Cache-Control", "value": "private, no-store, max-age=0" } ] },
+    { "source": "/hubs/:path*", "headers": [ { "key": "Cache-Control", "value": "private, no-store, max-age=0" } ] }
+  ],
   "rewrites": [
+    { "source": "/app/:role(chef|cashier|admin)/:path*", "destination": { "service": "staff" } },
     { "source": "/(.*)", "destination": { "service": "api" } }
   ]
 }

@@ -57,6 +57,12 @@ public sealed class StaffPreviewRoutingTests
             }
             using var customer = await client.GetAsync("http://gateway.module.invalid/Menu/FromQr?code=test");
             Assert.Equal(HttpStatusCode.NotFound, customer.StatusCode);
+            foreach (var path in new[] { "/api/gateway/staff/chef/dashboard", "/api/mobile/v1/orders", "/hubs/mobile-notifications/negotiate" })
+            {
+                using var protectedResult = await client.GetAsync("http://gateway.module.invalid" + path);
+                Assert.True(protectedResult.Headers.CacheControl?.NoStore == true);
+                Assert.DoesNotContain("staff-routing-test", await protectedResult.Content.ReadAsStringAsync());
+            }
             foreach (var (origin, expected) in new[] {
                 ("https://gateway.module.invalid", HttpStatusCode.BadRequest),
                 ("https://foreign.example", HttpStatusCode.Forbidden),
