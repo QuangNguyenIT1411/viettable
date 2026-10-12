@@ -43,22 +43,46 @@ Vercel project MỚI  viettable-qa  ──►  Supabase project MỚI  viettable
 (code = đúng commit candidate)
 ```
 
-Truy cập công khai: khuyến nghị deploy làm **Production của project QA** (mặc định công khai, không cần ngoại lệ
-protection). Phương án dự phòng: Preview + `alias-protection-override` giống stable (đã có tiền lệ, phức tạp hơn).
 Backend vẫn bắt buộc đăng nhập VietTable cho mọi API cần quyền.
+
+### 3.1 Làm sao để QA không bị Vercel 401 (chính là lỗi VT-HO-01)
+
+Theo tài liệu Vercel, Deployment Protection được **cài riêng cho từng project**. Project `viettable-api` đang dùng
+*Standard Protection*: chặn mọi URL **trừ domain Production**. Một project mới cũng sẽ nhận Standard Protection
+(theo mặc định của team). Có 3 cách để project `viettable-qa` truy cập công khai:
+
+| Cách | Làm gì | Ưu | Nhược |
+|---|---|---|---|
+| **Q1 (khuyến nghị)** — Deploy làm **Production** của `viettable-qa` | Không đổi cài đặt protection nào. Domain Production (dạng `viettable-qa.vercel.app`) công khai sẵn theo Standard Protection | Không phải "mở khóa" gì, không có cài đặt nào phải nhớ hoàn tác | Instance tắt sau **5 phút** không có request (Preview là 30 giây), tốn hạn mức bộ nhớ hơn một chút. Chấp nhận được vì QA chỉ bật khi test |
+| Q2 — Deploy **Preview** + **Deployment Protection Exception** cho đúng 1 alias QA | Chủ dự án thêm alias QA vào *Deployment Protection Exceptions* của `viettable-qa`. Có trên mọi gói, không tốn phí. Giống cách stable đang được mở | Tắt sau 30 giây, tiết kiệm hạn mức | Mỗi lần deploy phải gán lại alias (lệnh `alias`, hiện bị cấm, cần duyệt); thêm một cài đặt phải nhớ gỡ |
+| Q3 — Tắt Vercel Authentication cho cả project `viettable-qa` | Settings → Deployment Protection của `viettable-qa` → tắt | Đơn giản | **Mọi** URL QA công khai, phạm vi rộng nhất; không khuyến nghị |
+
+> **Đính chính:** ở phiên trước tôi gợi ý "deploy QA dạng Preview để tiết kiệm bộ nhớ" mà không nói rằng Preview sẽ
+> bị 401 nếu không có Exception (cách Q2). Kế hoạch chọn **Q1**. Chỉ chuyển sang Q2 nếu hạn mức bộ nhớ (mục 7) bị căng.
+
+**Cam kết không thay đổi `viettable-api`:**
+- Mọi thao tác Q1/Q2/Q3 chỉ làm trong trang Settings của project **`viettable-qa`**. Trước khi bấm, kiểm tra tên project ở đầu trang.
+- **Không** đổi *Team Settings → Deployment Protection* (cài đặt mặc định của team). Theo tài liệu, nó chỉ áp dụng cho
+  project mới, nhưng vẫn không đụng tới.
+- Kiểm tra trước và sau khi dựng QA (chỉ đọc):
+  1. 👤 Chụp màn hình *Settings → Deployment Protection* của `viettable-api`, so với ảnh chụp ngày 12/10. Phải giống hệt.
+  2. 🤖 `vercel inspect` stable alias: vẫn trỏ `dpl_4CiTfSuo4LhKb2fjFJSX4zaWKTgH` (hoặc bản anh đã duyệt sau này).
+  3. 🤖 Stable `/healthz` không cần đăng nhập Vercel: 200. Candidate không đăng nhập: vẫn 401.
 
 ## 4. Các bước
 
 | # | Bước | Ai | Ghi chú |
 |---|---|---|---|
 | 0 | Chốt **commit nguồn** cho QA: commit hóa thay đổi đang dở hoặc chọn `103bebb`. Không deploy từ working tree bẩn | 👤 quyết định, 🤖 chuẩn bị | Liên quan VT-HO-07 |
-| 1 | Kiểm tra gói Vercel và Supabase (mục 7) | 👤 | Dừng nếu cần nâng cấp mà chưa duyệt ngân sách |
+| 1 | Kiểm tra gói Vercel và Supabase (mục 7) | 👤 | **Đã làm 12/10:** Vercel Hobby, Supabase Free; số project Supabase: chờ chủ dự án báo |
+| 1b | **Xem Vercel Usage và đặt ngưỡng dừng** (mục 7.3) | 👤 | Bất kỳ chỉ số nào ≥ 50% hạn mức tháng thì **không dựng QA** tháng đó |
+| 1c | Supabase: tổng project đang hoạt động (không *Paused*) ở mọi organization phải **< 2** | 👤 | Không được tạm dừng project staging để lấy chỗ |
 | 2 | Tạo Supabase project `viettable-qa` (cùng region với staging); tạo bucket ảnh; tải CA (Database → Settings → SSL) | 👤 | Ghi mật khẩu DB vào trình quản lý mật khẩu, **không gửi qua chat** |
 | 3 | Tạo schema + role runtime cho 5 service trên DB QA | 🔒 | Trước đây làm bằng `tools/SelfRestaurant.CloudPreparation` (action `Roles`/`Migrate`) — **đang bị cấm**. Cần duyệt: (a) cho phép chạy tool **chỉ với DB QA**, hoặc (b) Claude soạn SQL để anh chạy trong Supabase SQL Editor |
 | 4 | Thử nghiệm local trước: chạy CloudHost với Postgres local, `Database__ApplyMigrations=true`, `Database__SeedProfile=Demo` để xem app tự dựng schema + dữ liệu mẫu | 🤖 (khi mở việc) | **Giả thuyết**, chưa kiểm chứng; có test `SelfRestaurant.Postgres.Tests` làm tham chiếu |
 | 5 | Sinh **secret mới** cho QA (không sao chép từ staging) | 👤/🔒 | Để token/cookie staging không dùng được ở QA và ngược lại |
 | 6 | Tạo Vercel project `viettable-qa`, khai báo biến môi trường (mục 5) | 👤 | Settings → Environment Variables; secret chọn loại *Sensitive* |
-| 7 | Deploy commit đã chốt vào project QA | 🔒 | Lệnh deploy chỉ chạy sau khi có duyệt; kiểm tra lại project = `viettable-qa` trước khi chạy |
+| 7 | Deploy commit đã chốt (branch `qa/vt-ho-01`) vào project QA, dạng **Production của `viettable-qa`** (cách Q1, mục 3.1) | 🔒 | Lệnh deploy chỉ chạy sau khi có duyệt; kiểm tra lại project = `viettable-qa` trước khi chạy |
 | 8 | Lần chạy đầu bật migrate/seed, sau đó đặt `Database__ApplyMigrations=false` rồi redeploy | 🔒 | Theo đúng quy tắc của staging: lúc chạy thường app không được sửa schema |
 | 9 | Kiểm tra không cần đăng nhập Vercel: `/healthz`, `/readyz`, `/api/mobile/v1/branches` = 200 | 🤖 | Chỉ đọc |
 | 10 | Tạo dữ liệu QA (mục 6) | 🔒 | Chỉ trên DB QA |
@@ -125,21 +149,54 @@ cloudQa {
 - Google Sign-In sẽ không hoạt động với package `.qa` nếu chưa đăng ký. Chấp nhận được với QA.
 - Không đổi `ApiClient`, không thêm header hay cookie nào của Vercel.
 
-## 7. Gói dịch vụ
+## 7. Gói dịch vụ và giới hạn
 
-**Cách xem gói Vercel (👤):** đăng nhập vercel.com → góc trên bên trái chọn team/scope `hienkhanhvu981-7145`
-→ **Settings → Billing**. Trang này ghi *Hobby* hoặc *Pro*.
-**Cách xem gói Supabase (👤):** supabase.com/dashboard → chọn Organization → **Billing** (Free / Pro).
+Hiện trạng (chủ dự án xác nhận 12/10/2026): **Vercel Hobby**, **Supabase Free**. Số liệu dưới đây lấy từ tài liệu
+chính thức ngày 12/10/2026; phải kiểm tra lại trước khi làm, vì nhà cung cấp có thể thay đổi.
 
-**Hướng A cần gì (cần đối chiếu trang giá chính thức lúc làm, không dựa trên tài liệu này):**
-- Project hiện tại đã chạy được backend dạng container trên gói đang có ⇒ project thứ hai *có khả năng* chạy được
-  trên cùng gói, nhưng tốn thêm tài nguyên/chi phí. Nếu Vercel yêu cầu nâng cấp hoặc add-on trả phí ⇒ **dừng và hỏi**
-  (đúng quy tắc trong `docs/VERCEL_API_STAGING.md`).
-- Hướng A **không cần** tính năng "Deployment Protection Exceptions" trả phí nếu deploy làm Production của project QA.
-- Lưu ý: gói Hobby của Vercel dành cho mục đích cá nhân, phi thương mại. Nếu VietTable dùng cho nhà hàng thật thì nên
-  cân nhắc Pro. Đây là câu hỏi điều khoản, không phải kỹ thuật.
-- Supabase Free giới hạn số project đang hoạt động cho mỗi organization, và project Free bị tạm dừng nếu lâu không dùng.
-  Kiểm tra còn chỗ cho project thứ hai.
+### 7.1 Chi phí
+
+**0 đồng.** Hobby và Supabase Free đều miễn phí, không gắn thẻ. Nếu Vercel hoặc Supabase yêu cầu nâng cấp hay add-on
+trả phí ⇒ **dừng và hỏi** (đúng quy tắc trong `docs/VERCEL_API_STAGING.md`). Exception (cách Q2) không cần add-on trả phí.
+
+### 7.2 Giới hạn
+
+| Giới hạn | Giá trị | Ảnh hưởng tới QA |
+|---|---|---|
+| ⚠ Hạn mức Hobby/tháng **dùng chung cả tài khoản**: Active CPU 4 giờ, Provisioned Memory 360 GB-giờ, 1.000.000 lượt gọi function, 100 GB Fast Data Transfer, 10 GB Fast Origin Transfer | Vượt ⇒ thường phải **chờ 30 ngày** mới dùng lại | **Rủi ro lớn nhất:** QA ăn chung hạn mức với `viettable-api`. Vượt hạn mức thì **stable và app trên Samsung cũng có thể ngừng chạy** |
+| Function chạy tối đa 300 giây | — | Kết nối realtime có thể bị ngắt sau 5 phút, app tự kết nối lại (stable đang như vậy) |
+| Container runtime | Beta, có trên mọi gói, tính phí theo Active CPU | Dùng được trên Hobby |
+| Container tắt khi không có request | Production 5 phút, Preview 30 giây | Khi tắt thì không tốn CPU; bộ nhớ chỉ tính lúc instance còn sống |
+| Project / deploy / build | 200 project; 100 deploy/ngày; 1 build cùng lúc; build ≤ 45 phút; upload CLI ≤ 100 MB | Đủ (lần upload trước khoảng 21 MB, build khoảng 4 phút) |
+| Điều khoản Hobby | Chỉ dùng cá nhân, **phi thương mại** | Quyết định của chủ dự án nếu VietTable phục vụ nhà hàng thật |
+| Supabase Free: số project | **2 project** đang hoạt động, tính gộp mọi organization mà bạn là Owner/Admin; project *Paused* không tính | Hết chỗ thì chưa dựng QA được |
+| Supabase Free: tạm dừng | Project ít hoạt động trong 7 ngày bị tạm dừng; khôi phục trong Studio | QA có thể bị dừng giữa chừng |
+| Supabase Free: dung lượng | DB 500 MB/project; Storage 1 GB; băng thông ra 5 GB | Đủ cho dữ liệu QA nhỏ |
+
+Nguồn: [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Vercel Limits](https://vercel.com/docs/limits),
+[Container Runtime](https://vercel.com/docs/functions/runtimes/container),
+[Deployment Protection](https://vercel.com/docs/deployment-protection),
+[Deployment Protection Exceptions](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/deployment-protection-exceptions),
+[Supabase billing](https://supabase.com/docs/guides/platform/billing-on-supabase),
+[Supabase project pausing](https://supabase.com/docs/guides/platform/free-project-pausing).
+
+### 7.3 Ngưỡng dừng theo hạn mức (👤, bước 1b)
+
+1. vercel.com → scope `hienkhanhvu981-7145` → **Usage** ở menu bên trái.
+2. Ghi lại phần trăm đã dùng trong chu kỳ hiện tại của: Active CPU, Provisioned Memory, Function Invocations,
+   Fast Data Transfer, Fast Origin Transfer. Lưu vào evidence (ảnh chụp hoặc số).
+3. Quy tắc:
+   - Trước khi dựng QA: chỉ số nào **≥ 50%** ⇒ **không dựng QA** tháng đó.
+   - Sau mỗi buổi test: xem lại. Chỉ số nào **≥ 70%** ⇒ dừng test QA, xóa deployment QA, chờ chu kỳ sau.
+   - Không bao giờ để QA làm stable bị ngừng.
+
+### 7.4 Nguyên tắc vận hành QA
+
+- **Chỉ bật QA khi đang test.** Xong buổi test thì xóa deployment QA (👤 Deployments → ⋯ → Delete) hoặc xóa project.
+  Lần sau cần thì deploy lại từ commit đã chốt.
+- Lý do: khi không có request, container tự tắt và hầu như không tốn hạn mức. Nhưng để URL công khai nằm đó vẫn bị
+  dò quét (tốn lượt gọi) và giữ một bề mặt tấn công không cần thiết.
+- Supabase QA có thể để tự tạm dừng sau 7 ngày (không mất dữ liệu). Khôi phục khi cần.
 
 ## 8. Nguồn code của candidate và hiện trạng Vercel
 
