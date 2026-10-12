@@ -6,6 +6,8 @@ def configuredApiUrl = providers.gradleProperty('VIETTABLE_API_BASE_URL').orElse
 def releaseApiUrl = configuredApiUrl.get()
 // Public origin only. Preview protection credentials must never be compiled into Android.
 def cloudPreviewApiUrl = 'https://viettable-staging-hienkhanhvu981.vercel.app'
+// New Vercel account, Production domain (public; no Vercel credential is compiled in).
+def cloudProdApiUrl = 'https://viettable-beta.vercel.app'
 def validateReleaseApiUrl = tasks.register('validateReleaseApiUrl') {
     inputs.property('apiUrl', releaseApiUrl)
     doLast {
@@ -25,6 +27,13 @@ def validateReleaseApiUrl = tasks.register('validateReleaseApiUrl') {
 }
 tasks.configureEach {
     if (name == 'preReleaseBuild') dependsOn(validateReleaseApiUrl)
+}
+
+// AGP 9 creates host unit tests only for the tested build type; also verify cloudProd's BuildConfig.
+androidComponents {
+    beforeVariants(selector().withBuildType('cloudProd')) { variantBuilder ->
+        variantBuilder.hostTests.get(com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE)?.enable = true
+    }
 }
 
 android {
@@ -60,6 +69,11 @@ android {
             buildConfigField 'int', 'API_READ_TIMEOUT_MS', '60000'
             buildConfigField 'int', 'IMAGE_READ_TIMEOUT_MS', '60000'
             // No debug source-set inheritance: main's system-CA, HTTPS-only policy applies.
+        }
+        cloudProd {
+            initWith cloudPreview
+            matchingFallbacks = ['debug']
+            buildConfigField 'String', 'API_BASE_URL', groovy.json.JsonOutput.toJson(cloudProdApiUrl)
         }
         release {
             debuggable false

@@ -1,6 +1,9 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
-> **Trạng thái: KẾ HOẠCH, CHƯA THỰC THI.** Lập 12/10/2026, chỉ đọc. Nhãn: 👤 chủ dự án tự làm · 🔒 cần duyệt từng lần ·
+> **Trạng thái (12/10/2026): đã làm tới bước 2.16** (deploy Production + APK `cloudProd`); việc còn lại ở mục 2b.
+> Phần dưới là kế hoạch gốc, giữ nguyên.
+>
+> **Kế hoạch gốc:** Lập 12/10/2026, chỉ đọc. Nhãn: 👤 chủ dự án tự làm · 🔒 cần duyệt từng lần ·
 > 🤖 Claude làm (không ghi lên Cloud khi chưa duyệt).
 >
 > - **Tài khoản CŨ** `hienkhanhvu981-7145` / project `viettable-api`: **không deploy, không xóa, không đổi gì** (dự phòng).
@@ -182,6 +185,16 @@ cloudProd {
    - Quay lại PowerShell, chờ chữ "Success".
 4. **Nếu team VietTable nằm trong cùng tài khoản cũ:** không cần logout/login, chỉ cần dùng `--scope <slug-moi>` ở mọi lệnh.
 5. Gõ: `npx.cmd --yes vercel@62.4.0 whoami` và `npx.cmd --yes vercel@62.4.0 teams ls` → gửi cho Claude **tên team slug** (không có bí mật).
+
+## 2b. Việc sau (ghi 12/10/2026, CHƯA làm)
+
+Production đã deploy: `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN`, domain `https://viettable-beta.vercel.app`, region `syd1`.
+
+| # | Việc | Ai | Chi tiết |
+|---|---|---|---|
+| 3.1 | **Đo khởi động lạnh thật** | 👤 báo giờ → 🤖 đo | Để yên **> 10 phút** không có request (app thoát, tab web đóng). Đo **1 lần** `/healthz`, `/readyz`, `/api/mobile/v1/branches`, `/api/mobile/v1/branches/1/menu` bằng `curl.exe` ẩn danh. Không chạy vòng lặp |
+| 3.2 | **Theo dõi `/readyz` chậm ~7 s** | 🤖 | Lần đo sau deploy: `/readyz` 7,14 s và 7,50 s ở 2 lần đầu, 0,37 s ở lần 3; `/healthz` và menu < 1,2 s. Ghi lại trong lần đo 3.1; nếu vẫn chậm thì đọc code `/readyz` (kiểm tra DB của 5 module) và log Vercel trước khi sửa |
+| 3.3 | **Trang chủ ở `/`** | 🤖 sửa code + test, gom vào **lần deploy sau** (🔒) | Hiện `/` trả 404. Thêm trang tĩnh đơn giản có 3 nút: **Admin** → `/app/admin/`, **Bếp** → `/app/chef/`, **Thu ngân** → `/app/cashier/`. Không chứa dữ liệu hay bí mật |
 
 ## 3. Quay lại nếu hỏng
 
