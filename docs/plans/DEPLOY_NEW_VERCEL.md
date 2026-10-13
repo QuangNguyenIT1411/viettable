@@ -1,5 +1,9 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 13/10/2026 16:10:** deploy Production `dpl_GGVQDTKaqgNzN5mW9BZPon7k4fWv` (commit `c16f9e1`: `/Menu/FromQr` + Hủy bàn), `[syd1]`, Ready;
+> đo 1 lần: `/` 200 8,17 s (khởi động lạnh sau deploy), `/Menu/FromQr?code=QR-Q1-B01` 200 0,91 s, `/branches/1/menu` 200 1,48 s.
+> APK `cloudProd` mới cài lên Samsung 16:06. Trạng thái mới nhất luôn ở CLAUDE.md mục 6a.
+>
 > **Trạng thái (cập nhật 13/10/2026):** đã xong tới bước 2.18 và **lần deploy gộp 2c**.
 > - Production đang chạy: `dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb` (12/10/2026 23:51), commit `5a25ff5`, `https://viettable-beta.vercel.app`, `[syd1]`
 >   (đã kiểm tra bằng `vercel inspect` 13/10/2026; commit do chủ dự án xác nhận). Bản cũ `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN` không còn là Production.

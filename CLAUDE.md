@@ -131,14 +131,14 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 - Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
 - **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
 
-### 6a. Trạng thái hiện tại (cập nhật 13/10/2026)
+### 6a. Trạng thái hiện tại (cập nhật 13/10/2026 16:10)
 
 | Mục | Trạng thái |
 |---|---|
-| Deploy đang chạy | Production `dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb` (tạo 12/10/2026 23:51), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready. Code commit `5a25ff5` (chủ dự án xác nhận; `vercel inspect` không ghi commit vì deploy bằng CLI) |
-| APK đã cài | `cloudProd` (trỏ `viettable-beta.vercel.app`), cài lên Samsung SM-A528B lúc 23:55 12/10/2026 |
-| Git | Branch `qa/vt-ho-01` **đã push** lên `origin` (GitHub private) tới `61f847d`; các commit sau đó chưa push |
-| Việc còn mở | 3.2 `/healthz` luôn ~7,3 s (đã đọc code, chờ chẩn đoán); xem `docs/plans/DEPLOY_NEW_VERCEL.md` mục 2b |
+| Deploy đang chạy | Production `dpl_GGVQDTKaqgNzN5mW9BZPon7k4fWv` (tạo 13/10/2026 16:03), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = commit `c16f9e1` (deploy bằng CLI từ HEAD `d096440`, commit sau `c16f9e1` chỉ là tài liệu). Gồm: trang `/Menu/FromQr`, tính năng Hủy bàn. Bản trước: `dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb` (commit `5a25ff5`) |
+| APK đã cài | `cloudProd` build 13/10/2026 15:52 từ commit `c16f9e1` (đọc link QR admin, thông báo giỏ khi chưa có bàn, nút Hủy bàn), cài đè lên Samsung SM-A528B lúc 16:06:49 13/10/2026 |
+| Git | Branch `qa/vt-ho-01` push lên `origin` (GitHub private): xem commit cuối trong `git status -sb` |
+| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn) — đều làm sau demo; chờ kết quả test 9 bước của chủ dự án |
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 
