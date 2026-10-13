@@ -197,7 +197,7 @@ public class FoodDetailFragment extends BaseFragment {
             binding.btnSubmitAddToCart.setOnClickListener(v -> {
                 String note = binding.etNote.getText() != null ? binding.etNote.getText().toString().trim() : "";
                 appStateManager.addToCart(foodItem, quantity, selectedSize, selectedToppings, selectedSpicy, note);
-                showToast("Đã thêm " + quantity + " " + foodItem.getName() + " vào giỏ!");
+                showCartAdded(quantity + " " + foodItem.getName());
                 navigateBack();
             });
 

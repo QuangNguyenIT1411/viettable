@@ -75,7 +75,7 @@ public class CategoryFragment extends BaseFragment {
             @Override
             public void onAddToCart(FoodItem food) {
                 appStateManager.addToCart(food, 1, "Tiêu chuẩn", new ArrayList<>(), 0, "");
-                showToast("Đã thêm " + food.getName() + " vào giỏ!");
+                showCartAdded(food.getName());
             }
 
             @Override

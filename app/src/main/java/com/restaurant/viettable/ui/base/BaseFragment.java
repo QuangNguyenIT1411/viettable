@@ -135,6 +135,10 @@ public abstract class BaseFragment extends Fragment {
         }
     }
 
+    protected void showCartAdded(String what) {
+        showToast(com.restaurant.viettable.util.CartMessages.added(what, appStateManager.hasActiveDiningSession()));
+    }
+
     protected String apiError(ApiException error) {
         if (error == null || error.getMessage() == null) return "Không thể thực hiện yêu cầu.";
         return error.getMessage();
