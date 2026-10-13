@@ -340,6 +340,16 @@
                 android:layout_marginTop="10dp"
                 android:nestedScrollingEnabled="false" />
 
+            <!-- Leave the table: shown only while no order round was sent -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelTable"
+                style="@style/Widget.VietTable.Button.Destructive"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="24dp"
+                android:text="Hủy bàn"
+                android:visibility="gone" />
+
             <!-- Secondary Return Home Action -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDiningReturnHome"

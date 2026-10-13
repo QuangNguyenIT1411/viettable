@@ -103,7 +103,7 @@ This catalog is the v1 target. `Planned` means the route is contractually reserv
 | Reservations | `POST /reservations`; `GET /reservations`, `/reservations/{id}`; `PUT /reservations/{id}`; `POST /reservations/{id}/cancel` | Customers | Partial; availability/change/deposit planned B3 |
 | Pre-order | `GET/PUT /reservations/{id}/preorder`; `POST /reservations/{id}/preorder/submit` | Orders via Gateway | Partial; current snapshot items migrate in B3 |
 | Check-in | `POST /check-ins/qr/validate`, `/check-ins/reservation`, `/check-ins/walk-in` | Orders/Customers/Catalog | Implemented B4 |
-| Dining session | `GET /dining-sessions/active`, `/dining-sessions/{id}`; `POST /dining-sessions/{id}/cancel-payment-request` | Orders | Explicit entity implemented B4 |
+| Dining session | `GET /dining-sessions/active`, `/dining-sessions/{id}`; `POST /dining-sessions/{id}/cancel-payment-request`, `/dining-sessions/{id}/cancel` (hủy bàn khi chưa có đợt gọi món; owner-only, không cho phiên từ đặt bàn hoặc đang chờ thanh toán) | Orders | Explicit entity implemented B4 |
 | Orders | `POST /dining-sessions/{id}/orders`; `GET /orders`, `/orders/{id}`, `/orders/{id}/tracking` | Orders | Implemented B5 |
 | Service requests | `POST/GET /dining-sessions/{id}/service-requests`; `POST /service-requests/{id}/cancel` | Orders | Implemented B5 |
 | Notifications | `GET /notifications`; `POST /notifications/{id}/read`; realtime `/hubs/mobile-notifications` | Customers/Gateway | Implemented B5/B7 |

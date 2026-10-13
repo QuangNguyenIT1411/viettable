@@ -9,11 +9,21 @@ public sealed class MobileCheckInB4Tests
     [InlineData("[HttpGet(\"dining-sessions/active\")]")]
     [InlineData("[HttpGet(\"dining-sessions/{sessionId:int}\")]")]
     [InlineData("[HttpPost(\"dining-sessions/{sessionId:int}/cancel-payment-request\")]")]
+    [InlineData("[HttpPost(\"dining-sessions/{sessionId:int}/cancel\")]")]
     public void Gateway_exposes_B4_routes(string route)
     {
         var source = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileCheckInsGatewayController.cs");
         Assert.Contains("[Authorize(Roles = \"customer\")]", source, StringComparison.Ordinal);
         Assert.Contains(route, source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Cancel_table_uses_token_actor_and_refreshes_cashier_branch()
+    {
+        var source = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileCheckInsGatewayController.cs");
+        Assert.Contains("_orders.CancelEmptyDiningSessionAsync(sessionId, actor.Value", source, StringComparison.Ordinal);
+        Assert.Contains("CustomerNotificationsHub.BranchGroup(session.BranchId)", source, StringComparison.Ordinal);
+        Assert.Contains("\"cashierDashboardChanged\"", source, StringComparison.Ordinal);
     }
 
     [Fact]

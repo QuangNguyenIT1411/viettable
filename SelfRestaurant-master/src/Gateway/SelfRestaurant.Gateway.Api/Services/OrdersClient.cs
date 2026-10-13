@@ -54,6 +54,10 @@ public sealed class OrdersClient : ApiClientBase
     public Task<MobileDiningSessionResponse?> GetDiningSessionAsync(int sessionId, int customerId, CancellationToken cancellationToken) =>
         GetAsync<MobileDiningSessionResponse>($"/api/internal/dining-sessions/{sessionId}?customerId={customerId}", cancellationToken);
 
+    public Task<MobileDiningSessionResponse?> CancelEmptyDiningSessionAsync(int sessionId, int customerId, CancellationToken cancellationToken) =>
+        PostForAsync<DiningSessionCustomerRequest, MobileDiningSessionResponse>(
+            $"/api/internal/dining-sessions/{sessionId}/cancel", new DiningSessionCustomerRequest(customerId), cancellationToken);
+
     public Task<MobileDiningSessionResponse?> CancelPaymentRequestAsync(int sessionId, int customerId, CancellationToken cancellationToken) =>
         PostForAsync<DiningSessionCustomerRequest, MobileDiningSessionResponse>(
             $"/api/internal/dining-sessions/{sessionId}/cancel-payment-request", new DiningSessionCustomerRequest(customerId), cancellationToken);

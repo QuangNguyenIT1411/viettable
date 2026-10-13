@@ -748,6 +748,19 @@ public final class MobileRepository {
         } catch (Exception e) { callback.onError(jsonError()); }
     }
 
+    /** Leaves a table with no order rounds. Unsent cart items are kept for the next table. */
+    public void cancelEmptySession(Callback<Void> callback) {
+        DiningSession session = state.getActiveDiningSession();
+        if (session == null) { callback.onError(new ApiException(0, "session_required", "Chưa có phiên phục vụ.", null)); return; }
+        api().post("/api/mobile/v1/dining-sessions/" + session.getId() + "/cancel", new JSONObject(), true, null, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                if (state.getActiveDiningSession() == session) state.setActiveDiningSession(null);
+                callback.onSuccess(null);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void cancelPaymentRequest(Callback<DiningSession> callback) {
         DiningSession session = state.getActiveDiningSession();
         if (session == null) { callback.onError(new ApiException(0, "session_required", "Chưa có phiên phục vụ.", null)); return; }

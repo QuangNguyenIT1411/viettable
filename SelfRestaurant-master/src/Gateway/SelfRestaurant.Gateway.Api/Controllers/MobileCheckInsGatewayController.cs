@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using SelfRestaurant.Gateway.Api.Hubs;
 using SelfRestaurant.Gateway.Api.Models;
 using SelfRestaurant.Gateway.Api.Services;
 
@@ -18,14 +20,16 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
     private readonly CatalogClient _catalog;
     private readonly OrdersClient _orders;
     private readonly ILogger<MobileCheckInsGatewayController> _logger;
+    private readonly IHubContext<CustomerNotificationsHub> _staffUpdatesHub;
 
     public MobileCheckInsGatewayController(CustomersClient customers, CatalogClient catalog, OrdersClient orders,
-        ILogger<MobileCheckInsGatewayController> logger)
+        ILogger<MobileCheckInsGatewayController> logger, IHubContext<CustomerNotificationsHub> staffUpdatesHub)
     {
         _customers = customers;
         _catalog = catalog;
         _orders = orders;
         _logger = logger;
+        _staffUpdatesHub = staffUpdatesHub;
     }
 
     [HttpPost("check-ins/qr/validate")]
@@ -165,6 +169,25 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
             return session is null ? Error("session_not_found", "Không tìm thấy phiên phục vụ.", 404) : Ok(session);
         }
         catch (ApiClientException ex) { return Downstream(ex, "get_session_failed"); }
+    }
+
+    [HttpPost("dining-sessions/{sessionId:int}/cancel")]
+    public async Task<ActionResult<MobileDiningSessionResponse>> CancelEmptySession(int sessionId, CancellationToken ct)
+    {
+        var actor = CurrentCustomerId();
+        if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
+        MobileDiningSessionResponse? session;
+        try { session = await _orders.CancelEmptyDiningSessionAsync(sessionId, actor.Value, ct); }
+        catch (ApiClientException ex) { return Downstream(ex, "cancel_session_failed"); }
+        if (session is null) return Error("session_not_found", "Không tìm thấy phiên phục vụ.", 404);
+        try
+        {
+            // The table is already released; a missed refresh only delays the cashier's table list.
+            await _staffUpdatesHub.Clients.Group(CustomerNotificationsHub.BranchGroup(session.BranchId))
+                .SendAsync("cashierDashboardChanged", new { tableId = session.TableId, branchId = session.BranchId }, ct);
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "Cashier refresh after session cancel failed for branch {BranchId}.", session.BranchId); }
+        return Ok(session);
     }
 
     [HttpPost("dining-sessions/{sessionId:int}/cancel-payment-request")]

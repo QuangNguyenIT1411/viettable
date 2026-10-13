@@ -195,6 +195,52 @@ public sealed class DiningSessionsController : ControllerBase
         return Ok(Map(entity, false));
     }
 
+    // Customer leaves a table before ordering anything. Re-checked here: the app's button is only a hint.
+    [HttpPost("{sessionId:int}/cancel")]
+    public async Task<ActionResult<DiningSessionResponse>> CancelEmptySession(
+        int sessionId, [FromBody] CustomerSessionRequest request, CancellationToken ct)
+    {
+        await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var entity = await _db.DiningSessions.FirstOrDefaultAsync(x => x.DiningSessionId == sessionId, ct);
+        if (entity is null) return NotFound(new { code = "session_not_found", message = "Không tìm thấy phiên phục vụ." });
+        if (entity.CustomerId != request.CustomerId) return StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu phiên phục vụ này." });
+        if (entity.EndedAtUtc is not null)
+        {
+            if (!string.Equals(entity.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+                return Conflict(new { code = "session_closed", message = "Phiên phục vụ đã kết thúc." });
+            // Retry of a cancel whose Catalog release failed; never release a table reused by a newer session.
+            if (!await _db.DiningSessions.AnyAsync(x => x.TableId == entity.TableId && x.EndedAtUtc == null, ct))
+                await _catalog.ReleaseTableAsync(entity.TableId, ct);
+            return Ok(Map(entity, false));
+        }
+        if (string.Equals(entity.Status, "PAYMENT_REQUESTED", StringComparison.OrdinalIgnoreCase))
+            return Conflict(new { code = "session_payment_locked", message = "Bàn đang yêu cầu thanh toán nên không thể hủy bàn." });
+        if (entity.ReservationId is not null)
+            return Conflict(new { code = "session_from_reservation", message = "Phiên mở từ đặt bàn không thể hủy trong app. Vui lòng gọi nhân viên." });
+        if (entity.ConvertedOrderId is > 0 || await _db.Orders.AnyAsync(x => x.DiningSessionCode == entity.SessionCode
+                || (x.TableID == entity.TableId && (x.IsActive ?? true)), ct))
+            return Conflict(new { code = "session_has_orders", message = "Bàn đã gọi món nên không thể hủy bàn. Vui lòng thanh toán hoặc gọi nhân viên." });
+
+        var now = DateTime.UtcNow;
+        var openRequests = await _db.ServiceRequests.Where(x => x.DiningSessionId == sessionId && (x.Status == "OPEN" || x.Status == "ACKNOWLEDGED")).ToListAsync(ct);
+        foreach (var serviceRequest in openRequests) { serviceRequest.Status = "CANCELLED"; serviceRequest.CancelledAtUtc = now; serviceRequest.UpdatedAtUtc = now; }
+        entity.Status = "CANCELLED";
+        entity.EndedAtUtc = now;
+        entity.UpdatedAtUtc = now;
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync(ct);
+            return Conflict(new { code = "command_in_progress", message = "Yêu cầu đang được xử lý. Vui lòng thử lại." });
+        }
+        await _catalog.ReleaseTableAsync(entity.TableId, ct);
+        return Ok(Map(entity, false));
+    }
+
     [HttpGet("{sessionId:int}/checkout-context")]
     public async Task<ActionResult<DiningSessionCheckoutContext>> GetCheckoutContext(
         int sessionId, [FromQuery] int customerId, CancellationToken ct)

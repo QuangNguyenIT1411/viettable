@@ -29,6 +29,7 @@ import com.restaurant.viettable.ui.order.OrderDetailFragment;
 import com.restaurant.viettable.ui.order.OrderTrackingFragment;
 import com.restaurant.viettable.ui.payment.PaymentCheckoutFragment;
 import com.restaurant.viettable.util.DiningSessionHistoryGrouper;
+import com.restaurant.viettable.util.SessionCancelPolicy;
 
 import java.util.List;
 
@@ -62,6 +63,7 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
         binding.toolbar.setNavigationOnClickListener(v -> returnToHome());
         binding.btnDiningReturnHome.setOnClickListener(v -> returnToHome());
         binding.btnEmptySessionReturnHome.setOnClickListener(v -> returnToHome());
+        binding.btnCancelTable.setOnClickListener(v -> confirmCancelTable());
 
         setupActions();
         refreshSession();
@@ -72,6 +74,37 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
             showToast("Đã về trang chủ. Phiên dùng bữa vẫn đang hoạt động.");
         }
         switchTab(com.restaurant.viettable.R.id.nav_home);
+    }
+
+    private void confirmCancelTable() {
+        com.restaurant.viettable.ui.common.DialogHelper.showConfirmDialog(
+                requireContext(),
+                "Hủy bàn",
+                "Bạn chắc chắn muốn hủy bàn?",
+                "Hủy bàn",
+                (dialog, which) -> cancelTable(),
+                "Đóng",
+                null
+        );
+    }
+
+    private void cancelTable() {
+        if (binding == null) return;
+        binding.btnCancelTable.setEnabled(false);
+        MobileRepository.getInstance().cancelEmptySession(new MobileRepository.Callback<Void>() {
+            @Override public void onSuccess(Void value) {
+                if (!isAdded()) return;
+                showToast("Đã hủy bàn. Món trong giỏ vẫn được giữ lại.");
+                switchTab(R.id.nav_home);
+            }
+
+            @Override public void onError(ApiException error) {
+                if (binding == null) return;
+                binding.btnCancelTable.setEnabled(true);
+                showToast(apiError(error));
+                refreshSession();
+            }
+        });
     }
 
     private void setupActions() {
@@ -221,6 +254,8 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
             }
             binding.tvTotalDishesCount.setText(totalDishes + " món");
             binding.tvOrderRoundsCount.setText(session.getOrders().size() + " đợt");
+            binding.btnCancelTable.setVisibility(SessionCancelPolicy.canCancel(session.getStatus(),
+                    session.getOrders().size(), session.getReservationId() != null) ? View.VISIBLE : View.GONE);
             binding.tvEstimatedTotalAmount.setText(session.getFormattedSubtotal());
 
             // Orders list
