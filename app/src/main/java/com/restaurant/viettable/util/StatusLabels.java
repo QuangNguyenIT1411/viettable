@@ -30,6 +30,40 @@ public final class StatusLabels {
         }
     }
 
+    public static String paymentStatus(String value) {
+        switch (upper(value)) {
+            case "SUCCEEDED": case "PAID": case "COMPLETED": return "Thành công";
+            case "PENDING": case "UNPAID": case "OPEN": return "Đang chờ";
+            case "PROCESSING": return "Đang xử lý";
+            case "FAILED": return "Thất bại";
+            case "CANCELLED": return "Đã hủy";
+            case "EXPIRED": return "Hết hạn";
+            case "REFUNDED": return "Đã hoàn tiền";
+            default: return value == null ? "" : value;
+        }
+    }
+
+    /** Short invoice title; the long INV-&lt;guid&gt; code is only a fallback when the number is unknown. */
+    public static String invoiceTitle(int invoiceId, String invoiceCode) {
+        if (invoiceId > 0) return "Hóa đơn #" + invoiceId;
+        return invoiceCode == null || invoiceCode.trim().isEmpty() ? "Hóa đơn" : invoiceCode.trim();
+    }
+
+    public static String sessionLabel(int sessionId) {
+        return sessionId > 0 ? "Phiên #" + sessionId : "Phiên";
+    }
+
+    /** e.g. "Tại nhà hàng • Tiền mặt • Thành công"; empty parts are skipped. */
+    public static String paymentSummary(String channel, String method, String status) {
+        StringBuilder value = new StringBuilder();
+        for (String part : new String[]{paymentChannel(channel), paymentMethod(method), paymentStatus(status)}) {
+            if (part == null || part.trim().isEmpty()) continue;
+            if (value.length() > 0) value.append(" • ");
+            value.append(part.trim());
+        }
+        return value.length() == 0 ? "Không rõ" : value.toString();
+    }
+
     public static String paymentLocation(String value) {
         switch (upper(value)) {
             case "TABLE": return "Tại bàn";

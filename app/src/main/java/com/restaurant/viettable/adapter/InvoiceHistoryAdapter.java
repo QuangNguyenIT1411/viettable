@@ -28,7 +28,8 @@ public class InvoiceHistoryAdapter extends RecyclerView.Adapter<InvoiceHistoryAd
     }
     @Override public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         InvoiceHistoryItem invoice = invoices.get(position);
-        holder.binding.tvHistoryInvoiceCode.setText(invoice.getInvoiceCode() + " • Phiên " + invoice.getDiningSessionId());
+        holder.binding.tvHistoryInvoiceCode.setText(StatusLabels.invoiceTitle(invoice.getInvoiceId(), invoice.getInvoiceCode())
+                + " • " + StatusLabels.sessionLabel(invoice.getDiningSessionId()));
         holder.binding.tvHistoryInvoiceStatus.setText(statusLabel(invoice.getPaymentStatus()));
         holder.binding.tvHistoryInvoiceMeta.setText(DisplayFormatters.dateTime(invoice.getIssuedAtUtc()) + " • "
                 + invoice.getBranchName() + " • " + invoice.getTableLabel());
@@ -40,7 +41,7 @@ public class InvoiceHistoryAdapter extends RecyclerView.Adapter<InvoiceHistoryAd
 
     private static String statusLabel(String status) {
         if ("SUCCEEDED".equalsIgnoreCase(status)) return "ĐÃ THANH TOÁN";
-        return status == null || status.isEmpty() ? "ĐÃ PHÁT HÀNH" : status;
+        return status == null || status.isEmpty() ? "ĐÃ PHÁT HÀNH" : StatusLabels.paymentStatus(status).toUpperCase(Locale.ROOT);
     }
     private static String paymentLabel(InvoiceHistoryItem invoice) {
         String channel = StatusLabels.paymentChannel(invoice.getPaymentChannel());

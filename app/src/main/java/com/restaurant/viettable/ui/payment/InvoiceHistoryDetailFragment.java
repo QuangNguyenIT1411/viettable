@@ -16,6 +16,7 @@ import com.restaurant.viettable.model.InvoiceHistoryItem;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.StatusLabels;
 
 import java.util.Locale;
 
@@ -66,15 +67,15 @@ public class InvoiceHistoryDetailFragment extends BaseFragment {
     private void render(InvoiceHistoryItem invoice) {
         binding.progressInvoiceDetail.setVisibility(View.GONE);
         binding.contentInvoiceDetail.setVisibility(View.VISIBLE);
-        binding.tvInvoiceDetailCode.setText(invoice.getInvoiceCode());
-        String paymentStatus = invoice.getPaymentStatus() == null ? "" : invoice.getPaymentStatus();
-        String paymentMethod = (invoice.getPaymentChannel() == null ? "" : invoice.getPaymentChannel()) + "/"
-                + (invoice.getPaymentMethod() == null ? "" : invoice.getPaymentMethod());
+        binding.tvInvoiceDetailCode.setText(StatusLabels.invoiceTitle(invoice.getInvoiceId(), invoice.getInvoiceCode()));
         binding.tvInvoiceDetailMeta.setText("Thời gian: " + DisplayFormatters.dateTime(invoice.getIssuedAtUtc())
                 + "\nChi nhánh: " + invoice.getBranchName() + "\n" + invoice.getTableLabel()
-                + " • Phiên " + invoice.getDiningSessionId() + " (" + invoice.getDiningSessionCode() + ")"
-                + "\nThanh toán: " + paymentMethod + " • " + paymentStatus
-                + "\nMã giao dịch: " + invoice.getPaymentCode());
+                + " • " + StatusLabels.sessionLabel(invoice.getDiningSessionId())
+                + "\nThanh toán: " + StatusLabels.paymentSummary(invoice.getPaymentChannel(), invoice.getPaymentMethod(), invoice.getPaymentStatus()));
+        String paymentCode = invoice.getPaymentCode();
+        boolean hasPaymentCode = paymentCode != null && !paymentCode.trim().isEmpty() && !"null".equals(paymentCode);
+        binding.tvInvoiceDetailPaymentCode.setVisibility(hasPaymentCode ? View.VISIBLE : View.GONE);
+        if (hasPaymentCode) binding.tvInvoiceDetailPaymentCode.setText("Mã giao dịch: " + paymentCode.trim());
         binding.layoutInvoiceDetailItems.removeAllViews();
         for (InvoiceHistoryItem.Line item : invoice.getItems()) {
             TextView row = new TextView(requireContext());

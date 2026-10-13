@@ -67,4 +67,21 @@ public class StatusLabelsTest {
         assertEquals("Tại quầy thu ngân", StatusLabels.paymentLocation("CASHIER"));
         assertEquals("", StatusLabels.paymentLocation(null));
     }
+
+    @Test
+    public void invoiceDetailUsesVietnamesePaymentSummary() {
+        assertEquals("Tại nhà hàng • Tiền mặt • Thành công", StatusLabels.paymentSummary("ONSITE", "CASH", "SUCCEEDED"));
+        assertEquals("Tiền mặt • Đang chờ", StatusLabels.paymentSummary(null, "cash", "PENDING"));
+        assertEquals("Không rõ", StatusLabels.paymentSummary(null, "", null));
+        assertEquals("Thất bại", StatusLabels.paymentStatus("FAILED"));
+        assertEquals("Hết hạn", StatusLabels.paymentStatus("expired"));
+    }
+
+    @Test
+    public void invoiceAndSessionUseShortNumbers() {
+        assertEquals("Hóa đơn #12", StatusLabels.invoiceTitle(12, "INV-d81d52c7aa"));
+        assertEquals("INV-d81d52c7aa", StatusLabels.invoiceTitle(0, "INV-d81d52c7aa"));
+        assertEquals("Hóa đơn", StatusLabels.invoiceTitle(0, null));
+        assertEquals("Phiên #29", StatusLabels.sessionLabel(29));
+    }
 }

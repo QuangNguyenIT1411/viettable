@@ -83,6 +83,15 @@
                             android:textColor="@color/primary"
                             android:textSize="19sp"
                             android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/tvInvoiceDetailPaymentCode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="end"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp"
+                            android:visibility="gone" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>

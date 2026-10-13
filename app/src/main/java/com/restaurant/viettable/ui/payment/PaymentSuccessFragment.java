@@ -59,7 +59,7 @@ public class PaymentSuccessFragment extends BaseFragment {
 
         if (invoice != null) {
             binding.tvSuccessAmount.setText(invoice.getFormattedFinalTotal());
-            binding.tvSuccessInvoiceId.setText("#" + invoice.getId());
+            binding.tvSuccessInvoiceId.setText(com.restaurant.viettable.util.StatusLabels.invoiceTitle(invoice.getBackendInvoiceId(), invoice.getId()));
             binding.tvSuccessMethod.setText(invoice.getPaymentMethod());
             binding.tvSuccessBranch.setText(invoice.getTableLabel() + " • " + invoice.getBranchName());
         }
