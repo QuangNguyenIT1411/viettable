@@ -1,3 +1,4 @@
+import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useMemo, useState } from "react";
 import { HubConnectionBuilder, HttpTransportType } from "@microsoft/signalr";
 import { Link } from "react-router-dom";
@@ -404,7 +405,7 @@ export function DashboardPage({ onLogout }: Props) {
     try {
       setCheckoutSubmitting(true);
       const invoiceSnapshot = {
-        orderCode: activeOrder.orderCode,
+        orderCode: orderLabel(activeOrder.orderId, activeOrder.orderCode),
         tableName: selectedTable.number,
         customerName: activeOrder.customerName,
         cashierName: dashboard.staff.name,
@@ -731,7 +732,7 @@ export function DashboardPage({ onLogout }: Props) {
               <>
                 <div className="inline-filter-card cashier-order-summary-card cashier-pos-order-summary">
                   <div>
-                    <strong>{activeOrder.orderCode}</strong>
+                    <strong>{orderLabel(activeOrder.orderId, activeOrder.orderCode)}</strong>
                     <div className="muted">{activeOrder.customerName || "Khách lẻ"}</div>
                   </div>
                   <span className="soft-badge info">{activeOrder.statusName}</span>

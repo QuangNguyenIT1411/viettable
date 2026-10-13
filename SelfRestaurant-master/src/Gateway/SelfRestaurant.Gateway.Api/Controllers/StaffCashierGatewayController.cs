@@ -647,7 +647,8 @@ public sealed class StaffCashierGatewayController : ControllerBase
         bill.PaymentMethod,
         bill.PaymentAmount,
         bill.ChangeAmount,
-        bill.CustomerName ?? string.Empty);
+        bill.CustomerName ?? string.Empty,
+        bill.OrderId);
 
     private CashierAccountDto BuildAccountDto(StaffSessionUserDto staff) => new(
         staff.EmployeeId,

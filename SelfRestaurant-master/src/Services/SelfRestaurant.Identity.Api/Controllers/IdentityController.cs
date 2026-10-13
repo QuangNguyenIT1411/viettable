@@ -1662,7 +1662,8 @@ public sealed class IdentityController : ControllerBase
                         b.TotalAmount,
                         b.PaymentMethod,
                         b.PaymentAmount,
-                        b.ChangeAmount)).ToList());
+                        b.ChangeAmount,
+                        b.OrderId)).ToList());
             }
         }
 
@@ -2330,7 +2331,8 @@ public sealed class IdentityController : ControllerBase
         decimal TotalAmount,
         string PaymentMethod,
         decimal? PaymentAmount,
-        decimal? ChangeAmount);
+        decimal? ChangeAmount,
+        int? OrderId = null);
 
     public sealed record AdminCashierHistoryPage(
         int Page,

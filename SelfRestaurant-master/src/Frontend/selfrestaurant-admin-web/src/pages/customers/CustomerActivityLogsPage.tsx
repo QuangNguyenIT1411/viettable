@@ -1,3 +1,4 @@
+import { orderLabel } from "../../../../shared/orderLabel";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -263,7 +264,7 @@ export function CustomerActivityLogsPage({ onLogout }: Props) {
                   <tbody>
                     {orderHistory.items.map((order) => (
                       <tr key={order.orderId}>
-                        <td style={{ whiteSpace: "nowrap" }}>{order.orderCode || `#${order.orderId}`}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>{orderLabel(order.orderId, order.orderCode)}</td>
                         <td style={{ whiteSpace: "nowrap" }}>{formatTimestamp(order.orderTime)}</td>
                         <td>{order.tableName || "-"}</td>
                         <td>

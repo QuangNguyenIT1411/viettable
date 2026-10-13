@@ -59,6 +59,7 @@ export type CashierBillHistoryItemDto = {
   billCode: string;
   billTime: string;
   orderCode: string;
+  orderId?: number | null;
   tableName: string;
   subtotal: number;
   discount: number;

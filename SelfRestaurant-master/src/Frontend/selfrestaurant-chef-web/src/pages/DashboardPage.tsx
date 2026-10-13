@@ -1,3 +1,4 @@
+import { orderLabel } from "../../../shared/orderLabel";
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAppDialog } from "../components/AppDialog";
@@ -505,7 +506,7 @@ export function DashboardPage({ onLogout }: Props) {
                     data.history.slice(0, 100).map((item) => (
                       <tr key={item.orderId}>
                         <td>{formatShortDateTime(item.completedTime ?? item.orderTime)}</td>
-                        <td>{item.orderCode || `ORD${item.orderId}`}</td>
+                        <td>{orderLabel(item.orderId, item.orderCode)}</td>
                         <td>{item.tableName || "Không rõ bàn"}</td>
                         <td>{item.dishesSummary}</td>
                         <td>
@@ -977,7 +978,7 @@ function OrderColumn({
                 {formatOrderTime(order.orderTime)}
               </span>
             </div>
-            <div className="order-code-label">#{order.orderCode || `ORD${order.orderId}`}</div>
+            <div className="order-code-label">{orderLabel(order.orderId, order.orderCode)}</div>
             <div className="order-items">
               {order.items.map((item) => (
                 <div key={item.itemId} className="order-item">
@@ -1041,7 +1042,7 @@ function OrderColumn({
               {secondaryLabel && secondaryAction ? (
                 <button
                   className="btn-action-danger"
-                  onClick={() => secondaryAction(order.orderId, order.orderCode || `ORD${order.orderId}`)}
+                  onClick={() => secondaryAction(order.orderId, orderLabel(order.orderId, order.orderCode))}
                 >
                   {secondaryLabel}
                 </button>

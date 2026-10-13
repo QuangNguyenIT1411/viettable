@@ -1,3 +1,4 @@
+import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { cashierApi } from "../lib/api";
@@ -137,7 +138,7 @@ export function ReportPage() {
                     <tr key={bill.billId}>
                       <td>{formatDateTime(bill.billTime)}</td>
                       <td>{bill.billCode}</td>
-                      <td>{bill.orderCode}</td>
+                      <td>{orderLabel(bill.orderId, bill.orderCode)}</td>
                       <td>{bill.tableName}</td>
                       <td className="text-end">{bill.totalAmount.toLocaleString("vi-VN")} {"\u0111"}</td>
                       <td>

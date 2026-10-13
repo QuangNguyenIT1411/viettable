@@ -431,7 +431,8 @@ public sealed record AdminCashierHistoryItemDto(
     decimal TotalAmount,
     string PaymentMethod,
     decimal? PaymentAmount,
-    decimal? ChangeAmount);
+    decimal? ChangeAmount,
+    int? OrderId = null);
 
 public sealed record AdminCashierHistoryPageDto(
     int Page,

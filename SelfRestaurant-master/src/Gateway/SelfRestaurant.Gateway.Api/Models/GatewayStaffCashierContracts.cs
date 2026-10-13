@@ -46,7 +46,8 @@ public sealed record CashierBillHistoryItemDto(
     string PaymentMethod,
     decimal? PaymentAmount,
     decimal? ChangeAmount,
-    string CustomerName);
+    string CustomerName,
+    int? OrderId = null);
 
 public sealed record CashierAccountDto(
     int EmployeeId,

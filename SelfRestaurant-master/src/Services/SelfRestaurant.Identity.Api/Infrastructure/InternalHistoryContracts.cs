@@ -26,7 +26,8 @@ public sealed record CashierHistoryAggregateResponse(
     decimal TotalAmount,
     string PaymentMethod,
     decimal? PaymentAmount,
-    decimal? ChangeAmount);
+    decimal? ChangeAmount,
+    int? OrderId = null);
 
 public sealed record CashierHistoryPagedResponse(
     int Page,

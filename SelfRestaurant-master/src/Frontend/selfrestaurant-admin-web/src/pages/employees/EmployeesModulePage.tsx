@@ -1,3 +1,4 @@
+import { orderLabel } from "../../../../shared/orderLabel";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -645,7 +646,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
                                     <td style={{ textAlign: "center" }}>
                                       <span className="badge bg-success">{details?.quantity || 1}x</span>
                                     </td>
-                                    <td>{details?.orderCode || "-"}</td>
+                                    <td>{orderLabel(details?.orderId, details?.orderCode)}</td>
                                     <td>{details?.tableName || "-"}</td>
                                   </tr>
                                 );
@@ -699,7 +700,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
                             <tbody>
                               {history.chefCookingHistory.items.map((item) => (
                                 <tr key={`chef-cook-${item.orderId}`}>
-                                  <td>{item.orderCode || `ORDER-${item.orderId}`}</td>
+                                  <td>{orderLabel(item.orderId, item.orderCode)}</td>
                                   <td>{formatDateTime(item.orderTime)}</td>
                                   <td>{formatDateTime(item.completedTime)}</td>
                                   <td>{item.tableName || "-"}</td>
@@ -778,7 +779,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
                               <tr key={`cash-${item.billId}`}>
                                 <td>{item.billCode}</td>
                                 <td>{formatDateTime(item.billTime)}</td>
-                                <td>{item.orderCode || "-"}</td>
+                                <td>{orderLabel(item.orderId, item.orderCode)}</td>
                                 <td>{item.tableName || "-"}</td>
                                 <td>{item.customerName || "-"}</td>
                                 <td>{item.totalAmount.toLocaleString("vi-VN")} đ</td>
