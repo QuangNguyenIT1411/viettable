@@ -49,9 +49,8 @@ test("trang Lịch sử hóa đơn của thu ngân mở được", async ({ page
   await expect(page.getByRole("heading", { name: "Thông tin tài khoản" })).toBeVisible();
 });
 
-// KNOWN GAP (13/10/2026, not a UI issue): app-session payments create Billing Invoices, but this page lists
-// legacy Bills only (CashierBillsController -> _db.Bills), so they never appear. Remove fixme once fixed.
-test.fixme("hóa đơn của phiên app hiện trong Lịch sử hóa đơn của thu ngân", async ({ page, baseURL }) => {
+// App-session payments create Billing Invoices; history and the daily report list them next to legacy Bills.
+test("hóa đơn của phiên app hiện trong Lịch sử hóa đơn và Báo cáo ngày của thu ngân", async ({ page, baseURL }) => {
   const order = await openTableWithOrder(baseURL!);
   await login(page, "cashier");
   await tableCard(page, order.tableNumber).click();
@@ -59,7 +58,12 @@ test.fixme("hóa đơn của phiên app hiện trong Lịch sử hóa đơn củ
   await page.getByRole("button", { name: "Vừa đủ" }).click();
   await page.getByRole("button", { name: "Xác nhận thanh toán" }).click();
   await expect(page.getByText("Thanh toán thành công").first()).toBeVisible();
+
   await page.goto("/app/cashier/Staff/Cashier/History");
+  await expect(page.getByRole("cell", { name: `Đơn #${order.orderId}` })).toBeVisible();
+
+  await page.goto("/app/cashier/Staff/Cashier/Report");
+  await page.getByRole("button", { name: "Xem báo cáo" }).click();
   await expect(page.getByRole("cell", { name: `Đơn #${order.orderId}` })).toBeVisible();
 });
 

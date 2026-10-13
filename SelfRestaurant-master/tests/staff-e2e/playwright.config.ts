@@ -9,6 +9,8 @@ if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(baseURL)) {
 
 export default defineConfig({
   testDir: "./specs",
+  globalSetup: "./support/cleanup.ts",
+  globalTeardown: "./support/teardown.ts",
   fullyParallel: false,
   workers: 1, // one shared local database and single-session staff accounts
   retries: 0,

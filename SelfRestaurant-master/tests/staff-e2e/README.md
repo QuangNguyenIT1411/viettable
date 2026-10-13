@@ -43,5 +43,8 @@ Cả 3 vai trò đăng nhập ở trang chung `/app/chef/Staff/Account/Login`.
 Dữ liệu khách được tạo qua API mobile local (`support/customer.ts`) và dùng bàn `QR-Q1-B11`…`B20`.
 Ảnh QR từ `api.qrserver.com` được giả lập để test không cần Internet.
 
-Test `test.fixme` trong `cashier.spec.ts` là **lỗi chức năng đã biết** (hóa đơn phiên app không hiện trong Lịch sử của thu ngân),
-không phải lỗi giao diện.
+Trước và sau mỗi lần chạy, `support/cleanup.ts` đăng nhập thu ngân qua API local và thanh toán mọi đơn còn mở ở bàn 11–20
+(test bếp và test sơ đồ bàn để phiên mở), để lần chạy sau luôn có bàn trống.
+
+Test "hóa đơn của phiên app hiện trong Lịch sử hóa đơn và Báo cáo ngày" cần bản sửa Billing `0396ec2` (branch `qa/vt-ho-01`);
+trên code chưa có bản sửa này test đó sẽ FAIL.
