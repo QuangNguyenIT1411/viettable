@@ -131,14 +131,14 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 - Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
 - **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
 
-### 6a. Trạng thái hiện tại (cập nhật 13/10/2026 16:10)
+### 6a. Trạng thái hiện tại (cập nhật 13/10/2026 19:15)
 
 | Mục | Trạng thái |
 |---|---|
-| Deploy đang chạy | Production `dpl_GGVQDTKaqgNzN5mW9BZPon7k4fWv` (tạo 13/10/2026 16:03), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = commit `c16f9e1` (deploy bằng CLI từ HEAD `d096440`, commit sau `c16f9e1` chỉ là tài liệu). Gồm: trang `/Menu/FromQr`, tính năng Hủy bàn. Bản trước: `dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb` (commit `5a25ff5`) |
-| APK đã cài | `cloudProd` build 13/10/2026 15:52 từ commit `c16f9e1` (đọc link QR admin, thông báo giỏ khi chưa có bàn, nút Hủy bàn), cài đè lên Samsung SM-A528B lúc 16:06:49 13/10/2026 |
-| Git | Branch `qa/vt-ho-01` push lên `origin` (GitHub private): xem commit cuối trong `git status -sb` |
-| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn) — đều làm sau demo; chờ kết quả test 9 bước của chủ dự án |
+| Deploy đang chạy | Production `dpl_54CoYXF8nb2pvditsHc9eD3KytmV` (tạo 13/10/2026 19:07), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = HEAD `4a11139` (deploy bằng CLI); thay đổi server mới nhất là `564fe14` (web bếp/thu ngân/admin hiện "Đơn #id", OrderId qua Identity/Gateway). Đã có: `/Menu/FromQr`, Hủy bàn. Bản trước: `dpl_GGVQDTKaqgNzN5mW9BZPon7k4fWv` (commit `c16f9e1`) |
+| APK đã cài | `cloudProd` build 13/10/2026 19:04 từ commit `4a11139` (nhãn hóa đơn tiếng Việt, "Hóa đơn #", "Phiên #", hạng thành viên tiếng Việt + các bản sửa trước), cài đè lên Samsung SM-A528B lúc 19:10:18 13/10/2026 |
+| Git | Branch `qa/vt-ho-01` push lên `origin` (GitHub private) cùng commit cập nhật mục này |
+| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn) — làm sau demo; chủ dự án test lại B4 (web bếp/thu ngân/admin) và B9 (hóa đơn app) |
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 

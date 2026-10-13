@@ -1,5 +1,9 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 13/10/2026 19:15:** deploy Production `dpl_54CoYXF8nb2pvditsHc9eD3KytmV` (HEAD `4a11139`, gồm `564fe14` nhãn "Đơn #id" trên web nhân viên), `[syd1]`, Ready;
+> đo 1 lần: `/` 200 8,08 s (khởi động lạnh sau deploy), `/Menu/FromQr` 200 0,94 s, `/branches/1/menu` 200 8,04 s (chậm bất thường lần này, chưa rõ nguyên nhân), `/app/chef/` 200 0,71 s.
+> APK `cloudProd` 19:04 cài lên Samsung 19:10.
+>
 > **Cập nhật 13/10/2026 16:10:** deploy Production `dpl_GGVQDTKaqgNzN5mW9BZPon7k4fWv` (commit `c16f9e1`: `/Menu/FromQr` + Hủy bàn), `[syd1]`, Ready;
 > đo 1 lần: `/` 200 8,17 s (khởi động lạnh sau deploy), `/Menu/FromQr?code=QR-Q1-B01` 200 0,91 s, `/branches/1/menu` 200 1,48 s.
 > APK `cloudProd` mới cài lên Samsung 16:06. Trạng thái mới nhất luôn ở CLAUDE.md mục 6a.
