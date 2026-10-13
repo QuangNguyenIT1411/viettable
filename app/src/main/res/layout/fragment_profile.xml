@@ -101,7 +101,7 @@
                             android:fontFamily="sans-serif-bold"
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="4dp"
-                            android:text="HẠNG VÀNG (GOLD)"
+                            android:text="HẠNG VÀNG"
                             android:textColor="#7D5200"
                             android:textSize="11sp" />
                     </LinearLayout>

@@ -64,6 +64,17 @@ public final class StatusLabels {
         return value.length() == 0 ? "Không rõ" : value.toString();
     }
 
+    /** Display name of a membership tier; the API code (MEMBER/SILVER/GOLD/DIAMOND) is unchanged. */
+    public static String memberTier(String value) {
+        switch (upper(value)) {
+            case "MEMBER": return "Thành viên";
+            case "SILVER": return "Bạc";
+            case "GOLD": return "Vàng";
+            case "DIAMOND": return "Kim cương";
+            default: return value == null || value.trim().isEmpty() ? "Thành viên" : value.trim();
+        }
+    }
+
     public static String paymentLocation(String value) {
         switch (upper(value)) {
             case "TABLE": return "Tại bàn";

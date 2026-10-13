@@ -65,7 +65,7 @@
                         android:fontFamily="sans-serif-bold"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="4dp"
-                        android:text="GOLD"
+                        android:text="VÀNG"
                         android:textColor="#7D5200"
                         android:textSize="11sp" />
 
@@ -181,7 +181,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Đặc quyền hạng Vàng (Gold)"
+                android:text="Đặc quyền hạng Vàng"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />
 

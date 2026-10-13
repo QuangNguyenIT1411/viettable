@@ -84,4 +84,14 @@ public class StatusLabelsTest {
         assertEquals("Hóa đơn", StatusLabels.invoiceTitle(0, null));
         assertEquals("Phiên #29", StatusLabels.sessionLabel(29));
     }
+
+    @Test
+    public void memberTiersAreShownInVietnamese() {
+        assertEquals("Thành viên", StatusLabels.memberTier("MEMBER"));
+        assertEquals("Bạc", StatusLabels.memberTier("silver"));
+        assertEquals("Vàng", StatusLabels.memberTier("GOLD"));
+        assertEquals("Kim cương", StatusLabels.memberTier("DIAMOND"));
+        assertEquals("Thành viên", StatusLabels.memberTier(null));
+        assertEquals("PLATINUM", StatusLabels.memberTier("PLATINUM"));
+    }
 }

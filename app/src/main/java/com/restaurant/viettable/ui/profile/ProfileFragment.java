@@ -76,7 +76,7 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
         if (user != null) {
             binding.tvProfileName.setText(user.getFullName());
             binding.tvProfilePhone.setText(user.getPhone());
-            binding.tvProfileTierBadge.setText("HẠNG " + user.getMembershipTier().toUpperCase());
+            binding.tvProfileTierBadge.setText("HẠNG " + com.restaurant.viettable.util.StatusLabels.memberTier(user.getMembershipTier()).toUpperCase(java.util.Locale.ROOT));
             binding.tvProfilePoints.setText(String.format(Locale.GERMANY, "%,d điểm", user.getLoyaltyPoints()));
         }
 

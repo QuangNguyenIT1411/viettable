@@ -40,7 +40,7 @@ public class LoyaltyFragment extends BaseFragment {
         if (user != null) {
             binding.tvCardHolder.setText(user.getFullName().toUpperCase());
             binding.tvCardPoints.setText(String.format(Locale.GERMANY, "%,d pts", user.getLoyaltyPoints()));
-            binding.tvCardTier.setText(user.getMembershipTier().toUpperCase());
+            binding.tvCardTier.setText(com.restaurant.viettable.util.StatusLabels.memberTier(user.getMembershipTier()).toUpperCase(Locale.ROOT));
         }
     }
 
