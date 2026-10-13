@@ -64,8 +64,31 @@ public sealed class StaffPreviewRoutingTests
                 foreach (var link in new[] { "href=\"/app/admin/\">Admin<", "href=\"/app/chef/\">Bếp<", "href=\"/app/cashier/\">Thu ngân<" })
                     Assert.Contains(link, html);
             }
-            using var customer = await client.GetAsync("http://gateway.module.invalid/Menu/FromQr?code=test");
-            Assert.Equal(HttpStatusCode.NotFound, customer.StatusCode);
+            using (var qr = await client.GetAsync("http://gateway.module.invalid/Menu/FromQr?code=QR-Q1-B01"))
+            {
+                Assert.Equal(HttpStatusCode.OK, qr.StatusCode);
+                Assert.Equal("text/html", qr.Content.Headers.ContentType!.MediaType);
+                Assert.Contains("no-cache", qr.Headers.CacheControl!.ToString());
+                var html = await qr.Content.ReadAsStringAsync();
+                Assert.Contains("Mở app VietTable và quét lại mã này", html);
+                Assert.Contains("<strong>QR-Q1-B01</strong>", html);
+                Assert.DoesNotContain("staff-routing-test", html);
+            }
+            foreach (var hostile in new[] { "<script>alert(1)</script>", "QR\"><img src=x onerror=alert(1)>", new string('A', 65) })
+            {
+                using var qr = await client.GetAsync("http://gateway.module.invalid/menu/fromqr?code=" + Uri.EscapeDataString(hostile));
+                Assert.Equal(HttpStatusCode.OK, qr.StatusCode);
+                var html = await qr.Content.ReadAsStringAsync();
+                Assert.Contains("Mở app VietTable và quét lại mã này", html);
+                Assert.DoesNotContain("Mã bàn:", html);
+                Assert.DoesNotContain("<script", html);
+                Assert.DoesNotContain("onerror", html);
+            }
+            using (var noCode = await client.GetAsync("http://gateway.module.invalid/Menu/FromQr"))
+            {
+                Assert.Equal(HttpStatusCode.OK, noCode.StatusCode);
+                Assert.DoesNotContain("Mã bàn:", await noCode.Content.ReadAsStringAsync());
+            }
             foreach (var path in new[] { "/api/gateway/staff/chef/dashboard", "/api/mobile/v1/orders", "/hubs/mobile-notifications/negotiate" })
             {
                 using var protectedResult = await client.GetAsync("http://gateway.module.invalid" + path);

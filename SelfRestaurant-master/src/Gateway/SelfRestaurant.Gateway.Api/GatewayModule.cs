@@ -350,6 +350,16 @@ if (customerAppRoot is null && builder.Configuration.GetValue<bool?>("CloudHost:
         return Results.Content(StaffLauncherHtml, "text/html; charset=utf-8");
     });
 }
+if (customerAppRoot is null)
+{
+    // Table QR codes printed by Admin Web point here; without customer web, tell phone-camera users to use the app.
+    // Static page: no database lookup, and the code is echoed only when it matches the table-code format.
+    app.MapGet("/Menu/FromQr", (HttpContext context, string? code) =>
+    {
+        ApplyNoCacheHeaders(context.Response);
+        return Results.Content(TableQrHintHtml(code), "text/html; charset=utf-8");
+    });
+}
 return Task.FromResult(app);
 
 }
@@ -442,6 +452,40 @@ a:hover,a:focus{background:#8f1b21}
 <a href="/app/admin/">Admin</a>
 <a href="/app/chef/">Bếp</a>
 <a href="/app/cashier/">Thu ngân</a>
+</main>
+</body>
+</html>
+""";
+
+static string TableQrHintHtml(string? code)
+{
+    var trimmed = code?.Trim();
+    var codeLine = trimmed is { Length: > 0 and <= 64 } && trimmed.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_')
+        ? "<p>Mã bàn: <strong>" + WebUtility.HtmlEncode(trimmed) + "</strong></p>"
+        : "";
+    return TableQrHintHtmlTemplate.Replace("{{CODE_LINE}}", codeLine);
+}
+
+const string TableQrHintHtmlTemplate = """
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VietTable</title>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#f6f4ef;color:#222}
+main{width:100%;max-width:360px;padding:16px;text-align:center}
+h1{margin:0 0 24px;font-size:28px}
+p{font-size:18px;line-height:1.5}
+strong{color:#b4232a}
+</style>
+</head>
+<body>
+<main>
+<h1>VietTable</h1>
+<p>Mở app VietTable và quét lại mã này</p>
+{{CODE_LINE}}
 </main>
 </body>
 </html>
