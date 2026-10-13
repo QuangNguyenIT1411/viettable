@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SelfRestaurant.Billing.Api.Infrastructure;
 using SelfRestaurant.Billing.Api.Persistence;
@@ -89,7 +90,8 @@ public sealed class CashierBillsController : ControllerBase
             })
             .ToList();
 
-        return Ok(payload);
+        var appInvoices = await GetAppInvoiceRowsAsync(employeeId, branchId, start, end, take, cancellationToken);
+        return Ok(payload.Concat(appInvoices).OrderByDescending(x => x.BillTime).Take(take).ToList());
     }
 
     [HttpGet("api/internal/employees/{employeeId:int}/cashier/history")]
@@ -114,13 +116,16 @@ public sealed class CashierBillsController : ControllerBase
             .AsNoTracking()
             .Where(b => b.IsActive && b.EmployeeID == employeeId && b.BillTime >= fromDate);
 
-        var totalItems = await query.CountAsync(cancellationToken);
+        // Legacy Bills and app Invoices are merged newest-first; take enough of each to fill this page.
+        var window = page * pageSize;
+        var appInvoices = await GetAppInvoiceRowsAsync(employeeId, null, fromDate, null, window, cancellationToken);
+        var totalItems = await query.CountAsync(cancellationToken)
+            + await AppInvoicesInRange(employeeId, null, fromDate, null).CountAsync(cancellationToken);
         var totalPages = totalItems <= 0 ? 0 : (int)Math.Ceiling(totalItems / (double)pageSize);
 
         var bills = await query
             .OrderByDescending(b => b.BillTime)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Take(window)
             .ToListAsync(cancellationToken);
 
         var orderLookup = await GetFallbackOrderContextLookupAsync(bills, cancellationToken);
@@ -150,7 +155,11 @@ public sealed class CashierBillsController : ControllerBase
                 b.PaymentMethod,
                 b.PaymentAmount,
                 b.ChangeAmount);
-        }).ToList();
+        }).Concat(appInvoices)
+            .OrderByDescending(x => x.BillTime)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
 
         return Ok(new { page, pageSize, totalItems, totalPages, items });
     }
@@ -213,11 +222,108 @@ public sealed class CashierBillsController : ControllerBase
             .Where(b => ResolveBranchId(b, orderLookup) == branchId)
             .ToList();
 
+        // Every app invoice of the branch counts (cashier-confirmed or online); app sessions never create Bills.
+        var appTotals = await AppInvoicesInRange(null, branchId, start, end)
+            .Select(x => x.Invoice.TotalAmount)
+            .ToListAsync(cancellationToken);
+
         return Ok(new BranchCashierReportResponse(
             Date: target,
             BranchId: branchId,
-            BillCount: filteredBills.Count,
-            TotalRevenue: filteredBills.Sum(b => b.TotalAmount)));
+            BillCount: filteredBills.Count + appTotals.Count,
+            TotalRevenue: filteredBills.Sum(b => b.TotalAmount) + appTotals.Sum()));
+    }
+
+    // App (mobile checkout) invoices. Bills use server-local BillTime; Invoices use UTC.
+    // A cashier owns an invoice when one of its SUCCEEDED payments was confirmed by them.
+    private IQueryable<AppInvoice> AppInvoicesInRange(int? employeeId, int? branchId, DateTime? fromLocal, DateTime? toLocal)
+    {
+        var invoices = _db.Invoices.AsNoTracking();
+        if (fromLocal is not null)
+        {
+            var fromUtc = ToUtc(fromLocal.Value);
+            invoices = invoices.Where(i => i.IssuedAtUtc >= fromUtc);
+        }
+        if (toLocal is not null)
+        {
+            var toUtc = ToUtc(toLocal.Value);
+            invoices = invoices.Where(i => i.IssuedAtUtc < toUtc);
+        }
+        if (employeeId is not null)
+            invoices = invoices.Where(i => _db.Payments.Any(p => p.CheckoutQuoteId == i.CheckoutQuoteId
+                && p.Status == "SUCCEEDED" && p.ConfirmedByEmployeeId == employeeId));
+        var quotes = _db.CheckoutQuotes.AsNoTracking();
+        if (branchId is not null) quotes = quotes.Where(q => q.BranchId == branchId);
+        return from invoice in invoices
+               join quote in quotes on invoice.CheckoutQuoteId equals quote.CheckoutQuoteId
+               select new AppInvoice { Invoice = invoice, Quote = quote };
+    }
+
+    private async Task<List<BillSummaryResponse>> GetAppInvoiceRowsAsync(
+        int? employeeId, int? branchId, DateTime? fromLocal, DateTime? toLocal, int take, CancellationToken cancellationToken)
+    {
+        var rows = await AppInvoicesInRange(employeeId, branchId, fromLocal, toLocal)
+            .OrderByDescending(x => x.Invoice.IssuedAtUtc)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+        if (rows.Count == 0) return new List<BillSummaryResponse>();
+
+        var paymentIds = rows.Select(x => x.Invoice.PaymentId).Distinct().ToArray();
+        var methods = await _db.Payments.AsNoTracking().Where(p => paymentIds.Contains(p.PaymentId))
+            .ToDictionaryAsync(p => p.PaymentId, p => p.Method, cancellationToken);
+        var orderIds = rows.ToDictionary(x => x.Invoice.InvoiceId, x => FirstOrderId(x.Invoice.ItemsJson));
+        var orderLookup = (await _ordersApi.GetOrderBillContextsAsync(
+                orderIds.Values.Where(id => id > 0).Distinct().ToArray(), cancellationToken))
+            .ToDictionary(x => x.OrderId);
+        var customerLookup = (await _customersApi.GetCustomersAsync(rows.Select(x => x.Invoice.CustomerId), cancellationToken))
+            .ToDictionary(x => x.CustomerId);
+
+        return rows.Select(x =>
+        {
+            var orderId = orderIds[x.Invoice.InvoiceId];
+            orderLookup.TryGetValue(orderId, out var order);
+            customerLookup.TryGetValue(x.Invoice.CustomerId, out var customer);
+            return new BillSummaryResponse(
+                -x.Invoice.InvoiceId, // negative: never collides with a legacy BillID used as a row key
+                $"Hóa đơn #{x.Invoice.InvoiceId}",
+                x.Invoice.IssuedAtUtc.ToLocalTime(),
+                orderId,
+                order?.OrderCode,
+                order?.TableName ?? "-",
+                customer?.Name,
+                x.Quote.Subtotal,
+                x.Quote.VoucherDiscount,
+                x.Quote.PointsDiscount,
+                x.Quote.PointsApplied,
+                x.Invoice.TotalAmount,
+                methods.GetValueOrDefault(x.Invoice.PaymentId) ?? "APP",
+                null,
+                null);
+        }).ToList();
+    }
+
+    private static DateTime ToUtc(DateTime local) =>
+        local.Kind == DateTimeKind.Utc ? local : DateTime.SpecifyKind(local, DateTimeKind.Local).ToUniversalTime();
+
+    private static int FirstOrderId(string itemsJson)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(itemsJson);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array) return 0;
+            foreach (var item in doc.RootElement.EnumerateArray())
+                foreach (var property in item.EnumerateObject())
+                    if (property.NameEquals("OrderId") || property.NameEquals("orderId"))
+                        return property.Value.TryGetInt32(out var id) ? id : 0;
+        }
+        catch (JsonException) { }
+        return 0;
+    }
+
+    private sealed class AppInvoice
+    {
+        public Persistence.Entities.Invoice Invoice { get; init; } = null!;
+        public Persistence.Entities.CheckoutQuote Quote { get; init; } = null!;
     }
 
     private async Task<IReadOnlyDictionary<int, OrdersApiClient.OrderBillContextResponse>> GetFallbackOrderContextLookupAsync(
