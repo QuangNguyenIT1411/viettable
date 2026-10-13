@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VietTable – Hướng thiết kế web staff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ====== Shared token NAMES (same for Chef/Cashier/Admin). Each direction only swaps VALUES. ====== */
+:root, [data-dir="a"] {
+  --font-sans: "Be Vietnam Pro", system-ui, sans-serif;
+  --color-bg: #F5F6F8;        --color-surface: #FFFFFF;    --color-surface-2: #F0F2F5;
+  --color-border: #D9DEE5;    --color-text: #161A21;       --color-text-muted: #545D6B;
+  --color-primary: #B4232A;   --color-primary-hover: #951C22; --color-on-primary: #FFFFFF;
+  --color-accent: #1D4ED8;
+  --color-success: #15803D;   --color-success-soft: #DCFCE7;
+  --color-warning: #B45309;   --color-warning-soft: #FEF3C7;
+  --color-danger: #B91C1C;    --color-danger-soft: #FEE2E2;
+  --color-info: #1D4ED8;      --color-info-soft: #DBEAFE;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+  --shadow-card: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);
+  --text-xs: 13px; --text-sm: 14px; --text-md: 16px; --text-lg: 20px; --text-xl: 26px; --text-2xl: 34px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --control-h: 44px;
+  /* kitchen board (same as app in A/C, dark in B) */
+  --kds-bg: var(--color-bg); --kds-card: var(--color-surface); --kds-text: var(--color-text); --kds-muted: var(--color-text-muted); --kds-border: var(--color-border);
+}
+[data-dir="b"] {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --color-bg: #F3F5F7;        --color-surface: #FFFFFF;    --color-surface-2: #EEF1F4;
+  --color-border: #D5DBE2;    --color-text: #0F172A;       --color-text-muted: #4B5563;
+  --color-primary: #0E7490;   --color-primary-hover: #0B5C72; --color-on-primary: #FFFFFF;
+  --color-accent: #B4232A;
+  --color-success: #15803D;   --color-success-soft: #DCFCE7;
+  --color-warning: #B45309;   --color-warning-soft: #FEF3C7;
+  --color-danger: #B91C1C;    --color-danger-soft: #FEE2E2;
+  --color-info: #0E7490;      --color-info-soft: #CFFAFE;
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 10px;
+  --kds-bg: #0E1116; --kds-card: #1A1F27; --kds-text: #F3F4F6; --kds-muted: #A7B0BE; --kds-border: #2C3440;
+}
+[data-dir="c"] {
+  --font-sans: "Lexend", system-ui, sans-serif;
+  --color-bg: #FAF6EF;        --color-surface: #FFFFFF;    --color-surface-2: #F3EDE2;
+  --color-border: #E3D9C8;    --color-text: #1F2A22;       --color-text-muted: #5C6A60;
+  --color-primary: #1F5135;   --color-primary-hover: #173E28; --color-on-primary: #FFFFFF;
+  --color-accent: #A87A1E;
+  --color-success: #1F7A3E;   --color-success-soft: #DDF3E3;
+  --color-warning: #9A6200;   --color-warning-soft: #FBEFD3;
+  --color-danger: #B42318;    --color-danger-soft: #FDE4E1;
+  --color-info: #1F5135;      --color-info-soft: #E3EFE7;
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 18px;
+  --shadow-card: 0 1px 2px rgba(60,40,10,.06), 0 2px 6px rgba(60,40,10,.06);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: #E9ECF0; font-family: system-ui, sans-serif; color: #161A21; }
+.picker { position: sticky; top: 0; z-index: 10; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 16px; background: #111827; color: #fff; }
+.picker strong { margin-right: 8px; }
+.picker button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #4B5563; background: transparent; color: #fff; cursor: pointer; }
+.picker button[aria-pressed="true"] { background: #fff; color: #111827; border-color: #fff; font-weight: 600; }
+.brief { max-width: 1366px; margin: 16px auto 0; padding: 0 16px; font-size: 15px; line-height: 1.55; }
+.brief .card { background: #fff; border-radius: 10px; padding: 16px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.brief h2 { margin: 0 0 6px; font-size: 20px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.sw { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.sw i { width: 22px; height: 22px; border-radius: 5px; border: 1px solid rgba(0,0,0,.12); display: inline-block; }
+
+/* ====== App frame (uses only tokens) ====== */
+.frame { max-width: 1366px; margin: 16px auto 40px; padding: 0 16px; }
+.app { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); border-radius: 12px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.12); font-size: var(--text-md); }
+.topbar { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-5); background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: var(--text-lg); }
+.brand-mark { width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--color-primary); color: var(--color-on-primary); display: grid; place-items: center; font-size: 16px; }
+.brand small { display: block; font-weight: 500; font-size: var(--text-xs); color: var(--color-text-muted); }
+.nav { display: flex; gap: var(--space-1); margin-left: var(--space-5); }
+.nav a { padding: 10px 14px; border-radius: var(--radius-sm); color: var(--color-text-muted); text-decoration: none; font-weight: 500; font-size: var(--text-sm); }
+.nav a[aria-current="page"] { background: var(--color-surface-2); color: var(--color-text); font-weight: 600; box-shadow: inset 0 -3px 0 var(--color-primary); }
+.spacer { flex: 1; }
+.who { font-size: var(--text-sm); color: var(--color-text-muted); text-align: right; }
+.who b { color: var(--color-text); display: block; }
+.btn { font: inherit; font-size: var(--text-sm); font-weight: 600; min-height: var(--control-h); padding: 0 18px; border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-secondary { background: var(--color-surface); color: var(--color-text); border-color: var(--color-border); }
+.btn-danger-ghost { background: transparent; color: var(--color-danger); border-color: var(--color-danger); }
+.btn-lg { min-height: 56px; font-size: var(--text-lg); width: 100%; }
+.btn:disabled { background: var(--color-surface-2); color: var(--color-text-muted); border-color: var(--color-border); cursor: not-allowed; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); padding: var(--space-5) var(--space-5) 0; }
+.stat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); box-shadow: var(--shadow-card); }
+.stat span { color: var(--color-text-muted); font-size: var(--text-sm); }
+.stat b { display: block; font-size: var(--text-xl); margin-top: 2px; }
+.stat.alert { border-color: var(--color-warning); background: var(--color-warning-soft); }
+.stat.alert span, .stat.alert b { color: var(--color-warning); }
+
+.pos { display: grid; grid-template-columns: 1.05fr 1fr 0.95fr; gap: var(--space-4); padding: var(--space-5); }
+.panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); display: flex; flex-direction: column; min-height: 480px; }
+.panel h2 { margin: 0; font-size: var(--text-lg); }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-4) var(--space-3); border-bottom: 1px solid var(--color-border); }
+.panel-body { padding: var(--space-4); flex: 1; display: flex; flex-direction: column; gap: var(--space-3); }
+.chip { font-size: var(--text-xs); font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.chip.ok { background: var(--color-success-soft); color: var(--color-success); }
+.chip.busy { background: var(--color-warning-soft); color: var(--color-warning); }
+.chip.info { background: var(--color-info-soft); color: var(--color-info); }
+.chip.danger { background: var(--color-danger-soft); color: var(--color-danger); }
+
+.tables { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.table { border: 2px solid var(--color-border); border-radius: var(--radius-md); padding: 12px 10px; text-align: left; background: var(--color-surface); font: inherit; cursor: pointer; }
+.table b { display: block; font-size: var(--text-lg); }
+.table small { color: var(--color-text-muted); font-size: var(--text-xs); }
+[data-dir="c"] .table b { font-size: var(--text-md); white-space: nowrap; }
+.table.busy { border-color: var(--color-warning); background: var(--color-warning-soft); }
+.table.pay { border-color: var(--color-danger); background: var(--color-danger-soft); }
+.table.selected { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+.legend { display: flex; gap: var(--space-3); font-size: var(--text-xs); color: var(--color-text-muted); flex-wrap: wrap; }
+
+.line { display: flex; justify-content: space-between; gap: var(--space-3); padding: 10px 0; border-bottom: 1px dashed var(--color-border); font-size: var(--text-md); }
+.line small { color: var(--color-text-muted); display: block; font-size: var(--text-xs); }
+.order-meta { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; color: var(--color-text-muted); font-size: var(--text-sm); }
+.order-id { font-size: var(--text-xl); font-weight: 700; color: var(--color-text); }
+
+.total { display: flex; justify-content: space-between; align-items: baseline; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--color-surface-2); }
+.total b { font-size: var(--text-2xl); color: var(--color-primary); }
+.sum-row { display: flex; justify-content: space-between; font-size: var(--text-sm); color: var(--color-text-muted); }
+.methods { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.method { border: 2px solid var(--color-border); border-radius: var(--radius-md); padding: 12px; font: inherit; font-weight: 600; background: var(--color-surface); color: var(--color-text); cursor: pointer; }
+.method[aria-pressed="true"] { border-color: var(--color-primary); box-shadow: inset 0 0 0 1px var(--color-primary); }
+.cash { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.cash button { min-height: 40px; }
+.hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+/* ====== Kitchen strip ====== */
+.kds { background: var(--kds-bg); color: var(--kds-text); padding: var(--space-5); display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+.kds h3 { margin: 0 0 var(--space-3); font-size: var(--text-lg); display: flex; justify-content: space-between; align-items: center; }
+.kds h3 .count { font-size: var(--text-md); padding: 2px 12px; border-radius: 999px; background: var(--kds-card); border: 1px solid var(--kds-border); }
+.kcard { background: var(--kds-card); border: 1px solid var(--kds-border); border-left: 6px solid var(--color-warning); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+.kcard.doing { border-left-color: var(--color-info); }
+.kcard.late { border-left-color: var(--color-danger); }
+.khead { display: flex; justify-content: space-between; align-items: center; }
+.khead b { font-size: var(--text-xl); }
+.ktime { font-weight: 700; font-size: var(--text-md); padding: 4px 10px; border-radius: var(--radius-sm); background: var(--color-warning-soft); color: var(--color-warning); }
+.kcard.late .ktime { background: var(--color-danger-soft); color: var(--color-danger); }
+.kitem { display: flex; gap: var(--space-3); align-items: flex-start; font-size: var(--text-lg); }
+.kqty { font-weight: 700; min-width: 40px; }
+.knote { font-size: var(--text-sm); color: var(--kds-muted); }
+.kactions { display: flex; gap: var(--space-2); }
+.kactions .btn { flex: 1; min-height: 52px; font-size: var(--text-md); }
+[data-dir="b"] .kds .btn-danger-ghost { color: #FCA5A5; border-color: #FCA5A5; }
+
+.notes { max-width: 1366px; margin: 0 auto 40px; padding: 0 16px; font-size: 14px; color: #374151; }
+@media (max-width: 1000px) { .pos, .kds, .stats { grid-template-columns: 1fr; } .nav { display: none; } }
+</style>
+</head>
+<body data-dir="a">
+
+<div class="picker" role="toolbar" aria-label="Chọn hướng thiết kế">
+  <strong>VietTable – web staff</strong>
+  <button data-pick="a" aria-pressed="true">A · Rõ ràng (đỏ VietTable)</button>
+  <button data-pick="b" aria-pressed="false">B · Bếp tối – Quầy sáng</button>
+  <button data-pick="c" aria-pressed="false">C · Ấm áp thương hiệu Việt</button>
+</div>
+
+<section class="brief">
+  <div class="card" id="brief"></div>
+</section>
+
+<div class="frame">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">VT</span><span>VietTable<small>Quầy thu ngân · Chi nhánh Quận 1</small></span></div>
+      <nav class="nav" aria-label="Điều hướng thu ngân">
+        <a href="#" aria-current="page">Quầy thu ngân</a><a href="#">Lịch sử hóa đơn</a><a href="#">Báo cáo ngày</a>
+      </nav>
+      <div class="spacer"></div>
+      <div class="who"><b>Thu ngân Lan</b>Ca sáng · 13/10/2026 19:30</div>
+      <button class="btn btn-secondary">Đăng xuất</button>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><span>Đơn hôm nay</span><b>24</b></div>
+      <div class="stat"><span>Doanh thu hôm nay</span><b>3.480.000 đ</b></div>
+      <div class="stat"><span>Bàn có khách</span><b>7 / 20</b></div>
+      <div class="stat alert"><span>Chờ xác nhận thu tiền</span><b>2 giao dịch</b></div>
+    </div>
+
+    <main class="pos">
+      <section class="panel" aria-label="Chọn bàn">
+        <div class="panel-head"><h2>Chọn bàn</h2><span class="chip info">20 bàn</span></div>
+        <div class="panel-body">
+          <div class="legend"><span class="chip ok">Trống</span><span class="chip busy">Có khách</span><span class="chip danger">Chờ thanh toán</span></div>
+          <div class="tables">
+            <button class="table"><b>Bàn 1</b><small>2 ghế · Trống</small></button>
+            <button class="table busy"><b>Bàn 2</b><small>2 ghế · 35 phút</small></button>
+            <button class="table"><b>Bàn 3</b><small>2 ghế · Trống</small></button>
+            <button class="table pay selected"><b>Bàn 4</b><small>2 ghế · Chờ TT</small></button>
+            <button class="table busy"><b>Bàn 5</b><small>2 ghế · 12 phút</small></button>
+            <button class="table"><b>Bàn 6</b><small>4 ghế · Trống</small></button>
+            <button class="table"><b>Bàn 7</b><small>4 ghế · Trống</small></button>
+            <button class="table busy"><b>Bàn 8</b><small>4 ghế · 5 phút</small></button>
+            <button class="table"><b>Bàn 9</b><small>4 ghế · Trống</small></button>
+            <button class="table"><b>Bàn 10</b><small>4 ghế · Trống</small></button>
+            <button class="table pay"><b>Bàn 11</b><small>4 ghế · Chờ TT</small></button>
+            <button class="table"><b>Bàn 12</b><small>6 ghế · Trống</small></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Chi tiết đơn">
+        <div class="panel-head"><h2>Bàn 4</h2><span class="chip danger">Khách yêu cầu thanh toán</span></div>
+        <div class="panel-body">
+          <div class="order-meta"><span class="order-id">Đơn #45</span><span>· Khách: Nguyễn Văn A · Hạng Vàng</span></div>
+          <div class="line"><span>2× Phở bò tái<small>Ghi chú: ít hành</small></span><b>130.000 đ</b></div>
+          <div class="line"><span>1× Bánh mì ốp la</span><b>35.000 đ</b></div>
+          <div class="line"><span>2× Trà đá</span><b>10.000 đ</b></div>
+          <div class="line"><span>1× Chè ba màu</span><b>25.000 đ</b></div>
+          <div class="spacer"></div>
+          <div class="sum-row"><span>6 món · 2 đợt gọi</span><span>Bắt đầu 18:55</span></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Thanh toán">
+        <div class="panel-head"><h2>Thanh toán</h2></div>
+        <div class="panel-body">
+          <div class="sum-row"><span>Tạm tính</span><span>200.000 đ</span></div>
+          <div class="sum-row"><span>Giảm giá (điểm thành viên)</span><span>−10.000 đ</span></div>
+          <div class="total"><span>Tổng cộng</span><b>190.000 đ</b></div>
+          <div class="methods"><button class="method" aria-pressed="true">Tiền mặt</button><button class="method" aria-pressed="false">QR chuyển khoản</button></div>
+          <label class="hint" for="given">Tiền khách đưa</label>
+          <input id="given" value="200.000" style="font: inherit; font-size: var(--text-lg); min-height: var(--control-h); padding: 0 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text);">
+          <div class="cash"><button class="btn btn-secondary">Vừa đủ</button><button class="btn btn-secondary">200k</button><button class="btn btn-secondary">500k</button></div>
+          <div class="sum-row"><span>Tiền thối lại</span><b style="color: var(--color-success)">10.000 đ</b></div>
+          <button class="btn btn-primary btn-lg">Xác nhận thanh toán</button>
+        </div>
+      </section>
+    </main>
+
+    <section class="kds" aria-label="Ví dụ bảng bếp">
+      <div>
+        <h3>Chờ chế biến <span class="count">3</span></h3>
+        <article class="kcard late">
+          <div class="khead"><b>Bàn 5 · Đơn #46</b><span class="ktime">18 phút</span></div>
+          <div class="kitem"><span class="kqty">2×</span><span>Bún chả Hà Nội<div class="knote">Ghi chú: không cay</div></span></div>
+          <div class="kitem"><span class="kqty">1×</span><span>Nem rán</span></div>
+          <div class="kactions"><button class="btn btn-primary">Bắt đầu nấu cả đơn</button><button class="btn btn-danger-ghost">Hủy…</button></div>
+        </article>
+      </div>
+      <div>
+        <h3>Đang chế biến <span class="count">2</span></h3>
+        <article class="kcard doing">
+          <div class="khead"><b>Bàn 2 · Đơn #44</b><span class="ktime">6 phút</span></div>
+          <div class="kitem"><span class="kqty">1×</span><span>Bò né</span></div>
+          <div class="kactions"><button class="btn btn-primary">Hoàn thành</button></div>
+        </article>
+      </div>
+      <div>
+        <h3>Sẵn sàng <span class="count">1</span></h3>
+        <article class="kcard" style="border-left-color: var(--color-success)">
+          <div class="khead"><b>Bàn 8 · Đơn #43</b><span class="chip ok">Đã báo khách</span></div>
+          <div class="kitem"><span class="kqty">2×</span><span>Trà đá</span></div>
+        </article>
+      </div>
+    </section>
+  </div>
+</div>
+
+<p class="notes">Mockup tĩnh, số liệu minh họa. Chỉ đổi giao diện: các nút, chữ và luồng giữ nguyên như bản hiện tại. Mọi màu, chữ, bo góc, khoảng cách
+lấy từ một bộ biến CSS (<code>--color-*</code>, <code>--text-*</code>, <code>--space-*</code>, <code>--radius-*</code>) — khi chọn hướng, bộ biến sẽ nằm ở
+<code>src/Frontend/shared/design-tokens.css</code> và cả 3 web cùng dùng.</p>
+
+<script>
+const briefs = {
+  a: { title: "A · Rõ ràng (đỏ VietTable)", font: "Be Vietnam Pro (thiết kế cho tiếng Việt, dấu rõ)",
+       text: "Nền sáng trung tính, chữ đậm, màu đỏ VietTable (giống app khách và trang chủ) cho nút chính. Một bố cục chung cho cả 3 web: thanh trên cố định, nội dung dạng thẻ. Bếp dùng cùng nền sáng, thẻ đơn có viền màu theo thời gian chờ. Ưu điểm: nhất quán nhất, dễ làm nhất, in báo cáo đẹp. Nhược: bếp sáng có thể chói nếu màn hình đặt gần bếp lửa.",
+       colors: ["#B4232A Chính", "#1D4ED8 Phụ", "#15803D Thành công", "#B45309 Cảnh báo", "#B91C1C Nguy hiểm", "#161A21 Chữ", "#F5F6F8 Nền"] },
+  b: { title: "B · Bếp tối – Quầy sáng", font: "Inter (gọn, số dễ đọc)",
+       text: "Cùng một bộ token, 2 chế độ: bảng bếp nền tối tương phản cao (chống chói, đọc từ xa), thu ngân và admin nền sáng. Màu chính xanh mòng két, đỏ VietTable làm điểm nhấn. Giống phong cách bếp hiện tại nhưng sửa nút mờ, chữ to hơn. Ưu điểm: hợp môi trường bếp. Nhược: hai chế độ nên phải kiểm tra tương phản kỹ hơn.",
+       colors: ["#0E7490 Chính", "#B4232A Nhấn", "#15803D Thành công", "#B45309 Cảnh báo", "#B91C1C Nguy hiểm", "#0E1116 Nền bếp", "#F3F5F7 Nền quầy"] },
+  c: { title: "C · Ấm áp thương hiệu Việt", font: "Lexend (thiết kế để dễ đọc, hỗ trợ tiếng Việt)",
+       text: "Nền kem ấm, xanh lá đậm và vàng đồng — cảm giác nhà hàng Việt, sang hơn khi demo. Bo góc lớn, chữ Lexend rộng và dễ đọc. Ưu điểm: khác biệt, ấn tượng khi trình bày. Nhược: màu trạng thái (xanh lá) gần màu thương hiệu nên phải dùng thêm nhãn chữ; xa với app khách hiện tại (đỏ).",
+       colors: ["#1F5135 Chính", "#A87A1E Nhấn", "#1F7A3E Thành công", "#9A6200 Cảnh báo", "#B42318 Nguy hiểm", "#1F2A22 Chữ", "#FAF6EF Nền"] },
+};
+function pick(dir) {
+  document.body.dataset.dir = dir;
+  document.querySelectorAll("[data-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.pick === dir)));
+  const b = briefs[dir];
+  document.getElementById("brief").innerHTML = `<h2>${b.title}</h2><div><b>Font:</b> ${b.font}</div><p style="margin:6px 0 0">${b.text}</p>
+    <div class="swatches">${b.colors.map((c) => { const [hex, ...n] = c.split(" "); return `<span class="sw"><i style="background:${hex}"></i>${n.join(" ")} <code>${hex}</code></span>`; }).join("")}</div>`;
+}
+document.querySelectorAll("[data-pick]").forEach((b) => b.addEventListener("click", () => pick(b.dataset.pick)));
+pick("a");
+</script>
+</body>
+</html>

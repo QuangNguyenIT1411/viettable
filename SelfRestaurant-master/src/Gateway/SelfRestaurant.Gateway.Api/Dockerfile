@@ -3,6 +3,8 @@ WORKDIR /frontend
 COPY src/Frontend/selfrestaurant-customer-web/package.json ./
 RUN npm install
 COPY src/Frontend/selfrestaurant-customer-web/ ./
+# Apps import ../../../shared from /frontend/src/*; mirror it at /shared.
+COPY src/Frontend/shared/ /shared/
 RUN npm run build
 
 FROM node:22-alpine AS chef_frontend
@@ -10,6 +12,8 @@ WORKDIR /frontend
 COPY src/Frontend/selfrestaurant-chef-web/package.json ./
 RUN npm install
 COPY src/Frontend/selfrestaurant-chef-web/ ./
+# Apps import ../../../shared from /frontend/src/*; mirror it at /shared.
+COPY src/Frontend/shared/ /shared/
 RUN npm run build
 
 FROM node:22-alpine AS cashier_frontend
@@ -17,6 +21,8 @@ WORKDIR /frontend
 COPY src/Frontend/selfrestaurant-cashier-web/package.json ./
 RUN npm install
 COPY src/Frontend/selfrestaurant-cashier-web/ ./
+# Apps import ../../../shared from /frontend/src/*; mirror it at /shared.
+COPY src/Frontend/shared/ /shared/
 RUN npm run build
 
 FROM node:22-alpine AS admin_frontend
@@ -24,6 +30,8 @@ WORKDIR /frontend
 COPY src/Frontend/selfrestaurant-admin-web/package.json ./
 RUN npm install
 COPY src/Frontend/selfrestaurant-admin-web/ ./
+# Apps import ../../../shared from /frontend/src/*; mirror it at /shared.
+COPY src/Frontend/shared/ /shared/
 RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
