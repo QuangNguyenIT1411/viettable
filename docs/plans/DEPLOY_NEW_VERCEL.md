@@ -1,6 +1,13 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
-> **Trạng thái (12/10/2026): đã làm tới bước 2.16** (deploy Production + APK `cloudProd`); việc còn lại ở mục 2b.
+> **Trạng thái (cập nhật 13/10/2026):** đã xong tới bước 2.18 và **lần deploy gộp 2c**.
+> - Production đang chạy: `dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb` (12/10/2026 23:51), commit `5a25ff5`, `https://viettable-beta.vercel.app`, `[syd1]`
+>   (đã kiểm tra bằng `vercel inspect` 13/10/2026; commit do chủ dự án xác nhận). Bản cũ `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN` không còn là Production.
+> - APK `cloudProd` mới đã cài lên Samsung lúc 23:55 12/10/2026.
+> - Branch `qa/vt-ho-01` đã push lên `origin` (GitHub private) tới `61f847d`.
+> - 3.1 đã đo (13/10/2026, `docs/acceptance/evidence/RUN_2026-10-13_COLD_START.md`). 3.3 đã deploy. Còn mở: 3.2 (`/healthz` luôn ~7,3 s).
+>
+> (Dòng trạng thái cũ: 12/10/2026 đã làm tới bước 2.16; việc còn lại ở mục 2b.)
 > Phần dưới là kế hoạch gốc, giữ nguyên.
 >
 > **Kế hoạch gốc:** Lập 12/10/2026, chỉ đọc. Nhãn: 👤 chủ dự án tự làm · 🔒 cần duyệt từng lần ·
@@ -188,7 +195,7 @@ cloudProd {
 
 ## 2b. Việc sau (ghi 12/10/2026, CHƯA làm)
 
-Production đã deploy: `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN`, domain `https://viettable-beta.vercel.app`, region `syd1`.
+Production đã deploy: `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN`, domain `https://viettable-beta.vercel.app`, region `syd1`. *(13/10: đã thay bằng `dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb`, xem đầu file.)*
 
 | # | Việc | Ai | Chi tiết |
 |---|---|---|---|
@@ -196,7 +203,7 @@ Production đã deploy: `dpl_7CqU6PiRdt6Q64vLty2BVFFt8mcN`, domain `https://viet
 | 3.2 | **Theo dõi `/readyz` chậm ~7 s** | 🤖 | Lần đo sau deploy: `/readyz` 7,14 s và 7,50 s ở 2 lần đầu, 0,37 s ở lần 3; `/healthz` và menu < 1,2 s. Ghi lại trong lần đo 3.1; nếu vẫn chậm thì đọc code `/readyz` (kiểm tra DB của 5 module) và log Vercel trước khi sửa |
 | 3.3 | **Trang chủ ở `/`** | 🤖 sửa code + test, gom vào **lần deploy sau** (🔒) | Hiện `/` trả 404. Thêm trang tĩnh đơn giản có 3 nút: **Admin** → `/app/admin/`, **Bếp** → `/app/chef/`, **Thu ngân** → `/app/cashier/`. Không chứa dữ liệu hay bí mật. **Code xong 12/10/2026, chưa deploy:** `GatewayModule` trả trang HTML tĩnh ở `/` khi không có customer web và staff web đang bật; test trong `StaffPreviewRoutingTests` |
 
-### 2c. Lần deploy gộp tiếp theo (đề xuất, 🔒 chưa duyệt)
+### 2c. Lần deploy gộp tiếp theo — ✅ ĐÃ DEPLOY 12/10/2026 23:51 (`dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb`, commit `5a25ff5`)
 
 Gồm: trang chủ `/` (3.3) + biến `Authentication__Google__ClientId` (đã có trên Production, `docs/plans/GOOGLE_LOGIN.md`) +
 sửa lỗi sau test demo 12/10/2026 (thông báo thanh toán, nhãn tiếng Việt, mã đơn ngắn, nhãn bếp) + nút "Thanh toán" trên

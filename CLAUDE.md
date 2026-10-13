@@ -117,6 +117,7 @@ Chỉ chạy các lệnh **build, unit test, contract test** khi được phép 
 | QA cô lập | Chưa có; tạm hoãn (kế hoạch `docs/plans/VT-HO-01_QA_ENV.md`) |
 | Candidate Vercel | `dpl_7MxW7oBh8H1DCYmPSefcYX7Hf8fE` — Ready/Preview, **chưa đủ điều kiện release** |
 | Stable | Alias **không được đổi** nếu chưa có phê duyệt |
+| **Production mới** (đang dùng) | Tài khoản Vercel mới, team `viet-table`, project `viettable`, `https://viettable-beta.vercel.app`, region `syd1`. Chi tiết và trạng thái: mục 6a |
 
 Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit, in ra log, hay nhúng vào APK.
 
@@ -129,6 +130,15 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 - Branch làm việc: `qa/vt-ho-01` (commit trên máy, **không push** khi chưa hỏi)
 - Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
 - **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
+
+### 6a. Trạng thái hiện tại (cập nhật 13/10/2026)
+
+| Mục | Trạng thái |
+|---|---|
+| Deploy đang chạy | Production `dpl_3nKhUqkKf8zTVxavp3LpnqPJpSdb` (tạo 12/10/2026 23:51), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready. Code commit `5a25ff5` (chủ dự án xác nhận; `vercel inspect` không ghi commit vì deploy bằng CLI) |
+| APK đã cài | `cloudProd` (trỏ `viettable-beta.vercel.app`), cài lên Samsung SM-A528B lúc 23:55 12/10/2026 |
+| Git | Branch `qa/vt-ho-01` **đã push** lên `origin` (GitHub private) tới `61f847d`; các commit sau đó chưa push |
+| Việc còn mở | 3.2 `/healthz` luôn ~7,3 s (đã đọc code, chờ chẩn đoán); xem `docs/plans/DEPLOY_NEW_VERCEL.md` mục 2b |
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 
@@ -175,6 +185,12 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 4. Báo cáo bằng **bằng chứng thực tế** (lệnh, exit code, output). Không ghi PASS nếu chưa chạy. "Build PASS" ≠ "E2E PASS"; "0 FAIL" ≠ "mọi thứ đúng".
 5. Khi không chắc một thao tác có ảnh hưởng dữ liệu/Cloud thật hay không → **dừng và hỏi**.
 6. Phát hiện thông tin trong file này sai/lỗi thời → đề xuất sửa CLAUDE.md.
+
+### Quy tắc cuối phiên
+
+Trước khi kết thúc mỗi phiên, cập nhật mục 6a (và mục trạng thái đầu `docs/plans/DEPLOY_NEW_VERCEL.md` nếu liên quan):
+deploy nào đang chạy (id, commit), APK nào đã cài lên Samsung (build type, giờ cài), branch đã push tới commit nào, việc còn mở.
+Ghi theo thông tin đã xác minh (lệnh chỉ đọc) hoặc chủ dự án xác nhận; ghi rõ nguồn. Commit thay đổi này (không push khi chưa hỏi).
 
 ## 10. Tài liệu tham chiếu
 
