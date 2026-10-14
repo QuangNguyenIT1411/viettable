@@ -1,5 +1,8 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 14/10/2026 16:40:** deploy Production `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89` (commit `0396ec2`: hóa đơn phiên app hiện trong Lịch sử/Báo cáo ngày của thu ngân), `[syd1]`, Ready;
+> gọi 1 lần: `/` 200 8,8 s (khởi động lạnh sau deploy), `/app/cashier/` 200 0,9 s, `/branches/1/menu` 200 1,7 s. APK không đổi.
+>
 > **Cập nhật 13/10/2026 19:15:** deploy Production `dpl_54CoYXF8nb2pvditsHc9eD3KytmV` (HEAD `4a11139`, gồm `564fe14` nhãn "Đơn #id" trên web nhân viên), `[syd1]`, Ready;
 > đo 1 lần: `/` 200 8,08 s (khởi động lạnh sau deploy), `/Menu/FromQr` 200 0,94 s, `/branches/1/menu` 200 8,04 s (chậm bất thường lần này, chưa rõ nguyên nhân), `/app/chef/` 200 0,71 s.
 > APK `cloudProd` 19:04 cài lên Samsung 19:10.
