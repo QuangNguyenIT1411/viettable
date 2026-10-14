@@ -1,3 +1,4 @@
+import { apiFailureMessage, cleanText } from "../../../shared/apiError";
 import type {
   ApiError,
   ChefCategoryDto,
@@ -91,9 +92,9 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     if (payload && typeof payload === "object") {
       const error = payload as ApiError | null;
-      throw new Error(formatApiError(error) || `Request failed: ${response.status}`);
+      throw new Error(cleanText(error?.message) ? formatApiError(error) : apiFailureMessage(response.status, payload));
     }
-    throw new Error(normalizeApiText(String(payload)) || `Request failed: ${response.status}`);
+    throw new Error(apiFailureMessage(response.status, typeof payload === "string" ? normalizeApiText(payload) : payload));
   }
   return payload as T;
 }

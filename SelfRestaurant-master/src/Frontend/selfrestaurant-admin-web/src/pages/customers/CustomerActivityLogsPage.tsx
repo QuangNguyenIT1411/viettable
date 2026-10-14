@@ -1,3 +1,4 @@
+import { userMessage } from "../../../../shared/apiError";
 import { formatViDateTime } from "../../../../shared/dateFormat";
 import { orderLabel } from "../../../../shared/orderLabel";
 import { useEffect, useState } from "react";
@@ -79,7 +80,7 @@ export function CustomerActivityLogsPage({ onLogout }: Props) {
       setData(activityResult);
       setOrderHistory(orderResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu.");
+      setError(userMessage(err, "Không thể tải dữ liệu."));
     } finally {
       setLoading(false);
     }

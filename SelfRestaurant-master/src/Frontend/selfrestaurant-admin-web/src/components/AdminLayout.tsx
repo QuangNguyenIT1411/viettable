@@ -1,3 +1,4 @@
+import { cleanText } from "../../../shared/apiError";
 import { formatViDateTime } from "../../../shared/dateFormat";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -197,7 +198,7 @@ export function AdminLayout({ title, description, staff, onLogout, onRefresh, ch
           </header>
 
           {message ? <div className="success-box">{message}</div> : null}
-          {error ? <div className="error-box">{error}</div> : null}
+          {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
           {children}
         </section>

@@ -1,3 +1,4 @@
+import { userMessage } from "../../../../shared/apiError";
 ﻿import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -73,7 +74,7 @@ export function UnitsModulePage({ mode, onLogout }: Props) {
         setForm(emptyUnitForm);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu đơn vị.");
+      setError(userMessage(err, "Không thể tải dữ liệu đơn vị."));
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,7 @@ export function UnitsModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Units/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tạo đơn vị.");
+      setError(userMessage(err, "Không thể tạo đơn vị."));
     }
   }
 
@@ -125,7 +126,7 @@ export function UnitsModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Units/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật đơn vị.");
+      setError(userMessage(err, "Không thể cập nhật đơn vị."));
     }
   }
 
@@ -150,7 +151,7 @@ export function UnitsModulePage({ mode, onLogout }: Props) {
       setMessage(response.message);
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể xóa đơn vị.");
+      setError(userMessage(err, "Không thể xóa đơn vị."));
     }
   }
 
@@ -165,7 +166,7 @@ export function UnitsModulePage({ mode, onLogout }: Props) {
       setMessage(isActive ? "Đã bật lại đơn vị." : "Đã vô hiệu hóa đơn vị.");
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật trạng thái đơn vị.");
+      setError(userMessage(err, "Không thể cập nhật trạng thái đơn vị."));
     }
   }
   const title = mode === "create" ? "Thêm đơn vị" : mode === "edit" ? "Cập nhật đơn vị" : "Quản lý đơn vị";

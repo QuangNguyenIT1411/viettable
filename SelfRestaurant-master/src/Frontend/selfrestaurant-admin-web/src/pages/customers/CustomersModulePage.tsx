@@ -1,3 +1,4 @@
+import { userMessage } from "../../../../shared/apiError";
 ﻿import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -87,7 +88,7 @@ export function CustomersModulePage({ mode, onLogout }: Props) {
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu khách hàng.");
+      setError(userMessage(err, "Không thể tải dữ liệu khách hàng."));
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ export function CustomersModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Customers/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể thêm khách hàng.");
+      setError(userMessage(err, "Không thể thêm khách hàng."));
     }
   }
 
@@ -155,7 +156,7 @@ export function CustomersModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Customers/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật khách hàng.");
+      setError(userMessage(err, "Không thể cập nhật khách hàng."));
     }
   }
 
@@ -173,7 +174,7 @@ export function CustomersModulePage({ mode, onLogout }: Props) {
       setMessage(response.message);
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể khóa khách hàng.");
+      setError(userMessage(err, "Không thể khóa khách hàng."));
     }
   }
   async function handleSetActive(customer: AdminCustomerDto, isActive: boolean) {
@@ -193,7 +194,7 @@ export function CustomersModulePage({ mode, onLogout }: Props) {
       setMessage(isActive ? "Đã bật lại khách hàng." : "Đã khóa khách hàng.");
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật trạng thái khách hàng.");
+      setError(userMessage(err, "Không thể cập nhật trạng thái khách hàng."));
     }
   }
 

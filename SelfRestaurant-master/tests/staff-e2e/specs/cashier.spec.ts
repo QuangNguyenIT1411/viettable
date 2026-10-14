@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { openTableWithOrder, requestOnsiteCashPayment, sessionStatus } from "../support/customer";
+import { expectCleanScreen } from "../support/screen";
 import { login } from "../support/staff";
 
 const tableCard = (page: Page, n: number) =>
@@ -9,6 +10,7 @@ test("thu ngân thấy bàn có khách trên sơ đồ bàn", async ({ page, bas
   const order = await openTableWithOrder(baseURL!);
   await login(page, "cashier");
   await expect(page.getByRole("heading", { name: "Chọn bàn" })).toBeVisible();
+  await expectCleanScreen(page);
   await expect(tableCard(page, order.tableNumber)).toContainText("Có khách");
   await tableCard(page, order.tableNumber).click();
   await expect(page.getByText(`Đơn #${order.orderId}`).first()).toBeVisible();
@@ -21,6 +23,7 @@ test("thanh toán ứng dụng tại nhà hàng: thu ngân xác nhận đã thu 
 
   const row = page.locator(`tr[data-payment-id="${paymentId}"]`);
   await expect(row).toBeVisible({ timeout: 30_000 });
+  await expectCleanScreen(page);
   page.once("dialog", (dialog) => void dialog.accept());
   await row.getByRole("button", { name: "Xác nhận đã thu tiền" }).click();
   await expect(row.getByRole("button", { name: "Xác nhận đã thu tiền" })).toHaveCount(0);
@@ -47,6 +50,7 @@ test("trang Lịch sử hóa đơn của thu ngân mở được", async ({ page
   await expect(page).toHaveURL(/\/Staff\/Cashier\/History/);
   await expect(page.getByRole("heading", { name: "Lịch sử hóa đơn đã thanh toán" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Thông tin tài khoản" })).toBeVisible();
+  await expectCleanScreen(page);
 });
 
 // App-session payments create Billing Invoices; history and the daily report list them next to legacy Bills.
@@ -73,4 +77,5 @@ test("báo cáo doanh thu theo ngày mở và tải được", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Báo cáo doanh thu theo ngày" })).toBeVisible();
   await page.getByRole("button", { name: "Xem báo cáo" }).click();
   await expect(page.getByRole("heading", { name: "Tổng quan" })).toBeVisible();
+  await expectCleanScreen(page);
 });

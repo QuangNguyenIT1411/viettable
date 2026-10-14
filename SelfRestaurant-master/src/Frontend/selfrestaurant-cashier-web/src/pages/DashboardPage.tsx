@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useMemo, useState } from "react";
@@ -176,7 +177,7 @@ export function DashboardPage({ onLogout }: Props) {
   const refreshDashboard = useControlledRead({
     read: signal => cashierApi.getDashboard(signal),
     apply: value => { setDashboard(value); setError(null); },
-    error: err => setError(err instanceof Error ? err.message : "Không thể tải dữ liệu thu ngân."),
+    error: err => setError(userMessage(err, "Không thể tải dữ liệu thu ngân.")),
     settled: () => setLoading(false),
     interval: 0,
   });
@@ -188,7 +189,7 @@ export function DashboardPage({ onLogout }: Props) {
     try {
       setReservations(await cashierApi.getTodayReservations(branchId, status));
     } catch (err) {
-      setReservationsError(err instanceof Error ? err.message : "Không thể tải danh sách đặt bàn hôm nay.");
+      setReservationsError(userMessage(err, "Không thể tải danh sách đặt bàn hôm nay."));
     } finally {
       setReservationsLoading(false);
     }
@@ -216,7 +217,7 @@ export function DashboardPage({ onLogout }: Props) {
       branchId,
       () => void loadDashboard(true),
       (err) => {
-        setError(err instanceof Error ? err.message : "Không thể kết nối cập nhật realtime thu ngân.");
+        setError(userMessage(err, "Không thể kết nối cập nhật realtime thu ngân."));
       },
     );
   }, [dashboard?.staff.branchId]);
@@ -438,7 +439,7 @@ export function DashboardPage({ onLogout }: Props) {
       clearCheckoutIntentKey(activeOrder.orderId);
       await loadDashboard(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể thanh toán hóa đơn.");
+      setError(userMessage(err, "Không thể thanh toán hóa đơn."));
     } finally {
       setCheckoutSubmitting(false);
     }
@@ -472,7 +473,7 @@ export function DashboardPage({ onLogout }: Props) {
         await loadReservations(dashboard.staff.branchId, reservationStatus);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể check-in đặt bàn.");
+      setError(userMessage(err, "Không thể check-in đặt bàn."));
     } finally {
       setCheckInSubmitting(false);
     }
@@ -489,7 +490,7 @@ export function DashboardPage({ onLogout }: Props) {
   }
 
   if (loading) return <div className="screen-message">Đang tải quầy thu ngân...</div>;
-  if (error && !dashboard) return <div className="screen-message error-box">{error}</div>;
+  if (cleanText(error) && !dashboard) return <div className="screen-message error-box">{cleanText(error)}</div>;
   if (!dashboard) return null;
 
   const occupiedCount = dashboard.tables.filter((table) => table.status === "OCCUPIED").length;
@@ -530,7 +531,7 @@ export function DashboardPage({ onLogout }: Props) {
       </section>
 
       {message ? <div className="success-box">{message}</div> : null}
-      {error ? <div className="error-box">{error}</div> : null}
+      {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
       <section className="cashier-pos-grid">
         <div className="panel cashier-panel-card cashier-pos-panel cashier-table-panel">
@@ -866,7 +867,7 @@ export function DashboardPage({ onLogout }: Props) {
             </div>
           ) : null}
 
-          {reservationsError ? <div className="error-box">{reservationsError}</div> : null}
+          {cleanText(reservationsError) ? <div className="error-box">{cleanText(reservationsError)}</div> : null}
 
           {!reservationsLoading && !reservationsError && visibleReservations.length === 0 ? (
             <div className="cashier-empty-state reservation-empty-state">

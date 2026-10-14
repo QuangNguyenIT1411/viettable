@@ -1,3 +1,4 @@
+import { userMessage } from "../../../../shared/apiError";
 import { formatViDateTime } from "../../../../shared/dateFormat";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -319,7 +320,7 @@ export function InventoryModulePage({ mode, onLogout }: Props) {
       if (ingredientIdFilter) await loadIngredients();
       setMovements(await adminApi.getInventoryMovements({ ingredientId: ingredientIdFilter, search, page, pageSize: 12 }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu kho.");
+      setError(userMessage(err, "Không thể tải dữ liệu kho."));
     } finally {
       setLoading(false);
     }
@@ -403,7 +404,7 @@ export function InventoryModulePage({ mode, onLogout }: Props) {
           completed += 1;
         } catch (err) {
           const ingredientName = ingredients.find((item) => item.ingredientId === Number(row.ingredientId))?.name ?? "chưa chọn";
-          const detail = err instanceof Error ? err.message : "Không thể nhập kho nguyên liệu.";
+          const detail = userMessage(err, "Không thể nhập kho nguyên liệu.");
           setError(`Đã nhập kho ${completed} lô. Dòng ${index + 1} (${ingredientName}) thất bại: ${detail}`);
           return;
         }
@@ -432,7 +433,7 @@ export function InventoryModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Inventory/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể xuất kho nguyên liệu.");
+      setError(userMessage(err, "Không thể xuất kho nguyên liệu."));
     } finally {
       setSaving(false);
     }

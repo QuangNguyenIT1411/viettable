@@ -1,3 +1,4 @@
+import { apiFailureMessage, parseBody } from "../../../shared/apiError";
 import type { AdminCategoriesScreenDto, AdminCustomerDto, AdminCustomersScreenDto, AdminDishesScreenDto, AdminEmployeeDto, AdminEmployeeHistoryResponse, AdminEmployeesScreenDto, AdminIngredientBatchDto, AdminIngredientDto, AdminIngredientsScreenDto, AdminRelatedIngredientDishDto, AdminReportsScreenDto, AdminSettingsDto, AdminTablesScreenDto, ApiError, StaffSessionDto, AdminDishIngredientsDto, AdminDishIngredientLineDto, AdminDashboardDto, AdminUnitsScreenDto, AdminUnitDto, CreateIngredientBatchRequest, IngredientStockMovementDto, InventoryBatchDto, InventoryMovementDto, InventoryStockInRequest, InventoryStockOutRequest, InventorySummaryDto, Paged, UpdateIngredientBatchRequest, AdminCustomerOrderHistoryItemDto } from "./types";
 
 const jsonHeaders = { "Content-Type": "application/json" };
@@ -10,10 +11,9 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = parseBody(text);
   if (!response.ok) {
-    const error = payload as ApiError | null;
-    throw new Error(error?.message ?? `Yêu cầu thất bại: ${response.status}`);
+    throw new Error(apiFailureMessage(response.status, payload));
   }
   return payload as T;
 }
@@ -27,10 +27,9 @@ async function requestForm<T>(input: string, formData: FormData, method = "POST"
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = parseBody(text);
   if (!response.ok) {
-    const error = payload as ApiError | null;
-    throw new Error(error?.message ?? `Yêu cầu thất bại: ${response.status}`);
+    throw new Error(apiFailureMessage(response.status, payload));
   }
   return payload as T;
 }

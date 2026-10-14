@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime, formatViIsoDate, formatViTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 ﻿import { useEffect, useMemo, useState } from "react";
@@ -198,7 +199,7 @@ export function DashboardPage({ onLogout }: Props) {
   const load = useControlledRead({
     read: signal => chefApi.getDashboard(signal),
     apply: dashboard => { setData(normalizeChefDashboard(dashboard)); setError(null); },
-    error: err => setError(err instanceof Error ? err.message : "Không thể tải dữ liệu bếp."),
+    error: err => setError(userMessage(err, "Không thể tải dữ liệu bếp.")),
     settled: () => setLoading(false),
     interval: 4000,
   });
@@ -246,7 +247,7 @@ export function DashboardPage({ onLogout }: Props) {
       setMessage(result.message ?? "Đã cập nhật.");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật.");
+      setError(userMessage(err, "Không thể cập nhật."));
     }
   }
 
@@ -263,7 +264,7 @@ export function DashboardPage({ onLogout }: Props) {
         draftItems: normalized.items.map((item) => ({ ingredientId: item.ingredientId, ingredientName: item.name, unit: item.unit, quantity: String(item.quantityPerDish) })),
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải nguyên liệu.");
+      setError(userMessage(err, "Không thể tải nguyên liệu."));
     }
   }
 
@@ -293,7 +294,7 @@ export function DashboardPage({ onLogout }: Props) {
       }
       setMessage("Cập nhật tài khoản thành công.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật tài khoản.");
+      setError(userMessage(err, "Không thể cập nhật tài khoản."));
     }
   }
 
@@ -313,7 +314,7 @@ export function DashboardPage({ onLogout }: Props) {
       setMessage(result.message || "Đổi mật khẩu thành công.");
       setPasswordDraft({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể đổi mật khẩu.");
+      setError(userMessage(err, "Không thể đổi mật khẩu."));
     }
   }
 
@@ -348,7 +349,7 @@ export function DashboardPage({ onLogout }: Props) {
     passwordDraft.newPassword !== passwordDraft.confirmPassword;
 
   if (loading) return <div className="screen-message">Đang tải bảng bếp...</div>;
-  if (error && !data) return <div className="screen-message error-box">{error}</div>;
+  if (cleanText(error) && !data) return <div className="screen-message error-box">{cleanText(error)}</div>;
   async function promptCancelItem(orderId: number, itemId: number, dishName: string) {
     const reason = await prompt({
       title: "Nhập lý do hủy món",
@@ -405,7 +406,7 @@ export function DashboardPage({ onLogout }: Props) {
         </section>
 
         {message ? <div className="success-box">{message}</div> : null}
-        {error ? <div className="error-box">{error}</div> : null}
+        {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
         <section className="split-grid chef-history-grid">
           <div className="panel">
@@ -589,7 +590,7 @@ export function DashboardPage({ onLogout }: Props) {
       </header>
 
       {message ? <div className="success-box">{message}</div> : null}
-      {error ? <div className="error-box">{error}</div> : null}
+      {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
       {activeTab === "orders" ? (
         <section className="board-grid chef-kds-board">

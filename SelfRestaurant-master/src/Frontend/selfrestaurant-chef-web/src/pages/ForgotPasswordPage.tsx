@@ -1,3 +1,4 @@
+import { userMessage } from "../../../shared/apiError";
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { chefApi } from "../lib/api";
@@ -24,7 +25,7 @@ export function ForgotPasswordPage() {
       setSuccess(result.message);
       setEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Có lỗi xảy ra. Vui lòng thử lại sau.");
+      setError(userMessage(err, "Có lỗi xảy ra. Vui lòng thử lại sau."));
     } finally {
       setLoading(false);
     }

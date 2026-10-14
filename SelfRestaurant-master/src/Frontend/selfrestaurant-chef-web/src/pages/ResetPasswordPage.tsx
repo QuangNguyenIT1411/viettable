@@ -1,3 +1,4 @@
+import { userMessage } from "../../../shared/apiError";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { chefApi } from "../lib/api";
@@ -39,7 +40,7 @@ export function ResetPasswordPage() {
         }
       } catch (err) {
         if (!active) return;
-        const message = err instanceof Error ? err.message : "Link không hợp lệ hoặc đã hết hạn.";
+        const message = userMessage(err, "Link không hợp lệ hoặc đã hết hạn.");
         const outcome = normalizeValidationMessage(message);
         const separator = outcome.redirect?.includes("?") ? "&" : "?";
         navigate(`${outcome.redirect ?? "/Staff/Account/Login"}${separator}message=${encodeURIComponent(outcome.message)}&type=danger`, { replace: true });
@@ -85,7 +86,7 @@ export function ResetPasswordPage() {
         navigate(result.nextPath ?? "/Staff/Account/Login", { replace: true });
       }, 2000);
     } catch (err) {
-      setAlert({ type: "danger", message: err instanceof Error ? err.message : "Có lỗi xảy ra. Vui lòng thử lại sau." });
+      setAlert({ type: "danger", message: userMessage(err, "Có lỗi xảy ra. Vui lòng thử lại sau.")});
       setSubmitting(false);
     }
   }

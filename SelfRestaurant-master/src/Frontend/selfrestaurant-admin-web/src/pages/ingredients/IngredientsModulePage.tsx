@@ -1,3 +1,4 @@
+import { userMessage } from "../../../../shared/apiError";
 import { formatViDateTime } from "../../../../shared/dateFormat";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -121,7 +122,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
 
       setScreen(await adminApi.getIngredients(search, page, 10, !onlyActive, stockStatus));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu nguyên liệu.");
+      setError(userMessage(err, "Không thể tải dữ liệu nguyên liệu."));
     } finally {
       setLoading(false);
     }
@@ -170,7 +171,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Ingredients/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể thêm nguyên liệu.");
+      setError(userMessage(err, "Không thể thêm nguyên liệu."));
     }
   }
 
@@ -191,7 +192,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Ingredients/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật nguyên liệu.");
+      setError(userMessage(err, "Không thể cập nhật nguyên liệu."));
     }
   }
 
@@ -204,7 +205,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
     try {
       setRelatedDishes(await adminApi.getIngredientRelatedDishes(ingredient.ingredientId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải món ăn liên quan.");
+      setError(userMessage(err, "Không thể tải món ăn liên quan."));
     } finally {
       setRelatedDishesLoading(false);
     }
@@ -231,7 +232,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
       setMessage(response.message);
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể xóa nguyên liệu.");
+      setError(userMessage(err, "Không thể xóa nguyên liệu."));
     }
   }
 
@@ -241,7 +242,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
       setMessage(isActive ? "Đã bật lại nguyên liệu." : "Đã vô hiệu hóa nguyên liệu.");
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật trạng thái nguyên liệu.");
+      setError(userMessage(err, "Không thể cập nhật trạng thái nguyên liệu."));
     }
   }
 
@@ -363,7 +364,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
                         <button className="danger" onClick={() => void adminApi.deactivateIngredient(ingredient.ingredientId).then((response) => {
                           setMessage(response.message);
                           return loadPage();
-                        }).catch((err) => setError(err instanceof Error ? err.message : "Không thể vô hiệu hóa nguyên liệu."))}>Vô hiệu</button>
+                        }).catch((err) => setError(userMessage(err, "Không thể vô hiệu hóa nguyên liệu.")))}>Vô hiệu</button>
                       ) : (
                         <button className="ghost" onClick={() => void handleSetActive(ingredient, true)}>Bật lại</button>
                       )}

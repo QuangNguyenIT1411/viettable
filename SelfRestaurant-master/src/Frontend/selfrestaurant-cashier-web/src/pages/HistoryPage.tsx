@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useState } from "react";
@@ -32,7 +33,7 @@ export function HistoryPage() {
         email: nextHistory.account.email,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kh\u00f4ng th\u1ec3 t\u1ea3i l\u1ecbch s\u1eed thu ng\u00e2n.");
+      setError(userMessage(err, "Kh\u00f4ng th\u1ec3 t\u1ea3i l\u1ecbch s\u1eed thu ng\u00e2n."));
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ export function HistoryPage() {
       setHistory((current) => (current ? { ...current, account: updated as CashierAccountDto } : current));
       setMessage("C\u1eadp nh\u1eadt t\u00e0i kho\u1ea3n th\u00e0nh c\u00f4ng.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt t\u00e0i kho\u1ea3n.");
+      setError(userMessage(err, "Kh\u00f4ng th\u1ec3 c\u1eadp nh\u1eadt t\u00e0i kho\u1ea3n."));
     }
   }
 
@@ -74,12 +75,12 @@ export function HistoryPage() {
       setMessage(result.message || "\u0110\u1ed5i m\u1eadt kh\u1ea9u th\u00e0nh c\u00f4ng.");
       setPasswordDraft({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kh\u00f4ng th\u1ec3 \u0111\u1ed5i m\u1eadt kh\u1ea9u.");
+      setError(userMessage(err, "Kh\u00f4ng th\u1ec3 \u0111\u1ed5i m\u1eadt kh\u1ea9u."));
     }
   }
 
   if (loading) return <div className="screen-message">{"\u0110ang t\u1ea3i l\u1ecbch s\u1eed thu ng\u00e2n..."}</div>;
-  if (error && !history) return <div className="screen-message error-box">{error}</div>;
+  if (cleanText(error) && !history) return <div className="screen-message error-box">{cleanText(error)}</div>;
   if (!history) return null;
 
   return (
@@ -101,7 +102,7 @@ export function HistoryPage() {
       </section>
 
       {message ? <div className="success-box">{message}</div> : null}
-      {error ? <div className="error-box">{error}</div> : null}
+      {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
       <section className="cashier-history-grid">
         <div className="panel cashier-panel-card">

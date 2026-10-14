@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { useEffect, useRef, useState } from "react";
 import { cashierApi, type OnsitePayment } from "../lib/api";
 import { useControlledRead } from "../lib/useControlledRead";
@@ -14,7 +15,7 @@ export function OnsitePaymentsPanel({ onPendingCountChange }: { onPendingCountCh
   const refresh = useControlledRead({
     read: signal => cashierApi.getOnsitePayments(signal),
     apply: result => { setPayments(result); setError(""); },
-    error: e => setError(e instanceof Error ? e.message : "Không tải được giao dịch."),
+    error: e => setError(userMessage(e, "Không tải được giao dịch.")),
     settled: () => setLoading(false),
     interval: 5000,
   });
@@ -31,12 +32,12 @@ export function OnsitePaymentsPanel({ onPendingCountChange }: { onPendingCountCh
     try {
       await cashierApi.confirmOnsitePayment(payment.paymentId);
       await refresh();
-    } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : "Không thể xác nhận giao dịch."); }
+    } catch (e) { if (mounted.current) setError(userMessage(e, "Không thể xác nhận giao dịch.")); }
     finally { submitting.current = false; if (mounted.current) setBusy(null); }
   };
   return <section id="onsite-payments" className="panel cashier-panel-card" aria-label="Thanh toán ứng dụng tại chỗ">
     <div className="cashier-panel-header"><div><h2><i className="bi bi-phone me-2" />Thanh toán ứng dụng tại chỗ</h2><p className="muted">Chỉ xác nhận sau khi thực nhận tiền. Giao dịch ứng dụng được xử lý tại đây, không thu lại qua hóa đơn legacy.</p></div>{pendingCount > 0 ? <span className="soft-badge warning">{pendingCount} chờ thu tiền</span> : null}</div>
-    {error && <div className="error-box" role="alert">{error}<button onClick={() => void refresh()}>Thử lại</button></div>}
+    {cleanText(error) && <div className="error-box" role="alert">{cleanText(error)}<button onClick={() => void refresh()}>Thử lại</button></div>}
     {loading ? <p className="muted" role="status">Đang tải giao dịch…</p> : payments.length === 0 ? <p className="muted">Chưa có giao dịch tại chỗ.</p> :
       <div style={{ overflowX: "auto" }}><table className="table"><thead><tr><th>Giao dịch / phiên</th><th>Bàn / phần</th><th>Số tiền</th><th>Phương thức</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
         <tbody>{payments.map(p => <tr key={p.paymentId} data-payment-id={p.paymentId}>

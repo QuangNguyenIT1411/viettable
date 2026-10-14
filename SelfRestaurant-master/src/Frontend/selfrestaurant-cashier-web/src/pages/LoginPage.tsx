@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { FormEvent, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cashierApi } from "../lib/api";
@@ -53,7 +54,7 @@ export function LoginPage({ onLoggedIn }: Props) {
         window.location.replace(nextPath);
       }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Đăng nhập thất bại.");
+      setError(userMessage(err, "Đăng nhập thất bại."));
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,7 @@ export function LoginPage({ onLoggedIn }: Props) {
         </div>
 
         {success ? <div className="success-box">{success}</div> : null}
-        {error ? <div className="error-box">{error}</div> : null}
+        {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
         <form onSubmit={handleSubmit} className="stack">
           <div className="form-floating-field">

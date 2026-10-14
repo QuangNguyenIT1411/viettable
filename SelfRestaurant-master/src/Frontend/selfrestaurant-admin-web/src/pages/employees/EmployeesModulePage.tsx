@@ -1,3 +1,4 @@
+import { userMessage } from "../../../../shared/apiError";
 import { formatViDateTime } from "../../../../shared/dateFormat";
 import { orderLabel } from "../../../../shared/orderLabel";
 import { useEffect, useState } from "react";
@@ -167,7 +168,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
         setHistory(await adminApi.getEmployeeHistory(employeeIdValue, activityPage, cookingPage, 50, 90));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải dữ liệu nhân viên.");
+      setError(userMessage(err, "Không thể tải dữ liệu nhân viên."));
     } finally {
       setLoading(false);
     }
@@ -210,7 +211,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
       setMessage(response.message);
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể khóa nhân viên.");
+      setError(userMessage(err, "Không thể khóa nhân viên."));
     }
   }
   async function handleSetActive(employee: AdminEmployeeDto, isActive: boolean) {
@@ -230,7 +231,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
       setMessage(isActive ? "Đã bật lại nhân viên." : "Đã khóa nhân viên.");
       await loadPage();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật trạng thái nhân viên.");
+      setError(userMessage(err, "Không thể cập nhật trạng thái nhân viên."));
     }
   }
 
@@ -255,7 +256,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Employees/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể thêm nhân viên.");
+      setError(userMessage(err, "Không thể thêm nhân viên."));
     }
   }
 
@@ -281,7 +282,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
       });
       navigate("/Admin/Employees/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật nhân viên.");
+      setError(userMessage(err, "Không thể cập nhật nhân viên."));
     }
   }
 

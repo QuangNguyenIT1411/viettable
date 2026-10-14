@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { FormEvent, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { chefApi } from "../lib/api";
@@ -57,7 +58,7 @@ export function LoginPage({ onLoggedIn }: Props) {
         window.location.replace(nextPath);
       }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "\u0110\u0103ng nh\u1eadp th\u1ea5t b\u1ea1i.");
+      setError(userMessage(err, "\u0110\u0103ng nh\u1eadp th\u1ea5t b\u1ea1i."));
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export function LoginPage({ onLoggedIn }: Props) {
         </div>
 
         {success ? <div className="success-box">{success}</div> : null}
-        {error ? <div className="error-box">{error}</div> : null}
+        {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
         <form onSubmit={handleSubmit} className="stack">
           <div className="form-floating-field">

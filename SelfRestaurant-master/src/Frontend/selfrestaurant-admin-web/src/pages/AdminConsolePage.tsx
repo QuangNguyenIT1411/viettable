@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime, formatViIsoDate } from "../../../shared/dateFormat";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -195,7 +196,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Kh?ng th? t?i nguy?n li?u m?n ?n.");
+        setError(userMessage(err, "Kh?ng th? t?i nguy?n li?u m?n ?n."));
       });
 
     return () => {
@@ -298,7 +299,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       setInitialized(true);
       setRefreshVersion(value => value + 1);
     } catch (err) {
-      if (sectionRead.current === readId) setError(err instanceof Error ? err.message : "Không thể tải dữ liệu quản trị.");
+      if (sectionRead.current === readId) setError(userMessage(err, "Không thể tải dữ liệu quản trị."));
     } finally {
       if (showSpinner && sectionRead.current === readId) {
         setLoading(false);
@@ -322,7 +323,7 @@ export function AdminConsolePage({ onLogout }: Props) {
     if (!initialized || section !== "dishes" || initializedSection.current !== section) return;
     const readId = dishRead.current + 1;
     void loadDishesData().catch((err) => {
-      if (dishRead.current === readId) setError(err instanceof Error ? err.message : "Không thể tải danh sách món ăn.");
+      if (dishRead.current === readId) setError(userMessage(err, "Không thể tải danh sách món ăn."));
     });
     return () => { dishRead.current++; };
   }, [initialized, section, refreshVersion, dishSearch, dishCategoryFilter, dishOnlyVegetarian, dishPage]);
@@ -331,7 +332,7 @@ export function AdminConsolePage({ onLogout }: Props) {
     if (!initialized || section !== "tables" || initializedSection.current !== section) return;
     const readId = tableRead.current + 1;
     void loadTablesPageData().catch((err) => {
-      if (tableRead.current === readId) setError(err instanceof Error ? err.message : "Không thể tải danh sách bàn.");
+      if (tableRead.current === readId) setError(userMessage(err, "Không thể tải danh sách bàn."));
     });
     return () => { tableRead.current++; };
   }, [initialized, section, refreshVersion, staff?.branchId, tableSearch, tableBranchFilter, tablePage]);
@@ -515,7 +516,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       if (nextMessage) showMessage(nextMessage);
       await loadAll();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật dữ liệu.");
+      setError(userMessage(err, "Không thể cập nhật dữ liệu."));
     }
   }
 
@@ -546,7 +547,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       await loadAll(false);
       navigate("/Admin/Categories/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tạo danh mục.");
+      setError(userMessage(err, "Không thể tạo danh mục."));
     }
   }
 
@@ -572,7 +573,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       await loadAll(false);
       navigate("/Admin/Categories/Index", { replace: true, state: { message: response.message } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật danh mục.");
+      setError(userMessage(err, "Không thể cập nhật danh mục."));
     }
   }
 
@@ -740,7 +741,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       setDishIngredientEditor({ dishId: recipe.dishId, dishName: recipe.dishName || dishName, items: recipe.ingredients });
       navigate(`/Admin/Dishes/Ingredients?dishId=${recipe.dishId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tải nguyên liệu món ăn.");
+      setError(userMessage(err, "Không thể tải nguyên liệu món ăn."));
     }
   }
 
@@ -763,7 +764,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       setDashboard((current) => current ? { ...current, settings: next } : current);
       showMessage("Đã cập nhật thông tin tài khoản.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể cập nhật thông tin tài khoản.");
+      setError(userMessage(err, "Không thể cập nhật thông tin tài khoản."));
     }
   }
 
@@ -773,7 +774,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       setPasswordEditor({ currentPassword: "", newPassword: "", confirmPassword: "" });
       showMessage(response.message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể đổi mật khẩu.");
+      setError(userMessage(err, "Không thể đổi mật khẩu."));
     }
   }
 
@@ -792,7 +793,7 @@ export function AdminConsolePage({ onLogout }: Props) {
   const qrVisibleTables = tableQrFilterId ? visibleTables.filter((table) => table.tableId === Number(tableQrFilterId)) : visibleTables;
 
   if (loading) return <div className="screen-message">Đang tải khu quản trị...</div>;
-  if (error && !dashboard) return <div className="screen-message error-box">{error}</div>;
+  if (cleanText(error) && !dashboard) return <div className="screen-message error-box">{cleanText(error)}</div>;
   if (!dashboard) return <div className="screen-message">Đang tải khu quản trị...</div>;
   if ((section === "categories" && !categories) || (section === "dishes" && !dishes)
     || (section === "tables" && !tablesData) || (section === "reports" && !reports))

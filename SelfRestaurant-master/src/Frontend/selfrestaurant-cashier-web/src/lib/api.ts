@@ -1,3 +1,4 @@
+import { apiFailureMessage, parseBody } from "../../../shared/apiError";
 import type {
   ApiError,
   CashierAccountDto,
@@ -27,10 +28,9 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
   });
 
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  const payload = parseBody(text);
   if (!response.ok) {
-    const error = payload as ApiError | null;
-    throw new Error(error?.message ?? `Request failed: ${response.status}`);
+    throw new Error(apiFailureMessage(response.status, payload));
   }
   return payload as T;
 }

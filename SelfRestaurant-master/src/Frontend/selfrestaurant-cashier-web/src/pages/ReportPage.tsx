@@ -1,3 +1,4 @@
+import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime, formatViIsoDate } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useState } from "react";
@@ -29,7 +30,7 @@ export function ReportPage() {
     try {
       setReport(await cashierApi.getReport(date));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kh\u00f4ng th\u1ec3 t\u1ea3i b\u00e1o c\u00e1o thu ng\u00e2n.");
+      setError(userMessage(err, "Kh\u00f4ng th\u1ec3 t\u1ea3i b\u00e1o c\u00e1o thu ng\u00e2n."));
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,7 @@ export function ReportPage() {
   }, []);
 
   if (loading) return <div className="screen-message">{"\u0110ang t\u1ea3i b\u00e1o c\u00e1o thu ng\u00e2n..."}</div>;
-  if (error && !report) return <div className="screen-message error-box">{error}</div>;
+  if (cleanText(error) && !report) return <div className="screen-message error-box">{cleanText(error)}</div>;
   if (!report) return null;
 
   return (
@@ -61,7 +62,7 @@ export function ReportPage() {
         </div>
       </section>
 
-      {error ? <div className="error-box">{error}</div> : null}
+      {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
       <section className="panel cashier-panel-card">
         <div className="cashier-panel-body">
