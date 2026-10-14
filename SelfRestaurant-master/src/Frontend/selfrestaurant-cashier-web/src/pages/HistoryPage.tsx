@@ -1,6 +1,6 @@
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { CashierTopbar } from "../components/CashierTopbar";
 import { cashierApi } from "../lib/api";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { CashierAccountDto, CashierHistoryDto } from "../lib/types";
@@ -90,22 +90,20 @@ export function HistoryPage() {
   if (!history) return null;
 
   return (
+    <>
+    <CashierTopbar
+      active="history"
+      branchName={history.account.branchName}
+      staffName={history.account.name}
+      roleName={history.account.roleName}
+    />
     <main className="cashier-shell cashier-subpage">
-      <section className="cashier-route-header">
-        <div className="cashier-route-title">
-          <i className="bi bi-person-badge" />
-          <div>
-            <h1>{"T\u00e0i kho\u1ea3n & L\u1ecbch s\u1eed Thu ng\u00e2n"}</h1>
-            <p className="muted">
-              {history.account.branchName} - {history.account.name} ({history.account.roleName})
-            </p>
-          </div>
-        </div>
-        <div className="header-actions">
-          <Link className="cashier-link-button" to="/Staff/Cashier/Index">
-            <i className="bi bi-arrow-left me-1" />
-            {"Quay v\u1ec1 m\u00e0n h\u00ecnh thanh to\u00e1n"}
-          </Link>
+      <section className="cashier-page-heading">
+        <div>
+          <h1>{"Tài khoản & Lịch sử Thu ngân"}</h1>
+          <p className="muted">
+            {history.account.branchName} - {history.account.name} ({history.account.roleName})
+          </p>
         </div>
       </section>
 
@@ -256,5 +254,6 @@ export function HistoryPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }

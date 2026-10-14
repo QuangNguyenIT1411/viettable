@@ -1,7 +1,7 @@
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useMemo, useState } from "react";
 import { HubConnectionBuilder, HttpTransportType } from "@microsoft/signalr";
-import { Link } from "react-router-dom";
+import { CashierTopbar } from "../components/CashierTopbar";
 import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
@@ -134,6 +134,7 @@ export function DashboardPage({ onLogout }: Props) {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [checkoutResult, setCheckoutResult] = useState<CheckoutResultView | null>(null);
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
+  const [pendingOnsiteCount, setPendingOnsiteCount] = useState(0);
 
   function getCheckoutStorageKey(orderId: number) {
     return `${CHECKOUT_KEY_PREFIX}${orderId}`;
@@ -495,173 +496,42 @@ export function DashboardPage({ onLogout }: Props) {
   const canCheckout = !!activeOrder;
 
   return (
+    <>
+    <CashierTopbar
+      active="pos"
+      branchName={dashboard.staff.branchName}
+      staffName={dashboard.staff.name}
+      roleName={dashboard.staff.roleName}
+      onLogout={() => void onLogout()}
+    />
     <main className="cashier-shell cashier-pos-shell">
-      <section className="hero-card cashier-hero cashier-pos-hero">
-        <header className="cashier-header">
-          <div>
-            <h1>Quầy Thu Ngân</h1>
-            <p className="muted">{dashboard.staff.branchName}</p>
-            <p className="muted">Nhân viên thu ngân: {dashboard.staff.name} ({dashboard.staff.roleName})</p>
-          </div>
-          <div className="header-actions">
-            <Link className="cashier-link-button" to="/Staff/Cashier/Report">
-              <i className="bi bi-printer me-1" />
-              Báo cáo theo ngày
-            </Link>
-            <Link className="cashier-link-button" to="/Staff/Cashier/History">
-              <i className="bi bi-clock-history me-1" />
-              Lịch sử & Tài khoản
-            </Link>
-            <button className="ghost" onClick={() => void onLogout()}>
-              <i className="bi bi-box-arrow-right me-1" />
-              Đăng xuất
-            </button>
-          </div>
-        </header>
-
-        <section className="stats-grid cashier-pos-stats">
-          <article>
-            <strong>{dashboard.todayOrders}</strong>
-            <span>Đơn hôm nay</span>
-          </article>
-          <article>
-            <strong>{dashboard.todayRevenue.toLocaleString("vi-VN")} đ</strong>
-            <span>Doanh thu</span>
-          </article>
-        </section>
+      <section className="vt-stats cashier-pos-stats" aria-label="Số liệu hôm nay">
+        <div className="vt-stat">
+          <span>Đơn hôm nay</span>
+          <b>{dashboard.todayOrders}</b>
+        </div>
+        <div className="vt-stat">
+          <span>Doanh thu hôm nay</span>
+          <b>{dashboard.todayRevenue.toLocaleString("vi-VN")} đ</b>
+        </div>
+        <div className="vt-stat">
+          <span>Bàn có khách</span>
+          <b>{occupiedCount} / {dashboard.tables.length}</b>
+        </div>
+        <button
+          type="button"
+          className={`vt-stat ${pendingOnsiteCount > 0 ? "is-alert" : ""}`}
+          onClick={() => document.getElementById("onsite-payments")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        >
+          <span>Chờ xác nhận thu tiền</span>
+          <b>{pendingOnsiteCount} giao dịch</b>
+        </button>
       </section>
 
       {message ? <div className="success-box">{message}</div> : null}
-      <OnsitePaymentsPanel />
-      <ServiceRequestsPanel tables={dashboard.tables} />
       {error ? <div className="error-box">{error}</div> : null}
 
-      <section className="panel cashier-panel-card cashier-reservation-panel">
-        <div className="cashier-panel-header">
-          <div>
-            <h2>
-              <i className="bi bi-calendar-check me-2" />
-              Đặt bàn hôm nay
-            </h2>
-            <p className="muted">Theo dõi khách đã đặt bàn và món đặt trước trong ngày.</p>
-          </div>
-          <button
-            type="button"
-            className="cashier-link-button cashier-link-button-outline"
-            onClick={() => void loadReservations(dashboard.staff.branchId, reservationStatus)}
-            disabled={reservationsLoading}
-          >
-            <i className="bi bi-arrow-clockwise me-1" />
-            Làm mới
-          </button>
-        </div>
-
-        <div className="cashier-panel-body">
-          <div className="reservation-filter-bar">
-            <div className="table-search-group">
-              <i className="bi bi-search" />
-              <input
-                type="text"
-                value={reservationSearch}
-                onChange={(event) => setReservationSearch(event.target.value)}
-                placeholder="Tìm mã đặt bàn, tên khách hoặc số điện thoại..."
-              />
-            </div>
-            <select value={reservationStatus} onChange={(event) => setReservationStatus(event.target.value)}>
-              {reservationStatuses.map((status) => (
-                <option key={status.value} value={status.value}>{status.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {reservationsLoading ? (
-            <div className="cashier-empty-state reservation-empty-state">
-              <i className="bi bi-hourglass-split" />
-              <p>Đang tải đặt bàn hôm nay...</p>
-            </div>
-          ) : null}
-
-          {reservationsError ? <div className="error-box">{reservationsError}</div> : null}
-
-          {!reservationsLoading && !reservationsError && visibleReservations.length === 0 ? (
-            <div className="cashier-empty-state reservation-empty-state">
-              <i className="bi bi-calendar2-x" />
-              <p>Chưa có đặt bàn nào hôm nay.</p>
-            </div>
-          ) : null}
-
-          {!reservationsLoading && !reservationsError && visibleReservations.length > 0 ? (
-            <div className="cashier-reservation-grid">
-              {visibleReservations.map((reservation) => {
-                const itemCount = reservation.preOrderItems?.filter((item) => item.status !== "Cancelled").length ?? 0;
-                const tableIds = getReservationTableIds(reservation);
-                const primaryAssignedTable = reservation.assignedTables?.find((assignedTable) => assignedTable.isPrimary)?.tableId ?? reservation.tableId ?? tableIds[0];
-                const tableText = tableIds.length > 0
-                  ? tableIds
-                      .map((tableId) => {
-                        const table = dashboard.tables.find((candidate) => candidate.tableId === tableId);
-                        const label = table?.number ?? `Bàn #${tableId}`;
-                        return tableId === primaryAssignedTable ? `${label} (bàn chính)` : label;
-                      })
-                      .join(", ")
-                  : "Chưa gán bàn";
-
-                return (
-                  <article key={reservation.reservationId} className="cashier-reservation-card">
-                    <div className="reservation-card-topline">
-                      <strong>{reservation.reservationCode}</strong>
-                      <span className={reservationStatusBadgeClass(reservation.status)}>
-                        {reservationStatusLabels[reservation.status] ?? reservation.status}
-                      </span>
-                    </div>
-                    <div className="reservation-main-info">
-                      <div>
-                        <span>Khách hàng</span>
-                        <strong>{reservation.customerName}</strong>
-                      </div>
-                      <div>
-                        <span>Điện thoại</span>
-                        <strong>{reservation.phoneNumber}</strong>
-                      </div>
-                      <div>
-                        <span>Số khách</span>
-                        <strong>{reservation.partySize} khách</strong>
-                      </div>
-                      <div>
-                        <span>Thời gian</span>
-                        <strong>{formatReservationTime(reservation.reservedAt)}</strong>
-                      </div>
-                    </div>
-                    <div className="reservation-meta-row">
-                      <span><i className="bi bi-shop me-1" />{dashboard.staff.branchName}</span>
-                      <span><i className="bi bi-table me-1" />{tableText}</span>
-                      {reservation.partySize > 4 ? <span className="soft-badge warning"><i className="bi bi-people me-1" />Cần sắp xếp/ghép bàn</span> : null}
-                    </div>
-                    {reservation.note ? <p className="reservation-note">Ghi chú: {reservation.note}</p> : null}
-                    <div className="reservation-preorder-summary">
-                      <span className="soft-badge info">{itemCount} món đặt trước</span>
-                      <p>{summarizePreOrderItems(reservation)}</p>
-                    </div>
-                    <button
-                      type="button"
-                      className="cashier-button-primary reservation-checkin-placeholder"
-                      disabled={!["Pending", "Confirmed"].includes(reservation.status) || checkInSubmitting}
-                      onClick={() => setCheckInTarget(reservation)}
-                      title={["Pending", "Confirmed"].includes(reservation.status) ? "Check-in đặt bàn" : "Đặt bàn không còn ở trạng thái nhận khách"}
-                    >
-                      <i className="bi bi-person-check me-1" />
-                      Nhận khách
-                    </button>
-                    <small className="muted">Check-in sẽ tạo đơn bếp từ món đặt trước nếu có.</small>
-                  </article>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="split-grid cash-grid cashier-pos-grid">
+      <section className="cashier-pos-grid">
         <div className="panel cashier-panel-card cashier-pos-panel cashier-table-panel">
           <div className="cashier-panel-header">
             <h2>
@@ -807,7 +677,7 @@ export function DashboardPage({ onLogout }: Props) {
               </div>
               {checkoutPreview.pointsUsed > 0 ? (
                 <div className="total-row">
-                  <span>Gim bng im:</span>
+                  <span>Giảm bằng điểm:</span>
                   <strong>-{checkoutPreview.pointsUsed.toLocaleString("vi-VN")} đ</strong>
                 </div>
               ) : null}
@@ -945,6 +815,136 @@ export function DashboardPage({ onLogout }: Props) {
         </div>
       </section>
 
+      <section className="cashier-secondary-grid">
+        <OnsitePaymentsPanel onPendingCountChange={setPendingOnsiteCount} />
+        <ServiceRequestsPanel tables={dashboard.tables} />
+      </section>
+
+      <section className="panel cashier-panel-card cashier-reservation-panel">
+        <div className="cashier-panel-header">
+          <div>
+            <h2>
+              <i className="bi bi-calendar-check me-2" />
+              Đặt bàn hôm nay
+            </h2>
+            <p className="muted">Theo dõi khách đã đặt bàn và món đặt trước trong ngày.</p>
+          </div>
+          <button
+            type="button"
+            className="cashier-link-button cashier-link-button-outline"
+            onClick={() => void loadReservations(dashboard.staff.branchId, reservationStatus)}
+            disabled={reservationsLoading}
+          >
+            <i className="bi bi-arrow-clockwise me-1" />
+            Làm mới
+          </button>
+        </div>
+
+        <div className="cashier-panel-body">
+          <div className="reservation-filter-bar">
+            <div className="table-search-group">
+              <i className="bi bi-search" />
+              <input
+                type="text"
+                value={reservationSearch}
+                onChange={(event) => setReservationSearch(event.target.value)}
+                placeholder="Tìm mã đặt bàn, tên khách hoặc số điện thoại..."
+              />
+            </div>
+            <select value={reservationStatus} onChange={(event) => setReservationStatus(event.target.value)}>
+              {reservationStatuses.map((status) => (
+                <option key={status.value} value={status.value}>{status.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {reservationsLoading ? (
+            <div className="cashier-empty-state reservation-empty-state">
+              <i className="bi bi-hourglass-split" />
+              <p>Đang tải đặt bàn hôm nay...</p>
+            </div>
+          ) : null}
+
+          {reservationsError ? <div className="error-box">{reservationsError}</div> : null}
+
+          {!reservationsLoading && !reservationsError && visibleReservations.length === 0 ? (
+            <div className="cashier-empty-state reservation-empty-state">
+              <i className="bi bi-calendar2-x" />
+              <p>Chưa có đặt bàn nào hôm nay.</p>
+            </div>
+          ) : null}
+
+          {!reservationsLoading && !reservationsError && visibleReservations.length > 0 ? (
+            <div className="cashier-reservation-grid">
+              {visibleReservations.map((reservation) => {
+                const itemCount = reservation.preOrderItems?.filter((item) => item.status !== "Cancelled").length ?? 0;
+                const tableIds = getReservationTableIds(reservation);
+                const primaryAssignedTable = reservation.assignedTables?.find((assignedTable) => assignedTable.isPrimary)?.tableId ?? reservation.tableId ?? tableIds[0];
+                const tableText = tableIds.length > 0
+                  ? tableIds
+                      .map((tableId) => {
+                        const table = dashboard.tables.find((candidate) => candidate.tableId === tableId);
+                        const label = table?.number ?? `Bàn #${tableId}`;
+                        return tableId === primaryAssignedTable ? `${label} (bàn chính)` : label;
+                      })
+                      .join(", ")
+                  : "Chưa gán bàn";
+
+                return (
+                  <article key={reservation.reservationId} className="cashier-reservation-card">
+                    <div className="reservation-card-topline">
+                      <strong>{reservation.reservationCode}</strong>
+                      <span className={reservationStatusBadgeClass(reservation.status)}>
+                        {reservationStatusLabels[reservation.status] ?? reservation.status}
+                      </span>
+                    </div>
+                    <div className="reservation-main-info">
+                      <div>
+                        <span>Khách hàng</span>
+                        <strong>{reservation.customerName}</strong>
+                      </div>
+                      <div>
+                        <span>Điện thoại</span>
+                        <strong>{reservation.phoneNumber}</strong>
+                      </div>
+                      <div>
+                        <span>Số khách</span>
+                        <strong>{reservation.partySize} khách</strong>
+                      </div>
+                      <div>
+                        <span>Thời gian</span>
+                        <strong>{formatReservationTime(reservation.reservedAt)}</strong>
+                      </div>
+                    </div>
+                    <div className="reservation-meta-row">
+                      <span><i className="bi bi-shop me-1" />{dashboard.staff.branchName}</span>
+                      <span><i className="bi bi-table me-1" />{tableText}</span>
+                      {reservation.partySize > 4 ? <span className="soft-badge warning"><i className="bi bi-people me-1" />Cần sắp xếp/ghép bàn</span> : null}
+                    </div>
+                    {reservation.note ? <p className="reservation-note">Ghi chú: {reservation.note}</p> : null}
+                    <div className="reservation-preorder-summary">
+                      <span className="soft-badge info">{itemCount} món đặt trước</span>
+                      <p>{summarizePreOrderItems(reservation)}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="cashier-button-primary reservation-checkin-placeholder"
+                      disabled={!["Pending", "Confirmed"].includes(reservation.status) || checkInSubmitting}
+                      onClick={() => setCheckInTarget(reservation)}
+                      title={["Pending", "Confirmed"].includes(reservation.status) ? "Check-in đặt bàn" : "Đặt bàn không còn ở trạng thái nhận khách"}
+                    >
+                      <i className="bi bi-person-check me-1" />
+                      Nhận khách
+                    </button>
+                    <small className="muted">Check-in sẽ tạo đơn bếp từ món đặt trước nếu có.</small>
+                  </article>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
       {checkInTarget ? (
         <div className="modal-backdrop">
           <div className="modal-card cashier-modal-card reservation-checkin-modal">
@@ -1039,7 +1039,7 @@ export function DashboardPage({ onLogout }: Props) {
                       ))}
                     </div>
                   ) : (
-                    <div className="cashier-info-note danger">Không bàn nào đang xử lý.</div>
+                    <div className="cashier-info-note warning">Không bàn nào đang xử lý.</div>
                   )}
                 </div>
 
@@ -1073,8 +1073,8 @@ export function DashboardPage({ onLogout }: Props) {
               </button>
             </div>
             <div className="cashier-panel-body">
-              <div className="cashier-empty-state" style={{ minHeight: "unset", padding: "1rem" }}>
-                <i className="bi bi-check-circle" style={{ color: "#198754" }} />
+              <div className="cashier-checkout-success">
+                <i className="bi bi-check-circle" />
                 <p>Đã thanh toán thành công!</p>
               </div>
 
@@ -1162,5 +1162,6 @@ export function DashboardPage({ onLogout }: Props) {
       ) : null}
       <Dialog />
     </main>
+    </>
   );
 }

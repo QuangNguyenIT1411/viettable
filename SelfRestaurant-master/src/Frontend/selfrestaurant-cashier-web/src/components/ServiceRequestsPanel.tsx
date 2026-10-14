@@ -29,7 +29,7 @@ export function ServiceRequestsPanel({ tables = [] }: { tables?: CashierDashboar
   }
 
   return <section className="panel cashier-panel-card" aria-label="Yêu cầu phục vụ">
-    <div className="cashier-panel-header"><div><h2>Yêu cầu phục vụ</h2><p className="muted">Tự cập nhật mỗi 5 giây cho chi nhánh đang đăng nhập.</p></div><button type="button" className="ghost" onClick={() => void load()}>Làm mới</button></div>
+    <div className="cashier-panel-header"><div><h2><i className="bi bi-bell me-2" />Yêu cầu phục vụ</h2><p className="muted">Tự cập nhật mỗi 5 giây cho chi nhánh đang đăng nhập.</p></div><button type="button" className="ghost" onClick={() => void load()}>Làm mới</button></div>
     {error ? <div className="error-box" role="alert">{error}</div> : null}
     {requests.length === 0 ? <p className="muted">Hiện không có yêu cầu đang chờ xử lý.</p> : <div className="service-request-list">
       {requests.map(item => <article className="service-request-card" key={item.serviceRequestId}>
