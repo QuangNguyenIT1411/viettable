@@ -530,3 +530,4 @@ label { font-weight: 500; font-size: var(--text-sm); }
 .section-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); flex-wrap: wrap; }
 .section-title-row h2, .section-title-row h3 { font-size: var(--text-lg); font-weight: 700; }
 .section-title-row .muted-line { margin: 2px 0 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.data-table td.nowrap { white-space: nowrap; }

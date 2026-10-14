@@ -1292,7 +1292,7 @@ export function AdminConsolePage({ onLogout }: Props) {
                       <td><span className="status-pill info">{dish.categoryName}</span></td>
                       <td>{dish.unit?.trim() || "-"}</td>
                       <td className="ingredient-summary-cell">{dish.ingredientsSummary || "-"}</td>
-                      <td>{dish.price.toLocaleString("vi-VN")} đ</td>
+                      <td className="nowrap">{dish.price.toLocaleString("vi-VN")} đ</td>
                       <td>{dish.available ? <span className="status-pill success">Đang bán</span> : <span className="status-pill warning">Tạm ngưng</span>}</td>
                       <td>
                         <div className="button-row wrap">
