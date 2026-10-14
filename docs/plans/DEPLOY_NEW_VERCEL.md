@@ -1,5 +1,8 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 14/10/2026 19:40:** deploy Production `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9` (merge `159141f`: redesign web staff), `[syd1]`, Ready;
+> gọi 1 lần: `/` 200 9,8 s (khởi động lạnh), `/app/cashier/` 200 1,7 s, `/app/chef/` 200 1,2 s, `/app/admin/` 200 1,2 s. Bản quay lui: `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89`. APK không đổi.
+>
 > **Cập nhật 14/10/2026 16:40:** deploy Production `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89` (commit `0396ec2`: hóa đơn phiên app hiện trong Lịch sử/Báo cáo ngày của thu ngân), `[syd1]`, Ready;
 > gọi 1 lần: `/` 200 8,8 s (khởi động lạnh sau deploy), `/app/cashier/` 200 0,9 s, `/branches/1/menu` 200 1,7 s. APK không đổi.
 >

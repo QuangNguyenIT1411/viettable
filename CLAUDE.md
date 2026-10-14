@@ -131,14 +131,15 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 - Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
 - **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
 
-### 6a. Trạng thái hiện tại (cập nhật 14/10/2026 16:40)
+### 6a. Trạng thái hiện tại (cập nhật 14/10/2026 19:40)
 
 | Mục | Trạng thái |
 |---|---|
-| Deploy đang chạy | Production `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89` (tạo 14/10/2026 16:30), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = `qa/vt-ho-01` HEAD `0396ec2` (deploy bằng CLI): Lịch sử hóa đơn / Báo cáo ngày của thu ngân đọc cả hóa đơn phiên app (Invoices), không đổi DB. Gọi thử sau deploy: `/` 200 8,8 s (khởi động lạnh), `/app/cashier/` 200 0,9 s, `/branches/1/menu` 200 1,7 s. Bản trước: `dpl_54CoYXF8nb2pvditsHc9eD3KytmV` (commit `4a11139`) |
-| APK đã cài | `cloudProd` build 13/10/2026 19:04 từ commit `4a11139`, cài đè lên Samsung SM-A528B lúc 19:10:18 13/10/2026 (không đổi trong lần deploy 14/10) |
-| Git | Branch `qa/vt-ho-01` push lên `origin` cùng commit cập nhật mục này. Branch `design/staff-redesign` (redesign web staff, hạn 01/11/2026) chỉ ở máy, chưa push, chưa deploy |
-| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn) — làm sau demo; redesign web staff: thu ngân xong, đang làm Bếp, sau đó Admin |
+| Deploy đang chạy | Production `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9` (tạo 14/10/2026 19:29), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = `qa/vt-ho-01` HEAD `159141f` (merge `design/staff-redesign`): giao diện mới web thu ngân/bếp/admin (màu xanh lá, bếp nền tối, font Lexend, ngày giờ "18:54, 13/10/2026"), kèm bản sửa hóa đơn app `0396ec2`. Gọi thử sau deploy: `/` 200 9,8 s (khởi động lạnh), `/app/cashier/` 200 1,7 s, `/app/chef/` 200 1,2 s, `/app/admin/` 200 1,2 s |
+| Bản quay lui | `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89` (`https://viettable-6z98xx0e7-viet-table.vercel.app`, commit `0396ec2`, giao diện cũ + sửa hóa đơn). Quay lui (cần chủ dự án duyệt, chạy ngoài thư mục `SelfRestaurant-master`): `npx vercel@62.4.0 rollback https://viettable-6z98xx0e7-viet-table.vercel.app --scope viet-table` |
+| APK đã cài | `cloudProd` build 13/10/2026 19:04 từ commit `4a11139`, cài đè lên Samsung SM-A528B lúc 19:10:18 13/10/2026 (không đổi) |
+| Git | `qa/vt-ho-01` đã gộp `design/staff-redesign` (merge `159141f`), push lên `origin` cùng commit cập nhật mục này. `design/staff-redesign` đã push lên `origin` tới `4d7d645` (sao lưu) |
+| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn), G17 (thanh bên Admin trên điện thoại) — làm sau demo. Redesign xong 14/10/2026; từ nay tới 01/11 chỉ sửa lỗi giao diện. Demo 01–10/11 |
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 
