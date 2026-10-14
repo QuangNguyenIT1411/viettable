@@ -270,7 +270,7 @@ export function CustomersModulePage({ mode, onLogout }: Props) {
                       <button className="ghost" onClick={() => navigate(`/Admin/Customers/Edit/${customer.customerId}`)}>Sửa</button>
                       <button className="ghost" onClick={() => navigate(`/Admin/Customers/${customer.customerId}/ActivityLogs`)}>Nhật ký</button>
                       {customer.isActive ? (
-                        <button className="danger" onClick={() => void handleDeactivate(customer.customerId)}>Khóa</button>
+                        <button className="warning-outline" onClick={() => void handleDeactivate(customer.customerId)}>Khóa</button>
                       ) : (
                         <button className="ghost" onClick={() => void handleSetActive(customer, true)}>Bật lại</button>
                       )}

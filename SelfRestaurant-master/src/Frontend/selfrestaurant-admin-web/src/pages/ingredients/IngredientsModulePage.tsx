@@ -1,3 +1,4 @@
+import { formatViDateTime } from "../../../../shared/dateFormat";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -457,7 +458,7 @@ export function IngredientsModulePage({ mode, onLogout }: Props) {
             <tbody>
               {movements.length > 0 ? movements.map((movement) => (
                 <tr key={movement.movementId}>
-                  <td>{new Date(movement.createdAt).toLocaleString("vi-VN")}</td>
+                  <td>{formatViDateTime(new Date(movement.createdAt), movement.createdAt)}</td>
                   <td>{movementLabel(movement.movementType)}</td>
                   <td>{movement.batchId ? `#${movement.batchId}` : "-"}</td>
                   <td>{formatNumber(movement.quantityChange)}</td>

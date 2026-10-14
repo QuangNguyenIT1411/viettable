@@ -1,3 +1,4 @@
+import { formatViDateTime, formatViIsoDate } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useState } from "react";
 import { CashierTopbar } from "../components/CashierTopbar";
@@ -8,27 +9,12 @@ import type { CashierReportScreenDto } from "../lib/types";
 function formatDateTime(value?: string | null) {
   if (!value) return "Ch\u01b0a c\u1eadp nh\u1eadt";
   const date = parseApiUtcTimestamp(value);
-  return !date
-    ? value
-    : date.toLocaleString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  return formatViDateTime(date, value);
 }
 
 function formatDate(value?: string | null) {
   if (!value) return "Ch\u01b0a c\u1eadp nh\u1eadt";
-  const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+  return formatViIsoDate(value);
 }
 
 export function ReportPage() {

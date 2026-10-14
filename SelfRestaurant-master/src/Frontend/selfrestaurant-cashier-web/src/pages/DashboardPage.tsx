@@ -1,3 +1,4 @@
+import { formatViDateTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useMemo, useState } from "react";
 import { HubConnectionBuilder, HttpTransportType } from "@microsoft/signalr";
@@ -92,7 +93,7 @@ function reservationStatusBadgeClass(status?: string | null) {
 function formatReservationTime(value: string) {
   const date = parseApiUtcTimestamp(value);
   if (!date) return value;
-  return new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }).format(date);
+  return formatViDateTime(date);
 }
 
 function summarizePreOrderItems(reservation: ReservationDto) {
@@ -1097,7 +1098,7 @@ export function DashboardPage({ onLogout }: Props) {
                 </div>
                 <div className="bill-meta-card">
                   <span>Thời gian</span>
-                  <strong>{parseApiUtcTimestamp(checkoutResult.paidTime)?.toLocaleString("vi-VN") ?? checkoutResult.paidTime}</strong>
+                  <strong>{formatViDateTime(parseApiUtcTimestamp(checkoutResult.paidTime), checkoutResult.paidTime)}</strong>
                 </div>
                 <div className="bill-meta-card">
                   <span>Thu ngân</span>

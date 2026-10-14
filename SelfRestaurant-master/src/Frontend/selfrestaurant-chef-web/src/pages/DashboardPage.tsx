@@ -1,3 +1,4 @@
+import { formatViDateTime, formatViIsoDate, formatViTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -225,12 +226,7 @@ export function DashboardPage({ onLogout }: Props) {
     if (!value) return "Chưa cập nhật";
     const date = parseApiUtcTimestamp(value);
     if (!date) return value;
-    return date.toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatViDateTime(date);
   }
 
   function getHistoryStatusClass(statusCode?: string | null) {
@@ -645,7 +641,7 @@ export function DashboardPage({ onLogout }: Props) {
             <div>
               <h2>Thực đơn hôm nay</h2>
               <p className="muted chef-menu-subtitle">
-                {data.menu.branchName} | {new Date(`${data.menu.menuDate}T00:00:00`).toLocaleDateString("vi-VN")}
+                {data.menu.branchName} | {formatViIsoDate(data.menu.menuDate)}
               </p>
             </div>
             <div className="chef-chip-row">
@@ -946,7 +942,7 @@ function OrderColumn({
   function formatOrderTime(value: string) {
     const date = parseApiUtcTimestamp(value);
     if (!date) return value;
-    return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    return formatViTime(date);
   }
 
   const iconClass =

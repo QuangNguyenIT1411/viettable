@@ -1,3 +1,4 @@
+import { formatViDateTime } from "../../../../shared/dateFormat";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AdminLayout } from "../../components/AdminLayout";
@@ -71,13 +72,7 @@ function formatDate(value?: string | null) {
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
-  return new Date(value).toLocaleString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return formatViDateTime(new Date(value), value);
 }
 
 function formatNumber(value?: number | null) {
