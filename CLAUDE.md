@@ -131,15 +131,15 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 - Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
 - **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
 
-### 6a. Trạng thái hiện tại (cập nhật 14/10/2026 19:40)
+### 6a. Trạng thái hiện tại (cập nhật 14/10/2026 23:15)
 
 | Mục | Trạng thái |
 |---|---|
-| Deploy đang chạy | Production `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9` (tạo 14/10/2026 19:29), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = `qa/vt-ho-01` HEAD `159141f` (merge `design/staff-redesign`): giao diện mới web thu ngân/bếp/admin (màu xanh lá, bếp nền tối, font Lexend, ngày giờ "18:54, 13/10/2026"), kèm bản sửa hóa đơn app `0396ec2`. Gọi thử sau deploy: `/` 200 9,8 s (khởi động lạnh), `/app/cashier/` 200 1,7 s, `/app/chef/` 200 1,2 s, `/app/admin/` 200 1,2 s |
-| Bản quay lui | `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89` (`https://viettable-6z98xx0e7-viet-table.vercel.app`, commit `0396ec2`, giao diện cũ + sửa hóa đơn). Quay lui (cần chủ dự án duyệt, chạy ngoài thư mục `SelfRestaurant-master`): `npx vercel@62.4.0 rollback https://viettable-6z98xx0e7-viet-table.vercel.app --scope viet-table` |
+| Deploy đang chạy | Production `dpl_8EwCeSUzAdaAcgyFjbqNbbzU87Mx` (tạo 14/10/2026 23:05), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = `qa/vt-ho-01` `b63cbcf`: giao diện mới web thu ngân/bếp/admin + sửa khung lỗi hiện chữ "null" (lỗi máy chủ giờ báo bằng tiếng Việt; đã thấy câu mới trong file JS của cả 3 web trên Production). Gọi thử sau deploy: `/` 200 8,6 s (khởi động lạnh), `/app/cashier/` 200 3,4 s, `/app/chef/` 200 0,9 s, `/app/admin/` 200 0,5 s |
+| Bản quay lui | `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9` (`https://viettable-2s6s07geb-viet-table.vercel.app`, merge `159141f`, giao diện mới chưa có sửa "null"). Bản cũ hơn (giao diện cũ): `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89`. Quay lui (cần chủ dự án duyệt, chạy ngoài thư mục `SelfRestaurant-master`): `npx vercel@62.4.0 rollback https://viettable-2s6s07geb-viet-table.vercel.app --scope viet-table` |
 | APK đã cài | `cloudProd` build 13/10/2026 19:04 từ commit `4a11139`, cài đè lên Samsung SM-A528B lúc 19:10:18 13/10/2026 (không đổi) |
-| Git | `qa/vt-ho-01` đã gộp `design/staff-redesign` (merge `159141f`), push lên `origin` cùng commit cập nhật mục này. `design/staff-redesign` đã push lên `origin` tới `4d7d645` (sao lưu) |
-| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn), G17 (thanh bên Admin trên điện thoại) — làm sau demo. Redesign xong 14/10/2026; từ nay tới 01/11 chỉ sửa lỗi giao diện. Demo 01–10/11 |
+| Git | `qa/vt-ho-01` (gồm merge `159141f` và sửa `b63cbcf`) push lên `origin` cùng commit cập nhật mục này. `design/staff-redesign` đã push lên `origin` tới `4d7d645` (sao lưu) |
+| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn), G17 (thanh bên Admin trên điện thoại) — làm sau demo. Chưa rõ request nào trả lỗi rỗng gây "null" (log Vercel Hobby chỉ giữ ~1 giờ, lúc đọc 23:01 đã hết). Đề xuất chưa làm: giảm tải lại 4–5 s của web bếp/thu ngân (xem báo cáo 14/10). Redesign xong 14/10/2026; từ nay tới 01/11 chỉ sửa lỗi giao diện. Demo 01–10/11 |
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 

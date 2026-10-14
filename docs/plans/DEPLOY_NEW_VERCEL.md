@@ -1,5 +1,8 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 14/10/2026 23:15:** deploy Production `dpl_8EwCeSUzAdaAcgyFjbqNbbzU87Mx` (commit `b63cbcf`: khung lỗi không còn hiện "null", lỗi máy chủ báo tiếng Việt), `[syd1]`, Ready;
+> gọi 1 lần: `/` 200 8,6 s (khởi động lạnh), `/app/cashier/` 200 3,4 s, `/app/chef/` 200 0,9 s, `/app/admin/` 200 0,5 s. Bản quay lui: `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9`. APK không đổi.
+>
 > **Cập nhật 14/10/2026 19:40:** deploy Production `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9` (merge `159141f`: redesign web staff), `[syd1]`, Ready;
 > gọi 1 lần: `/` 200 9,8 s (khởi động lạnh), `/app/cashier/` 200 1,7 s, `/app/chef/` 200 1,2 s, `/app/admin/` 200 1,2 s. Bản quay lui: `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89`. APK không đổi.
 >
