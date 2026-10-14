@@ -1,3 +1,4 @@
+import { formatViDateTime } from "../../../../shared/dateFormat";
 import { orderLabel } from "../../../../shared/orderLabel";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -28,7 +29,7 @@ const emptyEmployeeForm = {
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
-  return new Date(value).toLocaleString("vi-VN");
+  return formatViDateTime(new Date(value), value);
 }
 
 function getStaffActionLabel(actionType: string) {
@@ -392,7 +393,7 @@ export function EmployeesModulePage({ mode, onLogout }: Props) {
                       <button className="ghost" onClick={() => navigate(`/Admin/Employees/Edit/${employee.employeeId}`)}>Sửa</button>
                       <button className="ghost" onClick={() => navigate(`/Admin/Employees/History/${employee.employeeId}`)}>Nhật ký</button>
                       {employee.isActive ? (
-                        <button className="danger" onClick={() => void handleDeactivate(employee)}>Khóa</button>
+                        <button className="warning-outline" onClick={() => void handleDeactivate(employee)}>Khóa</button>
                       ) : (
                         <button className="ghost" onClick={() => void handleSetActive(employee, true)}>Bật lại</button>
                       )}

@@ -1,3 +1,4 @@
+import { formatViDateTime, formatViIsoDate } from "../../../shared/dateFormat";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AdminLayout } from "../components/AdminLayout";
@@ -43,7 +44,7 @@ const HARD_DELETE_CONFIRM_MESSAGE = "B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n x\u00f
 
 function formatDateTime(value?: string | null) {
   if (!value) return "Chưa cập nhật";
-  return new Date(value).toLocaleString("vi-VN");
+  return formatViDateTime(new Date(value), value);
 }
 
 function buildQrTargetUrl(qrCode?: string | null) {
@@ -1019,11 +1020,7 @@ export function AdminConsolePage({ onLogout }: Props) {
 
           {isCategoryIndexPage ? (
             <>
-              <div className="toolbar-card">
-                <div>
-                  <strong>Quản lý danh mục món ăn</strong>
-                  <div className="muted">Danh sách danh mục món ăn hiện có.</div>
-                </div>
+              <div className="toolbar-card toolbar-actions-only">
                 <button className="ghost" onClick={() => navigate("/Admin/Categories/Create")}>Thêm mới</button>
               </div>
               <div className="panel-head"><h2>Danh mục món ăn</h2><span className="status-pill success">{categories.categories.length} danh mục</span></div>
@@ -1058,8 +1055,7 @@ export function AdminConsolePage({ onLogout }: Props) {
 
       {section === "dishes" && dishes ? (
         <section className="panel">
-          <div className="toolbar-card">
-            <div><strong>Quản lý món ăn</strong><div className="muted">Quản lý món ăn, hình ảnh và thành phần món ăn.</div></div>
+          <div className="toolbar-card toolbar-actions-only">
             <div className="button-row wrap">
               {(isDishCreatePage || isDishEditPage || isDishIngredientsPage) ? <button className="ghost" onClick={() => navigate("/Admin/Dishes/Index")}>Quay lại danh sách món ăn</button> : null}
               <button className={isDishCreatePage ? "active-toggle" : "ghost"} onClick={() => navigate("/Admin/Dishes/Create")}>Thêm món mới</button>
@@ -1296,7 +1292,7 @@ export function AdminConsolePage({ onLogout }: Props) {
                       <td><span className="status-pill info">{dish.categoryName}</span></td>
                       <td>{dish.unit?.trim() || "-"}</td>
                       <td className="ingredient-summary-cell">{dish.ingredientsSummary || "-"}</td>
-                      <td>{dish.price.toLocaleString("vi-VN")} đ</td>
+                      <td className="nowrap">{dish.price.toLocaleString("vi-VN")} đ</td>
                       <td>{dish.available ? <span className="status-pill success">Đang bán</span> : <span className="status-pill warning">Tạm ngưng</span>}</td>
                       <td>
                         <div className="button-row wrap">
@@ -1322,8 +1318,7 @@ export function AdminConsolePage({ onLogout }: Props) {
 
       {section === "tables" && tablesData ? (
         <section className="panel">
-          <div className="toolbar-card">
-            <div><strong>{"Qu\u1ea3n l\u00fd b\u00e0n & m\u00e3 QR"}</strong><div className="muted">{"Qu\u1ea3n l\u00fd b\u00e0n \u0103n v\u00e0 m\u00e3 QR."}</div></div>
+          <div className="toolbar-card toolbar-actions-only">
             <div className="button-row wrap">
               {(isTableEditPage || isTableQrPage) ? <button className="ghost" onClick={() => navigate("/Admin/TablesQR/Index")}>{"Quay l\u1ea1i danh s\u00e1ch b\u00e0n"}</button> : null}
               <button className={isTableEditPage ? "active-toggle" : "ghost"} onClick={() => navigate("/Admin/TablesQR/Edit")}>{"S\u1eeda b\u00e0n"}</button>
@@ -1484,7 +1479,7 @@ export function AdminConsolePage({ onLogout }: Props) {
                           <button className="ghost" onClick={() => openTableEditPage(table)}>{"S\u1eeda"}</button>
                           <button className="ghost" onClick={() => navigate("/Admin/TablesQR/QR")}>QR</button>
                           {table.isActive ? (
-                            <button className="danger" onClick={() => void refreshAndShow(adminApi.deactivateTable(table.tableId), "Đã ẩn bàn.")}>Ẩn bàn</button>
+                            <button className="warning-outline" onClick={() => void refreshAndShow(adminApi.deactivateTable(table.tableId), "Đã ẩn bàn.")}>Ẩn bàn</button>
                           ) : (
                             <button className="ghost" onClick={() => void setTableActive(table, true)}>{"Hiển thị lại"}</button>
                           )}
@@ -1505,8 +1500,7 @@ export function AdminConsolePage({ onLogout }: Props) {
         <section className="panel-grid">
           {isRevenuePage ? (
             <article className="panel">
-              <div className="toolbar-card">
-                <div><strong>Báo cáo doanh thu</strong><div className="muted">Tổng quan doanh thu theo ngày và chi nhánh.</div></div>
+              <div className="toolbar-card toolbar-actions-only">
                 <div className="button-row wrap">
                   <button className={isRevenuePage ? "active-toggle" : "ghost"} onClick={() => navigate("/Admin/Reports/Revenue")}>Doanh thu</button>
                   <button className={isTopDishesPage ? "active-toggle" : "ghost"} onClick={() => navigate("/Admin/Reports/TopDishes")}>Top món ăn</button>
@@ -1521,7 +1515,7 @@ export function AdminConsolePage({ onLogout }: Props) {
                   ))}
                 </div>
               </div>
-              <div className="panel-head"><h2>Báo cáo doanh thu</h2><span>{filteredRevenueTotal.toLocaleString("vi-VN")} đ</span></div>
+              <div className="panel-head"><h2>Doanh thu theo ngày</h2><span className="report-total">Tổng: {filteredRevenueTotal.toLocaleString("vi-VN")} đ</span></div>
               {filteredRevenueRows.length === 0 ? (
                 <div className="empty-report"><i className="bi bi-graph-up-arrow" /><p>Chưa có dữ liệu doanh thu.</p></div>
               ) : (
@@ -1530,7 +1524,7 @@ export function AdminConsolePage({ onLogout }: Props) {
                   <tbody>
                     {filteredRevenueRows.map((row, index) => (
                       <tr key={`${row.branchId}-${row.date}-${index}`}>
-                        <td>{row.date}</td>
+                        <td>{formatViIsoDate(row.date)}</td>
                         <td>{row.branchName}</td>
                         <td>{row.totalOrders}</td>
                         <td>{row.totalRevenue.toLocaleString("vi-VN")} đ</td>
@@ -1544,8 +1538,7 @@ export function AdminConsolePage({ onLogout }: Props) {
 
           {isTopDishesPage ? (
             <article className="panel">
-              <div className="toolbar-card">
-                <div><strong>Món ăn được gọi nhiều nhất</strong><div className="muted">Top món theo số lượng bán ra.</div></div>
+              <div className="toolbar-card toolbar-actions-only">
                 <div className="button-row wrap"><button className="ghost" onClick={() => navigate("/Admin/Reports/Revenue")}>Quay lại báo cáo doanh thu</button></div>
               </div>
               <table className="data-table">
@@ -1570,7 +1563,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       {section === "settings" ? (
         <section className="panel">
           <div className="panel-head">
-            <div><h2>Cài đặt tài khoản</h2><p className="muted">Cập nhật thông tin cá nhân và mật khẩu.</p></div>
+            <span className="muted">Tài khoản đang đăng nhập</span>
             <span className="status-pill info"><i className="bi bi-person-badge-fill" /> {dashboard.settings.username}</span>
           </div>
 

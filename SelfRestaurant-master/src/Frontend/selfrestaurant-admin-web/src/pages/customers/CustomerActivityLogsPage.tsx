@@ -1,3 +1,4 @@
+import { formatViDateTime } from "../../../../shared/dateFormat";
 import { orderLabel } from "../../../../shared/orderLabel";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -89,15 +90,7 @@ export function CustomerActivityLogsPage({ onLogout }: Props) {
   }, [customerIdValue, activityPage, orderPage]);
 
   function formatTimestamp(utcString: string): string {
-    const date = new Date(utcString);
-    return date.toLocaleString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    return formatViDateTime(new Date(utcString), utcString);
   }
 
   function getActionLabel(actionType: string): string {

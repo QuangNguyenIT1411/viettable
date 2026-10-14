@@ -1,3 +1,4 @@
+import { formatViDateTime } from "../../../shared/dateFormat";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -78,12 +79,10 @@ export function AdminLayout({ title, description, staff, onLogout, onRefresh, ch
         <aside className="admin-sidebar">
           <div className="sidebar-card">
             <div className="sidebar-header">
-              <div className="sidebar-avatar">
-                <i className="bi bi-shield-lock-fill" />
-              </div>
+              <span className="vt-brand-mark" aria-hidden="true">VT</span>
               <div>
-                <div className="sidebar-title">Admin</div>
-                <div className="sidebar-subtitle">{staff?.roleName ?? "Qu\u1ea3n tr\u1ecb"}</div>
+                <div className="sidebar-title">VietTable</div>
+                <div className="sidebar-subtitle">{"Qu\u1ea3n tr\u1ecb"}{staff?.name ? ` \u00b7 ${staff.name}` : ""}</div>
               </div>
             </div>
             <div className="sidebar-links">
@@ -175,23 +174,27 @@ export function AdminLayout({ title, description, staff, onLogout, onRefresh, ch
         </aside>
 
         <section className="admin-main">
-          <section className="hero-card">
-            <div className="admin-header">
-              <div>
-                <div className="eyebrow">{"Xin ch\u00e0o"}, {staff?.name ?? "Admin"}</div>
-                <h1>{title}</h1>
-                <p className="muted-line">{description}</p>
-                <p className="muted-line">
-                  <i className="bi bi-building" /> {staff?.branchName ?? "Ch\u01b0a c\u00f3 chi nh\u00e1nh"} {" \u2022 "}
-                  <i className="bi bi-shield-check" /> {staff?.roleName ?? "Qu\u1ea3n tr\u1ecb"}
-                </p>
-              </div>
-              <div className="header-actions">
-                <span className="status-pill info">{new Date().toLocaleString("vi-VN")}</span>
-                {onRefresh ? <button className="ghost" onClick={() => void onRefresh()}>{"L\u00e0m m\u1edbi"}</button> : null}
-              </div>
+          <header className="admin-page-header">
+            <div>
+              <h1>{title}</h1>
+              <p className="muted-line">
+                {description}
+                <span className="admin-page-context">
+                  <i className="bi bi-building" aria-hidden="true" /> {staff?.branchName ?? "Ch\u01b0a c\u00f3 chi nh\u00e1nh"}
+                  {" \u00b7 "}
+                  <i className="bi bi-shield-check" aria-hidden="true" /> {staff?.roleName ?? "Qu\u1ea3n tr\u1ecb"}
+                </span>
+              </p>
             </div>
-          </section>
+            <div className="header-actions">
+              <span className="admin-clock">{formatViDateTime(new Date())}</span>
+              {onRefresh ? (
+                <button className="ghost" onClick={() => void onRefresh()}>
+                  <i className="bi bi-arrow-clockwise" aria-hidden="true" /> {"L\u00e0m m\u1edbi"}
+                </button>
+              ) : null}
+            </div>
+          </header>
 
           {message ? <div className="success-box">{message}</div> : null}
           {error ? <div className="error-box">{error}</div> : null}

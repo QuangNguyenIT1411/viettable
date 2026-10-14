@@ -1,6 +1,7 @@
+import { formatViDateTime, formatViIsoDate } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { CashierTopbar } from "../components/CashierTopbar";
 import { cashierApi } from "../lib/api";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { CashierReportScreenDto } from "../lib/types";
@@ -8,27 +9,12 @@ import type { CashierReportScreenDto } from "../lib/types";
 function formatDateTime(value?: string | null) {
   if (!value) return "Ch\u01b0a c\u1eadp nh\u1eadt";
   const date = parseApiUtcTimestamp(value);
-  return !date
-    ? value
-    : date.toLocaleString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  return formatViDateTime(date, value);
 }
 
 function formatDate(value?: string | null) {
   if (!value) return "Ch\u01b0a c\u1eadp nh\u1eadt";
-  const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+  return formatViIsoDate(value);
 }
 
 export function ReportPage() {
@@ -58,19 +44,20 @@ export function ReportPage() {
   if (!report) return null;
 
   return (
+    <>
+    <CashierTopbar
+      active="report"
+      branchName={report.staff.branchName}
+      staffName={report.staff.name}
+      roleName={report.staff.roleName}
+    />
     <main className="cashier-shell cashier-subpage">
-      <section className="cashier-report-heading">
+      <section className="cashier-page-heading">
         <div>
-          <h1>{"B\u00e1o c\u00e1o doanh thu theo ng\u00e0y"}</h1>
+          <h1>{"Báo cáo doanh thu theo ngày"}</h1>
           <p className="muted">
-            {"Nh\u00e2n vi\u00ean:"} {report.staff.name} ({report.staff.branchName})
+            {"Nhân viên:"} {report.staff.name} ({report.staff.branchName})
           </p>
-        </div>
-        <div className="header-actions">
-          <Link className="cashier-link-button cashier-link-button-outline" to="/Staff/Cashier/Index">
-            <i className="bi bi-arrow-left me-1" />
-            {"Quay l\u1ea1i qu\u1ea7y thu ng\u00e2n"}
-          </Link>
         </div>
       </section>
 
@@ -163,5 +150,6 @@ export function ReportPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }

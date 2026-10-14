@@ -1,0 +1,12 @@
+{
+  "name": "viettable-staff-e2e",
+  "private": true,
+  "description": "Browser regression tests for Chef, Cashier and Admin staff web against the LOCAL docker stack.",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1"
+  }
+}

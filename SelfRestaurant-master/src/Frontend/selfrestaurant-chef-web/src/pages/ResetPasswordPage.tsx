@@ -131,7 +131,7 @@ export function ResetPasswordPage() {
             {confirmPasswordError ? <div className="staff-invalid-feedback">{confirmPasswordError}</div> : null}
           </div>
 
-          <button type="submit" className="btn btn-success w-100 staff-submit-button" disabled={submitting}>
+          <button type="submit" className="staff-submit-button" disabled={submitting}>
             <i className="fas fa-check-circle me-2" />
             <span>{submitting ? "Đang xử lý..." : "Đặt Lại Mật Khẩu"}</span>
           </button>

@@ -67,7 +67,7 @@ export function LoginPage({ onLoggedIn }: Props) {
     <main className="login-shell">
       <section className="login-card">
         <div className="login-header">
-          <h1 className="login-brand">Self Restaurant</h1>
+          <h1 className="login-brand"><span className="vt-brand-mark" aria-hidden="true">VT</span>VietTable</h1>
           <p className="login-title">Đăng nhập tài khoản nhân viên</p>
         </div>
 

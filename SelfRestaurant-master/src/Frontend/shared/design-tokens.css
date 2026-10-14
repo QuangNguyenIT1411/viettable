@@ -1,0 +1,79 @@
+/*
+ * VietTable staff web design tokens (Chef / Cashier / Admin share these names and values).
+ * Direction: green primary for actions, red ONLY for cancel/delete/danger.
+ * Change values here, not in each app.
+ */
+:root {
+  --font-sans: "Lexend", "Segoe UI", system-ui, sans-serif;
+
+  --color-bg: #FAF6EF;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F3EDE2;
+  --color-border: #E3D9C8;
+  --color-border-strong: #CDBFA8;
+  --color-text: #1F2A22;
+  --color-text-muted: #5C6A60;
+
+  /* Primary = action buttons, selection, active navigation */
+  --color-primary: #1F5135;
+  --color-primary-hover: #173E28;
+  --color-primary-soft: #E3EFE7;
+  --color-on-primary: #FFFFFF;
+  --color-accent: #A87A1E;
+  --color-accent-soft: #F7EBCF;
+
+  /* Status */
+  --color-success: #1F7A3E;
+  --color-success-soft: #DDF3E3;
+  --color-warning: #9A6200;
+  --color-warning-soft: #FBEFD3;
+  --color-info: #2F5D8A;
+  --color-info-soft: #E3ECF6;
+  /* Danger = cancel / delete / destructive actions and errors only */
+  --color-danger: #B42318;
+  --color-danger-hover: #8F1C13;
+  --color-danger-soft: #FDE4E1;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(60, 40, 10, .06), 0 2px 6px rgba(60, 40, 10, .06);
+  --shadow-pop: 0 12px 32px rgba(31, 42, 34, .18);
+  --focus-ring: 0 0 0 3px rgba(31, 81, 53, .28);
+
+  --text-xs: 13px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 26px;
+  --text-2xl: 34px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --control-h: 44px;
+
+  /* Kitchen board (Chef web): dark, high-contrast surfaces readable from a distance */
+  --kds-bg: #0E1116;
+  --kds-surface: #151A21;
+  --kds-card: #1A1F27;
+  --kds-card-2: #222833;
+  --kds-text: #F3F4F6;
+  --kds-muted: #A7B0BE;
+  --kds-border: #2C3440;
+  --kds-primary: #2E7D4F;
+  --kds-primary-hover: #25683F;
+  --kds-danger: #FCA5A5;
+  --kds-danger-soft: rgba(248, 113, 113, .14);
+  --kds-warning: #FBBF24;
+  --kds-warning-soft: rgba(251, 191, 36, .14);
+  --kds-info: #7DD3FC;
+  --kds-info-soft: rgba(125, 211, 252, .14);
+  --kds-success: #86EFAC;
+  --kds-success-soft: rgba(134, 239, 172, .14);
+}

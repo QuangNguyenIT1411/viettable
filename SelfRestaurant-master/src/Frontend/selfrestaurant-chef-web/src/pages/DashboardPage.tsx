@@ -1,3 +1,4 @@
+import { formatViDateTime, formatViIsoDate, formatViTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 ﻿import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -225,12 +226,7 @@ export function DashboardPage({ onLogout }: Props) {
     if (!value) return "Chưa cập nhật";
     const date = parseApiUtcTimestamp(value);
     if (!date) return value;
-    return date.toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatViDateTime(date);
   }
 
   function getHistoryStatusClass(statusCode?: string | null) {
@@ -372,24 +368,40 @@ export function DashboardPage({ onLogout }: Props) {
   if (pageMode === "history") {
     return (
       <main className="chef-shell chef-subpage chef-history-shell">
-        <section className="hero-card chef-hero chef-history-hero">
-          <header className="chef-header">
-            <div>
-              <p className="eyebrow">{data.staff.branchName}</p>
-              <h1>Tài khoản & Lịch sử bếp</h1>
-              <p className="muted">
-                {data.staff.name} | {data.staff.roleName}
-              </p>
-            </div>
-            <div className="header-actions">
-              <Link className="ghost action-link" to="/Staff/Chef/Index">
-                Quay về màn hình bếp
-              </Link>
-              <button className="ghost" onClick={() => void onLogout()}>
-                Đăng xuất
-              </button>
-            </div>
-          </header>
+        <header className="vt-topbar">
+          <div className="vt-brand">
+            <span className="vt-brand-mark" aria-hidden="true">VT</span>
+            <span>
+              VietTable
+              <small>Bếp · {data.staff.branchName}</small>
+            </span>
+          </div>
+          <nav className="vt-nav" aria-label="Điều hướng bếp">
+            <Link to="/Staff/Chef/Index">
+              <i className="bi bi-arrow-left" aria-hidden="true" />
+              Quay về màn hình bếp
+            </Link>
+            <Link to="/Staff/Chef/History" aria-current="page">
+              <i className="bi bi-clock-history" aria-hidden="true" />
+              Lịch sử & Tài khoản
+            </Link>
+          </nav>
+          <div className="vt-spacer" />
+          <div className="vt-who">
+            <b>{data.staff.name}</b>
+            {data.staff.roleName}
+          </div>
+          <button type="button" className="vt-btn vt-btn-secondary" onClick={() => void onLogout()}>
+            <i className="bi bi-box-arrow-right" aria-hidden="true" />
+            Đăng xuất
+          </button>
+        </header>
+
+        <section className="chef-page-heading">
+          <h1>Tài khoản & Lịch sử bếp</h1>
+          <p className="muted">
+            {data.staff.branchName} · {data.staff.name} | {data.staff.roleName}
+          </p>
         </section>
 
         {message ? <div className="success-box">{message}</div> : null}
@@ -529,51 +541,52 @@ export function DashboardPage({ onLogout }: Props) {
 
   return (
     <main className="chef-shell chef-index-shell chef-kds-shell">
-      <section className="chef-mvc-header chef-kds-header">
-        <div className="chef-mvc-header-top">
-          <div className="chef-mvc-brand">
-            <i className="bi bi-fire chef-mvc-brand-icon" />
-            <div>
-              <h1>Bếp & Chế Biến</h1>
-              <div className="chef-mvc-meta">
-                {data.staff.branchName} - Nhân viên bếp: {data.staff.name}
-              </div>
-            </div>
-          </div>
-            <div className="chef-mvc-actions">
-              <div className="chef-tab-pills" role="tablist" aria-label="Điều hướng bếp">
-              <button
-                type="button"
-                className={activeTab === "orders" ? "tab-pill active" : "tab-pill"}
-                onClick={() => setActiveTab("orders")}
-              >
-                <i className="bi bi-kanban me-2" />
-                Đơn Hàng
-              </button>
-              <button
-                type="button"
-                className={activeTab === "menu" ? "tab-pill active" : "tab-pill"}
-                onClick={() => setActiveTab("menu")}
-              >
-                <i className="bi bi-journal-text me-2" />
-                Thực Đơn
-              </button>
-              </div>
-              <div className="chef-mvc-divider" />
-              <button className="ghost chef-header-button" onClick={() => setIngredientStockOpen(true)}>
-                <i className="bi bi-box-seam me-2" />
-                Kho nguyên liệu
-              </button>
-              <Link className="ghost action-link chef-header-button" to="/Staff/Chef/History">
-                <i className="bi bi-clock-history me-2" />
-                Lịch sử & Tài khoản
-            </Link>
-            <button className="ghost chef-logout-button" onClick={() => void onLogout()}>
-              <i className="bi bi-box-arrow-right" />
-            </button>
-          </div>
+      <header className="vt-topbar is-dark chef-kds-header">
+        <div className="vt-brand">
+          <span className="vt-brand-mark" aria-hidden="true">
+            <i className="bi bi-fire" />
+          </span>
+          <span>
+            Bếp & Chế Biến
+            <small>{data.staff.branchName} · Nhân viên bếp: {data.staff.name}</small>
+          </span>
         </div>
-      </section>
+        <div className="vt-tabs" role="tablist" aria-label="Điều hướng bếp">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "orders"}
+            className="vt-tab"
+            onClick={() => setActiveTab("orders")}
+          >
+            <i className="bi bi-kanban" aria-hidden="true" />
+            Đơn Hàng
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "menu"}
+            className="vt-tab"
+            onClick={() => setActiveTab("menu")}
+          >
+            <i className="bi bi-journal-text" aria-hidden="true" />
+            Thực Đơn
+          </button>
+        </div>
+        <div className="vt-spacer" />
+        <button type="button" className="vt-btn vt-btn-secondary" onClick={() => setIngredientStockOpen(true)}>
+          <i className="bi bi-box-seam" aria-hidden="true" />
+          Kho nguyên liệu
+        </button>
+        <Link className="vt-btn vt-btn-secondary" to="/Staff/Chef/History">
+          <i className="bi bi-clock-history" aria-hidden="true" />
+          Lịch sử & Tài khoản
+        </Link>
+        <button type="button" className="vt-btn vt-btn-secondary" onClick={() => void onLogout()}>
+          <i className="bi bi-box-arrow-right" aria-hidden="true" />
+          Đăng xuất
+        </button>
+      </header>
 
       {message ? <div className="success-box">{message}</div> : null}
       {error ? <div className="error-box">{error}</div> : null}
@@ -628,7 +641,7 @@ export function DashboardPage({ onLogout }: Props) {
             <div>
               <h2>Thực đơn hôm nay</h2>
               <p className="muted chef-menu-subtitle">
-                {data.menu.branchName} | {new Date(`${data.menu.menuDate}T00:00:00`).toLocaleDateString("vi-VN")}
+                {data.menu.branchName} | {formatViIsoDate(data.menu.menuDate)}
               </p>
             </div>
             <div className="chef-chip-row">
@@ -886,7 +899,7 @@ export function DashboardPage({ onLogout }: Props) {
             </div>
             <div className="header-actions chef-modal-actions">
               <button className="ghost" onClick={() => setCancelEditor(null)}>Đóng</button>
-              <button onClick={() => void submitCancel()}>
+              <button className="danger" onClick={() => void submitCancel()}>
                 <i className="bi bi-x-circle me-1" />
                 Xác nhận hủy
               </button>
@@ -929,7 +942,7 @@ function OrderColumn({
   function formatOrderTime(value: string) {
     const date = parseApiUtcTimestamp(value);
     if (!date) return value;
-    return date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    return formatViTime(date);
   }
 
   const iconClass =
