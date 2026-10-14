@@ -45,6 +45,30 @@ body {
 .vt-who { font-size: var(--text-sm); color: var(--color-text-muted); text-align: right; line-height: 1.35; }
 .vt-who b { display: block; color: var(--color-text); }
 
+/* Dark top bar (kitchen board) */
+.vt-topbar.is-dark { background: var(--kds-surface); border-bottom-color: var(--kds-border); color: var(--kds-text); }
+.vt-topbar.is-dark .vt-brand { color: var(--kds-text); }
+.vt-topbar.is-dark .vt-brand-mark { background: var(--kds-primary); }
+.vt-topbar.is-dark .vt-brand small, .vt-topbar.is-dark .vt-who { color: var(--kds-muted); }
+.vt-topbar.is-dark .vt-who b { color: var(--kds-text); }
+.vt-topbar.is-dark .vt-nav a, .vt-topbar.is-dark .vt-tab { color: var(--kds-muted); }
+.vt-topbar.is-dark .vt-nav a:hover, .vt-topbar.is-dark .vt-tab:hover { background: var(--kds-card-2); color: var(--kds-text); }
+.vt-topbar.is-dark .vt-btn-secondary { background: var(--kds-card); color: var(--kds-text); border-color: var(--kds-border); }
+.vt-topbar.is-dark .vt-btn-secondary:hover { background: var(--kds-card-2); color: var(--kds-text); }
+
+/* Tabs (buttons that switch a view on the same page) */
+.vt-tabs { display: inline-flex; gap: var(--space-1); padding: var(--space-1); border-radius: var(--radius-md); background: var(--color-surface-2); }
+.vt-topbar.is-dark .vt-tabs { background: var(--kds-bg); border: 1px solid var(--kds-border); }
+.vt-tab {
+  font: inherit; font-size: var(--text-sm); font-weight: 600;
+  min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; gap: 8px;
+  background: transparent; color: var(--color-text-muted); cursor: pointer;
+}
+.vt-tab:hover { background: var(--color-surface); color: var(--color-text); }
+.vt-tab[aria-selected="true"], .vt-topbar.is-dark .vt-tab[aria-selected="true"] { background: var(--color-primary); color: var(--color-on-primary); }
+.vt-topbar.is-dark .vt-tab[aria-selected="true"] { background: var(--kds-primary); }
+
 /* Buttons */
 .vt-btn {
   font: inherit; font-size: var(--text-sm); font-weight: 600;

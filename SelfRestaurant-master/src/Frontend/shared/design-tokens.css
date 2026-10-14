@@ -58,10 +58,22 @@
 
   --control-h: 44px;
 
-  /* Kitchen board: same light surfaces as the other screens */
-  --kds-bg: var(--color-bg);
-  --kds-card: var(--color-surface);
-  --kds-text: var(--color-text);
-  --kds-muted: var(--color-text-muted);
-  --kds-border: var(--color-border);
+  /* Kitchen board (Chef web): dark, high-contrast surfaces readable from a distance */
+  --kds-bg: #0E1116;
+  --kds-surface: #151A21;
+  --kds-card: #1A1F27;
+  --kds-card-2: #222833;
+  --kds-text: #F3F4F6;
+  --kds-muted: #A7B0BE;
+  --kds-border: #2C3440;
+  --kds-primary: #2E7D4F;
+  --kds-primary-hover: #25683F;
+  --kds-danger: #FCA5A5;
+  --kds-danger-soft: rgba(248, 113, 113, .14);
+  --kds-warning: #FBBF24;
+  --kds-warning-soft: rgba(251, 191, 36, .14);
+  --kds-info: #7DD3FC;
+  --kds-info-soft: rgba(125, 211, 252, .14);
+  --kds-success: #86EFAC;
+  --kds-success-soft: rgba(134, 239, 172, .14);
 }

@@ -59,7 +59,7 @@ export function ForgotPasswordPage() {
             {error ? <div className="staff-invalid-feedback">{error}</div> : null}
           </div>
 
-          <button type="submit" className="btn btn-danger staff-submit-button" disabled={loading}>
+          <button type="submit" className="staff-submit-button" disabled={loading}>
             <i className="fas fa-paper-plane me-2" />
             <span>{loading ? "Đang gửi..." : "Gửi Link Đặt Lại Mật Khẩu"}</span>
           </button>
