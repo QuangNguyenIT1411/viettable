@@ -5,7 +5,8 @@ export function createControlledRead<T>(options: {
   apply: (value: T) => void;
   error: (error: unknown) => void;
   settled?: () => void;
-  interval: number;
+  /** Fallback poll delay in ms (0 = no polling); read again before each poll so it can change. */
+  interval: number | (() => number);
 }, environment = {
   visible: () => document.visibilityState !== "hidden",
   schedule: (callback: () => void, delay: number) => setTimeout(callback, delay),
@@ -43,9 +44,10 @@ export function createControlledRead<T>(options: {
       }
     })().finally(() => {
       pending = null;
-      if (!disposed && options.interval > 0 && environment.visible()) {
+      const interval = typeof options.interval === "function" ? options.interval() : options.interval;
+      if (!disposed && interval > 0 && environment.visible()) {
         timer = environment.schedule(() => { void refresh(); },
-          Math.min(options.interval * 2 ** Math.min(failures, 4), 60000));
+          Math.max(interval, Math.min(interval * 2 ** Math.min(failures, 4), 60000)));
       }
     });
     return pending;

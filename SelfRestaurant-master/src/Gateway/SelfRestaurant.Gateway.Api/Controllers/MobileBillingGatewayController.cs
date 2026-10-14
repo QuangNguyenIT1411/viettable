@@ -1,3 +1,4 @@
+using SelfRestaurant.Gateway.Api.Infrastructure;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Text;
@@ -32,13 +33,16 @@ public sealed class MobileBillingGatewayController : ControllerBase
     [HttpPost("checkout/quotes/{quoteId:int}/loyalty")]
     public async Task<ActionResult<object>> Loyalty(int quoteId, ApplyLoyaltyRequest request, CancellationToken ct) => await Simple(() => _billing.ApplyLoyaltyAsync(quoteId, new { customerId = Actor(), request.Points }, ct));
 
+[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
     [HttpPost("dining-sessions/{sessionId:int}/payment-request")]
     public async Task<ActionResult<object>> RequestPayment(int sessionId, PaymentRequestBody request, CancellationToken ct)
     { var result = await Simple(() => _billing.RequestMobilePaymentAsync(sessionId, new { customerId = Actor(), request.CheckoutQuoteId }, ct)); if (result.Result is OkObjectResult) await Notify("paymentUpdated", new { sessionId, status = "PAYMENT_REQUESTED" }, ct); return result; }
 
+[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
     [HttpPost("dining-sessions/{sessionId:int}/payment-request/cancel")]
     public Task<ActionResult<object>> CancelPayment(int sessionId, CancellationToken ct) => Simple(() => _billing.CancelMobilePaymentRequestAsync(sessionId, new { customerId = Actor() }, ct));
 
+[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
     [HttpPost("checkout/quotes/{quoteId:int}/payments")]
     public Task<ActionResult<object>> Payment(int quoteId, CreateMobilePaymentBody request, CancellationToken ct) => Command("payment", new { quoteId, request.Channel, request.Method, request.Location },
         (actor, key, hash) => _billing.CreateMobilePaymentAsync(quoteId, new { customerId = actor, request.Channel, request.Method, request.Location, idempotencyKey = $"c{actor}:payment:{key}", requestHash = hash }, ct), true, ct);
@@ -46,6 +50,7 @@ public sealed class MobileBillingGatewayController : ControllerBase
     [HttpGet("payments/{paymentId:int}")]
     public async Task<ActionResult<object>> Payment(int paymentId, CancellationToken ct) { var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401); try { return Ok(await _billing.GetMobilePaymentAsync(paymentId, actor.Value, ct)); } catch (ApiClientException ex) { return Downstream(ex); } }
 
+[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
     [HttpPost("payments/{paymentId:int}/retry")]
     public Task<ActionResult<object>> Retry(int paymentId, CancellationToken ct) => Command("payment-retry", new { paymentId },
         (actor, key, hash) => _billing.RetryMobilePaymentAsync(paymentId, new { customerId = actor, idempotencyKey = $"c{actor}:payment-retry:{key}", requestHash = hash }, ct), true, ct);
@@ -74,6 +79,7 @@ public sealed class MobileBillingGatewayController : ControllerBase
     [HttpGet("split-bills/{splitBillId:int}")]
     public Task<ActionResult<object>> Split(int splitBillId, CancellationToken ct) => Get(() => _billing.GetSplitBillAsync(splitBillId, Actor()!.Value, ct));
 
+[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
     [HttpPost("split-bills/{splitBillId:int}/payments")]
     public Task<ActionResult<object>> SplitPayment(int splitBillId, PaySplitBillBody request, CancellationToken ct) => Command("split-payment", new { splitBillId, request.SplitBillPartId, request.Channel, request.Method, request.Location },
         (actor, key, hash) => _billing.PaySplitBillAsync(splitBillId, new { customerId = actor, request.SplitBillPartId, request.Channel, request.Method, request.Location, idempotencyKey = $"c{actor}:split-payment:{key}", requestHash = hash }, ct), true, ct);

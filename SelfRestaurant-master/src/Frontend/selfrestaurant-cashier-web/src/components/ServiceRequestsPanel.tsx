@@ -1,7 +1,9 @@
 import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime } from "../../../shared/dateFormat";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useControlledRead } from "../lib/useControlledRead";
+import { CASHIER_FALLBACK_POLL_MS, CASHIER_OFFLINE_POLL_MS } from "../lib/polling";
+import type { TopicBus } from "../../../shared/staffRealtime";
 import { cashierApi } from "../lib/api";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { StaffServiceRequestDto } from "../lib/types";
@@ -9,7 +11,7 @@ import type { CashierDashboardDto } from "../lib/types";
 
 const labels: Record<string, string> = { CALL_STAFF: "Gọi nhân viên", WATER: "Xin nước", UTENSILS: "Xin dụng cụ", OTHER: "Yêu cầu khác" };
 
-export function ServiceRequestsPanel({ tables = [] }: { tables?: CashierDashboardDto["tables"] }) {
+export function ServiceRequestsPanel({ tables = [], events, live = false }: { tables?: CashierDashboardDto["tables"]; events?: TopicBus; live?: boolean }) {
   const [requests, setRequests] = useState<StaffServiceRequestDto[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
@@ -17,8 +19,9 @@ export function ServiceRequestsPanel({ tables = [] }: { tables?: CashierDashboar
     read: signal => cashierApi.getServiceRequests(signal),
     apply: value => { setRequests(value); setError(""); },
     error: e => setError(userMessage(e, "Không tải được yêu cầu phục vụ.")),
-    interval: 5000,
+    interval: live ? CASHIER_FALLBACK_POLL_MS : CASHIER_OFFLINE_POLL_MS,
   });
+  useEffect(() => events?.on("serviceRequests", () => void load()), [events, load]);
 
   async function act(item: StaffServiceRequestDto, action: "acknowledge" | "complete") {
     setBusy(item.serviceRequestId);

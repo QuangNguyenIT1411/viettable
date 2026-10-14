@@ -13,6 +13,7 @@ public sealed class PrivateBackplaneTests
     [InlineData("orderReceived")]
     [InlineData("paymentUpdated")]
     [InlineData("cashierDashboardChanged")]
+    [InlineData("staffBranchChanged")]
     public void Existing_gateway_events_roundtrip_without_changing_wire_payload(string method)
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);

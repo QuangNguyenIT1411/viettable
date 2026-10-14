@@ -119,3 +119,23 @@ button.vt-stat.is-alert:hover { border-color: var(--color-warning); background: 
 @media print {
   .vt-topbar { position: static; }
 }
+
+/* Paused for inactivity: a dimmed screen and one bar to continue (chef and cashier). */
+.vt-paused-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(14, 17, 22, .45);
+  cursor: pointer;
+}
+.vt-paused-bar {
+  position: fixed; z-index: 901; left: 50%; top: var(--space-5); transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px));
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 56px; padding: 12px 20px;
+  font: inherit; font-size: var(--text-md); font-weight: 600; text-align: center;
+  color: var(--color-on-primary); background: var(--color-primary);
+  border: 0; border-radius: var(--radius-md); box-shadow: var(--shadow-pop);
+  cursor: pointer;
+}
+.vt-paused-bar:hover { background: var(--color-primary-hover); }
+.vt-paused-bar:focus-visible { outline: none; box-shadow: var(--focus-ring), var(--shadow-pop); }
+.vt-paused-bar i { font-size: 22px; }

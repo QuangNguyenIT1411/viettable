@@ -52,6 +52,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
     [HttpGet("onsite-payments")]
     public async Task<IActionResult> MobileOnsitePayments(CancellationToken ct) => await CashierPayment(null, ct);
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.OnsitePayments)]
     [HttpPost("onsite-payments/{paymentId:int}/confirm")]
     [Consumes("application/json")]
     public async Task<IActionResult> ConfirmMobileOnsitePayment(int paymentId, CancellationToken ct) => await CashierPayment(paymentId, ct);
@@ -156,9 +157,11 @@ public sealed class StaffCashierGatewayController : ControllerBase
         catch (ApiClientException ex) { return Error(ex.Code ?? "service_requests_failed", ex.Message, ex.StatusCode); }
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.ServiceRequests)]
     [HttpPost("service-requests/{requestId:int}/acknowledge")]
     public Task<IActionResult> AcknowledgeServiceRequest(int requestId, CancellationToken ct) => UpdateServiceRequest(requestId, complete: false, ct);
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.ServiceRequests)]
     [HttpPost("service-requests/{requestId:int}/complete")]
     public Task<IActionResult> CompleteServiceRequest(int requestId, CancellationToken ct) => UpdateServiceRequest(requestId, complete: true, ct);
 
@@ -454,6 +457,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
             BuildAccountDto(staff)));
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders, StaffBranchEvents.OnsitePayments)]
     [HttpPost("orders/{orderId:int}/checkout")]
     public async Task<ActionResult<CashierCheckoutResultDto>> Checkout(int orderId, [FromBody] CashierCheckoutApiRequest request, CancellationToken cancellationToken)
     {

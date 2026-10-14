@@ -2,10 +2,12 @@ import { userMessage, cleanText } from "../../../shared/apiError";
 import { useEffect, useRef, useState } from "react";
 import { cashierApi, type OnsitePayment } from "../lib/api";
 import { useControlledRead } from "../lib/useControlledRead";
+import { CASHIER_FALLBACK_POLL_MS, CASHIER_OFFLINE_POLL_MS } from "../lib/polling";
+import type { TopicBus } from "../../../shared/staffRealtime";
 
 const labels: Record<string, string> = { PENDING: "Chờ thu tiền", SUCCEEDED: "Đã thu tiền", FAILED: "Thất bại", CANCELLED: "Đã hủy", EXPIRED: "Hết hạn" };
 
-export function OnsitePaymentsPanel({ onPendingCountChange }: { onPendingCountChange?: (count: number) => void } = {}) {
+export function OnsitePaymentsPanel({ onPendingCountChange, events, live = false }: { onPendingCountChange?: (count: number) => void; events?: TopicBus; live?: boolean } = {}) {
   const [payments, setPayments] = useState<OnsitePayment[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -17,8 +19,9 @@ export function OnsitePaymentsPanel({ onPendingCountChange }: { onPendingCountCh
     apply: result => { setPayments(result); setError(""); },
     error: e => setError(userMessage(e, "Không tải được giao dịch.")),
     settled: () => setLoading(false),
-    interval: 5000,
+    interval: live ? CASHIER_FALLBACK_POLL_MS : CASHIER_OFFLINE_POLL_MS,
   });
+  useEffect(() => events?.on("onsitePayments", () => void refresh()), [events, refresh]);
   const pendingCount = payments.filter(p => p.status === "PENDING" && p.isCurrentAttempt).length;
   useEffect(() => { onPendingCountChange?.(pendingCount); }, [pendingCount, onPendingCountChange]);
   useEffect(() => {

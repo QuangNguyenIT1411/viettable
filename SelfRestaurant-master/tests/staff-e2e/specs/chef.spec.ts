@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { openTableWithOrder } from "../support/customer";
 import { expectCleanScreen } from "../support/screen";
+import { branchChangePushed, countRequests, reloadNow, staffRealtimeJoined } from "../support/realtime";
 import { login } from "../support/staff";
 
 // Kanban columns are <section>s titled "Chờ chế biến" / "Đang chế biến" / "Sẵn sàng"; orders are <article> cards.
@@ -52,10 +53,52 @@ test("lỗi máy chủ không có nội dung: khung lỗi hiện câu tiếng Vi
   await page.goto("/app/chef/Staff/Chef/History");
   await expect(page.getByRole("heading", { name: "Lịch sử đơn hàng bếp" })).toBeVisible();
   await page.route("**/api/gateway/staff/chef/dashboard", (route) => route.fulfill({ status: 500, body: "" }));
+  await reloadNow(page);
   const box = page.locator(".error-box");
   await expect(box).toBeVisible({ timeout: 15_000 });
   await expect(box).toHaveText("Máy chủ đang gặp sự cố (mã 500). Vui lòng thử lại sau ít phút.");
   await page.unroute("**/api/gateway/staff/chef/dashboard");
+  await reloadNow(page);
   await expect(box).toHaveCount(0, { timeout: 25_000 });
+  await expectCleanScreen(page);
+});
+
+test("đơn mới hiện ở bếp ngay nhờ realtime, không chờ hỏi định kỳ 60 giây", async ({ page, baseURL }) => {
+  const joined = staffRealtimeJoined(page);
+  await login(page, "chef");
+  const socket = await joined;
+  const pushed = branchChangePushed(socket);
+  const order = await openTableWithOrder(baseURL!);
+  const createdAt = Date.now();
+  await pushed;
+  await expect(card(page, "Chờ chế biến", order.orderId)).toBeVisible({ timeout: 10_000 });
+  // Far sooner than the 60 s fallback poll: the order came by the realtime push.
+  expect(Date.now() - createdAt).toBeLessThan(10_000);
+  await expectCleanScreen(page);
+});
+
+test("bếp: không thao tác 15 phút thì dừng hỏi và ngắt realtime; bấm thanh để tiếp tục", async ({ page }) => {
+  await page.clock.install();
+  const joined = staffRealtimeJoined(page);
+  await login(page, "chef");
+  const socket = await joined;
+  const bar = page.getByRole("button", { name: "Tạm dừng cập nhật để tiết kiệm. Bấm để tiếp tục" });
+  await page.clock.fastForward("14:00");
+  await expect(bar).toHaveCount(0);
+
+  await page.clock.fastForward("01:01");
+  await expect(bar).toBeVisible();
+  await expect.poll(() => socket.isClosed()).toBe(true);
+  const reads = countRequests(page, "/api/gateway/staff/chef/dashboard");
+  await page.clock.fastForward("05:00");
+  await page.waitForTimeout(1_000);
+  expect(reads(), "no polling while paused").toBe(0);
+
+  const rejoined = staffRealtimeJoined(page);
+  const reload = page.waitForRequest(r => r.url().includes("/api/gateway/staff/chef/dashboard"));
+  await bar.click();
+  await reload;
+  await rejoined;
+  await expect(bar).toHaveCount(0);
   await expectCleanScreen(page);
 });

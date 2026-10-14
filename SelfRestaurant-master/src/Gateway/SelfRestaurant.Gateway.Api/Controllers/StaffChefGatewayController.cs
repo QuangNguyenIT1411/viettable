@@ -219,6 +219,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Ok(categories ?? Array.Empty<CategoryDto>());
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/start")]
     public async Task<ActionResult<object>> Start(int orderId, CancellationToken cancellationToken)
     {
@@ -238,6 +239,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/ready")]
     public async Task<ActionResult<object>> Ready(int orderId, CancellationToken cancellationToken)
     {
@@ -257,6 +259,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/start")]
     public async Task<ActionResult<object>> StartItem(int orderId, int itemId, CancellationToken cancellationToken)
     {
@@ -276,6 +279,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/ready")]
     public async Task<ActionResult<object>> ReadyItem(int orderId, int itemId, CancellationToken cancellationToken)
     {
@@ -304,6 +308,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Error("customer_confirmation_required", "Chỉ khách hàng mới có thể xác nhận đã nhận món.", 409);
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/cancel")]
     public async Task<ActionResult<object>> Cancel(int orderId, [FromBody] ChefCancelOrderApiRequest request, CancellationToken cancellationToken)
     {
@@ -316,6 +321,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Ok(new { success = true, message = "Đã hủy đơn hàng." });
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/cancel")]
     public async Task<ActionResult<object>> CancelItem(int orderId, int itemId, [FromBody] ChefCancelOrderApiRequest request, CancellationToken cancellationToken)
     {
@@ -336,6 +342,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPatch("chef/orders/{orderId:int}/items/{itemId:int}/note")]
     public async Task<ActionResult<object>> UpdateItemNote(int orderId, int itemId, [FromBody] ChefUpdateItemNoteApiRequest request, CancellationToken cancellationToken)
     {
@@ -393,6 +400,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Ok(new ChefDishIngredientsDto(overrides.DishId, dish.Name, orderId, itemId, items));
     }
 
+[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPut("chef/orders/{orderId:int}/items/{itemId:int}/ingredients")]
     public async Task<ActionResult<object>> UpdateOrderItemIngredients(int orderId, int itemId, [FromBody] ChefUpdateOrderItemIngredientOverrideRequest request, CancellationToken cancellationToken)
     {

@@ -6,6 +6,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAppDialog } from "../components/AppDialog";
 import { chefApi } from "../lib/api";
 import { useControlledRead } from "../lib/useControlledRead";
+import { useStaffRealtime } from "../lib/useStaffRealtime";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type {
   ChefDashboardDto,
@@ -13,6 +14,9 @@ import type {
   ChefMenuDishDto,
   ChefOrderDto,
 } from "../lib/types";
+
+const CHEF_FALLBACK_POLL_MS = 60_000;
+const CHEF_OFFLINE_POLL_MS = 10_000;
 
 type Props = {
   onLogout: () => Promise<void>;
@@ -196,12 +200,21 @@ export function DashboardPage({ onLogout }: Props) {
 
   const pageMode = location.pathname.toLowerCase().includes("/staff/chef/history") ? "history" : "index";
 
+  // New orders arrive by realtime; the poll is only a fallback (faster while realtime is down).
+  const [realtimeLive, setRealtimeLive] = useState(false);
   const load = useControlledRead({
     read: signal => chefApi.getDashboard(signal),
     apply: dashboard => { setData(normalizeChefDashboard(dashboard)); setError(null); },
     error: err => setError(userMessage(err, "Không thể tải dữ liệu bếp.")),
     settled: () => setLoading(false),
-    interval: 4000,
+    interval: realtimeLive ? CHEF_FALLBACK_POLL_MS : CHEF_OFFLINE_POLL_MS,
+  });
+  useStaffRealtime(data?.staff.branchId, {
+    changed: topics => { if (topics.includes("orders")) void load(); },
+    live: value => {
+      setRealtimeLive(value);
+      if (!value) void load(); // Reschedule at the faster offline delay.
+    },
   });
 
   useEffect(() => {

@@ -202,6 +202,7 @@ builder.Services.AddHttpClient("Gemini", http =>
 });
 
 builder.Services.AddScoped<CustomerDishRecommendationService>();
+builder.Services.AddScoped<StaffBranchEvents>();
 
 configureServices?.Invoke(builder);
 registrationTiming?.Dispose();
@@ -227,31 +228,7 @@ app.Use(async (context, next) =>
     }
 });
 
-app.Use(async (context, next) =>
-{
-    if (!context.Request.Path.StartsWithSegments("/api/mobile/v1"))
-    {
-        await next();
-        return;
-    }
-
-    try
-    {
-        await next();
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unhandled mobile API error at {Path}", context.Request.Path);
-        if (context.Response.HasStarted) throw;
-        context.Response.Clear();
-        context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-        context.Response.ContentType = "application/json";
-        var correlationId = context.TraceIdentifier;
-        context.Response.Headers["X-Correlation-Id"] = correlationId;
-        await context.Response.WriteAsJsonAsync(MobileApiError.Create(
-            "service_unavailable", "Dịch vụ tạm thời không khả dụng.", correlationId));
-    }
-});
+app.UseApiErrorHandling();
 
 if (!app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Security:EnableHsts"))
 {

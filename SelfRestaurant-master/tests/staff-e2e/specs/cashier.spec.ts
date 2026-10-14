@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { openTableWithOrder, requestOnsiteCashPayment, sessionStatus } from "../support/customer";
 import { expectCleanScreen } from "../support/screen";
+import { branchChangePushed, countRequests, staffRealtimeJoined } from "../support/realtime";
 import { login } from "../support/staff";
 
 const tableCard = (page: Page, n: number) =>
@@ -77,5 +78,42 @@ test("báo cáo doanh thu theo ngày mở và tải được", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Báo cáo doanh thu theo ngày" })).toBeVisible();
   await page.getByRole("button", { name: "Xem báo cáo" }).click();
   await expect(page.getByRole("heading", { name: "Tổng quan" })).toBeVisible();
+  await expectCleanScreen(page);
+});
+
+test("giao dịch tại quầy mới hiện ngay ở thu ngân nhờ realtime, không chờ hỏi định kỳ", async ({ page, baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  const joined = staffRealtimeJoined(page);
+  await login(page, "cashier");
+  const socket = await joined;
+  const pushed = branchChangePushed(socket);
+  const paymentId = await requestOnsiteCashPayment(order);
+  const createdAt = Date.now();
+  await pushed;
+  await expect(page.locator(`tr[data-payment-id="${paymentId}"]`)).toBeVisible({ timeout: 10_000 });
+  expect(Date.now() - createdAt).toBeLessThan(10_000);
+  await expectCleanScreen(page);
+});
+
+test("thu ngân: không thao tác 15 phút thì dừng hỏi và ngắt realtime; bấm thanh để tiếp tục", async ({ page }) => {
+  await page.clock.install();
+  const joined = staffRealtimeJoined(page);
+  await login(page, "cashier");
+  const socket = await joined;
+  const bar = page.getByRole("button", { name: "Tạm dừng cập nhật để tiết kiệm. Bấm để tiếp tục" });
+  await page.clock.fastForward("15:01");
+  await expect(bar).toBeVisible();
+  await expect.poll(() => socket.isClosed()).toBe(true);
+  const reads = countRequests(page, "/onsite-payments", "/service-requests", "/cashier/dashboard");
+  await page.clock.fastForward("05:00");
+  await page.waitForTimeout(1_000);
+  expect(reads(), "no polling while paused").toBe(0);
+
+  const rejoined = staffRealtimeJoined(page);
+  const reload = page.waitForRequest(r => r.url().includes("/onsite-payments"));
+  await bar.click();
+  await reload;
+  await rejoined;
+  await expect(bar).toHaveCount(0);
   await expectCleanScreen(page);
 });

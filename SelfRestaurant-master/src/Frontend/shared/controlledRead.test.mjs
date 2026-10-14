@@ -48,3 +48,12 @@ test("failure backs off without replaying queued reads, success resets delay", a
   const retry = f.loop.refresh(); await flush(); f.calls[1].resolve(2); await retry;
   assert.equal([...f.timers.values()][0].delay, 4000); f.loop.dispose();
 });
+test("interval may change between polls: realtime up = slow fallback, realtime down = faster", async () => {
+  let delay = 10000;
+  const f = fixture(() => delay); const first = f.loop.refresh(); await flush();
+  f.calls[0].resolve(1); await first;
+  assert.equal([...f.timers.values()][0].delay, 10000);
+  delay = 60000; const second = f.loop.refresh(); await flush();
+  f.calls[1].resolve(2); await second;
+  assert.equal([...f.timers.values()][0].delay, 60000); f.loop.dispose();
+});

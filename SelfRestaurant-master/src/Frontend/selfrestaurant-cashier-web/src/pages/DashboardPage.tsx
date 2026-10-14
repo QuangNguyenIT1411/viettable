@@ -2,15 +2,15 @@ import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useMemo, useState } from "react";
-import { HubConnectionBuilder, HttpTransportType } from "@microsoft/signalr";
 import { CashierTopbar } from "../components/CashierTopbar";
 import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { cashierApi } from "../lib/api";
 import { useControlledRead } from "../lib/useControlledRead";
+import { useStaffRealtime } from "../lib/useStaffRealtime";
+import { createTopicBus } from "../../../shared/staffRealtime";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
-import { bindStaffRealtime } from "../lib/staffRealtime";
 import { buildCashierTransferReference, buildCashierVietQrUrl, cashierQrBankInfo } from "../lib/vietQr";
 import type { CashierCheckoutResultDto, CashierDashboardDto, CashierReservationCheckInResultDto, ReservationDto } from "../lib/types";
 
@@ -201,26 +201,17 @@ export function DashboardPage({ onLogout }: Props) {
     void loadReservations(branchId, reservationStatus);
   }, [dashboard?.staff.branchId, reservationStatus]);
 
-  useEffect(() => {
-    const branchId = dashboard?.staff.branchId;
-    if (!branchId) return;
-
-    const connection = new HubConnectionBuilder()
-      .withUrl("/hubs/customer-notifications", {
-        transport: HttpTransportType.WebSockets,
-        skipNegotiation: true,
-      })
-      .withAutomaticReconnect()
-      .build();
-    return bindStaffRealtime(
-      connection,
-      branchId,
-      () => void loadDashboard(true),
-      (err) => {
-        setError(userMessage(err, "Không thể kết nối cập nhật realtime thu ngân."));
-      },
-    );
-  }, [dashboard?.staff.branchId]);
+  // One realtime connection for the whole screen; the panels below listen on the topic bus.
+  const staffEvents = useMemo(() => createTopicBus(), []);
+  const [realtimeLive, setRealtimeLive] = useState(false);
+  useStaffRealtime(dashboard?.staff.branchId, {
+    changed: topics => {
+      if (topics.includes("dashboard") || topics.includes("orders")) void loadDashboard(true);
+      staffEvents.emit(topics);
+    },
+    live: setRealtimeLive,
+    error: err => setError(userMessage(err, "Không thể kết nối cập nhật realtime thu ngân.")),
+  });
 
   useEffect(() => {
     if (!dashboard) return;
@@ -818,8 +809,8 @@ export function DashboardPage({ onLogout }: Props) {
       </section>
 
       <section className="cashier-secondary-grid">
-        <OnsitePaymentsPanel onPendingCountChange={setPendingOnsiteCount} />
-        <ServiceRequestsPanel tables={dashboard.tables} />
+        <OnsitePaymentsPanel onPendingCountChange={setPendingOnsiteCount} events={staffEvents} live={realtimeLive} />
+        <ServiceRequestsPanel tables={dashboard.tables} events={staffEvents} live={realtimeLive} />
       </section>
 
       <section className="panel cashier-panel-card cashier-reservation-panel">
