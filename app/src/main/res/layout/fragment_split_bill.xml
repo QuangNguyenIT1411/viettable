@@ -89,6 +89,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnModeCustom"
+                    android:visibility="gone"
                     style="@style/Widget.VietTable.Button.Outlined"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

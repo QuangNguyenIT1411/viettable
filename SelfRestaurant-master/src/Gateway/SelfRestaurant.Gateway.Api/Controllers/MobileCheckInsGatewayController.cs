@@ -191,7 +191,7 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
         return Ok(session);
     }
 
-[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
+    [StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
     [HttpPost("dining-sessions/{sessionId:int}/cancel-payment-request")]
     public async Task<ActionResult<MobileDiningSessionResponse>> CancelPaymentRequest(int sessionId, CancellationToken ct)
     {

@@ -38,10 +38,12 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
                 android:text="Thông báo &amp; Bảo mật"
+                android:visibility="gone"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="15sp" />
 
             <com.google.android.material.card.MaterialCardView
+                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -160,6 +162,7 @@
 
                     <LinearLayout
                         android:id="@+id/rowLanguage"
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="54dp"
                         android:background="?attr/selectableItemBackground"
@@ -184,6 +187,7 @@
                     </LinearLayout>
 
                     <View
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:background="@color/colorDivider" />

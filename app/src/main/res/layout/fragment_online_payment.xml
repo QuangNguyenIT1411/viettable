@@ -107,6 +107,7 @@
                 <!-- MoMo -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardMomo"
+                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
@@ -163,6 +164,7 @@
                 <!-- ZaloPay -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardZaloPay"
+                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
@@ -219,6 +221,7 @@
                 <!-- International Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/cardVisaMaster"
+                    android:visibility="gone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardBackgroundColor="@color/colorSurface"

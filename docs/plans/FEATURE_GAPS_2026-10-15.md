@@ -91,3 +91,20 @@ Các mục này đã có trong `docs/acceptance/REMAINING_ISSUES.md`. Mình khô
 
 - #5: thống nhất doanh thu Admin với thu ngân.
 - #10, #11, #12: trang admin xem yêu cầu hỗ trợ, đánh giá, đặt bàn hôm nay.
+
+## Cập nhật 15/10/2026 — Đợt 1 (chủ dự án chọn; đã làm, **chưa deploy**)
+
+| # | Trạng thái |
+|---|---|
+| 1 | Xong ở `be88d4e` (chờ deploy) |
+| 2 | **Bản đầy đủ:** app gửi yêu cầu loại `KITCHEN_RUSH` ("Giục bếp") / `KITCHEN_CANCEL` ("Xin hủy món"), ghi chú = tên món; câu trên app: "Đã gửi yêu cầu tới bếp". Bảng bếp nhận qua realtime: thông báo nổi góc phải + dấu trên thẻ đơn cùng bàn; nút "Đã xem" đóng yêu cầu (không hủy món). Khung thu ngân hiện nhãn "Khách giục bếp" / "Khách xin hủy món". Danh sách yêu cầu cho nhân viên không còn hiện yêu cầu của phiên đã kết thúc. Không đổi cấu trúc database |
+| 3, 4 | Ẩn MoMo/ZaloPay/Thẻ. Máy chủ có API mới `GET /api/mobile/v1/payment-options` (từ cấu hình VNPAY của Billing); app chỉ hiện "Thanh toán Online" khi danh sách không rỗng. Production hiện không có biến VNPAY nên chỉ còn thanh toán tại quầy |
+| 6 | Ẩn mục chọn ngôn ngữ |
+| 8 | Xong: chủ dự án đã thử đăng nhập Google trên Samsung ngày 13/10/2026, đạt |
+| 9 | Ẩn cả nhóm "Thông báo & Bảo mật" (công tắc thông báo đẩy, SMS, vân tay) |
+| 13 | Ẩn nút "Theo món (chưa hỗ trợ)" |
+| 14 | Ẩn nút "Sắp xếp theo đánh giá cao" |
+| 16 | Câu điều khoản: bỏ phần tiền cọc, ghi "Đặt bàn hiện không cần đặt cọc" |
+| Thêm | Màn trạng thái yêu cầu trên app hiện nhãn tiếng Việt ("Gọi nhân viên", "Giục bếp"…) thay vì mã như `CALL_STAFF` |
+
+Đợt 2 (chờ chủ dự án duyệt đợt 1): #5 thống nhất doanh thu Admin theo tiền thực thu. #10–#12 để chủ dự án quyết sau đợt 2.

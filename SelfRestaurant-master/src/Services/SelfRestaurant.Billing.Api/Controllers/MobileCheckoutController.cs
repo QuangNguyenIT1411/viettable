@@ -52,6 +52,11 @@ public sealed class MobileCheckoutController : ControllerBase
         return Ok(MapQuote(quote));
     }
 
+    // Online gateways the server can actually use; the app hides online payment when the list is empty.
+    [HttpGet("payment-options")]
+    public ActionResult<object> PaymentOptions() =>
+        Ok(new { onlineMethods = _paymentProvider.IsConfigured ? new[] { "VNPAY" } : Array.Empty<string>() });
+
     [HttpGet("me/vouchers")]
     public async Task<ActionResult<object>> Vouchers([FromQuery] int customerId, CancellationToken ct)
     {

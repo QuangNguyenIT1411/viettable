@@ -17,7 +17,7 @@ public class ServiceRequestTypeTest {
         assertEquals("CALL_STAFF", ServiceRequestType.normalize(null));
     }
     @Test public void contractCodesArePreserved() {
-        for (String code : new String[]{"CALL_STAFF", "WATER", "UTENSILS", "OTHER"})
+        for (String code : new String[]{"CALL_STAFF", "WATER", "UTENSILS", "OTHER", "KITCHEN_RUSH", "KITCHEN_CANCEL"})
             assertEquals(code, ServiceRequestType.normalize(code));
     }
 }

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AlertDialog;
 
 import com.restaurant.viettable.databinding.FragmentOrderItemDetailBinding;
 import com.restaurant.viettable.data.MobileRepository;
+import com.restaurant.viettable.data.ServiceRequestType;
 import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.ServiceRequest;
 import com.restaurant.viettable.network.ApiException;
@@ -65,8 +66,8 @@ public class OrderItemDetailFragment extends BaseFragment {
 
         binding.btnRemindKitchen.setOnClickListener(v -> {
             if (item != null) {
-                MobileRepository.getInstance().createServiceRequest("Giục bếp làm nhanh", "Ưu tiên ra món: " + item.getFoodName(), new MobileRepository.Callback<ServiceRequest>() {
-                    @Override public void onSuccess(ServiceRequest value) { showToast("Đã gửi yêu cầu ưu tiên món tới Bếp trưởng!"); openDiningSession(); }
+                MobileRepository.getInstance().createServiceRequest(ServiceRequestType.KITCHEN_RUSH, item.getFoodName(), new MobileRepository.Callback<ServiceRequest>() {
+                    @Override public void onSuccess(ServiceRequest value) { showToast("Đã gửi yêu cầu tới bếp"); openDiningSession(); }
                     @Override public void onError(ApiException error) { showToast(apiError(error)); }
                 });
             }
@@ -85,12 +86,12 @@ public class OrderItemDetailFragment extends BaseFragment {
                 com.restaurant.viettable.ui.common.DialogHelper.showDestructiveDialog(
                         requireContext(),
                         "Yêu cầu hủy món?",
-                        "Bạn có chắc muốn báo hủy món " + (item != null ? item.getFoodName() : "") + " tới nhà bếp?",
+                        "Gửi yêu cầu hủy món " + (item != null ? item.getFoodName() : "") + " tới bếp? Món chỉ bị hủy khi bếp hoặc thu ngân đồng ý.",
                         "Báo hủy",
                         (dialog, which) -> {
                             if (item != null) {
-                                MobileRepository.getInstance().createServiceRequest("Hủy món", "Khách yêu cầu hủy món: " + item.getFoodName(), new MobileRepository.Callback<ServiceRequest>() {
-                                    @Override public void onSuccess(ServiceRequest value) { showToast("Đã gửi yêu cầu hủy món tới bếp!"); navigateBack(); }
+                                MobileRepository.getInstance().createServiceRequest(ServiceRequestType.KITCHEN_CANCEL, item.getFoodName(), new MobileRepository.Callback<ServiceRequest>() {
+                                    @Override public void onSuccess(ServiceRequest value) { showToast("Đã gửi yêu cầu tới bếp"); navigateBack(); }
                                     @Override public void onError(ApiException error) { showToast(apiError(error)); }
                                 });
                             }

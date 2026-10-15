@@ -64,7 +64,18 @@ public sealed record ChefDashboardDto(
     IReadOnlyList<ChefHistoryDto> History,
     ChefMenuDto Menu,
     IReadOnlyList<AdminIngredientDto> Ingredients,
-    ChefDashboardSummaryDto Summary);
+    ChefDashboardSummaryDto Summary,
+    IReadOnlyList<ChefKitchenRequestDto>? KitchenRequests = null);
+
+/// <summary>A customer's "rush this dish" or "please cancel this dish" request, shown on the kitchen board until a chef marks it seen.</summary>
+public sealed record ChefKitchenRequestDto(
+    int ServiceRequestId,
+    int TableId,
+    string? TableName,
+    string RequestType,
+    string? Note,
+    string Status,
+    DateTime CreatedAtUtc);
 
 public sealed record ChefDashboardSummaryDto(
     int PendingOrders,

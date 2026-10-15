@@ -11,6 +11,7 @@ import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type {
   ChefDashboardDto,
   ChefDishIngredientsDto,
+  ChefKitchenRequestDto,
   ChefMenuDishDto,
   ChefOrderDto,
 } from "../lib/types";
@@ -210,7 +211,7 @@ export function DashboardPage({ onLogout }: Props) {
     interval: realtimeLive ? CHEF_FALLBACK_POLL_MS : CHEF_OFFLINE_POLL_MS,
   });
   useStaffRealtime(data?.staff.branchId, {
-    changed: topics => { if (topics.includes("orders")) void load(); },
+    changed: topics => { if (topics.includes("orders") || topics.includes("serviceRequests")) void load(); },
     live: value => {
       setRealtimeLive(value);
       if (!value) void load(); // Reschedule at the faster offline delay.
@@ -610,10 +611,17 @@ export function DashboardPage({ onLogout }: Props) {
       {message ? <div className="success-box">{message}</div> : null}
       {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
+      <KitchenRequestNotices
+        requests={data.kitchenRequests ?? []}
+        onSeen={(requestId) => act(() => chefApi.markKitchenRequestSeen(requestId))}
+      />
+
       {activeTab === "orders" ? (
         <section className="board-grid chef-kds-board">
           <OrderColumn
             title="Chờ chế biến"
+            kitchenRequests={data.kitchenRequests ?? []}
+            onKitchenRequestSeen={(requestId) => act(() => chefApi.markKitchenRequestSeen(requestId))}
             tone="secondary"
             orders={data.pendingOrders}
             actionLabel="BẮT ĐẦU NẤU"
@@ -628,6 +636,8 @@ export function DashboardPage({ onLogout }: Props) {
           />
           <OrderColumn
             title="Đang chế biến"
+            kitchenRequests={data.kitchenRequests ?? []}
+            onKitchenRequestSeen={(requestId) => act(() => chefApi.markKitchenRequestSeen(requestId))}
             tone="primary"
             orders={data.preparingOrders}
             actionLabel="Hoàn thành"
@@ -642,6 +652,8 @@ export function DashboardPage({ onLogout }: Props) {
           />
           <OrderColumn
             title="Sẵn sàng"
+            kitchenRequests={data.kitchenRequests ?? []}
+            onKitchenRequestSeen={(requestId) => act(() => chefApi.markKitchenRequestSeen(requestId))}
             tone="success"
             orders={data.readyOrders}
             secondaryLabel="HỦY"
@@ -948,6 +960,8 @@ type OrderColumnProps = {
   onStartItem?: (orderId: number, itemId: number) => Promise<void>;
   onReadyItem?: (orderId: number, itemId: number) => Promise<void>;
   onCancelItem?: (orderId: number, itemId: number, dishName: string, statusCode?: string) => Promise<void>;
+  kitchenRequests?: ChefKitchenRequestDto[];
+  onKitchenRequestSeen?: (requestId: number) => Promise<void>;
 };
 
 function OrderColumn({
@@ -962,6 +976,8 @@ function OrderColumn({
   onStartItem,
   onReadyItem,
   onCancelItem,
+  kitchenRequests = [],
+  onKitchenRequestSeen,
 }: OrderColumnProps) {
   function formatOrderTime(value: string) {
     const date = parseApiUtcTimestamp(value);
@@ -1016,6 +1032,22 @@ function OrderColumn({
               </span>
             </div>
             <div className="order-code-label">{orderLabel(order.orderId, order.orderCode)}</div>
+            {kitchenRequests
+              .filter((request) => order.tableId != null && request.tableId === order.tableId)
+              .map((request) => (
+                <div key={request.serviceRequestId} className={`kitchen-request-flag ${kitchenRequestTone(request.requestType)}`}>
+                  <i className={kitchenRequestIcon(request.requestType)} aria-hidden="true" />
+                  <span>
+                    <strong>{kitchenRequestLabel(request.requestType)}</strong>
+                    {cleanText(request.note) ? `: ${cleanText(request.note)}` : null}
+                  </span>
+                  {onKitchenRequestSeen ? (
+                    <button type="button" className="ghost" onClick={() => void onKitchenRequestSeen(request.serviceRequestId)}>
+                      Đã xem
+                    </button>
+                  ) : null}
+                </div>
+              ))}
             <div className="order-items">
               {order.items.map((item) => (
                 <div key={item.itemId} className="order-item">
@@ -1089,5 +1121,41 @@ function OrderColumn({
         ))}
       </div>
     </section>
+  );
+}
+
+function kitchenRequestLabel(type: string) {
+  return type === "KITCHEN_CANCEL" ? "Khách xin hủy món" : "Khách giục món";
+}
+
+function kitchenRequestTone(type: string) {
+  return type === "KITCHEN_CANCEL" ? "kitchen-request-cancel" : "kitchen-request-rush";
+}
+
+function kitchenRequestIcon(type: string) {
+  return type === "KITCHEN_CANCEL" ? "bi bi-x-octagon" : "bi bi-lightning-charge-fill";
+}
+
+/** Floating list of customers' kitchen requests. Nothing is cancelled automatically: the kitchen or cashier decides. */
+function KitchenRequestNotices({ requests, onSeen }: { requests: ChefKitchenRequestDto[]; onSeen: (requestId: number) => Promise<void> }) {
+  if (requests.length === 0) return null;
+  return (
+    <aside className="kitchen-request-stack" aria-label="Yêu cầu từ khách" aria-live="polite">
+      {requests.map((request) => (
+        <div key={request.serviceRequestId} className={`kitchen-request-notice ${kitchenRequestTone(request.requestType)}`} role="status">
+          <i className={kitchenRequestIcon(request.requestType)} aria-hidden="true" />
+          <div className="kitchen-request-body">
+            <strong>
+              {request.tableName || `Bàn ${request.tableId}`} · {kitchenRequestLabel(request.requestType)}
+            </strong>
+            {cleanText(request.note) ? <span>{cleanText(request.note)}</span> : null}
+            <small>{formatViDateTime(parseApiUtcTimestamp(request.createdAtUtc))}</small>
+          </div>
+          <button type="button" className="btn-action-primary" onClick={() => void onSeen(request.serviceRequestId)}>
+            Đã xem
+          </button>
+        </div>
+      ))}
+    </aside>
   );
 }

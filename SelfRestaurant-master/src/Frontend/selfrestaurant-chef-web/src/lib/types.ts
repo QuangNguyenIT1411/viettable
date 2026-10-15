@@ -136,4 +136,16 @@ export type ChefDashboardDto = {
   menu: ChefMenuDto;
   ingredients: AdminIngredientDto[];
   summary: ChefDashboardSummaryDto;
+  /** "Giục bếp" / "Xin hủy món" sent by customers from the app; shown until a chef marks them seen. */
+  kitchenRequests?: ChefKitchenRequestDto[];
+};
+
+export type ChefKitchenRequestDto = {
+  serviceRequestId: number;
+  tableId: number;
+  tableName?: string | null;
+  requestType: "KITCHEN_RUSH" | "KITCHEN_CANCEL" | string;
+  note?: string | null;
+  status: string;
+  createdAtUtc: string;
 };

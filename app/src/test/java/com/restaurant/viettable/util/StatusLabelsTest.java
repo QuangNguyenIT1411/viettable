@@ -94,4 +94,13 @@ public class StatusLabelsTest {
         assertEquals("Thành viên", StatusLabels.memberTier(null));
         assertEquals("PLATINUM", StatusLabels.memberTier("PLATINUM"));
     }
+
+    @Test
+    public void serviceRequestTypesAreShownInVietnamese() {
+        assertEquals("Gọi nhân viên", StatusLabels.serviceRequestType("CALL_STAFF"));
+        assertEquals("Xin nước", StatusLabels.serviceRequestType("water"));
+        assertEquals("Giục bếp", StatusLabels.serviceRequestType("KITCHEN_RUSH"));
+        assertEquals("Xin hủy món", StatusLabels.serviceRequestType("KITCHEN_CANCEL"));
+        assertEquals("", StatusLabels.serviceRequestType(null));
+    }
 }

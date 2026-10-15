@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { openTableWithOrder } from "../support/customer";
+import { openTableWithOrder, sendKitchenRequest } from "../support/customer";
 import { expectCleanScreen } from "../support/screen";
 import { branchChangePushed, countRequests, reloadNow, staffRealtimeJoined } from "../support/realtime";
 import { login } from "../support/staff";
@@ -132,5 +132,38 @@ test("cột Sẵn sàng: hủy món hoặc đơn đã nấu xong phải qua hộ
   await page.getByPlaceholder("Ví dụ: Khách yêu cầu hủy").fill("e2e: hủy đơn đã sẵn sàng");
   await page.getByRole("button", { name: "Xác nhận hủy" }).click();
   await expect(ready).toHaveCount(0);
+  await expectCleanScreen(page);
+});
+
+// Customers' "Giục bếp" / "Báo hủy món" reach the kitchen by realtime; "Đã xem" closes them and never cancels a dish.
+test("yêu cầu giục bếp và xin hủy món từ app hiện ngay trên bảng bếp, bấm Đã xem để tắt", async ({ page, baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  const joined = staffRealtimeJoined(page);
+  await login(page, "chef");
+  const socket = await joined;
+  const pending = card(page, "Chờ chế biến", order.orderId);
+  await expect(pending).toBeVisible({ timeout: 30_000 });
+
+  const pushed = branchChangePushed(socket);
+  await sendKitchenRequest(order, "KITCHEN_RUSH", order.dishName);
+  await pushed;
+  const notices = page.getByRole("complementary", { name: "Yêu cầu từ khách" });
+  const rush = notices.getByRole("status").filter({ hasText: "Khách giục món" });
+  await expect(rush).toBeVisible({ timeout: 10_000 });
+  await expect(rush).toContainText(`Bàn ${order.tableNumber}`);
+  await expect(pending.locator(".kitchen-request-flag")).toContainText(`Khách giục món: ${order.dishName}`);
+
+  await sendKitchenRequest(order, "KITCHEN_CANCEL", order.dishName);
+  const cancel = notices.getByRole("status").filter({ hasText: "Khách xin hủy món" });
+  await expect(cancel).toBeVisible({ timeout: 10_000 });
+
+  await rush.getByRole("button", { name: "Đã xem" }).click();
+  await expect(rush).toHaveCount(0);
+  await pending.getByRole("button", { name: "Đã xem" }).click();
+  await expect(notices).toHaveCount(0);
+  await expect(pending.locator(".kitchen-request-flag")).toHaveCount(0);
+  // The request did not cancel anything: the dish is still waiting to be cooked.
+  await expect(pending).toContainText(order.dishName);
+  await expect(pending).toContainText("Chờ chế biến");
   await expectCleanScreen(page);
 });

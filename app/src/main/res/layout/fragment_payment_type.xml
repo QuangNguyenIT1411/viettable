@@ -87,6 +87,7 @@
             <!-- Option 1: Online Payment Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPayOnline"
+                android:visibility="gone"
                 style="@style/Widget.VietTable.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

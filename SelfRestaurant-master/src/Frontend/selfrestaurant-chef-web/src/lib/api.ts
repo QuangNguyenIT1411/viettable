@@ -150,6 +150,11 @@ export const chefApi = {
       method: "POST",
       body: JSON.stringify({ reason }),
     }),
+  markKitchenRequestSeen: (requestId: number) =>
+    request<{ success: boolean; message: string }>(`/api/gateway/staff/chef/kitchen-requests/${requestId}/seen`, {
+      method: "POST",
+      body: "{}",
+    }),
   cancelItem: (orderId: number, itemId: number, reason: string) =>
     request<{ success: boolean; message: string }>(`/api/gateway/staff/chef/orders/${orderId}/items/${itemId}/cancel`, {
       method: "POST",

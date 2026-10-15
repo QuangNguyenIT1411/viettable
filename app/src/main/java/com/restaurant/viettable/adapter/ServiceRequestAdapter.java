@@ -11,6 +11,7 @@ import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemServiceRequestBinding;
 import com.restaurant.viettable.model.ServiceRequest;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.StatusLabels;
 
 import java.util.List;
 
@@ -54,7 +55,7 @@ public class ServiceRequestAdapter extends RecyclerView.Adapter<ServiceRequestAd
         }
 
         public void bind(ServiceRequest req, Listener listener) {
-            binding.tvRequestType.setText(req.getType());
+            binding.tvRequestType.setText(StatusLabels.serviceRequestType(req.getType()));
             binding.tvRequestNote.setText("Chi tiết: " + req.getNote());
             binding.tvRequestTime.setText("Thời gian gửi: " + DisplayFormatters.dateTime(req.getCreatedAt()));
 

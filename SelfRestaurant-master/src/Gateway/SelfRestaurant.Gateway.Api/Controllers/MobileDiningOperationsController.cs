@@ -26,7 +26,7 @@ public sealed class MobileDiningOperationsController : ControllerBase
         _hub = hub;
     }
 
-[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.Orders)]
     [HttpPost("dining-sessions/{sessionId:int}/orders")]
     public async Task<ActionResult<MobileOrderResponse>> CreateOrder(int sessionId, MobileCreateOrderRequest request, CancellationToken ct)
     {
@@ -85,7 +85,7 @@ public sealed class MobileDiningOperationsController : ControllerBase
         catch (ApiClientException ex) { return Downstream(ex, "tracking_failed"); }
     }
 
-[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.Orders)]
     [HttpPost("orders/{orderId:int}/items/{itemId:int}/confirm-received")]
     public async Task<IActionResult> ConfirmItemReceived(int orderId, int itemId, CancellationToken ct)
     {
@@ -108,7 +108,7 @@ public sealed class MobileDiningOperationsController : ControllerBase
         catch (ApiClientException ex) { return Downstream(ex, "confirm_received_failed"); }
     }
 
-[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.ServiceRequests)]
+    [StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.ServiceRequests)]
     [HttpPost("dining-sessions/{sessionId:int}/service-requests")]
     public async Task<ActionResult<ServiceRequestResponse>> CreateServiceRequest(int sessionId, MobileCreateServiceRequest request, CancellationToken ct)
     {
@@ -138,7 +138,7 @@ public sealed class MobileDiningOperationsController : ControllerBase
         catch (ApiClientException ex) { return Downstream(ex, "get_service_requests_failed"); }
     }
 
-[StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.ServiceRequests)]
+    [StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.ServiceRequests)]
     [HttpPost("service-requests/{requestId:int}/cancel")]
     public async Task<ActionResult<ServiceRequestResponse>> CancelServiceRequest(int requestId, CancellationToken ct)
     {

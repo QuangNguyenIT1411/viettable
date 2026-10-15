@@ -1044,6 +1044,22 @@ public final class MobileRepository {
         return 0;
     }
 
+    /** Online gateways the server can use right now (e.g. "VNPAY"); empty when none is configured. */
+    public void loadOnlinePaymentMethods(Callback<List<String>> callback) {
+        api().get("/api/mobile/v1/payment-options", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONArray rows = body instanceof JSONObject ? ((JSONObject) body).optJSONArray("onlineMethods") : null;
+                List<String> result = new ArrayList<>();
+                if (rows != null) for (int i = 0; i < rows.length(); i++) {
+                    String method = rows.optString(i, "").trim();
+                    if (!method.isEmpty()) result.add(method);
+                }
+                callback.onSuccess(result);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void loadFaqs(Callback<List<FaqItem>> callback) {
         api().get("/api/mobile/v1/support/faqs", false, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {

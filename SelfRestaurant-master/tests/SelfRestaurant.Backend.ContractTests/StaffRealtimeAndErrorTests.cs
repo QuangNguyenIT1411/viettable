@@ -129,11 +129,41 @@ public sealed class StaffRealtimeAndErrorTests
     [InlineData(typeof(StaffCashierGatewayController), nameof(StaffCashierGatewayController.ConfirmMobileOnsitePayment), "onsitePayments")]
     [InlineData(typeof(StaffCashierGatewayController), nameof(StaffCashierGatewayController.CompleteServiceRequest), "serviceRequests")]
     [InlineData(typeof(StaffCashierGatewayController), nameof(StaffCashierGatewayController.Checkout), "orders")]
+    [InlineData(typeof(StaffChefGatewayController), nameof(StaffChefGatewayController.MarkKitchenRequestSeen), "serviceRequests")]
     public void Changes_that_staff_screens_show_publish_a_branch_event(Type controller, string action, string topic)
     {
         var attributes = controller.GetMethods(BindingFlags.Instance | BindingFlags.Public)
             .Where(m => m.Name == action).SelectMany(m => m.GetCustomAttributes<StaffBranchEventAttribute>()).ToArray();
         Assert.Contains(attributes, a => a.Topics.Contains(topic));
+    }
+
+    // ---- Online payment options ------------------------------------------------------------------
+
+    [Fact]
+    public void Without_vnpay_settings_the_app_is_told_there_is_no_online_payment()
+    {
+        var methods = OnlineMethods(new SelfRestaurant.Billing.Api.Infrastructure.Payments.VnPayOptions());
+        Assert.Empty(methods);
+    }
+
+    [Fact]
+    public void Configured_vnpay_is_offered_as_the_only_online_method()
+    {
+        var methods = OnlineMethods(new SelfRestaurant.Billing.Api.Infrastructure.Payments.VnPayOptions
+        {
+            Enabled = true, TmnCode = "TEST", HashSecret = "secret",
+            PaymentUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html", ReturnUrl = "https://example.test/return",
+        });
+        Assert.Equal(new[] { "VNPAY" }, methods);
+    }
+
+    private static string[] OnlineMethods(SelfRestaurant.Billing.Api.Infrastructure.Payments.VnPayOptions options)
+    {
+        var provider = new SelfRestaurant.Billing.Api.Infrastructure.Payments.VnPayPaymentProvider(Microsoft.Extensions.Options.Options.Create(options));
+        var controller = new SelfRestaurant.Billing.Api.Controllers.MobileCheckoutController(null!, null!, null!, provider, null!, null!);
+        var ok = Assert.IsType<OkObjectResult>(controller.PaymentOptions().Result);
+        var json = JsonSerializer.SerializeToElement(ok.Value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        return json.GetProperty("onlineMethods").EnumerateArray().Select(x => x.GetString() ?? "").ToArray();
     }
 
     private static async Task Run(StaffBranchEventAttribute filter, HttpContext http, IActionResult result)

@@ -219,7 +219,41 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Ok(categories ?? Array.Empty<CategoryDto>());
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.ServiceRequests)]
+    [HttpPost("chef/kitchen-requests/{requestId:int}/seen")]
+    public async Task<ActionResult<object>> MarkKitchenRequestSeen(int requestId, CancellationToken cancellationToken)
+    {
+        var staff = RequireChef();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
+        if (requestId <= 0) return Error("invalid_request", "Yêu cầu không hợp lệ.", 400);
+        try
+        {
+            var open = await _ordersClient.GetStaffServiceRequestsAsync(staff.BranchId, cancellationToken);
+            var request = open.FirstOrDefault(x => x.ServiceRequestId == requestId);
+            if (request is null || !IsKitchenRequest(request.RequestType))
+                return Error("kitchen_request_not_found", "Không tìm thấy yêu cầu gửi bếp, có thể đã được xử lý.", 404);
+            var command = new StaffServiceRequestCommand(staff.BranchId, staff.EmployeeId);
+            if (string.Equals(request.Status, "OPEN", StringComparison.OrdinalIgnoreCase))
+                await _ordersClient.AcknowledgeServiceRequestAsync(requestId, command, cancellationToken);
+            var done = await _ordersClient.CompleteServiceRequestAsync(requestId, command, cancellationToken);
+            if (done is not null)
+            {
+                try
+                {
+                    await _mobileNotificationsHub.Clients.Group(MobileNotificationsHub.CustomerGroup(done.CustomerId))
+                        .SendAsync("serviceRequestUpdated", new { done.ServiceRequestId, done.DiningSessionId, done.Status, done.UpdatedAtUtc }, cancellationToken);
+                }
+                catch (Exception ex) { _logger.LogWarning("Kitchen request {RequestId} realtime update deferred ({ErrorType}).", requestId, ex.GetType().Name); }
+            }
+            return Ok(new { success = true, message = "Đã xem yêu cầu." });
+        }
+        catch (ApiClientException ex)
+        {
+            return Error(ex.Code ?? "kitchen_request_failed", ex.Message, ex.StatusCode);
+        }
+    }
+
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/start")]
     public async Task<ActionResult<object>> Start(int orderId, CancellationToken cancellationToken)
     {
@@ -239,7 +273,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/ready")]
     public async Task<ActionResult<object>> Ready(int orderId, CancellationToken cancellationToken)
     {
@@ -259,7 +293,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/start")]
     public async Task<ActionResult<object>> StartItem(int orderId, int itemId, CancellationToken cancellationToken)
     {
@@ -279,7 +313,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/ready")]
     public async Task<ActionResult<object>> ReadyItem(int orderId, int itemId, CancellationToken cancellationToken)
     {
@@ -308,7 +342,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Error("customer_confirmation_required", "Chỉ khách hàng mới có thể xác nhận đã nhận món.", 409);
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/cancel")]
     public async Task<ActionResult<object>> Cancel(int orderId, [FromBody] ChefCancelOrderApiRequest request, CancellationToken cancellationToken)
     {
@@ -321,7 +355,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Ok(new { success = true, message = "Đã hủy đơn hàng." });
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/cancel")]
     public async Task<ActionResult<object>> CancelItem(int orderId, int itemId, [FromBody] ChefCancelOrderApiRequest request, CancellationToken cancellationToken)
     {
@@ -342,7 +376,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         }
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPatch("chef/orders/{orderId:int}/items/{itemId:int}/note")]
     public async Task<ActionResult<object>> UpdateItemNote(int orderId, int itemId, [FromBody] ChefUpdateItemNoteApiRequest request, CancellationToken cancellationToken)
     {
@@ -400,7 +434,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         return Ok(new ChefDishIngredientsDto(overrides.DishId, dish.Name, orderId, itemId, items));
     }
 
-[StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPut("chef/orders/{orderId:int}/items/{itemId:int}/ingredients")]
     public async Task<ActionResult<object>> UpdateOrderItemIngredients(int orderId, int itemId, [FromBody] ChefUpdateOrderItemIngredientOverrideRequest request, CancellationToken cancellationToken)
     {
@@ -699,7 +733,8 @@ public sealed class StaffChefGatewayController : ControllerBase
         var historyTask = _ordersClient.GetChefHistoryAsync(staff.BranchId, historyTake, cancellationToken);
         var menuTask = BuildMenuAsync(staff.BranchId, staff.BranchName, cancellationToken);
         var ingredientsTask = GetAllActiveIngredientsAsync(cancellationToken);
-        await Task.WhenAll(ordersTask, historyTask, menuTask, ingredientsTask);
+        var kitchenRequestsTask = GetKitchenRequestsAsync(staff.BranchId, cancellationToken);
+        await Task.WhenAll(ordersTask, historyTask, menuTask, ingredientsTask, kitchenRequestsTask);
         var orders = await ordersTask;
         var history = await historyTask;
         var menu = await menuTask;
@@ -723,8 +758,33 @@ public sealed class StaffChefGatewayController : ControllerBase
             history,
             menu,
             ingredients,
-            new ChefDashboardSummaryDto(pending.Length, preparing.Length, ready.Length, menu.Dishes.Count, menu.Dishes.Count(x => x.Available)));
+            new ChefDashboardSummaryDto(pending.Length, preparing.Length, ready.Length, menu.Dishes.Count, menu.Dishes.Count(x => x.Available)),
+            (await kitchenRequestsTask).Select(request => request with
+            {
+                TableName = orders.FirstOrDefault(order => order.TableId == request.TableId)?.TableName ?? request.TableName,
+            }).ToArray());
     }
+
+    // Kitchen requests are a side panel: if they cannot be read, the order board must still load.
+    private async Task<IReadOnlyList<ChefKitchenRequestDto>> GetKitchenRequestsAsync(int branchId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var rows = await _ordersClient.GetStaffServiceRequestsAsync(branchId, cancellationToken);
+            return rows.Where(x => IsKitchenRequest(x.RequestType))
+                .Select(x => new ChefKitchenRequestDto(x.ServiceRequestId, x.TableId, null, x.RequestType, x.Note, x.Status, x.CreatedAtUtc))
+                .ToArray();
+        }
+        catch (Exception ex) when (ex is ApiClientException or HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning("Kitchen requests unavailable for branch {BranchId} ({ErrorType}).", branchId, ex.GetType().Name);
+            return Array.Empty<ChefKitchenRequestDto>();
+        }
+    }
+
+    private static bool IsKitchenRequest(string? type) =>
+        string.Equals(type, "KITCHEN_RUSH", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(type, "KITCHEN_CANCEL", StringComparison.OrdinalIgnoreCase);
 
     private async Task<ChefMenuDto> BuildMenuAsync(int branchId, string branchName, CancellationToken cancellationToken)
     {

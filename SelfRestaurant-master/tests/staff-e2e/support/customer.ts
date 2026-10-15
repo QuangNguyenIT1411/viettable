@@ -76,3 +76,11 @@ export async function sessionStatus(f: DiningFixture): Promise<string> {
   }), "session");
   return body.status;
 }
+
+/** The customer taps "Giục bếp" (KITCHEN_RUSH) or "Báo hủy món" (KITCHEN_CANCEL) in the app. */
+export async function sendKitchenRequest(f: DiningFixture, requestType: "KITCHEN_RUSH" | "KITCHEN_CANCEL", note: string): Promise<number> {
+  const body = await json(await f.api.post(`/api/mobile/v1/dining-sessions/${f.sessionId}/service-requests`, {
+    headers: { Authorization: `Bearer ${f.token}`, "Idempotency-Key": key() }, data: { requestType, note },
+  }), "kitchen request");
+  return body.serviceRequestId;
+}

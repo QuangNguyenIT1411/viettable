@@ -16,6 +16,8 @@ public sealed class StaffServiceRequestsController(OrdersDbContext db) : Control
         if (branchId <= 0) return BadRequest();
         var rows = await db.ServiceRequests.AsNoTracking()
             .Where(x => x.BranchId == branchId && (x.Status == "OPEN" || x.Status == "ACKNOWLEDGED"))
+            // Requests of an ended session can no longer change state; do not show them to staff.
+            .Where(x => db.DiningSessions.Any(s => s.DiningSessionId == x.DiningSessionId && s.EndedAtUtc == null))
             .OrderBy(x => x.CreatedAtUtc).ToListAsync(ct);
         return Ok(rows.Select(Map).ToArray());
     }

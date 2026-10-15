@@ -254,3 +254,35 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--space-2
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* Customers' kitchen requests ("Giục bếp" / "Xin hủy món"): floating notices + a flag on the order card. */
+.kitchen-request-stack {
+  position: fixed; right: 16px; bottom: 16px; z-index: 800;
+  display: flex; flex-direction: column; gap: 10px;
+  width: min(380px, calc(100vw - 32px));
+}
+.kitchen-request-notice {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px; border-radius: var(--radius-md);
+  background: var(--kds-card-2); color: var(--kds-text);
+  border: 1px solid var(--kds-border); border-left-width: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+}
+.kitchen-request-notice > i { font-size: 22px; margin-top: 2px; }
+.kitchen-request-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.kitchen-request-body span { color: var(--kds-text); overflow-wrap: anywhere; }
+.kitchen-request-body small { color: var(--kds-muted); }
+.kitchen-request-notice .btn-action-primary { white-space: nowrap; align-self: center; }
+.kitchen-request-rush { border-left-color: var(--kds-warning); }
+.kitchen-request-rush > i { color: var(--kds-warning); }
+.kitchen-request-cancel { border-left-color: var(--kds-danger); }
+.kitchen-request-cancel > i { color: var(--kds-danger); }
+
+.kitchen-request-flag {
+  display: flex; align-items: center; gap: 8px; margin: 6px 0 8px;
+  padding: 8px 10px; border-radius: var(--radius-sm); font-size: var(--text-sm);
+}
+.kitchen-request-flag span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.kitchen-request-flag button { padding: 4px 10px; min-height: 32px; white-space: nowrap; }
+.kitchen-request-flag.kitchen-request-rush { background: var(--kds-warning-soft); color: var(--kds-warning); }
+.kitchen-request-flag.kitchen-request-cancel { background: var(--kds-danger-soft); color: var(--kds-danger); }

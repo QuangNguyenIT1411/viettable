@@ -774,7 +774,7 @@ public sealed class CustomerGatewayController : ControllerBase
         }
     }
 
-[StaffBranchEvent(StaffEventSource.CustomerWeb, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.CustomerWeb, StaffBranchEvents.Orders)]
     [HttpPost("order/submit")]
     public async Task<ActionResult<object>> SubmitOrder([FromBody] SubmitOrderApiRequest? request, CancellationToken cancellationToken)
     {
@@ -794,7 +794,7 @@ public sealed class CustomerGatewayController : ControllerBase
         }
     }
 
-[StaffBranchEvent(StaffEventSource.CustomerWeb, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.CustomerWeb, StaffBranchEvents.Orders)]
     [HttpPost("menu/send-order-to-kitchen")]
     public async Task<ActionResult<object>> SubmitMenuOrder([FromBody] SubmitMenuOrderApiRequest request, CancellationToken cancellationToken)
     {
@@ -841,7 +841,7 @@ public sealed class CustomerGatewayController : ControllerBase
         }
     }
 
-[StaffBranchEvent(StaffEventSource.CustomerWeb, StaffBranchEvents.Orders)]
+    [StaffBranchEvent(StaffEventSource.CustomerWeb, StaffBranchEvents.Orders)]
     [HttpPost("order/confirm-received")]
     public async Task<ActionResult<object>> ConfirmOrderReceived([FromQuery] int orderId, CancellationToken cancellationToken)
     {

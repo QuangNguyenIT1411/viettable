@@ -9,7 +9,7 @@ import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { StaffServiceRequestDto } from "../lib/types";
 import type { CashierDashboardDto } from "../lib/types";
 
-const labels: Record<string, string> = { CALL_STAFF: "Gọi nhân viên", WATER: "Xin nước", UTENSILS: "Xin dụng cụ", OTHER: "Yêu cầu khác" };
+const labels: Record<string, string> = { CALL_STAFF: "Gọi nhân viên", WATER: "Xin nước", UTENSILS: "Xin dụng cụ", OTHER: "Yêu cầu khác", KITCHEN_RUSH: "Khách giục bếp", KITCHEN_CANCEL: "Khách xin hủy món" };
 
 export function ServiceRequestsPanel({ tables = [], events, live = false }: { tables?: CashierDashboardDto["tables"]; events?: TopicBus; live?: boolean }) {
   const [requests, setRequests] = useState<StaffServiceRequestDto[]>([]);

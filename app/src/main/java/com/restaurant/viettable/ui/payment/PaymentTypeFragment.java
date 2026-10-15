@@ -8,7 +8,9 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.databinding.FragmentPaymentTypeBinding;
+import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.model.Invoice;
 import com.restaurant.viettable.model.SplitBill;
 import com.restaurant.viettable.ui.base.BaseFragment;
@@ -70,6 +72,16 @@ public class PaymentTypeFragment extends BaseFragment {
         binding.cardPayOnline.setOnClickListener(v -> {
             navigateTo(splitPart == null ? OnlinePaymentMethodFragment.newInstance(invoice)
                     : OnlinePaymentMethodFragment.newInstanceForSplit(invoice, splitBill, splitPart));
+        });
+
+        // Online payment shows only when the server has a configured gateway; paying at the counter always works.
+        MobileRepository.getInstance().loadOnlinePaymentMethods(new MobileRepository.Callback<java.util.List<String>>() {
+            @Override public void onSuccess(java.util.List<String> methods) {
+                if (binding != null) binding.cardPayOnline.setVisibility(methods.isEmpty() ? View.GONE : View.VISIBLE);
+            }
+            @Override public void onError(ApiException error) {
+                if (binding != null) binding.cardPayOnline.setVisibility(View.GONE);
+            }
         });
 
         binding.cardPayOnsite.setOnClickListener(v -> {

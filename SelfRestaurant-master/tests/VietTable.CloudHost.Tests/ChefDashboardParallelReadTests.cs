@@ -26,9 +26,10 @@ public sealed class ChefDashboardParallelReadTests
         {
             await handler.AllStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
             Assert.False(task.IsCompleted);
-            Assert.Equal(4, handler.Paths.Count);
+            Assert.Equal(5, handler.Paths.Count);
             Assert.Contains(handler.Paths, path => path.StartsWith("/api/branches/7/chef/orders"));
             Assert.Contains(handler.Paths, path => path.StartsWith("/api/branches/7/chef/history"));
+            Assert.Contains(handler.Paths, path => path.StartsWith("/api/internal/service-requests?branchId=7"));
         }
         finally { handler.Release.TrySetResult(); }
         var result = await task;
@@ -37,6 +38,7 @@ public sealed class ChefDashboardParallelReadTests
         Assert.Empty(result.History);
         Assert.Empty(result.Menu.Dishes);
         Assert.Empty(result.Ingredients);
+        Assert.Empty(result.KitchenRequests!);
     }
 
     private sealed class HeldReads : HttpMessageHandler
@@ -47,7 +49,7 @@ public sealed class ChefDashboardParallelReadTests
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Paths.Add(request.RequestUri!.PathAndQuery);
-            if (Paths.Count == 4) AllStarted.TrySetResult();
+            if (Paths.Count == 5) AllStarted.TrySetResult();
             await Release.Task.WaitAsync(ct);
             var body = request.RequestUri.AbsolutePath.Contains("/chef/") ? "[]" : "null";
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };

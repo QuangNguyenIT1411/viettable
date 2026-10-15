@@ -459,7 +459,7 @@ public sealed class DiningSessionsController : ControllerBase
     public async Task<ActionResult<ServiceRequestResponse>> CreateServiceRequest(int sessionId, CreateServiceRequestRequest request, CancellationToken ct)
     {
         var normalizedType = request.RequestType?.Trim().ToUpperInvariant();
-        if (request.CustomerId <= 0 || normalizedType is not ("CALL_STAFF" or "WATER" or "UTENSILS" or "OTHER")
+        if (request.CustomerId <= 0 || normalizedType is not ("CALL_STAFF" or "WATER" or "UTENSILS" or "OTHER" or "KITCHEN_RUSH" or "KITCHEN_CANCEL")
             || string.IsNullOrWhiteSpace(request.IdempotencyKey) || request.IdempotencyKey.Length > 140
             || string.IsNullOrWhiteSpace(request.RequestHash) || request.RequestHash.Length != 64
             || request.Note?.Length > 500)

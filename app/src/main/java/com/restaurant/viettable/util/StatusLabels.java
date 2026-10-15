@@ -11,6 +11,19 @@ public final class StatusLabels {
 
     private StatusLabels() {}
 
+    /** Request type shown to the customer, e.g. "CALL_STAFF" becomes "Gọi nhân viên". */
+    public static String serviceRequestType(String value) {
+        switch (upper(value)) {
+            case "CALL_STAFF": return "Gọi nhân viên";
+            case "WATER": return "Xin nước";
+            case "UTENSILS": return "Xin dụng cụ";
+            case "OTHER": return "Yêu cầu khác";
+            case "KITCHEN_RUSH": return "Giục bếp";
+            case "KITCHEN_CANCEL": return "Xin hủy món";
+            default: return value == null ? "" : value;
+        }
+    }
+
     public static String paymentChannel(String value) {
         switch (upper(value)) {
             case "ONSITE": return "Tại nhà hàng";

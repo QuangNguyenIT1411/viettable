@@ -74,7 +74,7 @@ public class SettingsFragment extends BaseFragment {
             com.restaurant.viettable.ui.common.DialogHelper.showInfoDialog(
                     requireContext(),
                     "Điều khoản dịch vụ",
-                    "VietTable cam kết giữ bàn trong vòng 15 phút sau giờ đặt trước. Tiền cọc sẽ được hoàn lại nếu khách hủy bàn trước 2 tiếng theo quy định của chuỗi nhà hàng.",
+                    "VietTable giữ bàn trong vòng 15 phút sau giờ đặt. Đặt bàn hiện không cần đặt cọc; quý khách có thể hủy hoặc đổi lịch đặt bàn ngay trong ứng dụng.",
                     "Đóng",
                     null
             );
