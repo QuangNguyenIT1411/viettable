@@ -180,7 +180,7 @@ export function DashboardPage({ onLogout }: Props) {
   const [ingredientStockOpen, setIngredientStockOpen] = useState(false);
   const [ingredientStockSearch, setIngredientStockSearch] = useState("");
   const [onlyLowStock, setOnlyLowStock] = useState(false);
-  const [cancelEditor, setCancelEditor] = useState<{ orderId: number; orderCode: string; reason: string } | null>(null);
+  const [cancelEditor, setCancelEditor] = useState<{ orderId: number; orderCode: string; reason: string; ready?: boolean } | null>(null);
 
   const filteredMenuDishes = useMemo(() => {
     if (!data) return [] as ChefMenuDishDto[];
@@ -363,12 +363,17 @@ export function DashboardPage({ onLogout }: Props) {
 
   if (loading) return <div className="screen-message">Đang tải bảng bếp...</div>;
   if (cleanText(error) && !data) return <div className="screen-message error-box">{cleanText(error)}</div>;
-  async function promptCancelItem(orderId: number, itemId: number, dishName: string) {
+  // The kitchen may cancel a dish even when it is READY (the Orders service allows READY -> CANCELLED),
+  // so a ready dish gets an explicit warning before the reason is asked.
+  async function promptCancelItem(orderId: number, itemId: number, dishName: string, statusCode?: string) {
+    const ready = normalizeItemStatusCode(statusCode) === "READY";
     const reason = await prompt({
-      title: "Nhập lý do hủy món",
-      message: `Nhập lý do hủy món "${dishName}":`,
-      confirmLabel: "Đồng ý",
-      cancelLabel: "Hủy",
+      title: ready ? "Hủy món đã nấu xong?" : "Nhập lý do hủy món",
+      message: ready
+        ? `Món "${dishName}" đã nấu xong và đang chờ phục vụ. Nếu vẫn hủy, nhập lý do:`
+        : `Nhập lý do hủy món "${dishName}":`,
+      confirmLabel: "Xác nhận hủy món",
+      cancelLabel: "Không hủy",
       placeholder: "Lý do hủy",
       multiline: true,
       variant: "danger",
@@ -641,7 +646,7 @@ export function DashboardPage({ onLogout }: Props) {
             orders={data.readyOrders}
             secondaryLabel="HỦY"
             secondaryAction={(orderId, orderCode) => {
-              setCancelEditor({ orderId, orderCode, reason: "" });
+              setCancelEditor({ orderId, orderCode, reason: "", ready: true });
             }}
             onOpenIngredients={(dishId, customerNote, orderId, itemId) => void openIngredients(dishId, customerNote, orderId, itemId)}
             onCancelItem={promptCancelItem}
@@ -897,6 +902,11 @@ export function DashboardPage({ onLogout }: Props) {
               <button className="ghost" onClick={() => setCancelEditor(null)}>Đóng</button>
             </div>
             <div className="chef-modal-section">
+              {cancelEditor.ready ? (
+                <div className="alert alert-warning small">
+                  <strong>Đơn này đã nấu xong và đang chờ phục vụ. Hủy đơn sẽ hủy cả các món đã sẵn sàng.</strong>
+                </div>
+              ) : null}
               <div className="alert alert-warning small">
                 Vui lòng nhập lý do hủy đơn. Thông tin này sẽ được lưu lại trong lịch sử đơn hàng.
               </div>
@@ -937,7 +947,7 @@ type OrderColumnProps = {
   onOpenIngredients: (dishId: number, customerNote?: string | null, orderId?: number, itemId?: number) => void;
   onStartItem?: (orderId: number, itemId: number) => Promise<void>;
   onReadyItem?: (orderId: number, itemId: number) => Promise<void>;
-  onCancelItem?: (orderId: number, itemId: number, dishName: string) => Promise<void>;
+  onCancelItem?: (orderId: number, itemId: number, dishName: string, statusCode?: string) => Promise<void>;
 };
 
 function OrderColumn({
@@ -1043,7 +1053,7 @@ function OrderColumn({
                         </button>
                       ) : null}
                       {onCancelItem && ["PENDING", "CONFIRMED", "PREPARING", "READY"].includes(normalizeItemStatusCode(item.statusCode)) ? (
-                        <button className="btn-action-danger" onClick={() => void onCancelItem(order.orderId, item.itemId, item.dishName)}>
+                        <button className="btn-action-danger" onClick={() => void onCancelItem(order.orderId, item.itemId, item.dishName, item.statusCode)}>
                           Hủy món
                         </button>
                       ) : null}

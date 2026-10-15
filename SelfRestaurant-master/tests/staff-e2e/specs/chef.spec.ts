@@ -102,3 +102,35 @@ test("bếp: không thao tác 15 phút thì dừng hỏi và ngắt realtime; b�
   await expect(bar).toHaveCount(0);
   await expectCleanScreen(page);
 });
+
+// Orders service allows cancelling a READY dish/order, so the "Sẵn sàng" column keeps the buttons behind a warning dialog.
+test("cột Sẵn sàng: hủy món hoặc đơn đã nấu xong phải qua hộp xác nhận có cảnh báo", async ({ page, baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  await login(page, "chef");
+  const pending = card(page, "Chờ chế biến", order.orderId);
+  await expect(pending).toBeVisible({ timeout: 30_000 });
+  await pending.getByRole("button", { name: "BẮT ĐẦU NẤU" }).click();
+  await card(page, "Đang chế biến", order.orderId).getByRole("button", { name: "Hoàn thành" }).last().click();
+  const ready = card(page, "Sẵn sàng", order.orderId);
+  await expect(ready).toBeVisible();
+
+  await ready.getByRole("button", { name: "Hủy món" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Hủy món đã nấu xong?");
+  await expect(dialog).toContainText("đã nấu xong và đang chờ phục vụ");
+  await dialog.getByRole("button", { name: "Không hủy" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(ready.getByText("Sẵn sàng", { exact: true }).first()).toBeVisible();
+
+  await ready.getByRole("button", { name: "HỦY", exact: true }).click();
+  await expect(page.getByText("Đơn này đã nấu xong và đang chờ phục vụ")).toBeVisible();
+  await page.getByRole("button", { name: "Đóng" }).last().click();
+  await expect(page.getByText("Đơn này đã nấu xong và đang chờ phục vụ")).toHaveCount(0);
+  await expect(ready).toBeVisible();
+
+  await ready.getByRole("button", { name: "HỦY", exact: true }).click();
+  await page.getByPlaceholder("Ví dụ: Khách yêu cầu hủy").fill("e2e: hủy đơn đã sẵn sàng");
+  await page.getByRole("button", { name: "Xác nhận hủy" }).click();
+  await expect(ready).toHaveCount(0);
+  await expectCleanScreen(page);
+});
