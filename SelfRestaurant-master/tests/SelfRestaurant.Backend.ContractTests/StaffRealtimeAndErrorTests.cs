@@ -161,7 +161,9 @@ public sealed class StaffRealtimeAndErrorTests
     {
         var provider = new SelfRestaurant.Billing.Api.Infrastructure.Payments.VnPayPaymentProvider(Microsoft.Extensions.Options.Options.Create(options));
         var controller = new SelfRestaurant.Billing.Api.Controllers.MobileCheckoutController(null!, null!, null!, provider, null!, null!);
-        var ok = Assert.IsType<OkObjectResult>(controller.PaymentOptions().Result);
+        var transfer = new SelfRestaurant.Billing.Api.Infrastructure.Payments.BankTransferQrService(
+            Microsoft.Extensions.Options.Options.Create(new SelfRestaurant.Billing.Api.Infrastructure.Payments.BankTransferOptions()));
+        var ok = Assert.IsType<OkObjectResult>(controller.PaymentOptions(transfer).Result);
         var json = JsonSerializer.SerializeToElement(ok.Value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         return json.GetProperty("onlineMethods").EnumerateArray().Select(x => x.GetString() ?? "").ToArray();
     }

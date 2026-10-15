@@ -57,6 +57,11 @@ export async function openTableWithOrder(baseURL: string): Promise<DiningFixture
 
 /** Customer asks to pay ONSITE in cash at the counter; returns the pending payment id the cashier must confirm. */
 export async function requestOnsiteCashPayment(f: DiningFixture): Promise<number> {
+  return requestOnsitePayment(f, "CASH", "CASHIER");
+}
+
+/** Customer asks to pay ONSITE in cash or by bank transfer (VietQR); returns the pending payment id. */
+export async function requestOnsitePayment(f: DiningFixture, method: "CASH" | "TRANSFER", location: "TABLE" | "CASHIER" = "TABLE"): Promise<number> {
   const auth = (extra: Record<string, string> = {}) => ({ Authorization: `Bearer ${f.token}`, ...extra });
   const quote = await json(await f.api.post(`/api/mobile/v1/dining-sessions/${f.sessionId}/checkout/quote`, {
     headers: auth({ "Idempotency-Key": key() }), data: {},
@@ -65,7 +70,7 @@ export async function requestOnsiteCashPayment(f: DiningFixture): Promise<number
     headers: auth({ "Idempotency-Key": key() }), data: { checkoutQuoteId: quote.checkoutQuoteId },
   }), "payment-request");
   const payment = await json(await f.api.post(`/api/mobile/v1/checkout/quotes/${quote.checkoutQuoteId}/payments`, {
-    headers: auth({ "Idempotency-Key": key() }), data: { channel: "ONSITE", method: "CASH", location: "CASHIER" },
+    headers: auth({ "Idempotency-Key": key() }), data: { channel: "ONSITE", method, location },
   }), "payment");
   return payment.paymentId;
 }
@@ -83,4 +88,16 @@ export async function sendKitchenRequest(f: DiningFixture, requestType: "KITCHEN
     headers: { Authorization: `Bearer ${f.token}`, "Idempotency-Key": key() }, data: { requestType, note },
   }), "kitchen request");
   return body.serviceRequestId;
+}
+
+/** VietQR the app shows for a pending bank-transfer payment. */
+export async function appTransferQr(f: DiningFixture, paymentId: number) {
+  return json(await f.api.get(`/api/mobile/v1/payments/${paymentId}/transfer-qr`, {
+    headers: { Authorization: `Bearer ${f.token}` },
+  }), "transfer-qr");
+}
+
+/** Payment options the app receives (cash is always possible; transfer when the account is configured). */
+export async function appPaymentOptions(f: DiningFixture) {
+  return json(await f.api.get("/api/mobile/v1/payment-options", { headers: { Authorization: `Bearer ${f.token}` } }), "payment-options");
 }

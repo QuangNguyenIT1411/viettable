@@ -35,8 +35,7 @@ public final class StatusLabels {
     public static String paymentMethod(String value) {
         switch (upper(value)) {
             case "CASH": return "Tiền mặt";
-            case "QR": return "QR chuyển khoản";
-            case "TRANSFER": return "Chuyển khoản";
+            case "QR": case "TRANSFER": return "Chuyển khoản";
             case "CARD": return "Thẻ";
             case "VNPAY": return "VNPAY";
             default: return value == null ? "" : value;

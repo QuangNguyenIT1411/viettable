@@ -63,7 +63,8 @@ public class StatusLabelsTest {
     public void paymentCodesAreShownInVietnamese() {
         assertEquals("Tại nhà hàng", StatusLabels.paymentChannel("ONSITE"));
         assertEquals("Tiền mặt", StatusLabels.paymentMethod("cash"));
-        assertEquals("QR chuyển khoản", StatusLabels.paymentMethod("QR"));
+        assertEquals("Chuyển khoản", StatusLabels.paymentMethod("QR"));
+        assertEquals("Chuyển khoản", StatusLabels.paymentMethod("TRANSFER"));
         assertEquals("Tại quầy thu ngân", StatusLabels.paymentLocation("CASHIER"));
         assertEquals("", StatusLabels.paymentLocation(null));
     }

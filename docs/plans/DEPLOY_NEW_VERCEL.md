@@ -1,5 +1,9 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **15/10/2026 — Biến môi trường cần thêm trước lần deploy kế tiếp (chuyển khoản VietQR):** `Payments__BankTransfer__BankBin`,
+> `Payments__BankTransfer__BankName`, `Payments__BankTransfer__AccountNumber`, `Payments__BankTransfer__AccountName` (chi tiết:
+> `docs/plans/FEATURE_GAPS_2026-10-15.md`). Thiếu biến → chỉ còn Tiền mặt.
+>
 > **Cập nhật 15/10/2026 09:55:** deploy Production `dpl_HvjDLTFJ3WFkWf3b1kbt6JC2Bzcg` (commit `fcd83a9`: realtime cho bếp/thu ngân, tạm dừng khi không thao tác 15 phút, lỗi API dạng JSON tiếng Việt), `[syd1]`, Ready;
 > gọi 1 lần: `/` 200 1,4 s, `/app/cashier/` 200 7,8 s, `/app/chef/` 200 0,8 s, `/app/admin/` 200 1,0 s. Bản quay lui: `dpl_8EwCeSUzAdaAcgyFjbqNbbzU87Mx`. APK không đổi.
 > Lần thử deploy đầu (cùng ngày) dừng ở bước build image trên máy vì Dockerfile gọi đường dẫn test cũ; đã sửa ở `fcd83a9`, không có gì lên Production.

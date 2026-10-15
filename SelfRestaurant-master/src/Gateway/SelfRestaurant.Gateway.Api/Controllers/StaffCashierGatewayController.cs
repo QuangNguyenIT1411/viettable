@@ -454,7 +454,29 @@ public sealed class StaffCashierGatewayController : ControllerBase
             report.BillCount,
             report.TotalRevenue,
             report.Bills.Select(MapBill).ToArray(),
-            BuildAccountDto(staff)));
+            BuildAccountDto(staff),
+            report.CashRevenue,
+            report.TransferRevenue,
+            report.OtherRevenue));
+    }
+
+    // VietQR shown on the counter screen. The cashier confirms receipt by hand after checking the bank app.
+    [HttpGet("transfer-qr")]
+    public async Task<IActionResult> OrderTransferQr([FromQuery] int orderId, [FromQuery] decimal amount, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await _billingClient.CashierOrderTransferQrAsync(staff, orderId, amount, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "transfer_qr_failed", ex.Message, ex.StatusCode); }
+    }
+
+    [HttpGet("onsite-payments/{paymentId:int}/transfer-qr")]
+    public async Task<IActionResult> PaymentTransferQr(int paymentId, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await _billingClient.CashierPaymentTransferQrAsync(staff, paymentId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "transfer_qr_failed", ex.Message, ex.StatusCode); }
     }
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders, StaffBranchEvents.OnsitePayments)]

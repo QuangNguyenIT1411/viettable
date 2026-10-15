@@ -11,7 +11,9 @@ import { useControlledRead } from "../lib/useControlledRead";
 import { useStaffRealtime } from "../lib/useStaffRealtime";
 import { createTopicBus } from "../../../shared/staffRealtime";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
-import { buildCashierTransferReference, buildCashierVietQrUrl, cashierQrBankInfo } from "../lib/vietQr";
+import { TransferQrCard } from "../components/TransferQrCard";
+import type { TransferQrDto } from "../lib/api";
+import { paymentMethodLabel } from "../../../shared/paymentMethod";
 import type { CashierCheckoutResultDto, CashierDashboardDto, CashierReservationCheckInResultDto, ReservationDto } from "../lib/types";
 
 type Props = {
@@ -60,9 +62,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function paymentMethodLabel(value: string) {
-  return value === "QR" ? "Chuyển khoản QR" : value === "CASH" ? "Tiền mặt" : value;
-}
 
 function itemStatusLabel(statusCode?: string | null) {
   const normalized = (statusCode ?? "").toUpperCase();
@@ -132,7 +131,8 @@ export function DashboardPage({ onLogout }: Props) {
   const [discountAmount, setDiscountAmount] = useState("0");
   const [discountPercent, setDiscountPercent] = useState("0");
   const [pointsUsedInput, setPointsUsedInput] = useState("0");
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "QR">("CASH");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "TRANSFER">("CASH");
+  const [transferQr, setTransferQr] = useState<{ qr: TransferQrDto | null; error: string | null; loading: boolean }>({ qr: null, error: null, loading: false });
   const [paymentAmount, setPaymentAmount] = useState("");
   const [checkoutResult, setCheckoutResult] = useState<CheckoutResultView | null>(null);
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
@@ -273,7 +273,7 @@ export function DashboardPage({ onLogout }: Props) {
     const total = Math.max(0, subtotal - safeDiscount - safePoints);
     const rawPayment = Number(paymentAmount || "0");
     const safePayment = Number.isFinite(rawPayment) ? Math.max(0, rawPayment) : 0;
-    const effectivePayment = paymentMethod === "QR" ? total : safePayment;
+    const effectivePayment = paymentMethod === "TRANSFER" ? total : safePayment;
     const changeAmount = Math.max(0, effectivePayment - total);
 
     return {
@@ -304,20 +304,30 @@ export function DashboardPage({ onLogout }: Props) {
   }, [activeOrder?.orderId]);
 
   useEffect(() => {
-    if (paymentMethod === "QR") {
+    if (paymentMethod === "TRANSFER") {
       setPaymentAmount(String(checkoutPreview.total));
     }
   }, [checkoutPreview.total, paymentMethod]);
 
-  const qrTransferReference = useMemo(
-    () => buildCashierTransferReference(activeOrder?.orderCode, activeOrder?.orderId),
-    [activeOrder?.orderCode, activeOrder?.orderId],
-  );
-
-  const qrImageUrl = useMemo(
-    () => buildCashierVietQrUrl({ amount: checkoutPreview.total, orderCode: activeOrder?.orderCode, orderId: activeOrder?.orderId }),
-    [activeOrder?.orderCode, activeOrder?.orderId, checkoutPreview.total],
-  );
+  // VietQR from the server for the order total after discounts; reloaded when the total changes.
+  useEffect(() => {
+    const orderId = activeOrder?.orderId;
+    const amount = checkoutPreview.total;
+    if (paymentMethod !== "TRANSFER" || !orderId || amount <= 0) {
+      setTransferQr({ qr: null, error: null, loading: false });
+      return;
+    }
+    const controller = new AbortController();
+    setTransferQr((current) => ({ ...current, error: null, loading: true }));
+    const timer = window.setTimeout(() => {
+      cashierApi.getOrderTransferQr(orderId, amount, controller.signal)
+        .then((qr) => setTransferQr({ qr, error: null, loading: false }))
+        .catch((err) => {
+          if (!controller.signal.aborted) setTransferQr({ qr: null, error: userMessage(err, "Không tạo được mã QR chuyển khoản."), loading: false });
+        });
+    }, 300);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [activeOrder?.orderId, checkoutPreview.total, paymentMethod]);
 
   async function copyText(value: string, successMessage: string) {
     try {
@@ -724,12 +734,12 @@ export function DashboardPage({ onLogout }: Props) {
                   <strong>Tiền mặt</strong>
                 </button>
                 <button
-                  className={`payment-method-tile ${paymentMethod === "QR" ? "active" : ""}`}
-                  onClick={() => setPaymentMethod("QR")}
+                  className={`payment-method-tile ${paymentMethod === "TRANSFER" ? "active" : ""}`}
+                  onClick={() => setPaymentMethod("TRANSFER")}
                 >
                   <i className="bi bi-qr-code" />
-                  <strong>QR chuyển khoản</strong>
-                  <small>BIDV - in sẵn số tiền</small>
+                  <strong>Chuyển khoản</strong>
+                  <small>Mã VietQR có sẵn số tiền</small>
                 </button>
               </div>
             </div>
@@ -762,47 +772,21 @@ export function DashboardPage({ onLogout }: Props) {
                 ) : null}
               </div>
             ) : (
-              <div className="qr-payment-panel">
-                <div className="qr-payment-preview">
-                  <img src={qrImageUrl} alt="Mã QR chuyển khoản BIDV" />
-                </div>
-                <div className="qr-payment-details">
-                  <div className="qr-payment-summary">
-                    <span>Ngân hàng</span>
-                    <strong>{cashierQrBankInfo.bankName}</strong>
-                  </div>
-                  <div className="qr-payment-summary">
-                    <span>Số tài khoản</span>
-                    <strong>{cashierQrBankInfo.accountNumber}</strong>
-                  </div>
-                  <div className="qr-payment-summary">
-                    <span>Số tiền</span>
-                    <strong>{checkoutPreview.total.toLocaleString("vi-VN")} đ</strong>
-                  </div>
-                  <div className="qr-payment-summary qr-payment-reference">
-                    <span>Nội dung chuyển khoản</span>
-                    <strong>{qrTransferReference}</strong>
-                  </div>
-                  <div className="qr-payment-actions">
-                    <button className="cashier-button-outline" onClick={() => void copyText(cashierQrBankInfo.accountNumber, "Đã sao chép số tài khoản.")}>
-                      <i className="bi bi-copy me-1" />
-                      Sao chép STK
-                    </button>
-                    <button className="cashier-button-outline" onClick={() => void copyText(qrTransferReference, "Đã sao chép nội dung chuyển khoản.")}>
-                      <i className="bi bi-copy me-1" />
-                      Sao chép nội dung
-                    </button>
-                  </div>
-                  <div className="cashier-info-note qr-payment-note">
-                    Quét mã để mở ứng dụng ngân hàng với BIDV, số tài khoản, số tiền và nội dung chuyển khoản đã điền sẵn. Hóa đơn chỉ được ghi nhận sau khi thu ngân xác nhận đã nhận thanh toán.
-                  </div>
-                </div>
-              </div>
+              <TransferQrCard
+                qr={transferQr.qr}
+                loading={transferQr.loading}
+                error={transferQr.error}
+                onCopy={(value, note) => void copyText(value, note)}
+              />
             )}
 
-            <button className="cashier-button-primary wide" disabled={!canCheckout || checkoutSubmitting} onClick={() => void processCheckout()}>
+            <button
+              className="cashier-button-primary wide"
+              disabled={!canCheckout || checkoutSubmitting || (paymentMethod === "TRANSFER" && !transferQr.qr)}
+              onClick={() => void processCheckout()}
+            >
               <i className="bi bi-check-circle me-2" />
-              {checkoutSubmitting ? "Đang xử lý..." : "Xác nhận thanh toán"}
+              {checkoutSubmitting ? "Đang xử lý..." : paymentMethod === "TRANSFER" ? "Đã nhận chuyển khoản" : "Xác nhận thanh toán"}
             </button>
           </div>
         </div>

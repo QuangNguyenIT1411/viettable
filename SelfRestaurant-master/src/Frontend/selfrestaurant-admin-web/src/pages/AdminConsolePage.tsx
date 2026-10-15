@@ -1521,13 +1521,15 @@ export function AdminConsolePage({ onLogout }: Props) {
                 <div className="empty-report"><i className="bi bi-graph-up-arrow" /><p>Chưa có dữ liệu doanh thu.</p></div>
               ) : (
                 <table className="data-table">
-                  <thead><tr><th>Ngày</th><th>Chi nhánh</th><th>Số đơn</th><th>Doanh thu</th></tr></thead>
+                  <thead><tr><th>Ngày</th><th>Chi nhánh</th><th>Số hóa đơn</th><th>Tiền mặt</th><th>Chuyển khoản</th><th>Doanh thu</th></tr></thead>
                   <tbody>
                     {filteredRevenueRows.map((row, index) => (
                       <tr key={`${row.branchId}-${row.date}-${index}`}>
                         <td>{formatViIsoDate(row.date)}</td>
                         <td>{row.branchName}</td>
                         <td>{row.totalOrders}</td>
+                        <td>{(row.cashRevenue ?? 0).toLocaleString("vi-VN")} đ</td>
+                        <td>{(row.transferRevenue ?? 0).toLocaleString("vi-VN")} đ</td>
                         <td>{row.totalRevenue.toLocaleString("vi-VN")} đ</td>
                       </tr>
                     ))}

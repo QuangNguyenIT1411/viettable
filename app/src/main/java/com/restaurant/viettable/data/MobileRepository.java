@@ -1044,6 +1044,27 @@ public final class MobileRepository {
         return 0;
     }
 
+    /** True when the restaurant's receiving bank account is configured, so the app may offer "Chuyển khoản". */
+    public void loadTransferAvailable(Callback<Boolean> callback) {
+        api().get("/api/mobile/v1/payment-options", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                callback.onSuccess(body instanceof JSONObject && ((JSONObject) body).optBoolean("transferAvailable", false));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    /** VietQR of a pending bank-transfer payment: bank, account, amount, transfer content and a PNG (base64). */
+    public void loadTransferQr(int paymentId, Callback<JSONObject> callback) {
+        api().get("/api/mobile/v1/payments/" + paymentId + "/transfer-qr", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                if (body instanceof JSONObject) callback.onSuccess((JSONObject) body);
+                else callback.onError(new ApiException(0, "transfer_qr_invalid", "Không đọc được mã QR chuyển khoản.", null));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     /** Online gateways the server can use right now (e.g. "VNPAY"); empty when none is configured. */
     public void loadOnlinePaymentMethods(Callback<List<String>> callback) {
         api().get("/api/mobile/v1/payment-options", true, new ApiClient.Callback() {

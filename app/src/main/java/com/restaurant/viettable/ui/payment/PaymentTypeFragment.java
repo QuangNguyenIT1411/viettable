@@ -12,10 +12,15 @@ import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.databinding.FragmentPaymentTypeBinding;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.model.Invoice;
+import com.restaurant.viettable.model.PaymentInfo;
+import com.restaurant.viettable.model.SplitPaymentResult;
 import com.restaurant.viettable.model.SplitBill;
 import com.restaurant.viettable.ui.base.BaseFragment;
 
 public class PaymentTypeFragment extends BaseFragment {
+    static final String CASH_LABEL = "Tiền mặt";
+    static final String TRANSFER_LABEL = "Chuyển khoản";
+    static final String TRANSFER_LOCATION_LABEL = "Chuyển khoản qua ngân hàng";
 
     private static final String ARG_INVOICE = "arg_invoice";
     private static final String ARG_SPLIT = "arg_split";
@@ -74,20 +79,56 @@ public class PaymentTypeFragment extends BaseFragment {
                     : OnlinePaymentMethodFragment.newInstanceForSplit(invoice, splitBill, splitPart));
         });
 
-        // Online payment shows only when the server has a configured gateway; paying at the counter always works.
-        MobileRepository.getInstance().loadOnlinePaymentMethods(new MobileRepository.Callback<java.util.List<String>>() {
-            @Override public void onSuccess(java.util.List<String> methods) {
-                if (binding != null) binding.cardPayOnline.setVisibility(methods.isEmpty() ? View.GONE : View.VISIBLE);
+        // Guests pay cash or by bank transfer (VietQR). Online gateways stay hidden; their screens are kept for later.
+        binding.cardPayOnline.setVisibility(View.GONE);
+        MobileRepository.getInstance().loadTransferAvailable(new MobileRepository.Callback<Boolean>() {
+            @Override public void onSuccess(Boolean available) {
+                if (binding != null) binding.cardPayTransfer.setVisibility(Boolean.TRUE.equals(available) ? View.VISIBLE : View.GONE);
             }
             @Override public void onError(ApiException error) {
-                if (binding != null) binding.cardPayOnline.setVisibility(View.GONE);
+                if (binding != null) binding.cardPayTransfer.setVisibility(View.GONE);
             }
         });
 
         binding.cardPayOnsite.setOnClickListener(v -> {
-            navigateTo(splitPart == null ? OnsitePaymentMethodFragment.newInstance(invoice)
-                    : OnsitePaymentMethodFragment.newInstanceForSplit(invoice, splitBill, splitPart));
+            navigateTo(splitPart == null ? PaymentLocationFragment.newInstance(invoice, CASH_LABEL)
+                    : PaymentLocationFragment.newInstanceForSplit(invoice, CASH_LABEL, splitBill, splitPart));
         });
+
+        binding.cardPayTransfer.setOnClickListener(v -> startTransfer());
+    }
+
+    /** Creates the bank-transfer payment, then shows its VietQR while the cashier confirms receipt. */
+    private void startTransfer() {
+        if (invoice == null || binding == null) return;
+        binding.cardPayTransfer.setEnabled(false);
+        Invoice updated = new Invoice(
+                invoice.getId(), invoice.getDiningSessionId(), invoice.getBranchName(), invoice.getTableId(),
+                invoice.getSubtotal(), invoice.getServiceFee(), invoice.getTax(), invoice.getVoucherDiscount(),
+                invoice.getLoyaltyDiscount(), splitPart == null ? invoice.getFinalTotal() : splitPart.getAmount(),
+                TRANSFER_LABEL, TRANSFER_LOCATION_LABEL, "Vừa xong");
+        updated.setTableLabel(invoice.getTableLabel());
+        if (splitPart == null) {
+            MobileRepository.getInstance().createPayment("ONSITE", "TRANSFER", "TABLE", new MobileRepository.Callback<PaymentInfo>() {
+                @Override public void onSuccess(PaymentInfo value) {
+                    if (binding != null) navigateTo(OnsiteStatusFragment.newInstance(updated, TRANSFER_LOCATION_LABEL, value));
+                }
+                @Override public void onError(ApiException error) { transferError(error); }
+            });
+        } else {
+            MobileRepository.getInstance().createSplitPayment(splitBill, splitPart, "ONSITE", "TRANSFER", "TABLE",
+                    new MobileRepository.Callback<SplitPaymentResult>() {
+                        @Override public void onSuccess(SplitPaymentResult value) {
+                            if (binding != null) navigateTo(OnsiteStatusFragment.newInstanceForSplit(updated, TRANSFER_LOCATION_LABEL,
+                                    value.getPayment(), value.getSplitBill().getSplitBillId()));
+                        }
+                        @Override public void onError(ApiException error) { transferError(error); }
+                    });
+        }
+    }
+
+    private void transferError(ApiException error) {
+        if (binding != null) { binding.cardPayTransfer.setEnabled(true); showToast(apiError(error)); }
     }
 
     @Override

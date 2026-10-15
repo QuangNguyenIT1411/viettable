@@ -79,6 +79,8 @@ builder.Services.AddScoped<RequestActorContextAccessor>();
 builder.Services.AddScoped<BusinessAuditLogger>();
 builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("Payments:VnPay"));
 builder.Services.AddSingleton<IPaymentProvider, VnPayPaymentProvider>();
+builder.Services.Configure<BankTransferOptions>(builder.Configuration.GetSection("Payments:BankTransfer"));
+builder.Services.AddSingleton<BankTransferQrService>();
 
 registrationTiming?.Dispose();
 using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "builder-build");

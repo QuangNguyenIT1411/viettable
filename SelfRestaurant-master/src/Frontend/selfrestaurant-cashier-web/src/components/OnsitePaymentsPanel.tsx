@@ -1,6 +1,8 @@
 import { userMessage, cleanText } from "../../../shared/apiError";
 import { useEffect, useRef, useState } from "react";
-import { cashierApi, type OnsitePayment } from "../lib/api";
+import { cashierApi, type OnsitePayment, type TransferQrDto } from "../lib/api";
+import { paymentMethodLabel, paymentMethodGroup } from "../../../shared/paymentMethod";
+import { TransferQrCard } from "./TransferQrCard";
 import { useControlledRead } from "../lib/useControlledRead";
 import { CASHIER_FALLBACK_POLL_MS, CASHIER_OFFLINE_POLL_MS } from "../lib/polling";
 import type { TopicBus } from "../../../shared/staffRealtime";
@@ -12,6 +14,7 @@ export function OnsitePaymentsPanel({ onPendingCountChange, events, live = false
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<number | null>(null);
+  const [qrView, setQrView] = useState<{ payment: OnsitePayment; qr: TransferQrDto | null; error: string | null } | null>(null);
   const submitting = useRef(false);
   const mounted = useRef(false);
   const refresh = useControlledRead({
@@ -28,9 +31,15 @@ export function OnsitePaymentsPanel({ onPendingCountChange, events, live = false
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
+  const showQr = async (payment: OnsitePayment) => {
+    setQrView({ payment, qr: null, error: null });
+    try { const qr = await cashierApi.getPaymentTransferQr(payment.paymentId); setQrView({ payment, qr, error: null }); }
+    catch (e) { setQrView({ payment, qr: null, error: userMessage(e, "Không tạo được mã QR chuyển khoản.") }); }
+  };
   const confirm = async (payment: OnsitePayment) => {
     if (submitting.current) return;
-    if (!window.confirm(`Xác nhận đã thực nhận ${payment.amount.toLocaleString("vi-VN")} đ cho ${payment.paymentCode}${payment.splitPart ? ` — ${payment.splitPart}` : ""}?`)) return;
+    const what = paymentMethodGroup(payment.method) === "TRANSFER" ? "đã nhận chuyển khoản" : "đã thực nhận";
+    if (!window.confirm(`Xác nhận ${what} ${payment.amount.toLocaleString("vi-VN")} đ cho ${payment.paymentCode}${payment.splitPart ? ` — ${payment.splitPart}` : ""}?`)) return;
     submitting.current = true; setBusy(payment.paymentId);
     try {
       await cashierApi.confirmOnsitePayment(payment.paymentId);
@@ -46,10 +55,20 @@ export function OnsitePaymentsPanel({ onPendingCountChange, events, live = false
         <tbody>{payments.map(p => <tr key={p.paymentId} data-payment-id={p.paymentId}>
           <td>{p.paymentCode}<br/><small>{p.diningSessionCode}</small></td>
           <td>Bàn #{p.tableId}{p.splitPart && <><br/>{p.splitPart}</>}</td>
-          <td>{p.amount.toLocaleString("vi-VN")} đ</td><td>{p.method} / {p.location}</td>
+          <td>{p.amount.toLocaleString("vi-VN")} đ</td><td>{paymentMethodLabel(p.method)}{p.location ? <><br/><small>{p.location === "CASHIER" ? "Tại quầy" : p.location === "TABLE" ? "Tại bàn" : p.location}</small></> : null}</td>
           <td>{labels[p.status] ?? p.status}{!p.isCurrentAttempt && " (đã thay thế)"}</td>
-          <td>{p.status === "PENDING" && p.isCurrentAttempt && <button disabled={busy !== null} onClick={() => void confirm(p)}>
-            {busy === p.paymentId ? "Đang xác nhận…" : "Xác nhận đã thu tiền"}</button>}</td>
+          <td>{p.status === "PENDING" && p.isCurrentAttempt && <div className="onsite-actions">
+            {paymentMethodGroup(p.method) === "TRANSFER" && <button className="cashier-button-outline" onClick={() => void showQr(p)}>Hiện mã QR</button>}
+            <button disabled={busy !== null} onClick={() => void confirm(p)}>
+              {busy === p.paymentId ? "Đang xác nhận…" : paymentMethodGroup(p.method) === "TRANSFER" ? "Đã nhận chuyển khoản" : "Xác nhận đã thu tiền"}</button>
+          </div>}</td>
         </tr>)}</tbody></table></div>}
+    {qrView && <div className="modal-backdrop" onClick={() => setQrView(null)}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-label="Mã QR chuyển khoản" onClick={e => e.stopPropagation()}>
+        <div className="cashier-panel-header"><h2>Mã QR chuyển khoản · Bàn #{qrView.payment.tableId}</h2>
+          <button className="cashier-button-outline" onClick={() => setQrView(null)}>Đóng</button></div>
+        <TransferQrCard qr={qrView.qr} loading={!qrView.qr && !qrView.error} error={qrView.error} />
+      </div>
+    </div>}
   </section>;
 }

@@ -52,10 +52,40 @@ public sealed class MobileCheckoutController : ControllerBase
         return Ok(MapQuote(quote));
     }
 
-    // Online gateways the server can actually use; the app hides online payment when the list is empty.
+    // What the app may offer. Online gateways stay listed for later use, but the app currently shows only
+    // cash and bank transfer; transfer needs the receiving account in Payments:BankTransfer.
     [HttpGet("payment-options")]
-    public ActionResult<object> PaymentOptions() =>
-        Ok(new { onlineMethods = _paymentProvider.IsConfigured ? new[] { "VNPAY" } : Array.Empty<string>() });
+    public ActionResult<object> PaymentOptions([FromServices] BankTransferQrService transfer) =>
+        Ok(new
+        {
+            onlineMethods = _paymentProvider.IsConfigured ? new[] { "VNPAY" } : Array.Empty<string>(),
+            transferAvailable = transfer.IsConfigured,
+        });
+
+    // VietQR for an app payment the customer chose to pay by bank transfer; the cashier confirms receipt.
+    [HttpGet("payments/{paymentId:int}/transfer-qr")]
+    public async Task<ActionResult<object>> TransferQr(int paymentId, [FromQuery] int customerId,
+        [FromServices] BankTransferQrService transfer, CancellationToken ct)
+    {
+        if (customerId <= 0) return Validation();
+        var row = await (from p in _db.Payments.AsNoTracking()
+                         join q in _db.CheckoutQuotes.AsNoTracking() on p.CheckoutQuoteId equals q.CheckoutQuoteId
+                         where p.PaymentId == paymentId
+                         select new { Payment = p, q.BranchId }).FirstOrDefaultAsync(ct);
+        if (row is null) return NotFound(new { code = "payment_not_found", message = "Không tìm thấy giao dịch." });
+        if (row.Payment.CustomerId != customerId) return ForbidResult();
+        if (!IsTransferPayment(row.Payment.Channel, row.Payment.Method))
+            return Conflict(new { code = "not_bank_transfer", message = "Giao dịch này không thanh toán bằng chuyển khoản." });
+        if (row.Payment.Status is not ("PENDING" or "CREATED"))
+            return Conflict(new { code = "payment_not_pending", message = "Giao dịch không còn chờ thanh toán." });
+        if (!transfer.IsConfigured)
+            return Conflict(new { code = "bank_transfer_unavailable", message = "Nhà hàng chưa cấu hình tài khoản nhận chuyển khoản." });
+        return Ok(transfer.Create(row.Payment.Amount, BankTransferQrService.PaymentContent(row.BranchId, row.Payment.PaymentId)));
+    }
+
+    internal static bool IsTransferPayment(string? channel, string? method) =>
+        string.Equals(channel, "ONSITE", StringComparison.OrdinalIgnoreCase)
+        && (string.Equals(method, "TRANSFER", StringComparison.OrdinalIgnoreCase) || string.Equals(method, "QR", StringComparison.OrdinalIgnoreCase));
 
     [HttpGet("me/vouchers")]
     public async Task<ActionResult<object>> Vouchers([FromQuery] int customerId, CancellationToken ct)

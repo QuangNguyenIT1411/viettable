@@ -77,7 +77,10 @@ public sealed record CashierReportScreenDto(
     int BillCount,
     decimal TotalRevenue,
     IReadOnlyList<CashierBillHistoryItemDto> Bills,
-    CashierAccountDto Account);
+    CashierAccountDto Account,
+    decimal CashRevenue = 0,
+    decimal TransferRevenue = 0,
+    decimal OtherRevenue = 0);
 
 public sealed record CashierCheckoutResultDto(
     string BillCode,

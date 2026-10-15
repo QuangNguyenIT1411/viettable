@@ -18,6 +18,7 @@ public sealed class AdminGatewayController : ControllerBase
     private readonly OrdersClient _ordersClient;
     private readonly CatalogClient _catalogClient;
     private readonly CustomersClient _customersClient;
+    private readonly BillingClient _billingClient;
     private readonly ILogger<AdminGatewayController> _logger;
     private readonly SelfRestaurant.Gateway.Api.Infrastructure.Media.IDishMediaStorage _mediaStorage;
 
@@ -26,9 +27,11 @@ public sealed class AdminGatewayController : ControllerBase
         OrdersClient ordersClient,
         CatalogClient catalogClient,
         CustomersClient customersClient,
+        BillingClient billingClient,
         ILogger<AdminGatewayController> logger,
         SelfRestaurant.Gateway.Api.Infrastructure.Media.IDishMediaStorage mediaStorage)
     {
+        _billingClient = billingClient;
         _identityClient = identityClient;
         _ordersClient = ordersClient;
         _catalogClient = catalogClient;
@@ -97,8 +100,10 @@ public sealed class AdminGatewayController : ControllerBase
         var rolesTask = _identityClient.GetEmployeeRolesAsync(cancellationToken);
         var categoriesTask = _catalogClient.GetCategoriesAsync(false, cancellationToken);
         var statusesTask = _catalogClient.GetTableStatusesAsync(cancellationToken);
+        // "Doanh thu hôm nay" = money collected today, the same figure the cashier dashboard shows.
+        var collectedTodayTask = _billingClient.GetAdminRevenueReportAsync(1, branchId, cancellationToken);
 
-        await Task.WhenAll(identityStatsTask, orderStatsTask, employeesTask, branchesTask, rolesTask, categoriesTask, statusesTask);
+        await Task.WhenAll(identityStatsTask, orderStatsTask, employeesTask, branchesTask, rolesTask, categoriesTask, statusesTask, collectedTodayTask);
 
         return Ok(new AdminDashboardDto(
             admin,
@@ -108,7 +113,7 @@ public sealed class AdminGatewayController : ControllerBase
                 identityStatsTask.Result?.BranchCount ?? 0,
                 orderStatsTask.Result?.TodayOrders ?? 0,
                 orderStatsTask.Result?.PendingOrders ?? 0,
-                orderStatsTask.Result?.TodayRevenue ?? 0),
+                collectedTodayTask.Result?.TotalRevenue ?? orderStatsTask.Result?.TodayRevenue ?? 0),
             employeesTask.Result?.Items ?? Array.Empty<AdminEmployeeDto>(),
             ScopeBranches(admin, branchesTask.Result),
             rolesTask.Result,
@@ -859,14 +864,25 @@ public sealed class AdminGatewayController : ControllerBase
     {
         var admin = RequireAdmin();
         if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
-        var revenueTask = _ordersClient.GetAdminRevenueReportAsync(revenueDays, admin.BranchId, cancellationToken);
+        // Revenue = money actually collected (Billing), the same figures as the cashier report.
+        var revenueTask = _billingClient.GetAdminRevenueReportAsync(revenueDays, admin.BranchId, cancellationToken);
         var topDishesTask = _ordersClient.GetAdminTopDishesReportAsync(topDishDays, topDishTake, admin.BranchId, cancellationToken);
-        await Task.WhenAll(revenueTask, topDishesTask);
+        var branchesTask = _catalogClient.GetBranchesAsync(cancellationToken);
+        await Task.WhenAll(revenueTask, topDishesTask, branchesTask);
+        var branchNames = (branchesTask.Result ?? Array.Empty<BranchDto>()).ToDictionary(x => x.BranchId, x => x.Name);
+        var revenue = revenueTask.Result is { } report
+            ? report with
+            {
+                RevenueByBranchDate = report.RevenueByBranchDate
+                    .Select(row => row with { BranchName = branchNames.GetValueOrDefault(row.BranchId) ?? $"Chi nhánh {row.BranchId}" })
+                    .ToArray(),
+            }
+            : null;
         return Ok(new AdminReportsScreenDto(
             Math.Clamp(revenueDays, 1, 365),
             Math.Clamp(topDishDays, 1, 365),
             Math.Clamp(topDishTake, 1, 50),
-            revenueTask.Result ?? new AdminRevenueReportDto(0, Array.Empty<AdminRevenueReportRowDto>()),
+            revenue ?? new AdminRevenueReportDto(0, Array.Empty<AdminRevenueReportRowDto>()),
             topDishesTask.Result ?? new AdminTopDishReportDto(Array.Empty<AdminTopDishReportItemDto>())));
     }
 

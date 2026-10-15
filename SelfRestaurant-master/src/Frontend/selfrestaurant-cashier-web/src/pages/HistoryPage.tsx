@@ -1,3 +1,4 @@
+import { paymentMethodLabel } from "../../../shared/paymentMethod";
 import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
@@ -224,11 +225,7 @@ export function HistoryPage() {
                           <td>{bill.tableName}</td>
                           <td className="text-end">{bill.totalAmount.toLocaleString("vi-VN")} {"\u0111"}</td>
                           <td>
-                            {bill.paymentMethod === "CARD"
-                              ? "Th\u1ebb"
-                              : bill.paymentMethod === "CASH"
-                                ? "Ti\u1ec1n m\u1eb7t"
-                                : bill.paymentMethod}
+                            {paymentMethodLabel(bill.paymentMethod)}
                           </td>
                         </tr>
                       ))}

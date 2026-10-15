@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SelfRestaurant.Billing.Api.Infrastructure;
+using SelfRestaurant.Billing.Api.Infrastructure.Payments;
 using SelfRestaurant.Billing.Api.Persistence;
 
 namespace SelfRestaurant.Billing.Api.Controllers;
@@ -190,7 +191,10 @@ public sealed class CashierBillsController : ControllerBase
             BranchId: branchId,
             BillCount: list.Count,
             TotalRevenue: revenue,
-            Bills: list));
+            Bills: list,
+            CashRevenue: list.Where(b => PaymentMethodGroups.Of(b.PaymentMethod) == PaymentMethodGroups.Cash).Sum(b => b.TotalAmount),
+            TransferRevenue: list.Where(b => PaymentMethodGroups.Of(b.PaymentMethod) == PaymentMethodGroups.Transfer).Sum(b => b.TotalAmount),
+            OtherRevenue: list.Where(b => PaymentMethodGroups.Of(b.PaymentMethod) == PaymentMethodGroups.Other).Sum(b => b.TotalAmount)));
     }
 
     [HttpGet("api/branches/{branchId:int}/cashier/report")]
@@ -206,33 +210,75 @@ public sealed class CashierBillsController : ControllerBase
 
         var target = date ?? DateOnly.FromDateTime(DateTime.Today);
         var start = target.ToDateTime(TimeOnly.MinValue, DateTimeKind.Local);
-        var end = start.AddDays(1);
-
-        var bills = await _db.Bills
-            .AsNoTracking()
-            .Where(b =>
-                b.IsActive
-                && b.BillTime >= start
-                && b.BillTime < end)
-            .ToListAsync(cancellationToken);
-
-        var orderLookup = await GetFallbackOrderContextLookupAsync(bills, cancellationToken);
-
-        var filteredBills = bills
-            .Where(b => ResolveBranchId(b, orderLookup) == branchId)
-            .ToList();
-
-        // Every app invoice of the branch counts (cashier-confirmed or online); app sessions never create Bills.
-        var appTotals = await AppInvoicesInRange(null, branchId, start, end)
-            .Select(x => x.Invoice.TotalAmount)
-            .ToListAsync(cancellationToken);
+        var entries = await CollectRevenueAsync(branchId, start, start.AddDays(1), cancellationToken);
 
         return Ok(new BranchCashierReportResponse(
             Date: target,
             BranchId: branchId,
-            BillCount: filteredBills.Count + appTotals.Count,
-            TotalRevenue: filteredBills.Sum(b => b.TotalAmount) + appTotals.Sum()));
+            BillCount: entries.Count,
+            TotalRevenue: entries.Sum(x => x.Amount),
+            CashRevenue: entries.Where(x => x.MethodGroup == PaymentMethodGroups.Cash).Sum(x => x.Amount),
+            TransferRevenue: entries.Where(x => x.MethodGroup == PaymentMethodGroups.Transfer).Sum(x => x.Amount),
+            OtherRevenue: entries.Where(x => x.MethodGroup == PaymentMethodGroups.Other).Sum(x => x.Amount)));
     }
+
+    // Admin revenue = money actually collected, the same numbers as the cashier report: paid legacy Bills
+    // plus issued app Invoices, after discounts, grouped by day and branch and split by payment method.
+    [HttpGet("api/admin/reports/revenue")]
+    public async Task<ActionResult<AdminRevenueResponse>> GetAdminRevenue(
+        [FromQuery] int days = 7,
+        [FromQuery] int? branchId = null,
+        CancellationToken cancellationToken = default)
+    {
+        days = Math.Clamp(days, 1, 365);
+        var start = DateTime.Today.AddDays(-(days - 1));
+        var entries = await CollectRevenueAsync(branchId is > 0 ? branchId : null, start, DateTime.Today.AddDays(1), cancellationToken);
+        var rows = entries
+            .GroupBy(x => new { x.Date, x.BranchId })
+            .OrderByDescending(g => g.Key.Date).ThenBy(g => g.Key.BranchId)
+            .Select(g => new AdminRevenueRow(
+                g.Key.Date, g.Key.BranchId, g.Count(), g.Sum(x => x.Amount),
+                g.Where(x => x.MethodGroup == PaymentMethodGroups.Cash).Sum(x => x.Amount),
+                g.Where(x => x.MethodGroup == PaymentMethodGroups.Transfer).Sum(x => x.Amount),
+                g.Where(x => x.MethodGroup == PaymentMethodGroups.Other).Sum(x => x.Amount)))
+            .ToList();
+        return Ok(new AdminRevenueResponse(
+            rows.Sum(x => x.TotalRevenue), rows.Sum(x => x.CashRevenue), rows.Sum(x => x.TransferRevenue), rows.Sum(x => x.OtherRevenue), rows));
+    }
+
+    /// <summary>
+    /// Every payment received in [startLocal, endLocal): active legacy Bills (branch resolved from the bill or its order)
+    /// and issued app Invoices (branch from the checkout quote). Bills without a known branch are left out, as before.
+    /// </summary>
+    private async Task<List<RevenueEntry>> CollectRevenueAsync(int? branchId, DateTime startLocal, DateTime endLocal, CancellationToken cancellationToken)
+    {
+        var bills = await _db.Bills
+            .AsNoTracking()
+            .Where(b => b.IsActive && b.BillTime >= startLocal && b.BillTime < endLocal)
+            .ToListAsync(cancellationToken);
+        var orderLookup = await GetFallbackOrderContextLookupAsync(bills, cancellationToken);
+        var entries = new List<RevenueEntry>();
+        foreach (var bill in bills)
+        {
+            var billBranch = ResolveBranchId(bill, orderLookup);
+            if (billBranch is null || (branchId is not null && billBranch != branchId)) continue;
+            entries.Add(new RevenueEntry(DateOnly.FromDateTime(bill.BillTime), billBranch.Value, bill.TotalAmount, PaymentMethodGroups.Of(bill.PaymentMethod)));
+        }
+
+        // Every app invoice counts (cashier-confirmed or online); app sessions never create Bills.
+        var invoices = await AppInvoicesInRange(null, branchId, startLocal, endLocal)
+            .Select(x => new { x.Invoice.IssuedAtUtc, x.Quote.BranchId, x.Invoice.TotalAmount, x.Invoice.PaymentId })
+            .ToListAsync(cancellationToken);
+        var paymentIds = invoices.Select(x => x.PaymentId).Distinct().ToArray();
+        var methods = await _db.Payments.AsNoTracking().Where(p => paymentIds.Contains(p.PaymentId))
+            .ToDictionaryAsync(p => p.PaymentId, p => p.Method, cancellationToken);
+        entries.AddRange(invoices.Select(x => new RevenueEntry(
+            DateOnly.FromDateTime(DateTime.SpecifyKind(x.IssuedAtUtc, DateTimeKind.Utc).ToLocalTime()), x.BranchId, x.TotalAmount,
+            PaymentMethodGroups.Of(methods.GetValueOrDefault(x.PaymentId)))));
+        return entries;
+    }
+
+    private sealed record RevenueEntry(DateOnly Date, int BranchId, decimal Amount, string MethodGroup);
 
     // App (mobile checkout) invoices. Bills use server-local BillTime; Invoices use UTC.
     // A cashier owns an invoice when one of its SUCCEEDED payments was confirmed by them.
@@ -380,11 +426,23 @@ public sealed class CashierBillsController : ControllerBase
         int BranchId,
         int BillCount,
         decimal TotalRevenue,
-        IReadOnlyList<BillSummaryResponse> Bills);
+        IReadOnlyList<BillSummaryResponse> Bills,
+        decimal CashRevenue = 0,
+        decimal TransferRevenue = 0,
+        decimal OtherRevenue = 0);
 
     public sealed record BranchCashierReportResponse(
         DateOnly Date,
         int BranchId,
         int BillCount,
-        decimal TotalRevenue);
+        decimal TotalRevenue,
+        decimal CashRevenue = 0,
+        decimal TransferRevenue = 0,
+        decimal OtherRevenue = 0);
+
+    public sealed record AdminRevenueRow(
+        DateOnly Date, int BranchId, int TotalOrders, decimal TotalRevenue, decimal CashRevenue, decimal TransferRevenue, decimal OtherRevenue);
+
+    public sealed record AdminRevenueResponse(
+        decimal TotalRevenue, decimal CashRevenue, decimal TransferRevenue, decimal OtherRevenue, IReadOnlyList<AdminRevenueRow> RevenueByBranchDate);
 }

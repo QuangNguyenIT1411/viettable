@@ -126,13 +126,19 @@ public sealed record AdminOrderStatsResponse(int TodayOrders, int PendingOrders,
 public sealed record AdminRevenueReportRowDto(
     DateOnly Date,
     int BranchId,
-    string BranchName,
+    string? BranchName,
     int TotalOrders,
-    decimal TotalRevenue);
+    decimal TotalRevenue,
+    decimal CashRevenue = 0,
+    decimal TransferRevenue = 0,
+    decimal OtherRevenue = 0);
 
 public sealed record AdminRevenueReportDto(
     decimal TotalRevenue,
-    IReadOnlyList<AdminRevenueReportRowDto> RevenueByBranchDate);
+    IReadOnlyList<AdminRevenueReportRowDto> RevenueByBranchDate,
+    decimal CashRevenue = 0,
+    decimal TransferRevenue = 0,
+    decimal OtherRevenue = 0);
 
 public sealed record AdminTopDishReportItemDto(
     int DishId,
@@ -299,13 +305,19 @@ public sealed record CashierReportDto(
     int BranchId,
     int BillCount,
     decimal TotalRevenue,
-    IReadOnlyList<CashierBillSummaryDto> Bills);
+    IReadOnlyList<CashierBillSummaryDto> Bills,
+    decimal CashRevenue = 0,
+    decimal TransferRevenue = 0,
+    decimal OtherRevenue = 0);
 
 public sealed record BranchCashierReportDto(
     DateOnly Date,
     int BranchId,
     int BillCount,
-    decimal TotalRevenue);
+    decimal TotalRevenue,
+    decimal CashRevenue = 0,
+    decimal TransferRevenue = 0,
+    decimal OtherRevenue = 0);
 
 public sealed record EmployeeRoleDto(int RoleId, string RoleCode, string RoleName);
 

@@ -1,3 +1,4 @@
+import { paymentMethodLabel } from "../../../shared/paymentMethod";
 import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime, formatViIsoDate } from "../../../shared/dateFormat";
 import { orderLabel } from "../../../shared/orderLabel";
@@ -106,6 +107,23 @@ export function ReportPage() {
               <strong>{report.totalRevenue.toLocaleString("vi-VN")} {"\u0111"}</strong>
               <div className="muted">{"Doanh thu c\u1ee7a ng\u00e0y \u0111ang ch\u1ecdn."}</div>
             </article>
+            <article className="cashier-report-metric-card">
+              <span className="eyebrow">Tiền mặt</span>
+              <strong>{(report.cashRevenue ?? 0).toLocaleString("vi-VN")} {"\u0111"}</strong>
+              <div className="muted">Tổng thu bằng tiền mặt.</div>
+            </article>
+            <article className="cashier-report-metric-card">
+              <span className="eyebrow">Chuyển khoản</span>
+              <strong>{(report.transferRevenue ?? 0).toLocaleString("vi-VN")} {"\u0111"}</strong>
+              <div className="muted">Tổng thu bằng chuyển khoản.</div>
+            </article>
+            {(report.otherRevenue ?? 0) > 0 ? (
+              <article className="cashier-report-metric-card">
+                <span className="eyebrow">Khác</span>
+                <strong>{(report.otherRevenue ?? 0).toLocaleString("vi-VN")} {"\u0111"}</strong>
+                <div className="muted">Phương thức cũ (thẻ, cổng online).</div>
+              </article>
+            ) : null}
           </div>
 
           <div className="table-scroll">
@@ -130,11 +148,7 @@ export function ReportPage() {
                       <td>{bill.tableName}</td>
                       <td className="text-end">{bill.totalAmount.toLocaleString("vi-VN")} {"\u0111"}</td>
                       <td>
-                        {bill.paymentMethod === "CARD"
-                          ? "Th\u1ebb"
-                          : bill.paymentMethod === "CASH"
-                            ? "Ti\u1ec1n m\u1eb7t"
-                            : bill.paymentMethod}
+                        {paymentMethodLabel(bill.paymentMethod)}
                       </td>
                     </tr>
                   ))

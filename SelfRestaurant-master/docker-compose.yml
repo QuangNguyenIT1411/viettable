@@ -156,6 +156,11 @@
       Payments__VnPay__HashSecret: ${VNPAY_HASH_SECRET:-}
       Payments__VnPay__PaymentUrl: ${VNPAY_PAYMENT_URL:-https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
       Payments__VnPay__ReturnUrl: ${VNPAY_RETURN_URL:-https://your-public-host.example/api/payments/providers/vnpay/return}
+      # Bank transfer (VietQR). Local defaults are a fake test account; real values come from the environment.
+      Payments__BankTransfer__BankBin: ${BANK_TRANSFER_BANK_BIN:-970418}
+      Payments__BankTransfer__BankName: ${BANK_TRANSFER_BANK_NAME:-BIDV}
+      Payments__BankTransfer__AccountNumber: ${BANK_TRANSFER_ACCOUNT_NUMBER:-0123456789}
+      Payments__BankTransfer__AccountName: ${BANK_TRANSFER_ACCOUNT_NAME:-VIETTABLE TEST}
       Payments__VnPay__ExpiryMinutes: ${VNPAY_EXPIRY_MINUTES:-15}
     ports:
       - "5105:8080"

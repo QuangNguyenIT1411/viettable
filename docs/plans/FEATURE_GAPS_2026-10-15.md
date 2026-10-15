@@ -108,3 +108,25 @@ Các mục này đã có trong `docs/acceptance/REMAINING_ISSUES.md`. Mình khô
 | Thêm | Màn trạng thái yêu cầu trên app hiện nhãn tiếng Việt ("Gọi nhân viên", "Giục bếp"…) thay vì mã như `CALL_STAFF` |
 
 Đợt 2 (chờ chủ dự án duyệt đợt 1): #5 thống nhất doanh thu Admin theo tiền thực thu. #10–#12 để chủ dự án quyết sau đợt 2.
+
+## Cập nhật 15/10/2026 — Thanh toán chỉ còn Tiền mặt + Chuyển khoản, và Đợt 2 (**chưa deploy**)
+
+**Thanh toán (chủ dự án yêu cầu):**
+- App và web thu ngân chỉ hiện 2 cách: **Tiền mặt** và **Chuyển khoản** (VietQR). VNPAY/MoMo/ZaloPay/Thẻ/POS bị ẩn, code giữ nguyên.
+- Mã VietQR do Billing tạo theo chuẩn EMVCo/Napas (chuỗi + CRC16) và vẽ ảnh PNG ngay trong máy chủ (thư viện QRCoder), **không gọi dịch vụ ngoài**. Đã kiểm bằng bộ đọc QR độc lập (zxing-cpp): giải mã ra đúng chuỗi.
+- Nội dung chuyển khoản: thu ngân thanh toán đơn → `VT B<chi nhánh> DON<mã đơn>` (vd `VT B1 DON46`); khách trả qua app → `VT B<chi nhánh> TT<mã giao dịch>`.
+- App: chọn Chuyển khoản → hiện mã QR, ngân hàng, chủ TK, số TK, số tiền, nội dung, nút "Lưu ảnh QR"; chờ thu ngân xác nhận.
+- Web thu ngân: nút Tiền mặt / Chuyển khoản; Chuyển khoản hiện QR trên màn hình quầy, nút "Đã nhận chuyển khoản" (bấm tay sau khi kiểm tra app ngân hàng). Khung giao dịch từ app có nút "Hiện mã QR".
+- Hóa đơn, lịch sử, báo cáo ghi "Tiền mặt" / "Chuyển khoản"; báo cáo ngày tách tổng theo 2 phương thức (và "Khác" cho dữ liệu cũ nếu có).
+- Tài khoản nhận nằm trong biến môi trường, không ghi cứng (đã xóa số tài khoản và dịch vụ `img.vietqr.io` khỏi code web thu ngân):
+
+| Biến (Vercel → project `viettable` → Settings → Environment Variables, môi trường Production) | Giá trị |
+|---|---|
+| `Payments__BankTransfer__BankBin` | `970418` (mã BIN Napas của BIDV) |
+| `Payments__BankTransfer__BankName` | `BIDV` |
+| `Payments__BankTransfer__AccountNumber` | `8830150124` |
+| `Payments__BankTransfer__AccountName` | tên chủ tài khoản, IN HOA KHÔNG DẤU (đúng như ngân hàng hiển thị) |
+
+Thiếu bất kỳ biến nào → app và web thu ngân chỉ cho thanh toán **Tiền mặt** (không lỗi). Thêm/sửa biến xong phải **deploy lại** thì máy chủ mới đọc giá trị mới.
+
+**Đợt 2 — #5 xong:** doanh thu Admin (báo cáo theo ngày và "Doanh thu hôm nay" ở Tổng quan) = tiền **thực thu**, dùng chung một hàm với báo cáo chi nhánh của thu ngân (hóa đơn đã thanh toán, sau giảm giá), có cột Tiền mặt / Chuyển khoản. Playwright so khớp Admin = thu ngân.

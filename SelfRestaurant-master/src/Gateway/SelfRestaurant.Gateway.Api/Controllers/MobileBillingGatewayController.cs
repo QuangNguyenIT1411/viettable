@@ -50,6 +50,9 @@ public sealed class MobileBillingGatewayController : ControllerBase
     public Task<ActionResult<object>> Payment(int quoteId, CreateMobilePaymentBody request, CancellationToken ct) => Command("payment", new { quoteId, request.Channel, request.Method, request.Location },
         (actor, key, hash) => _billing.CreateMobilePaymentAsync(quoteId, new { customerId = actor, request.Channel, request.Method, request.Location, idempotencyKey = $"c{actor}:payment:{key}", requestHash = hash }, ct), true, ct);
 
+    [HttpGet("payments/{paymentId:int}/transfer-qr")]
+    public Task<ActionResult<object>> TransferQr(int paymentId, CancellationToken ct) => Get(() => _billing.GetMobileTransferQrAsync(paymentId, Actor()!.Value, ct));
+
     [HttpGet("payments/{paymentId:int}")]
     public async Task<ActionResult<object>> Payment(int paymentId, CancellationToken ct) { var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401); try { return Ok(await _billing.GetMobilePaymentAsync(paymentId, actor.Value, ct)); } catch (ApiClientException ex) { return Downstream(ex); } }
 

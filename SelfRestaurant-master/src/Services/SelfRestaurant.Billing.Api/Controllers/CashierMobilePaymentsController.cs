@@ -27,6 +27,36 @@ public sealed class CashierMobilePaymentsController(BillingDbContext db, Payment
         return Ok(payments);
     }
 
+    // Same VietQR as in the app, shown on the counter screen for a pending app payment by bank transfer.
+    [HttpGet("{paymentId:int}/transfer-qr")]
+    public async Task<IActionResult> TransferQr(int paymentId, [FromServices] BankTransferQrService transfer, CancellationToken ct)
+    {
+        if (!int.TryParse(User.FindFirst("branchId")?.Value, out var branchId) || branchId <= 0) return Forbid();
+        var row = await (from p in db.Payments.AsNoTracking()
+                         join q in db.CheckoutQuotes.AsNoTracking() on p.CheckoutQuoteId equals q.CheckoutQuoteId
+                         where p.PaymentId == paymentId
+                         select new { Payment = p, q.BranchId }).FirstOrDefaultAsync(ct);
+        if (row is null || row.BranchId != branchId) return NotFound(new { code = "payment_not_found", message = "Không tìm thấy giao dịch của chi nhánh." });
+        if (!MobileCheckoutController.IsTransferPayment(row.Payment.Channel, row.Payment.Method))
+            return Conflict(new { code = "not_bank_transfer", message = "Giao dịch này không thanh toán bằng chuyển khoản." });
+        return TransferQrResult(transfer, row.Payment.Amount, BankTransferQrService.PaymentContent(branchId, paymentId));
+    }
+
+    // VietQR for a cashier checkout of one order. The amount is the total after discounts shown on the counter screen.
+    [HttpGet("~/api/internal/cashier/transfer-qr")]
+    public IActionResult OrderTransferQr([FromQuery] int orderId, [FromQuery] decimal amount, [FromServices] BankTransferQrService transfer)
+    {
+        if (!int.TryParse(User.FindFirst("branchId")?.Value, out var branchId) || branchId <= 0) return Forbid();
+        if (orderId <= 0 || amount <= 0 || amount > 1_000_000_000m)
+            return BadRequest(new { code = "validation_failed", message = "Đơn hàng hoặc số tiền không hợp lệ." });
+        return TransferQrResult(transfer, amount, BankTransferQrService.OrderContent(branchId, orderId));
+    }
+
+    private IActionResult TransferQrResult(BankTransferQrService transfer, decimal amount, string content) =>
+        transfer.IsConfigured
+            ? Ok(transfer.Create(amount, content))
+            : Conflict(new { code = "bank_transfer_unavailable", message = "Chưa cấu hình tài khoản nhận chuyển khoản." });
+
     [HttpPost("{paymentId:int}/confirm")]
     public async Task<IActionResult> Confirm(int paymentId, CancellationToken ct)
     {

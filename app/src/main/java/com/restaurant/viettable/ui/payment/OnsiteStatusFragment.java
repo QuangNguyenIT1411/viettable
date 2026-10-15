@@ -82,6 +82,11 @@ public class OnsiteStatusFragment extends BaseFragment {
             binding.tvOnsiteTotal.setText(invoice.getFormattedFinalTotal());
         }
 
+        if (invoice != null && PaymentTypeFragment.TRANSFER_LABEL.equals(invoice.getPaymentMethod()) && payment != null) {
+            binding.cardTransferQr.setVisibility(View.VISIBLE);
+            loadTransferQr();
+        }
+
         binding.btnRefreshOnsiteStatus.setOnClickListener(v -> schedulePoll(0));
         pollRunnable = this::refreshStatus;
 
@@ -173,6 +178,28 @@ public class OnsiteStatusFragment extends BaseFragment {
         finishing = false;
         binding.tvOnsiteStatusDesc.setText(apiError(error) + " Đang tự thử lại...");
         schedulePoll(5000);
+    }
+
+    private void loadTransferQr() {
+        MobileRepository.getInstance().loadTransferQr(payment.getPaymentId(), new MobileRepository.Callback<org.json.JSONObject>() {
+            @Override public void onSuccess(org.json.JSONObject qr) {
+                if (binding == null) return;
+                android.graphics.Bitmap image = TransferQrImages.decode(qr.optString("qrPngBase64"));
+                if (image == null) { binding.tvTransferState.setText("Không hiển thị được mã QR."); return; }
+                binding.ivTransferQr.setImageBitmap(image);
+                binding.tvTransferState.setVisibility(View.GONE);
+                binding.tvTransferDetails.setText(TransferQrImages.details(qr));
+                binding.tvTransferDetails.setVisibility(View.VISIBLE);
+                binding.btnSaveTransferQr.setEnabled(true);
+                binding.btnSaveTransferQr.setOnClickListener(v -> showToast(
+                        TransferQrImages.saveToGallery(requireContext(), image, "VietTable-QR-" + payment.getPaymentId())
+                                ? "Đã lưu ảnh QR vào thư mục Ảnh (VietTable)."
+                                : "Không lưu được ảnh. Bạn có thể chụp màn hình mã QR."));
+            }
+            @Override public void onError(ApiException error) {
+                if (binding != null) binding.tvTransferState.setText(apiError(error));
+            }
+        });
     }
 
     @Override

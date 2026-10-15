@@ -109,6 +109,9 @@ export type CashierReportScreenDto = {
   totalRevenue: number;
   bills: CashierBillHistoryItemDto[];
   account: CashierAccountDto;
+  cashRevenue?: number;
+  transferRevenue?: number;
+  otherRevenue?: number;
 };
 
 export type CashierCheckoutResultDto = {
