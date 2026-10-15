@@ -1,5 +1,9 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 15/10/2026 18:55:** deploy Production `dpl_9qAcGgnbpqi4yXsK1j2GvMrBqmmL` (commit `911960a`: thanh toán Tiền mặt + Chuyển khoản VietQR, doanh thu Admin = tiền thực thu, đợt 1 dọn tính năng), `[syd1]`, Ready;
+> 4 biến `Payments__BankTransfer__*` đã có trên Vercel (chủ dự án thêm, kiểm tên bằng `vercel env ls`). Gọi 1 lần: `/` 200 2,2 s, `/app/cashier/` 200 7,0 s, `/app/chef/` 200 1,4 s, `/app/admin/` 200 7,2 s.
+> Bản quay lui: `dpl_HvjDLTFJ3WFkWf3b1kbt6JC2Bzcg`. APK `cloudProd` (commit `911960a`) cài đè lên Samsung lúc 18:52:27.
+>
 > **15/10/2026 — Biến môi trường cần thêm trước lần deploy kế tiếp (chuyển khoản VietQR):** `Payments__BankTransfer__BankBin`,
 > `Payments__BankTransfer__BankName`, `Payments__BankTransfer__AccountNumber`, `Payments__BankTransfer__AccountName` (chi tiết:
 > `docs/plans/FEATURE_GAPS_2026-10-15.md`). Thiếu biến → chỉ còn Tiền mặt.
