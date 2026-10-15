@@ -1,5 +1,9 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 15/10/2026 09:55:** deploy Production `dpl_HvjDLTFJ3WFkWf3b1kbt6JC2Bzcg` (commit `fcd83a9`: realtime cho bếp/thu ngân, tạm dừng khi không thao tác 15 phút, lỗi API dạng JSON tiếng Việt), `[syd1]`, Ready;
+> gọi 1 lần: `/` 200 1,4 s, `/app/cashier/` 200 7,8 s, `/app/chef/` 200 0,8 s, `/app/admin/` 200 1,0 s. Bản quay lui: `dpl_8EwCeSUzAdaAcgyFjbqNbbzU87Mx`. APK không đổi.
+> Lần thử deploy đầu (cùng ngày) dừng ở bước build image trên máy vì Dockerfile gọi đường dẫn test cũ; đã sửa ở `fcd83a9`, không có gì lên Production.
+>
 > **Cập nhật 14/10/2026 23:15:** deploy Production `dpl_8EwCeSUzAdaAcgyFjbqNbbzU87Mx` (commit `b63cbcf`: khung lỗi không còn hiện "null", lỗi máy chủ báo tiếng Việt), `[syd1]`, Ready;
 > gọi 1 lần: `/` 200 8,6 s (khởi động lạnh), `/app/cashier/` 200 3,4 s, `/app/chef/` 200 0,9 s, `/app/admin/` 200 0,5 s. Bản quay lui: `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9`. APK không đổi.
 >

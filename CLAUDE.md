@@ -100,7 +100,15 @@ docker exec -w /workspace viettable-cloudhost-sdk dotnet test tests/SelfRestaura
 # Build 4 web frontends (4/4 PASS) — trong từng SelfRestaurant-master/src/Frontend/selfrestaurant-*-web
 npm.cmd ci
 npm.cmd run build
+
+# Build image Production (bắt buộc khi "chạy toàn bộ test"; image này chạy thêm test web dùng chung + test bundle).
+# Chỉ build trên máy, không deploy. Chạy trong thư mục do scripts/prepare-staff-preview.ps1 tạo ra:
+docker build -f Dockerfile -t viettable-prod:prepared .
 ```
+
+**Quy tắc (chủ dự án yêu cầu 15/10/2026):** "chạy toàn bộ test" luôn phải gồm cả **build image Production** từ
+`SelfRestaurant-master/Dockerfile.staff-preview` (qua `scripts/prepare-staff-preview.ps1`). Docker local (`docker compose build gateway`)
+dùng Dockerfile khác nên không thay thế được: ngày 15/10 image Production hỏng vì đường dẫn test cũ dù Playwright vẫn qua 24/24.
 
 ⚠ KHÔNG chạy nếu chưa hỏi: `scripts/*staging*`, `scripts/q1-*`, `scripts/*bootstrap*`, `scripts/provision-*`,
 `tools/SelfRestaurant.CloudPreparation`, `docker compose up` (có db-init), mọi lệnh `vercel`/`npx vercel` ghi lên Cloud.
@@ -131,16 +139,15 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 - Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
 - **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
 
-### 6a. Trạng thái hiện tại (cập nhật 14/10/2026 23:29)
+### 6a. Trạng thái hiện tại (cập nhật 15/10/2026 09:55)
 
 | Mục | Trạng thái |
 |---|---|
-| Deploy đang chạy | Production `dpl_8EwCeSUzAdaAcgyFjbqNbbzU87Mx` (tạo 14/10/2026 23:05), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = `qa/vt-ho-01` `b63cbcf`: giao diện mới web thu ngân/bếp/admin + sửa khung lỗi hiện chữ "null" (lỗi máy chủ giờ báo bằng tiếng Việt; đã thấy câu mới trong file JS của cả 3 web trên Production). Gọi thử sau deploy: `/` 200 8,6 s (khởi động lạnh), `/app/cashier/` 200 3,4 s, `/app/chef/` 200 0,9 s, `/app/admin/` 200 0,5 s |
-| Bản quay lui | `dpl_9BFUyNGZRTiZy6DWhpQbUBHUCAt9` (`https://viettable-2s6s07geb-viet-table.vercel.app`, merge `159141f`, giao diện mới chưa có sửa "null"). Bản cũ hơn (giao diện cũ): `dpl_H7wD8vLiRZdo6JLjzjEGX4EJgs89`. Quay lui (cần chủ dự án duyệt, chạy ngoài thư mục `SelfRestaurant-master`): `npx vercel@62.4.0 rollback https://viettable-2s6s07geb-viet-table.vercel.app --scope viet-table` |
+| Deploy đang chạy | Production `dpl_HvjDLTFJ3WFkWf3b1kbt6JC2Bzcg` (tạo 15/10/2026 09:45), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = `qa/vt-ho-01` `fcd83a9`: giao diện mới + sửa "null" + realtime cho bếp/thu ngân (`9afa0bb`: bếp nhận đơn qua SignalR, hỏi dự phòng 60 s, 10 s khi mất realtime; 2 khung thu ngân và sơ đồ bàn cập nhật theo sự kiện, dự phòng 60 s, 15 s khi mất realtime; không thao tác 15 phút thì dừng hỏi + ngắt realtime, hiện thanh "Tạm dừng cập nhật để tiết kiệm. Bấm để tiếp tục"; máy chủ trả JSON tiếng Việt cho lỗi chưa xử lý ở `/api`). Gọi thử sau deploy: `/` 200 1,4 s, `/app/cashier/` 200 7,8 s, `/app/chef/` 200 0,8 s, `/app/admin/` 200 1,0 s; file JS bếp + thu ngân có thanh tạm dừng. Chưa thử thật trên Production: đơn mới hiện ngay ở bếp (VT-HO-02, sự kiện qua nhiều máy chủ) |
+| Bản quay lui | `dpl_8EwCeSUzAdaAcgyFjbqNbbzU87Mx` (`https://viettable-7o4wc01g7-viet-table.vercel.app`, commit `b63cbcf`, chưa có realtime). Quay lui (cần chủ dự án duyệt, chạy ngoài thư mục `SelfRestaurant-master`): `npx vercel@62.4.0 rollback https://viettable-7o4wc01g7-viet-table.vercel.app --scope viet-table` |
 | APK đã cài | `cloudProd` build 13/10/2026 19:04 từ commit `4a11139`, cài đè lên Samsung SM-A528B lúc 19:10:18 13/10/2026 (không đổi) |
-| Code chờ deploy | `9afa0bb` (trên `qa/vt-ho-01`, **chưa deploy**): web bếp nhận đơn qua realtime SignalR (hỏi dự phòng 60 s, 10 s khi mất realtime); 2 khung thu ngân cập nhật theo sự kiện (dự phòng 60 s, 15 s khi mất realtime); không thao tác 15 phút thì dừng hỏi + ngắt realtime, hiện thanh "Tạm dừng cập nhật để tiết kiệm. Bấm để tiếp tục" (web admin không tự cập nhật nên không có thanh); máy chủ trả JSON tiếng Việt cho mọi lỗi chưa xử lý ở `/api` và ghi log loại lỗi/đường dẫn/giờ. Test: Playwright 24/24, CloudHost 103/103, contract 171 + 1 bỏ qua, test web dùng chung 27/27, Android unit 73/73, build 3 web. Sau khi deploy cần thử thật trên Production rằng đơn mới hiện ngay ở bếp (VT-HO-02: sự kiện qua nhiều máy chủ chưa được chứng minh) |
-| Git | `qa/vt-ho-01` (gồm merge `159141f`, sửa `b63cbcf`, realtime `9afa0bb`) push lên `origin` cùng commit cập nhật mục này. `design/staff-redesign` đã push lên `origin` tới `4d7d645` (sao lưu) |
-| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn), G17 (thanh bên Admin trên điện thoại) — làm sau demo. Chưa rõ request nào trả lỗi rỗng gây "null" (log Vercel Hobby chỉ giữ ~1 giờ, lúc đọc 23:01 đã hết). Việc giảm tải lại 4–5 s đã làm ở `9afa0bb` (chưa deploy). Redesign xong 14/10/2026; từ nay tới 01/11 chỉ sửa lỗi giao diện. Demo 01–10/11 |
+| Git | `qa/vt-ho-01` (gồm merge `159141f`, sửa `b63cbcf`, realtime `9afa0bb`, sửa Dockerfile `fcd83a9`) push lên `origin` cùng commit cập nhật mục này. `design/staff-redesign` đã push lên `origin` tới `4d7d645` (sao lưu) |
+| Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn), G17 (thanh bên Admin trên điện thoại) — làm sau demo. Chưa rõ request nào trả lỗi rỗng gây "null" (log Vercel Hobby chỉ giữ ~1 giờ, lúc đọc 23:01 đã hết). Việc giảm tải lại 4–5 s đã làm ở `9afa0bb` (đã deploy 15/10). Redesign xong 14/10/2026; từ nay tới 01/11 chỉ sửa lỗi giao diện. Demo 01–10/11 |
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 
