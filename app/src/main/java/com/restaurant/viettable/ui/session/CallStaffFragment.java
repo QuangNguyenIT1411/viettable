@@ -17,6 +17,7 @@ import com.restaurant.viettable.model.DiningSession;
 import com.restaurant.viettable.model.ServiceRequest;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.SafeText;
 
 public class CallStaffFragment extends BaseFragment {
 
@@ -42,7 +43,7 @@ public class CallStaffFragment extends BaseFragment {
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
-            binding.tvStaffTableInfo.setText("Yêu cầu từ: " + session.getTableLabel() + " • " + session.getBranchName());
+            binding.tvStaffTableInfo.setText("Yêu cầu từ: " + SafeText.join(" • ", session.getTableLabel(), session.getBranchName()));
         }
 
         binding.btnViewServiceHistory.setOnClickListener(v -> {

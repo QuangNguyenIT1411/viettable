@@ -16,6 +16,7 @@ import com.restaurant.viettable.model.PaymentInfo;
 import com.restaurant.viettable.model.SplitPaymentResult;
 import com.restaurant.viettable.model.SplitBill;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.SafeText;
 
 public class PaymentTypeFragment extends BaseFragment {
     static final String CASH_LABEL = "Tiền mặt";
@@ -71,7 +72,7 @@ public class PaymentTypeFragment extends BaseFragment {
 
         if (invoice != null) {
             binding.tvPaymentTypeGrandTotal.setText(splitPart == null ? invoice.getFormattedFinalTotal() : splitPart.getFormattedAmount());
-            binding.tvPaymentTypeTable.setText(invoice.getTableLabel() + " • " + invoice.getBranchName());
+            binding.tvPaymentTypeTable.setText(SafeText.join(" • ", invoice.getTableLabel(), invoice.getBranchName()));
         }
 
         binding.cardPayOnline.setOnClickListener(v -> {

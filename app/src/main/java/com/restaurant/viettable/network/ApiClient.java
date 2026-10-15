@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import com.restaurant.viettable.util.SafeText;
 
 public final class ApiClient {
     private static final String GOOGLE_AUTH_PATH = "/api/mobile/v1/auth/google";
@@ -88,7 +89,7 @@ public final class ApiClient {
     }
 
     public synchronized boolean saveTokenResponse(JSONObject response) {
-        return tokens.save(response.optString("accessToken"), response.optString("refreshToken"));
+        return tokens.save(SafeText.json(response, "accessToken"), SafeText.json(response, "refreshToken"));
     }
 
     public synchronized void clearSession() {
@@ -201,8 +202,8 @@ public final class ApiClient {
                 + (android.os.SystemClock.elapsedRealtime() - requestStarted) + " chars=" + text.length());
         if (status < 200 || status >= 300) {
             JSONObject error = parsed instanceof JSONObject ? (JSONObject) parsed : new JSONObject();
-            throw new ApiException(status, error.optString("code", "request_failed"),
-                    error.optString("message", "Yêu cầu không thành công."), error.optString("correlationId", null));
+            throw new ApiException(status, SafeText.json(error, "code", "request_failed"),
+                    SafeText.json(error, "message", "Yêu cầu không thành công."), SafeText.json(error, "correlationId", null));
         }
         return parsed;
     }

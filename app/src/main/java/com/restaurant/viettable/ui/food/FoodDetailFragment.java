@@ -18,6 +18,7 @@ import com.restaurant.viettable.util.ImageLoader;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class FoodDetailFragment extends BaseFragment {
 
@@ -97,14 +98,14 @@ public class FoodDetailFragment extends BaseFragment {
             binding.tvFoodPrice.setText(foodItem.getFormattedPrice());
             binding.tvFoodRating.setText(foodItem.getRating() + " (" + foodItem.getSoldCount() + " đã bán)");
             binding.layoutFoodRating.setVisibility(foodItem.getRating() > 0 ? View.VISIBLE : View.GONE);
-            binding.tvDescription.setText(foodItem.getDescription());
-            binding.tvDescription.setVisibility(TextUtils.isEmpty(foodItem.getDescription()) ? View.GONE : View.VISIBLE);
-            binding.tvIngredients.setText("Thành phần: " + foodItem.getIngredients());
-            binding.tvIngredients.setVisibility(TextUtils.isEmpty(foodItem.getIngredients()) ? View.GONE : View.VISIBLE);
-            binding.tvAllergy.setText("Dị ứng: " + foodItem.getAllergyInfo());
-            binding.tvAllergy.setVisibility(TextUtils.isEmpty(foodItem.getAllergyInfo()) ? View.GONE : View.VISIBLE);
-            binding.tvNutrition.setText("Dinh dưỡng: " + foodItem.getNutrition());
-            binding.tvNutrition.setVisibility(TextUtils.isEmpty(foodItem.getNutrition()) ? View.GONE : View.VISIBLE);
+            binding.tvDescription.setText(SafeText.clean(foodItem.getDescription()));
+            binding.tvDescription.setVisibility(SafeText.isBlank(foodItem.getDescription()) ? View.GONE : View.VISIBLE);
+            binding.tvIngredients.setText("Thành phần: " + SafeText.clean(foodItem.getIngredients()));
+            binding.tvIngredients.setVisibility(SafeText.isBlank(foodItem.getIngredients()) ? View.GONE : View.VISIBLE);
+            binding.tvAllergy.setText("Dị ứng: " + SafeText.clean(foodItem.getAllergyInfo()));
+            binding.tvAllergy.setVisibility(SafeText.isBlank(foodItem.getAllergyInfo()) ? View.GONE : View.VISIBLE);
+            binding.tvNutrition.setText("Dinh dưỡng: " + SafeText.clean(foodItem.getNutrition()));
+            binding.tvNutrition.setVisibility(SafeText.isBlank(foodItem.getNutrition()) ? View.GONE : View.VISIBLE);
             boolean hasDietaryInfo = binding.tvIngredients.getVisibility() == View.VISIBLE
                     || binding.tvAllergy.getVisibility() == View.VISIBLE
                     || binding.tvNutrition.getVisibility() == View.VISIBLE;

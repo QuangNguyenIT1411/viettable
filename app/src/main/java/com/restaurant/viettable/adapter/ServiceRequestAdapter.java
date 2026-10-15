@@ -14,6 +14,7 @@ import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.util.StatusLabels;
 
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class ServiceRequestAdapter extends RecyclerView.Adapter<ServiceRequestAdapter.ViewHolder> {
 
@@ -56,7 +57,8 @@ public class ServiceRequestAdapter extends RecyclerView.Adapter<ServiceRequestAd
 
         public void bind(ServiceRequest req, Listener listener) {
             binding.tvRequestType.setText(StatusLabels.serviceRequestType(req.getType()));
-            binding.tvRequestNote.setText("Chi tiết: " + req.getNote());
+            binding.tvRequestNote.setText("Chi tiết: " + SafeText.clean(req.getNote()));
+            binding.tvRequestNote.setVisibility(SafeText.isBlank(req.getNote()) ? android.view.View.GONE : android.view.View.VISIBLE);
             binding.tvRequestTime.setText("Thời gian gửi: " + DisplayFormatters.dateTime(req.getCreatedAt()));
 
             binding.tvRequestStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);

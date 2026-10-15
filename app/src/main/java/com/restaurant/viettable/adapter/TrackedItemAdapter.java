@@ -15,6 +15,7 @@ import com.restaurant.viettable.util.DisplayFormatters;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
+import com.restaurant.viettable.util.SafeText;
 
 public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.ViewHolder> {
 
@@ -74,7 +75,7 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
 
         public void bind(OrderItem item, OnTrackedItemClickListener listener, OnReceiveClickListener receiveListener, boolean pending) {
             binding.tvTrackedFoodName.setText(item.getFoodName());
-            binding.tvTrackedFoodOptions.setText("SL: " + item.getQuantity() + " • " + item.getOptionsSummary());
+            binding.tvTrackedFoodOptions.setText(SafeText.join(" • ", "SL: " + item.getQuantity(), item.getOptionsSummary()));
             binding.tvTrackedFoodTime.setText("Gọi lúc " + DisplayFormatters.dateTime(item.getCreatedAt()));
 
             switch (item.getStatus()) {

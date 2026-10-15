@@ -20,6 +20,7 @@ import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class PaymentCheckoutFragment extends BaseFragment {
 
@@ -46,7 +47,7 @@ public class PaymentCheckoutFragment extends BaseFragment {
         DiningSession session = appStateManager.getActiveDiningSession();
         List<String> unfinishedNames = new ArrayList<>();
         if (session != null) {
-            binding.tvCheckoutTable.setText(session.getTableLabel() + " - " + session.getBranchName());
+            binding.tvCheckoutTable.setText(SafeText.join(" - ", session.getTableLabel(), session.getBranchName()));
             binding.tvCheckoutSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + DisplayFormatters.dateTime(session.getStartTime()));
             binding.tvCheckoutOrderCount.setText(session.getOrders().size() + " đợt");
 

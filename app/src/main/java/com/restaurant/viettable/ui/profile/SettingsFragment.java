@@ -14,6 +14,7 @@ import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.network.ApiException;
 import org.json.JSONObject;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.SafeText;
 
 public class SettingsFragment extends BaseFragment {
 
@@ -96,7 +97,7 @@ public class SettingsFragment extends BaseFragment {
                 binding.switchPushNotification.setChecked(value.optBoolean("pushNotificationsEnabled"));
                 binding.switchSms.setChecked(value.optBoolean("smsReservationRemindersEnabled"));
                 binding.switchBiometric.setChecked(value.optBoolean("biometricLoginEnabled"));
-                languageCode = value.optString("languageCode", "vi"); loading = false;
+                languageCode = SafeText.json(value, "languageCode", "vi"); loading = false;
             }
             @Override public void onError(ApiException error) { loading = false; if (binding != null) showToast(apiError(error)); }
         });

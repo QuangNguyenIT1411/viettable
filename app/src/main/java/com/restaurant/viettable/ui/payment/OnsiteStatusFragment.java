@@ -18,6 +18,7 @@ import com.restaurant.viettable.model.SplitBill;
 import com.restaurant.viettable.model.PaymentInfo;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.SafeText;
 
 public class OnsiteStatusFragment extends BaseFragment {
 
@@ -184,7 +185,7 @@ public class OnsiteStatusFragment extends BaseFragment {
         MobileRepository.getInstance().loadTransferQr(payment.getPaymentId(), new MobileRepository.Callback<org.json.JSONObject>() {
             @Override public void onSuccess(org.json.JSONObject qr) {
                 if (binding == null) return;
-                android.graphics.Bitmap image = TransferQrImages.decode(qr.optString("qrPngBase64"));
+                android.graphics.Bitmap image = TransferQrImages.decode(SafeText.json(qr, "qrPngBase64"));
                 if (image == null) { binding.tvTransferState.setText("Không hiển thị được mã QR."); return; }
                 binding.ivTransferQr.setImageBitmap(image);
                 binding.tvTransferState.setVisibility(View.GONE);

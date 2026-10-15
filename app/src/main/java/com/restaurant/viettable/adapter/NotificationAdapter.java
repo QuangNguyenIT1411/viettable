@@ -13,6 +13,7 @@ import com.restaurant.viettable.model.NotificationItem;
 import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapter.NotificationViewHolder> {
 
@@ -57,7 +58,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
 
         public void bind(NotificationItem item, OnNotificationClickListener listener) {
             binding.tvNotifTitle.setText(item.getTitle());
-            binding.tvNotifMessage.setText(item.getMessage());
+            binding.tvNotifMessage.setText(SafeText.clean(item.getMessage()));
             binding.tvNotifTimestamp.setText(DisplayFormatters.dateTime(item.getTimestamp()));
             binding.viewUnreadDot.setVisibility(item.isRead() ? View.GONE : View.VISIBLE);
 

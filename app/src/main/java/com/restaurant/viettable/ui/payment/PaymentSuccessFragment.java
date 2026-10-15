@@ -16,6 +16,7 @@ import com.restaurant.viettable.model.DiningSession;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.profile.ReviewFragment;
+import com.restaurant.viettable.util.SafeText;
 
 public class PaymentSuccessFragment extends BaseFragment {
 
@@ -61,7 +62,7 @@ public class PaymentSuccessFragment extends BaseFragment {
             binding.tvSuccessAmount.setText(invoice.getFormattedFinalTotal());
             binding.tvSuccessInvoiceId.setText(com.restaurant.viettable.util.StatusLabels.invoiceTitle(invoice.getBackendInvoiceId(), invoice.getId()));
             binding.tvSuccessMethod.setText(invoice.getPaymentMethod());
-            binding.tvSuccessBranch.setText(invoice.getTableLabel() + " • " + invoice.getBranchName());
+            binding.tvSuccessBranch.setText(SafeText.join(" • ", invoice.getTableLabel(), invoice.getBranchName()));
         }
 
         binding.btnReviewMeal.setOnClickListener(v -> {

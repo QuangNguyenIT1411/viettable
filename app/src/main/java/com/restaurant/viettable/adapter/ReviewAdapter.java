@@ -11,6 +11,7 @@ import com.restaurant.viettable.model.Review;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public final class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.Holder> {
     public interface Listener { void onEdit(Review review); void onDelete(Review review); }
@@ -32,10 +33,16 @@ public final class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.Hold
             binding.tvReviewInvoice.setText("Hóa đơn #" + review.getInvoiceId());
             binding.tvReviewStars.setText(stars(review.getOverallRating()) + "  " + review.getOverallRating() + "/5");
             binding.tvReviewDetails.setText("Món ăn " + review.getFoodRating() + "/5 • Phục vụ " + review.getServiceRating() + "/5 • Không gian " + review.getSpaceRating() + "/5");
-            binding.tvReviewComment.setText(review.getComment() == null || review.getComment().isEmpty() ? "Không có nhận xét." : review.getComment());
+            binding.tvReviewComment.setText(commentText(review.getComment()));
+            binding.tvReviewComment.setAlpha(SafeText.isBlank(review.getComment()) ? 0.55f : 1f);
             binding.btnEditReview.setOnClickListener(v -> listener.onEdit(review));
             binding.btnDeleteReview.setOnClickListener(v -> listener.onDelete(review));
         }
     }
+    /** Comment line of a review: the comment, or a dimmed "Không có nhận xét." when there is none (never "null"). */
+    static String commentText(String comment) {
+        return SafeText.or(comment, "Không có nhận xét.");
+    }
+
     private static String stars(int rating) { StringBuilder value = new StringBuilder(); for (int i = 1; i <= 5; i++) value.append(i <= rating ? '★' : '☆'); return value.toString(); }
 }

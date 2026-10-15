@@ -161,13 +161,19 @@ public sealed class MobileEngagementController : ControllerBase
     }
 
     private static object MapFavorite(CustomerFavorite x) => new { favoriteId = x.CustomerFavoriteId, x.DishId, dishName = x.DishNameSnapshot, x.CreatedAtUtc };
-    private static object MapReview(CustomerReview x) => new { reviewId = x.CustomerReviewId, x.InvoiceId, x.DiningSessionId, x.OverallRating, x.FoodRating, x.ServiceRating, x.SpaceRating, x.Comment, imageUrls = JsonSerializer.Deserialize<string[]>(x.ImageUrlsJson) ?? Array.Empty<string>(), x.CreatedAtUtc, x.UpdatedAtUtc };
+    private static object MapReview(CustomerReview x) => new { reviewId = x.CustomerReviewId, x.InvoiceId, x.DiningSessionId, x.OverallRating, x.FoodRating, x.ServiceRating, x.SpaceRating, Comment = Clean(x.Comment), imageUrls = JsonSerializer.Deserialize<string[]>(x.ImageUrlsJson) ?? Array.Empty<string>(), x.CreatedAtUtc, x.UpdatedAtUtc };
     private static object MapSupport(SupportRequest x) => new { x.SupportRequestId, x.RequestCode, x.Category, x.Subject, x.Message, x.OrderId, x.ReservationId, x.PaymentId, x.Status, x.CreatedAtUtc, x.UpdatedAtUtc };
     private static bool ValidCommand(string? key, string? hash) => !string.IsNullOrWhiteSpace(key) && key.Length <= 140 && !string.IsNullOrWhiteSpace(hash) && hash.Length == 64;
     private static bool ValidReview(int overall, int food, int service, int space, string? comment, IReadOnlyList<string>? images) =>
         overall is >= 1 and <= 5 && food is >= 1 and <= 5 && service is >= 1 and <= 5 && space is >= 1 and <= 5
         && comment?.Length <= 2000 && (images?.Count ?? 0) <= 5 && (images?.All(x => Uri.TryCreate(x, UriKind.Absolute, out _)) ?? true);
-    private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    // Free text from clients: blank or a leftover "null"/"undefined" (older apps sent the word) is stored and returned as null.
+    public static string? Clean(string? value)
+    {
+        var text = value?.Trim();
+        return string.IsNullOrEmpty(text) || text.Equals("null", StringComparison.OrdinalIgnoreCase)
+            || text.Equals("undefined", StringComparison.OrdinalIgnoreCase) ? null : text;
+    }
     private ActionResult Validation() => BadRequest(new { code = "validation_failed", message = "Dữ liệu không hợp lệ." });
     private ActionResult IdempotencyConflict() => Conflict(new { code = "idempotency_conflict", message = "Idempotency key đã được dùng với dữ liệu khác." });
 

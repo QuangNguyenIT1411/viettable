@@ -12,6 +12,7 @@ import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.util.ImageLoader;
 
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class BranchAdapter extends RecyclerView.Adapter<BranchAdapter.BranchViewHolder> {
 
@@ -59,7 +60,7 @@ public class BranchAdapter extends RecyclerView.Adapter<BranchAdapter.BranchView
         public void bind(Branch branch, OnBranchActionListener listener) {
             ImageLoader.getInstance().load(branch, binding.ivBranchImage);
             binding.tvBranchName.setText(branch.getName());
-            binding.tvBranchAddress.setText(branch.getAddress());
+            binding.tvBranchAddress.setText(SafeText.clean(branch.getAddress()));
             binding.tvOpeningHours.setText(branch.getOpeningHours());
             binding.tvOpeningHours.setVisibility(isBlank(branch.getOpeningHours()) ? View.GONE : View.VISIBLE);
             boolean hasDistance = branch.getDistanceKm() > 0;

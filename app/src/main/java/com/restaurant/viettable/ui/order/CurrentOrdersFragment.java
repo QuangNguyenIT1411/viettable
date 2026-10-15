@@ -26,6 +26,7 @@ import com.restaurant.viettable.ui.session.DineinMenuFragment;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class CurrentOrdersFragment extends BaseFragment implements AppStateManager.StateChangeListener, SignalRManager.Listener {
 
@@ -124,7 +125,7 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
             binding.contentCurrentOrders.setVisibility(View.VISIBLE);
             binding.bottomActions.setVisibility(View.VISIBLE);
             binding.layoutCurrentOrdersState.setVisibility(View.GONE);
-            binding.tvCurrentOrdersTable.setText(session.getTableLabel() + " • " + session.getBranchName());
+            binding.tvCurrentOrdersTable.setText(SafeText.join(" • ", session.getTableLabel(), session.getBranchName()));
 
             int totalItems = 0;
             for (Order o : session.getOrders()) {

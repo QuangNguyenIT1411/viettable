@@ -20,6 +20,7 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class PreorderDetailFragment extends BaseFragment {
 
@@ -71,7 +72,7 @@ public class PreorderDetailFragment extends BaseFragment {
                         if (binding == null) return;
                         adapter.notifyDataSetChanged();
                         updateTotal();
-                        boolean editable = "DRAFT".equalsIgnoreCase(value.optString("status"));
+                        boolean editable = "DRAFT".equalsIgnoreCase(SafeText.json(value, "status"));
                         binding.btnEditPreorder.setVisibility(editable ? View.VISIBLE : View.GONE);
                         binding.btnCancelPreorder.setVisibility(editable ? View.VISIBLE : View.GONE);
                     }

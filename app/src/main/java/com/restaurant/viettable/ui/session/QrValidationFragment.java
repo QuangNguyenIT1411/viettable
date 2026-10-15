@@ -15,6 +15,7 @@ import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import org.json.JSONObject;
+import com.restaurant.viettable.util.SafeText;
 
 public class QrValidationFragment extends BaseFragment {
 
@@ -59,12 +60,12 @@ public class QrValidationFragment extends BaseFragment {
         MobileRepository.getInstance().validateQr(tableCode, new MobileRepository.Callback<JSONObject>() {
             @Override public void onSuccess(JSONObject value) {
                 if (!isAdded()) return;
-                String outcome = value.optString("outcome");
+                String outcome = SafeText.json(value, "outcome");
                 if ("READY".equals(outcome)) navigateTo(CheckinConfirmFragment.newInstance(tableCode));
                 else if ("MISMATCH_CONFIRMATION_REQUIRED".equals(outcome))
                     navigateTo(ReservationMismatchFragment.newInstance(tableCode, String.valueOf(value.optInt("reservedTableId"))));
                 else if ("WALK_IN_AVAILABLE".equals(outcome)) navigateTo(WalkinConfirmFragment.newInstance(tableCode));
-                else { showToast(value.optString("message", "Chưa thể check-in lúc này.")); navigateBack(); }
+                else { showToast(SafeText.json(value, "message", "Chưa thể check-in lúc này.")); navigateBack(); }
             }
             @Override public void onError(ApiException error) { if (binding != null) { showToast(apiError(error)); navigateBack(); } }
         });

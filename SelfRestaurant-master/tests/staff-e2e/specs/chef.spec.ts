@@ -3,12 +3,16 @@ import { openTableWithOrder, sendKitchenRequest } from "../support/customer";
 import { expectCleanScreen } from "../support/screen";
 import { branchChangePushed, countRequests, reloadNow, staffRealtimeJoined } from "../support/realtime";
 import { login } from "../support/staff";
+import { settleAfterTest } from "../support/cleanup";
 
 // Kanban columns are <section>s titled "Chờ chế biến" / "Đang chế biến" / "Sẵn sàng"; orders are <article> cards.
 const column = (page: Page, title: string) =>
   page.locator("section").filter({ has: page.getByText(title, { exact: true }) }).last();
 const card = (page: Page, title: string, orderId: number) =>
   column(page, title).locator("article").filter({ hasText: `Đơn #${orderId}` });
+
+// Give the test tables back after every test (only 10 exist), so later tests can always check in.
+test.afterEach(async ({ baseURL }) => { await settleAfterTest(baseURL!); });
 
 test("bếp nhận đơn mới, bắt đầu nấu và báo hoàn thành", async ({ page, baseURL }) => {
   const order = await openTableWithOrder(baseURL!);

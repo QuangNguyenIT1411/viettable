@@ -15,6 +15,7 @@ import com.restaurant.viettable.databinding.FragmentBranchDetailBinding;
 import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.ImageLoader;
+import com.restaurant.viettable.util.SafeText;
 
 public class BranchDetailFragment extends BaseFragment {
 
@@ -60,17 +61,17 @@ public class BranchDetailFragment extends BaseFragment {
         if (branch != null) {
             ImageLoader.getInstance().load(branch, binding.ivBranchHero);
             binding.tvBranchName.setText(branch.getName());
-            binding.tvAddress.setText(branch.getAddress());
-            binding.tvPhone.setText(branch.getPhone());
-            binding.tvPhone.setVisibility(TextUtils.isEmpty(branch.getPhone()) ? View.GONE : View.VISIBLE);
-            binding.tvHours.setText("Giờ mở cửa: " + branch.getOpeningHours());
-            binding.tvHours.setVisibility(TextUtils.isEmpty(branch.getOpeningHours()) ? View.GONE : View.VISIBLE);
+            binding.tvAddress.setText(SafeText.clean(branch.getAddress()));
+            binding.tvPhone.setText(SafeText.clean(branch.getPhone()));
+            binding.tvPhone.setVisibility(SafeText.isBlank(branch.getPhone()) ? View.GONE : View.VISIBLE);
+            binding.tvHours.setText("Giờ mở cửa: " + SafeText.clean(branch.getOpeningHours()));
+            binding.tvHours.setVisibility(SafeText.isBlank(branch.getOpeningHours()) ? View.GONE : View.VISIBLE);
             binding.tvRatingReviews.setText(branch.getRating() + " • " + branch.getReviewCount() + " đánh giá");
             boolean hasRating = branch.getRating() > 0 && branch.getReviewCount() > 0;
             binding.layoutRating.setVisibility(hasRating ? View.VISIBLE : View.GONE);
             binding.tvDistanceDetail.setText("• Cách bạn " + branch.getDistanceKm() + " km");
             binding.tvDistanceDetail.setVisibility(branch.getDistanceKm() > 0 ? View.VISIBLE : View.GONE);
-            binding.tvDescription.setText(branch.getDescription());
+            binding.tvDescription.setText(SafeText.clean(branch.getDescription()));
             boolean hasDescription = !TextUtils.isEmpty(branch.getDescription());
             binding.tvDescriptionHeading.setVisibility(hasDescription ? View.VISIBLE : View.GONE);
             binding.tvDescription.setVisibility(hasDescription ? View.VISIBLE : View.GONE);

@@ -6,6 +6,7 @@ import com.restaurant.viettable.databinding.ViewActiveDiningCardBinding;
 import com.restaurant.viettable.model.DiningSession;
 import com.restaurant.viettable.navigation.NavigationCoordinator;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.SafeText;
 
 public class ActiveDiningCardBinder {
 
@@ -23,7 +24,7 @@ public class ActiveDiningCardBinder {
         }
 
         binding.getRoot().setVisibility(View.VISIBLE);
-        binding.tvDiningTable.setText(session.getTableLabel() + " • " + session.getBranchName());
+        binding.tvDiningTable.setText(SafeText.join(" • ", session.getTableLabel(), session.getBranchName()));
 
         if (session.getStatus() == DiningSession.Status.PAYMENT_REQUESTED) {
             binding.tvDiningBadge.setText("Đang yêu cầu thanh toán");

@@ -13,6 +13,7 @@ import com.restaurant.viettable.databinding.FragmentResConfirmationBinding;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.SafeText;
 
 public class ResConfirmationFragment extends BaseFragment {
 
@@ -57,9 +58,10 @@ public class ResConfirmationFragment extends BaseFragment {
 
         if (reservation != null) {
             binding.tvConfirmCode.setText("#" + reservation.getId());
-            binding.tvConfirmBranch.setText(reservation.getBranchName() + " (" + reservation.getBranchAddress() + ")");
+            binding.tvConfirmBranch.setText(SafeText.isBlank(reservation.getBranchAddress()) ? SafeText.clean(reservation.getBranchName())
+                    : SafeText.join(" ", SafeText.clean(reservation.getBranchName()), "(" + SafeText.clean(reservation.getBranchAddress()) + ")"));
             binding.tvConfirmTimeDate.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));
-            binding.tvConfirmTableArea.setText(reservation.getTableLabel() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
+            binding.tvConfirmTableArea.setText(SafeText.join(" • ", reservation.getTableLabel(), reservation.getAreaName(), reservation.getGuestCount() + " khách"));
 
             if (reservation.getDepositAmount() > 0) {
                 binding.tvConfirmDeposit.setText("Tiền cọc: Đã thanh toán " + String.format(java.util.Locale.GERMANY, "%,dđ", reservation.getDepositAmount()));

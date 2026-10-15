@@ -14,6 +14,7 @@ import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.model.User;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.SafeText;
 
 public class EditProfileFragment extends BaseFragment {
 
@@ -39,9 +40,9 @@ public class EditProfileFragment extends BaseFragment {
 
         User user = appStateManager.getCurrentUser();
         if (user != null) {
-            binding.etEditName.setText(user.getFullName());
-            binding.etEditPhone.setText(user.getPhone());
-            binding.etEditEmail.setText(user.getEmail());
+            binding.etEditName.setText(SafeText.clean(user.getFullName()));
+            binding.etEditPhone.setText(SafeText.clean(user.getPhone()));
+            binding.etEditEmail.setText(SafeText.clean(user.getEmail()));
         }
 
         binding.btnChangeAvatar.setOnClickListener(v -> {

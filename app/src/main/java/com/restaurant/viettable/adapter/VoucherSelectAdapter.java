@@ -11,6 +11,7 @@ import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class VoucherSelectAdapter extends RecyclerView.Adapter<VoucherSelectAdapter.ViewHolder> {
 
@@ -63,7 +64,7 @@ public class VoucherSelectAdapter extends RecyclerView.Adapter<VoucherSelectAdap
 
         public void bind(Voucher voucher, boolean isSelected) {
             binding.tvVoucherTitle.setText(voucher.getTitle());
-            binding.tvVoucherDesc.setText(voucher.getDescription());
+            binding.tvVoucherDesc.setText(SafeText.clean(voucher.getDescription()));
             binding.tvVoucherExpiry.setText("HSD: " + DisplayFormatters.date(voucher.getExpiryDate()));
             binding.rbVoucherSelect.setChecked(isSelected);
 

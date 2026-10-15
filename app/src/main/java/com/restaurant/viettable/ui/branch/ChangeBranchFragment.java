@@ -21,6 +21,7 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class ChangeBranchFragment extends BaseFragment implements AppStateManager.StateChangeListener {
 
@@ -45,7 +46,7 @@ public class ChangeBranchFragment extends BaseFragment implements AppStateManage
         Branch current = appStateManager.getSelectedBranch();
         if (current != null) {
             binding.tvCurrentBranchName.setText(current.getName());
-            binding.tvCurrentBranchAddress.setText(current.getAddress());
+            binding.tvCurrentBranchAddress.setText(SafeText.clean(current.getAddress()));
         }
 
         boolean hasCartItems = !appStateManager.getCartItems().isEmpty();
@@ -115,7 +116,7 @@ public class ChangeBranchFragment extends BaseFragment implements AppStateManage
         if (binding == null || adapter == null) return;
         Branch current = appStateManager.getSelectedBranch();
         binding.tvCurrentBranchName.setText(current == null ? getString(R.string.catalog_select_branch) : current.getName());
-        binding.tvCurrentBranchAddress.setText(current == null ? "" : current.getAddress());
+        binding.tvCurrentBranchAddress.setText(current == null ? "" : SafeText.clean(current.getAddress()));
         otherBranches.clear();
         for (Branch branch : appStateManager.getBranches())
             if (current == null || !branch.getId().equals(current.getId())) otherBranches.add(branch);

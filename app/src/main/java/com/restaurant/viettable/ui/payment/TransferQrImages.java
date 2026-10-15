@@ -14,6 +14,7 @@ import org.json.JSONObject;
 
 import java.io.OutputStream;
 import java.util.Locale;
+import com.restaurant.viettable.util.SafeText;
 
 /** VietQR image from the server (PNG in base64): decode, describe and save to the gallery. */
 final class TransferQrImages {
@@ -30,11 +31,11 @@ final class TransferQrImages {
     }
 
     static String details(JSONObject qr) {
-        return "Ngân hàng: " + qr.optString("bankName")
-                + "\nChủ tài khoản: " + qr.optString("accountName")
-                + "\nSố tài khoản: " + qr.optString("accountNumber")
+        return "Ngân hàng: " + SafeText.json(qr, "bankName")
+                + "\nChủ tài khoản: " + SafeText.json(qr, "accountName")
+                + "\nSố tài khoản: " + SafeText.json(qr, "accountNumber")
                 + "\nSố tiền: " + String.format(Locale.GERMANY, "%,d đ", Math.round(qr.optDouble("amount")))
-                + "\nNội dung: " + qr.optString("content");
+                + "\nNội dung: " + SafeText.json(qr, "content");
     }
 
     /** Saves into Pictures/VietTable (Android 10+, no permission needed). Older Android: returns false. */

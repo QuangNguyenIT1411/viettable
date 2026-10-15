@@ -17,6 +17,7 @@ import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.model.Review;
+import com.restaurant.viettable.model.ReviewInputPolicy;
 import com.restaurant.viettable.model.ServiceRequest;
 import com.restaurant.viettable.model.Invoice;
 import com.restaurant.viettable.model.InvoiceHistoryItem;
@@ -48,6 +49,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import com.restaurant.viettable.util.SafeText;
 
 public final class MobileRepository {
     public interface Callback<T> {
@@ -182,7 +184,7 @@ public final class MobileRepository {
             JSONObject body = new JSONObject().put("usernameOrEmailOrPhone", identity);
             api().post("/api/mobile/v1/auth/forgot-password", body, false, null, new ApiClient.Callback() {
                 @Override public void onSuccess(Object value) {
-                    String token = ((JSONObject) value).optString("resetToken", "");
+                    String token = SafeText.json(((JSONObject) value), "resetToken", "");
                     if (token.isEmpty()) callback.onError(new ApiException(0, "reset_token_delivery_required", "Hãy kiểm tra kênh nhận mã đặt lại mật khẩu.", null));
                     else callback.onSuccess(token);
                 }
@@ -299,10 +301,10 @@ public final class MobileRepository {
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
                     if (row == null) continue;
-                    Branch branch = new Branch(String.valueOf(row.optInt("branchId")), row.optString("name"),
-                            row.optString("location"), "", "", 0, true, "", new ArrayList<>(),
+                    Branch branch = new Branch(String.valueOf(row.optInt("branchId")), SafeText.json(row, "name"),
+                            SafeText.json(row, "location"), "", "", 0, true, "", new ArrayList<>(),
                             0, 0, 0, 0);
-                    branch.setImageUrl(api().absoluteUrl(row.optString("image", "")));
+                    branch.setImageUrl(api().absoluteUrl(SafeText.json(row, "image", "")));
                     branches.add(branch);
                 }
                 state.replaceBranches(branches);
@@ -369,7 +371,7 @@ public final class MobileRepository {
                     if (category == null) continue;
                     String categoryId = String.valueOf(category.optInt("categoryId"));
                     JSONArray dishes = category.optJSONArray("dishes");
-                    categories.add(new Category(categoryId, category.optString("categoryName"), 0,
+                    categories.add(new Category(categoryId, SafeText.json(category, "categoryName"), 0,
                             dishes == null ? 0 : dishes.length()));
                     if (dishes == null) continue;
                     for (int j = 0; j < dishes.length(); j++) {
@@ -462,12 +464,12 @@ public final class MobileRepository {
                 List<NotificationItem> values = new ArrayList<>();
                 if (rows != null) for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
-                    String type = row.optString("type");
+                    String type = SafeText.json(row, "type");
                     values.add(new NotificationItem(String.valueOf(row.optLong("notificationId")),
                             StatusLabels.EVENT_PAYMENT_SUCCEEDED.equals(type) ? NotificationItem.Type.PAYMENT : NotificationItem.Type.ORDER,
                             StatusLabels.notificationTitle(type),
-                            StatusLabels.notificationMessage(row.optString("message"), row.optLong("orderId")),
-                            row.optString("createdAtUtc"), row.optBoolean("isRead")));
+                            StatusLabels.notificationMessage(SafeText.json(row, "message"), row.optLong("orderId")),
+                            SafeText.json(row, "createdAtUtc"), row.optBoolean("isRead")));
                 }
                 state.replaceNotifications(values);
                 callback.onSuccess(values);
@@ -605,11 +607,11 @@ public final class MobileRepository {
                             String dishId = String.valueOf(row.optInt("dishId"));
                             FoodItem food = state.findFoodItem(dishId);
                             if (food == null) food = new FoodItem(dishId, "", reservation.getBranchId(),
-                                    row.optString("dishNameSnapshot"), Math.round(row.optDouble("unitPriceSnapshot")),
+                                    SafeText.json(row, "dishNameSnapshot"), Math.round(row.optDouble("unitPriceSnapshot")),
                                     0, 0, "", "", "", "", 0, true, false,
                                     Collections.singletonList("Tiêu chuẩn"), new ArrayList<>(), "", 0);
                             cart.add(new CartItem(food, row.optInt("quantity"), "Tiêu chuẩn",
-                                    new ArrayList<>(), 0, row.optString("note")));
+                                    new ArrayList<>(), 0, SafeText.json(row, "note")));
                         }
                         state.replaceCart(cart);
                         reservation.setHasPreOrder(rows != null && rows.length() > 0);
@@ -1018,19 +1020,19 @@ public final class MobileRepository {
             if (total == 0) total = jsonLong(line, "unitPrice", "UnitPrice") * quantity;
             lines.add(new InvoiceHistoryItem.Line(name, quantity, total));
         }
-        InvoiceHistoryItem invoice = new InvoiceHistoryItem(row.optInt("invoiceId"), row.optString("invoiceCode"),
+        InvoiceHistoryItem invoice = new InvoiceHistoryItem(row.optInt("invoiceId"), SafeText.json(row, "invoiceCode"),
                 row.optInt("checkoutQuoteId"), row.optInt("paymentId"), row.optInt("diningSessionId"),
-                row.optString("diningSessionCode"), branch == null ? "Chi nhánh " + branchId : branch.getName(),
+                SafeText.json(row, "diningSessionCode"), branch == null ? "Chi nhánh " + branchId : branch.getName(),
                 tableId > 0 ? String.valueOf(tableId) : "", Math.round(row.optDouble("subtotal")),
                 Math.round(row.optDouble("discount")), Math.round(row.optDouble("totalAmount")),
-                row.optString("issuedAtUtc"), row.optString("paymentCode"), row.optString("paymentChannel"),
-                row.optString("paymentMethod"), row.optString("paymentLocation"), row.optString("paymentStatus"), lines);
+                SafeText.json(row, "issuedAtUtc"), SafeText.json(row, "paymentCode"), SafeText.json(row, "paymentChannel"),
+                SafeText.json(row, "paymentMethod"), SafeText.json(row, "paymentLocation"), SafeText.json(row, "paymentStatus"), lines);
         invoice.setTableLabel(tableLabel(String.valueOf(branchId), invoice.getTableId()));
         return invoice;
     }
 
     private static String jsonString(JSONObject row, String... keys) {
-        for (String key : keys) if (row.has(key) && !row.isNull(key)) return row.optString(key);
+        for (String key : keys) if (row.has(key) && !row.isNull(key)) return SafeText.json(row, key);
         return "Món ăn";
     }
 
@@ -1072,7 +1074,7 @@ public final class MobileRepository {
                 JSONArray rows = body instanceof JSONObject ? ((JSONObject) body).optJSONArray("onlineMethods") : null;
                 List<String> result = new ArrayList<>();
                 if (rows != null) for (int i = 0; i < rows.length(); i++) {
-                    String method = rows.optString(i, "").trim();
+                    String method = SafeText.json(rows, i).trim();
                     if (!method.isEmpty()) result.add(method);
                 }
                 callback.onSuccess(result);
@@ -1087,7 +1089,7 @@ public final class MobileRepository {
                 JSONArray rows = ((JSONObject) body).optJSONArray("items"); List<FaqItem> result = new ArrayList<>();
                 if (rows != null) for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
-                    if (row != null) result.add(new FaqItem(row.optString("faqId"), row.optString("question"), row.optString("answer")));
+                    if (row != null) result.add(new FaqItem(SafeText.json(row, "faqId"), SafeText.json(row, "question"), SafeText.json(row, "answer")));
                 }
                 callback.onSuccess(result);
             }
@@ -1113,7 +1115,7 @@ public final class MobileRepository {
         try {
             JSONObject body = new JSONObject().put("invoiceId", invoiceId).put("overallRating", rating)
                     .put("foodRating", rating).put("serviceRating", rating).put("spaceRating", rating)
-                    .put("comment", comment).put("imageUrls", new JSONArray());
+                    .put("comment", ReviewInputPolicy.commentPayload(comment)).put("imageUrls", new JSONArray());
             api().post("/api/mobile/v1/reviews", body, true, stableKey("reviewcreate", String.valueOf(invoiceId)), new ApiClient.Callback() {
                 @Override public void onSuccess(Object body) { callback.onSuccess(parseReview((JSONObject) body)); }
                 @Override public void onError(ApiException error) { callback.onError(error); }
@@ -1126,7 +1128,7 @@ public final class MobileRepository {
         try {
             JSONObject body = new JSONObject().put("overallRating", rating)
                     .put("foodRating", review.getFoodRating()).put("serviceRating", review.getServiceRating())
-                    .put("spaceRating", review.getSpaceRating()).put("comment", comment)
+                    .put("spaceRating", review.getSpaceRating()).put("comment", ReviewInputPolicy.commentPayload(comment))
                     .put("imageUrls", new JSONArray(review.getImageUrls()));
             api().put("/api/mobile/v1/reviews/" + review.getReviewId(), body, true, null, new ApiClient.Callback() {
                 @Override public void onSuccess(Object body) { callback.onSuccess(parseReview((JSONObject) body)); }
@@ -1162,12 +1164,12 @@ public final class MobileRepository {
             @Override public void onSuccess(Object body) {
                 JSONArray rows = (JSONArray) body; List<Voucher> values = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
-                    JSONObject row = rows.optJSONObject(i); String type = row.optString("discountType");
-                    Voucher voucher = new Voucher(row.optString("code"), row.optString("name"),
+                    JSONObject row = rows.optJSONObject(i); String type = SafeText.json(row, "discountType");
+                    Voucher voucher = new Voucher(SafeText.json(row, "code"), SafeText.json(row, "name"),
                             "FIXED".equals(type) ? Math.round(row.optDouble("discountValue")) : 0,
                             "PERCENT".equals(type) ? row.optInt("discountValue") : 0,
-                            Math.round(row.optDouble("minSubtotal")), row.optString("endsAtUtc"), true, null,
-                            row.optString("name"), false);
+                            Math.round(row.optDouble("minSubtotal")), SafeText.json(row, "endsAtUtc"), true, null,
+                            SafeText.json(row, "name"), false);
                     voucher.setBackendId(row.optInt("voucherId")); values.add(voucher);
                 }
                 state.replaceVouchers(values); callback.onSuccess(values);
@@ -1246,35 +1248,35 @@ public final class MobileRepository {
         List<String> ingredients = new ArrayList<>();
         JSONArray rows = dish.optJSONArray("ingredients");
         if (rows != null) for (int i = 0; i < rows.length(); i++)
-            ingredients.add(rows.optJSONObject(i).optString("name"));
-        String image = api().absoluteUrl(dish.optString("image"));
+            ingredients.add(SafeText.json(rows.optJSONObject(i), "name"));
+        String image = api().absoluteUrl(SafeText.json(dish, "image"));
         return new FoodItem(String.valueOf(dish.optInt("dishId")), categoryId, branchId,
-                dish.optString("name"), Math.round(dish.optDouble("price")), 0, 0,
-                dish.optString("description"), String.join(", ", ingredients), "", "", 0,
+                SafeText.json(dish, "name"), Math.round(dish.optDouble("price")), 0, 0,
+                SafeText.json(dish, "description"), String.join(", ", ingredients), "", "", 0,
                 dish.optBoolean("available", true), false, Collections.singletonList("Tiêu chuẩn"),
                 new ArrayList<>(), image, 0);
     }
 
     private User parseTokenUser(JSONObject row) {
         if (row == null) return new User();
-        return new User(String.valueOf(row.optInt("customerId")), row.optString("name"),
-                row.optString("email"), row.optString("phoneNumber"), "Thành viên",
+        return new User(String.valueOf(row.optInt("customerId")), SafeText.json(row, "name"),
+                SafeText.json(row, "email"), SafeText.json(row, "phoneNumber"), "Thành viên",
                 row.optInt("loyaltyPoints"), null);
     }
 
     private User parseProfile(JSONObject row) {
-        return new User(String.valueOf(row.optInt("customerId")), row.optString("name"),
-                row.optString("email"), row.optString("phoneNumber"), row.optString("membershipTier", "Thành viên"),
+        return new User(String.valueOf(row.optInt("customerId")), SafeText.json(row, "name"),
+                SafeText.json(row, "email"), SafeText.json(row, "phoneNumber"), SafeText.json(row, "membershipTier", "Thành viên"),
                 row.optInt("loyaltyPoints"), null);
     }
 
     private Reservation parseReservation(JSONObject row) {
         if (row == null) return new Reservation();
         String branchId = String.valueOf(row.optInt("branchId")); Branch branch = state.findBranch(branchId);
-        String reserved = row.optString("reservedAt");
+        String reserved = SafeText.json(row, "reservedAt");
         String date = DisplayFormatters.date(reserved);
         String time = DisplayFormatters.time(reserved);
-        String note = row.isNull("note") ? "" : row.optString("note", "");
+        String note = row.isNull("note") ? "" : SafeText.json(row, "note", "");
         int tableId = row.isNull("tableId") ? 0 : row.optInt("tableId");
         JSONArray assignedTables = row.optJSONArray("assignedTables");
         if (tableId <= 0 && assignedTables != null && assignedTables.length() > 0) {
@@ -1283,8 +1285,8 @@ public final class MobileRepository {
         Reservation reservation = new Reservation(String.valueOf(row.optInt("reservationId")), branchId,
                 branch == null ? "Chi nhánh " + branchId : branch.getName(), branch == null ? "" : branch.getAddress(),
                 date, time, row.optInt("partySize"), "", tableId > 0 ? String.valueOf(tableId) : "", note,
-                new ArrayList<>(), 0, reservationStatus(row.optString("status")), row.optJSONArray("preOrderItems") != null && row.optJSONArray("preOrderItems").length() > 0,
-                row.optString("customerName"), row.optString("phoneNumber"));
+                new ArrayList<>(), 0, reservationStatus(SafeText.json(row, "status")), row.optJSONArray("preOrderItems") != null && row.optJSONArray("preOrderItems").length() > 0,
+                SafeText.json(row, "customerName"), SafeText.json(row, "phoneNumber"));
         reservation.setTableLabel(tableLabel(branchId, reservation.getTableId()));
         return reservation;
     }
@@ -1294,8 +1296,8 @@ public final class MobileRepository {
         User user = state.getCurrentUser();
         DiningSession session = new DiningSession(String.valueOf(row.optInt("diningSessionId")), branchId,
                 branch == null ? "Chi nhánh " + branchId : branch.getName(), String.valueOf(row.optInt("tableId")),
-                sessionStatus(row.optString("status")), row.isNull("reservationId") ? null : String.valueOf(row.optInt("reservationId")),
-                user == null ? "Khách hàng" : user.getFullName(), row.optString("startedAtUtc"), new ArrayList<>(), new ArrayList<>());
+                sessionStatus(SafeText.json(row, "status")), row.isNull("reservationId") ? null : String.valueOf(row.optInt("reservationId")),
+                user == null ? "Khách hàng" : user.getFullName(), SafeText.json(row, "startedAtUtc"), new ArrayList<>(), new ArrayList<>());
         session.setTableLabel(tableLabel(branchId, session.getTableId()));
         return session;
     }
@@ -1310,12 +1312,12 @@ public final class MobileRepository {
     private Order parseOrder(JSONObject row) {
         List<OrderItem> items = new ArrayList<>(); JSONArray itemRows = row.optJSONArray("items");
         // Items carry no timestamp of their own: they were ordered together with their round.
-        String orderTime = row.optString("orderTime");
+        String orderTime = SafeText.json(row, "orderTime");
         if (itemRows != null) for (int i = 0; i < itemRows.length(); i++) {
             JSONObject item = itemRows.optJSONObject(i);
-            items.add(new OrderItem(String.valueOf(item.optInt("itemId")), item.optString("dishName"),
-                    Math.round(item.optDouble("unitPrice")), item.optInt("quantity"), item.optString("note"),
-                    orderItemStatus(item.optString("status")), orderTime));
+            items.add(new OrderItem(String.valueOf(item.optInt("itemId")), SafeText.json(item, "dishName"),
+                    Math.round(item.optDouble("unitPrice")), item.optInt("quantity"), SafeText.json(item, "note"),
+                    orderItemStatus(SafeText.json(item, "status")), orderTime));
         }
         DiningSession activeSession = state.getActiveDiningSession();
         JSONObject sessionRow = row.optJSONObject("diningSession");
@@ -1332,22 +1334,22 @@ public final class MobileRepository {
             int tableId = sessionRow.optInt("tableId");
             tableIdValue = tableId > 0 ? String.valueOf(tableId) : "";
             tableDisplay = tableLabel(branchId, tableIdValue);
-            summary = new DiningSessionSummary(sessionId, sessionRow.optString("sessionCode"), branchId,
-                    tableId > 0 ? String.valueOf(tableId) : "", sessionRow.optString("status"),
-                    sessionRow.optString("startedAtUtc"), sessionRow.isNull("endedAtUtc") ? null : sessionRow.optString("endedAtUtc"));
+            summary = new DiningSessionSummary(sessionId, SafeText.json(sessionRow, "sessionCode"), branchId,
+                    tableId > 0 ? String.valueOf(tableId) : "", SafeText.json(sessionRow, "status"),
+                    SafeText.json(sessionRow, "startedAtUtc"), sessionRow.isNull("endedAtUtc") ? null : SafeText.json(sessionRow, "endedAtUtc"));
             summary.setTableLabel(tableDisplay);
         }
         Order order = new Order(String.valueOf(row.optInt("orderId")), sessionId,
                 branchName, tableIdValue, Order.Type.DINE_IN,
-                orderStatus(row.optString("status")), row.optString("orderTime"), items, Math.round(row.optDouble("subtotal")), "");
+                orderStatus(SafeText.json(row, "status")), SafeText.json(row, "orderTime"), items, Math.round(row.optDouble("subtotal")), "");
         order.setDiningSessionSummary(summary);
         order.setTableLabel(tableDisplay);
         return order;
     }
 
     private ServiceRequest parseServiceRequest(JSONObject row) {
-        ServiceRequest.Status status = serviceRequestStatus(row.optString("status"));
-        return new ServiceRequest(String.valueOf(row.optInt("serviceRequestId")), row.optString("requestType"), row.optString("note"), status, row.optString("createdAtUtc"));
+        ServiceRequest.Status status = serviceRequestStatus(SafeText.json(row, "status"));
+        return new ServiceRequest(String.valueOf(row.optInt("serviceRequestId")), SafeText.json(row, "requestType"), SafeText.json(row, "note"), status, SafeText.json(row, "createdAtUtc"));
     }
 
     static ServiceRequest.Status serviceRequestStatus(String value) {
@@ -1364,18 +1366,18 @@ public final class MobileRepository {
         long voucher = Math.round(quote.optDouble("voucherDiscount")); long points = Math.round(quote.optDouble("pointsDiscount"));
         Invoice invoice = new Invoice("QUOTE-" + quote.optInt("checkoutQuoteId"), String.valueOf(quote.optInt("diningSessionId")),
                 session == null ? "VietTable" : session.getBranchName(), session == null ? "" : session.getTableId(), subtotal,
-                0, 0, voucher, points, Math.round(quote.optDouble("totalAmount")), "Chưa chọn", "", quote.optString("expiresAtUtc"));
+                0, 0, voucher, points, Math.round(quote.optDouble("totalAmount")), "Chưa chọn", "", SafeText.json(quote, "expiresAtUtc"));
         invoice.setTableLabel(session == null ? "Chưa có thông tin bàn" : session.getTableLabel());
         return invoice;
     }
 
     private Invoice invoiceFromIssued(JSONObject value) {
         DiningSession session = state.getActiveDiningSession();
-        Invoice invoice = new Invoice(value.optString("invoiceCode", String.valueOf(value.optInt("invoiceId"))),
+        Invoice invoice = new Invoice(SafeText.json(value, "invoiceCode", String.valueOf(value.optInt("invoiceId"))),
                 String.valueOf(value.optInt("diningSessionId")), session == null ? "VietTable" : session.getBranchName(),
                 session == null ? String.valueOf(value.optInt("tableId")) : session.getTableId(), Math.round(value.optDouble("subtotal")), 0, 0,
                 Math.round(value.optDouble("discount")), 0, Math.round(value.optDouble("totalAmount")),
-                "Đã thanh toán", "", value.optString("issuedAtUtc"));
+                "Đã thanh toán", "", SafeText.json(value, "issuedAtUtc"));
         invoice.setBackendInvoiceId(value.optInt("invoiceId"));
         invoice.setTableLabel(session == null ? tableLabel(String.valueOf(value.optInt("branchId")), String.valueOf(value.optInt("tableId"))) : session.getTableLabel());
         return invoice;
@@ -1397,31 +1399,31 @@ public final class MobileRepository {
         if (values != null) for (int i = 0; i < values.length(); i++) {
             JSONObject part = values.optJSONObject(i); if (part == null) continue;
             Integer paymentId = part.isNull("paymentId") ? null : part.optInt("paymentId");
-            parts.add(new SplitBill.Part(part.optInt("splitBillPartId"), part.optString("label"),
-                    Math.round(part.optDouble("amount")), part.optString("status"), paymentId,
-                    part.optString("paymentStatus", null)));
+            parts.add(new SplitBill.Part(part.optInt("splitBillPartId"), SafeText.json(part, "label"),
+                    Math.round(part.optDouble("amount")), SafeText.json(part, "status"), paymentId,
+                    SafeText.json(part, "paymentStatus", null)));
         }
         return new SplitBill(row.optInt("splitBillId"), row.optInt("checkoutQuoteId"),
                 row.optInt("diningSessionId"), Math.round(row.optDouble("totalAmount")),
-                row.optString("status"), parts);
+                SafeText.json(row, "status"), parts);
     }
 
     private PaymentInfo parsePayment(JSONObject row) {
         return new PaymentInfo(row.optInt("paymentId"), row.optInt("checkoutQuoteId"),
                 row.optInt("diningSessionId"), Math.round(row.optDouble("amount")),
-                row.optString("channel"), row.optString("method"), row.optString("location", null),
-                row.optString("status"), row.optString("currency", "VND"), row.optString("providerName", null),
-                row.optString("providerReference", null), row.optString("providerTransactionId", null),
-                row.optString("paymentUrl", null), row.optString("providerExpiresAtUtc", null));
+                SafeText.json(row, "channel"), SafeText.json(row, "method"), SafeText.json(row, "location", null),
+                SafeText.json(row, "status"), SafeText.json(row, "currency", "VND"), SafeText.json(row, "providerName", null),
+                SafeText.json(row, "providerReference", null), SafeText.json(row, "providerTransactionId", null),
+                SafeText.json(row, "paymentUrl", null), SafeText.json(row, "providerExpiresAtUtc", null));
     }
 
     private static Review parseReview(JSONObject row) {
         JSONArray images = row.optJSONArray("imageUrls"); List<String> imageUrls = new ArrayList<>();
-        if (images != null) for (int i = 0; i < images.length(); i++) imageUrls.add(images.optString(i));
+        if (images != null) for (int i = 0; i < images.length(); i++) imageUrls.add(SafeText.json(images, i));
         return new Review(row.optInt("reviewId"), row.optInt("invoiceId"), row.optInt("diningSessionId"),
                 row.optInt("overallRating"), row.optInt("foodRating"), row.optInt("serviceRating"),
-                row.optInt("spaceRating"), row.optString("comment", null), imageUrls,
-                row.optString("createdAtUtc", null), row.optString("updatedAtUtc", null));
+                row.optInt("spaceRating"), SafeText.json(row, "comment", null), imageUrls,
+                SafeText.json(row, "createdAtUtc", null), SafeText.json(row, "updatedAtUtc", null));
     }
 
     private static Reservation.Status reservationStatus(String value) {

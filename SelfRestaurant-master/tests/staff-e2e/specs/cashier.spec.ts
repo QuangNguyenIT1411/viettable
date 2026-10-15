@@ -3,9 +3,13 @@ import { appPaymentOptions, appTransferQr, openTableWithOrder, requestOnsiteCash
 import { expectCleanScreen } from "../support/screen";
 import { branchChangePushed, countRequests, staffRealtimeJoined } from "../support/realtime";
 import { accounts, login, password } from "../support/staff";
+import { settleAfterTest } from "../support/cleanup";
 
 const tableCard = (page: Page, n: number) =>
   page.locator("article").filter({ hasText: new RegExp(`^\s*Bàn ${n}(?!\d)`) }).first();
+
+// Give the test tables back after every test (only 10 exist), so later tests can always check in.
+test.afterEach(async ({ baseURL }) => { await settleAfterTest(baseURL!); });
 
 test("thu ngân thấy bàn có khách trên sơ đồ bàn", async ({ page, baseURL }) => {
   const order = await openTableWithOrder(baseURL!);

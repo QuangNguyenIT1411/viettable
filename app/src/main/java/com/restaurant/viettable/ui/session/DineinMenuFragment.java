@@ -21,6 +21,7 @@ import com.restaurant.viettable.ui.food.FoodDetailFragment;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class DineinMenuFragment extends BaseFragment implements AppStateManager.StateChangeListener {
 
@@ -49,7 +50,7 @@ public class DineinMenuFragment extends BaseFragment implements AppStateManager.
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
-            binding.tvTableContext.setText(session.getTableLabel() + " • " + session.getBranchName());
+            binding.tvTableContext.setText(SafeText.join(" • ", session.getTableLabel(), session.getBranchName()));
         }
 
         // Setup tabs

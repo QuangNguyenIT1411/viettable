@@ -16,6 +16,7 @@ import com.restaurant.viettable.ui.preorder.PreorderDetailFragment;
 import com.restaurant.viettable.ui.preorder.PreorderMenuFragment;
 import com.restaurant.viettable.ui.session.QrScanFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.SafeText;
 
 public class ResDetailFragment extends BaseFragment {
 
@@ -63,7 +64,7 @@ public class ResDetailFragment extends BaseFragment {
             binding.tvDetailResId.setText("#" + reservation.getId());
             binding.tvDetailBranch.setText(reservation.getBranchName());
             binding.tvDetailDateTime.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));
-            binding.tvDetailTable.setText(reservation.getTableLabel() + " • " + reservation.getAreaName() + " • " + reservation.getGuestCount() + " khách");
+            binding.tvDetailTable.setText(SafeText.join(" • ", reservation.getTableLabel(), reservation.getAreaName(), reservation.getGuestCount() + " khách"));
             binding.tvDetailStatusBadge.setText(reservation.getStatusDisplayText());
             binding.tvDetailStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);
             switch (reservation.getStatus()) {
@@ -85,8 +86,8 @@ public class ResDetailFragment extends BaseFragment {
                     break;
             }
 
-            if (reservation.getNote() != null && !reservation.getNote().isEmpty()) {
-                binding.tvDetailNote.setText("Ghi chú: " + reservation.getNote());
+            if (!SafeText.isBlank(reservation.getNote())) {
+                binding.tvDetailNote.setText("Ghi chú: " + SafeText.clean(reservation.getNote()));
             } else {
                 binding.tvDetailNote.setVisibility(View.GONE);
             }

@@ -17,6 +17,7 @@ import com.restaurant.viettable.model.Review;
 import com.restaurant.viettable.model.ReviewInputPolicy;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.SafeText;
 
 public final class ReviewFragment extends BaseFragment {
     private static final String ARG_INVOICE_ID = "invoice_id";
@@ -57,7 +58,7 @@ public final class ReviewFragment extends BaseFragment {
         binding.toolbar.setTitle(editingReview == null ? "Đánh giá bữa ăn" : "Sửa đánh giá");
         binding.tvReviewInvoiceMeta.setText(invoiceId > 0 ? "Hóa đơn #" + invoiceId : "Không tìm thấy hóa đơn hợp lệ");
         binding.btnSubmitReview.setText(editingReview == null ? "Gửi đánh giá" : "Lưu thay đổi");
-        if (editingReview != null && editingReview.getComment() != null) binding.etReviewComment.setText(editingReview.getComment());
+        if (editingReview != null && !SafeText.isBlank(editingReview.getComment())) binding.etReviewComment.setText(SafeText.clean(editingReview.getComment()));
         setupStars(); setRating(selectedRating, stars());
         if (invoiceId <= 0) binding.btnSubmitReview.setEnabled(false);
         binding.btnSubmitReview.setOnClickListener(v -> submit());

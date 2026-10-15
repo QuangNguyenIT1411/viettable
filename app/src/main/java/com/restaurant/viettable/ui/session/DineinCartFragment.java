@@ -19,6 +19,7 @@ import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 
 import java.util.List;
+import com.restaurant.viettable.util.SafeText;
 
 public class DineinCartFragment extends BaseFragment {
 
@@ -45,7 +46,7 @@ public class DineinCartFragment extends BaseFragment {
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
-            binding.tvDineinCartTable.setText("Gửi tới: " + session.getTableLabel() + " • " + session.getBranchName());
+            binding.tvDineinCartTable.setText("Gửi tới: " + SafeText.join(" • ", session.getTableLabel(), session.getBranchName()));
         }
 
         List<CartItem> cartItems = appStateManager.getCartItems();

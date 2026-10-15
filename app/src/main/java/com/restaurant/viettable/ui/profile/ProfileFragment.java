@@ -27,6 +27,7 @@ import com.restaurant.viettable.ui.session.DineinMenuFragment;
 import com.restaurant.viettable.ui.payment.PaymentCheckoutFragment;
 
 import java.util.Locale;
+import com.restaurant.viettable.util.SafeText;
 
 public class ProfileFragment extends BaseFragment implements AppStateManager.StateChangeListener {
 
@@ -74,8 +75,8 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
     private void bindUserData() {
         User user = appStateManager.getCurrentUser();
         if (user != null) {
-            binding.tvProfileName.setText(user.getFullName());
-            binding.tvProfilePhone.setText(user.getPhone());
+            binding.tvProfileName.setText(SafeText.clean(user.getFullName()));
+            binding.tvProfilePhone.setText(SafeText.clean(user.getPhone()));
             binding.tvProfileTierBadge.setText("HẠNG " + com.restaurant.viettable.util.StatusLabels.memberTier(user.getMembershipTier()).toUpperCase(java.util.Locale.ROOT));
             binding.tvProfilePoints.setText(String.format(Locale.GERMANY, "%,d điểm", user.getLoyaltyPoints()));
         }
