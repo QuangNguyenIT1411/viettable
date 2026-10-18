@@ -76,6 +76,8 @@ export const cashierApi = {
   },
   checkInReservation: (reservationId: number, payload: { tableId?: number | null; tableIds?: number[] }) =>
     request<CashierReservationCheckInResultDto>(`/api/cashier/reservations/${reservationId}/check-in`, { method: "POST", body: JSON.stringify({ tableId: payload.tableId ?? null, tableIds: payload.tableIds ?? [] }) }),
+  closeDiningSession: (sessionId: number) =>
+    request<{ success: boolean; message: string }>(`/api/gateway/staff/cashier/dining-sessions/${sessionId}/close`, { method: "POST", body: "{}" }),
   checkout: (orderId: number, payload: { discount?: number; pointsUsed?: number; paymentMethod?: string; paymentAmount?: number; idempotencyKey: string }) =>
     request<CashierCheckoutResultDto>(`/api/gateway/staff/cashier/orders/${orderId}/checkout`, {
       method: "POST",

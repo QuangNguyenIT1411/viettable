@@ -60,12 +60,22 @@ export async function openTableWithOrder(baseURL: string): Promise<DiningFixture
   expect(session, "no free local table QR-Q1-B11..B20 for walk-in").toBeTruthy();
   recordSession(email, session.diningSessionId, token);
 
+  // A dish listed as available can still run out of ingredients in the local stock after many runs: try the next one.
   const menu = await json(await api.get("/api/mobile/v1/branches/1/menu"), "menu");
-  const dish = menu.categories.flatMap((c: any) => c.dishes).find((d: any) => d.available);
-  expect(dish, "no available dish on branch 1").toBeTruthy();
-  const order = await json(await api.post(`/api/mobile/v1/dining-sessions/${session.diningSessionId}/orders`, {
-    headers: headers({ "Idempotency-Key": key() }), data: { items: [{ dishId: dish.dishId, quantity: 1, note: "e2e" }] },
-  }), "order");
+  const dishes = menu.categories.flatMap((c: any) => c.dishes).filter((d: any) => d.available);
+  expect(dishes.length, "no available dish on branch 1").toBeGreaterThan(0);
+  let dish: any = null;
+  let order: any = null;
+  for (const candidate of dishes) {
+    const response = await api.post(`/api/mobile/v1/dining-sessions/${session.diningSessionId}/orders`, {
+      headers: headers({ "Idempotency-Key": key() }), data: { items: [{ dishId: candidate.dishId, quantity: 1, note: "e2e" }] },
+    });
+    if (response.status() === 422) continue;
+    dish = candidate;
+    order = await json(response, "order");
+    break;
+  }
+  expect(order, "every available dish is out of stock locally").toBeTruthy();
 
   return {
     api, token, sessionId: session.diningSessionId, tableId: session.tableId, tableNumber,
@@ -157,10 +167,12 @@ export async function releaseRecordedSessions(baseURL: string, includeEarlierRun
       const orders = await (await api.get("/api/mobile/v1/orders?scope=active", { headers: auth })).json().catch(() => []);
       if (Array.isArray(orders) && orders.length > 0) continue;
       const menu = await (await api.get("/api/mobile/v1/branches/1/menu")).json();
-      const dish = menu.categories.flatMap((c: any) => c.dishes).find((d: any) => d.available);
-      await api.post(`/api/mobile/v1/dining-sessions/${id}/orders`, {
-        headers: { ...auth, "Idempotency-Key": key() }, data: { items: [{ dishId: dish.dishId, quantity: 1, note: "e2e cleanup" }] },
-      });
+      for (const dish of menu.categories.flatMap((c: any) => c.dishes).filter((d: any) => d.available)) {
+        const ordered = await api.post(`/api/mobile/v1/dining-sessions/${id}/orders`, {
+          headers: { ...auth, "Idempotency-Key": key() }, data: { items: [{ dishId: dish.dishId, quantity: 1, note: "e2e cleanup" }] },
+        });
+        if (ordered.status() !== 422) break;
+      }
     }
   } finally {
     await api.dispose();
@@ -170,4 +182,28 @@ export async function releaseRecordedSessions(baseURL: string, includeEarlierRun
 /** Forget recorded sessions once they are settled. */
 export function clearRecordedSessions() {
   if (existsSync(SESSIONS_FILE)) writeFileSync(SESSIONS_FILE, "");
+}
+
+/** The guest taps "Hủy bàn" in the app; returns the HTTP status. */
+export async function customerCancelsTable(f: DiningFixture): Promise<number> {
+  const response = await f.api.post(`/api/mobile/v1/dining-sessions/${f.sessionId}/cancel`, {
+    headers: { Authorization: `Bearer ${f.token}` }, data: {},
+  });
+  return response.status();
+}
+
+/** A new guest scans the QR of one exact test table; returns the HTTP status of the walk-in check-in. */
+export async function newGuestChecksIn(baseURL: string, tableNumber: number): Promise<number> {
+  const api = await request.newContext({ baseURL });
+  const id = randomUUID().slice(0, 8);
+  const email = `e2e.${id}@viettable.local`;
+  const auth = await json(await api.post("/api/mobile/v1/auth/register", {
+    data: { name: `E2E ${id}`, username: email, email, password: PASSWORD, phoneNumber: `09${Date.now().toString().slice(-8)}` },
+  }), "register");
+  const response = await api.post("/api/mobile/v1/check-ins/walk-in", {
+    headers: { Authorization: `Bearer ${auth.accessToken}`, "Idempotency-Key": key() },
+    data: { qrCode: `QR-Q1-B${String(tableNumber).padStart(2, "0")}` },
+  });
+  if (response.ok()) recordSession(email, (await response.json()).diningSessionId, auth.accessToken);
+  return response.status();
 }

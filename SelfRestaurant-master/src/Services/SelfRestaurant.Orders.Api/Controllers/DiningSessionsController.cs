@@ -217,16 +217,11 @@ public sealed class DiningSessionsController : ControllerBase
             return Conflict(new { code = "session_payment_locked", message = "Bàn đang yêu cầu thanh toán nên không thể hủy bàn." });
         if (entity.ReservationId is not null)
             return Conflict(new { code = "session_from_reservation", message = "Phiên mở từ đặt bàn không thể hủy trong app. Vui lòng gọi nhân viên." });
-        if (entity.ConvertedOrderId is > 0 || await _db.Orders.AnyAsync(x => x.DiningSessionCode == entity.SessionCode
-                || (x.TableID == entity.TableId && (x.IsActive ?? true)), ct))
+        // Orders the kitchen cancelled do not count: such a guest has effectively ordered nothing.
+        if (await HasLiveOrdersAsync(entity, ct))
             return Conflict(new { code = "session_has_orders", message = "Bàn đã gọi món nên không thể hủy bàn. Vui lòng thanh toán hoặc gọi nhân viên." });
 
-        var now = DateTime.UtcNow;
-        var openRequests = await _db.ServiceRequests.Where(x => x.DiningSessionId == sessionId && (x.Status == "OPEN" || x.Status == "ACKNOWLEDGED")).ToListAsync(ct);
-        foreach (var serviceRequest in openRequests) { serviceRequest.Status = "CANCELLED"; serviceRequest.CancelledAtUtc = now; serviceRequest.UpdatedAtUtc = now; }
-        entity.Status = "CANCELLED";
-        entity.EndedAtUtc = now;
-        entity.UpdatedAtUtc = now;
+        await EndWithoutPaymentAsync(entity, ct);
         try
         {
             await _db.SaveChangesAsync(ct);
@@ -240,6 +235,80 @@ public sealed class DiningSessionsController : ControllerBase
         await _catalog.ReleaseTableAsync(entity.TableId, ct);
         return Ok(Map(entity, false));
     }
+
+    // Open sessions of a branch, so the cashier sees every seated table even when all its orders were cancelled.
+    [HttpGet("~/api/internal/branches/{branchId:int}/dining-sessions/open")]
+    public async Task<ActionResult<IReadOnlyList<OpenSessionResponse>>> OpenSessions(int branchId, CancellationToken ct)
+    {
+        var rows = await _db.DiningSessions.AsNoTracking()
+            .Where(x => x.BranchId == branchId && x.EndedAtUtc == null)
+            .OrderBy(x => x.StartedAtUtc).ToListAsync(ct);
+        var result = new List<OpenSessionResponse>(rows.Count);
+        foreach (var row in rows)
+            result.Add(new OpenSessionResponse(row.DiningSessionId, row.TableId, row.Status, row.StartedAtUtc,
+                CanStaffClose(row) && !await HasLiveOrdersAsync(row, ct)));
+        return Ok(result);
+    }
+
+    // Cashier "Đóng bàn": frees a table whose guest left with nothing to pay. Never automatic.
+    [HttpPost("{sessionId:int}/staff-close")]
+    public async Task<ActionResult<DiningSessionResponse>> StaffClose(int sessionId, [FromBody] StaffCloseSessionRequest request, CancellationToken ct)
+    {
+        if (request.BranchId <= 0 || request.EmployeeId <= 0) return BadRequest(new { code = "validation_failed", message = "Thiếu thông tin nhân viên." });
+        await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+        var entity = await _db.DiningSessions.FirstOrDefaultAsync(x => x.DiningSessionId == sessionId, ct);
+        if (entity is null) return NotFound(new { code = "session_not_found", message = "Không tìm thấy phiên phục vụ." });
+        if (entity.BranchId != request.BranchId) return StatusCode(403, new { code = "forbidden", message = "Phiên thuộc chi nhánh khác." });
+        if (entity.EndedAtUtc is not null) return Conflict(new { code = "session_closed", message = "Bàn đã được đóng trước đó." });
+        if (!CanStaffClose(entity))
+            return Conflict(new { code = "session_payment_locked", message = "Khách đang yêu cầu thanh toán, không thể đóng bàn." });
+        if (await HasLiveOrdersAsync(entity, ct))
+            return Conflict(new { code = "session_has_orders", message = "Bàn còn món chưa thanh toán. Hãy thanh toán trước khi đóng bàn." });
+
+        await EndWithoutPaymentAsync(entity, ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync(ct);
+            return Conflict(new { code = "command_in_progress", message = "Yêu cầu đang được xử lý. Vui lòng thử lại." });
+        }
+        await _catalog.ReleaseTableAsync(entity.TableId, ct);
+        return Ok(Map(entity, false));
+    }
+
+    private static bool CanStaffClose(DiningSession session) =>
+        !string.Equals(session.Status, "PAYMENT_REQUESTED", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Orders of the session that still count: anything not cancelled (the pre-order included).</summary>
+    private async Task<bool> HasLiveOrdersAsync(DiningSession session, CancellationToken ct)
+    {
+        var cancelledId = await _db.OrderStatus.Where(x => x.StatusCode == "CANCELLED").Select(x => (int?)x.StatusID).FirstOrDefaultAsync(ct);
+        // A converted pre-order counts unless it is known to be cancelled.
+        if (session.ConvertedOrderId is int converted
+            && !await _db.Orders.AnyAsync(x => x.OrderID == converted && cancelledId != null && x.StatusID == cancelledId, ct))
+            return true;
+        return await _db.Orders.AnyAsync(x =>
+            (x.DiningSessionCode == session.SessionCode || (x.TableID == session.TableId && (x.IsActive ?? true)))
+            && (cancelledId == null || x.StatusID != cancelledId), ct);
+    }
+
+    /// <summary>Ends a session nobody pays for: open service requests are cancelled; the caller releases the table.</summary>
+    private async Task EndWithoutPaymentAsync(DiningSession entity, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var openRequests = await _db.ServiceRequests.Where(x => x.DiningSessionId == entity.DiningSessionId && (x.Status == "OPEN" || x.Status == "ACKNOWLEDGED")).ToListAsync(ct);
+        foreach (var serviceRequest in openRequests) { serviceRequest.Status = "CANCELLED"; serviceRequest.CancelledAtUtc = now; serviceRequest.UpdatedAtUtc = now; }
+        entity.Status = "CANCELLED";
+        entity.EndedAtUtc = now;
+        entity.UpdatedAtUtc = now;
+    }
+
+    public sealed record OpenSessionResponse(int DiningSessionId, int TableId, string Status, DateTime StartedAtUtc, bool CanClose);
+    public sealed record StaffCloseSessionRequest(int BranchId, int EmployeeId);
 
     [HttpGet("{sessionId:int}/checkout-context")]
     public async Task<ActionResult<DiningSessionCheckoutContext>> GetCheckoutContext(

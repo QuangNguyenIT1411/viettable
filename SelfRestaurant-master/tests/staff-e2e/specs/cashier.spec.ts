@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { appPaymentOptions, appTransferQr, openTableWithOrder, requestOnsiteCashPayment, requestOnsitePayment, sessionStatus } from "../support/customer";
+import { appPaymentOptions, appTransferQr, customerCancelsTable, newGuestChecksIn, openTableWithOrder, requestOnsiteCashPayment, requestOnsitePayment, sessionStatus } from "../support/customer";
 import { expectCleanScreen } from "../support/screen";
 import { branchChangePushed, countRequests, staffRealtimeJoined } from "../support/realtime";
 import { accounts, login, password } from "../support/staff";
+import { request as playwrightRequest } from "@playwright/test";
 import { settleAfterTest } from "../support/cleanup";
 
 const tableCard = (page: Page, n: number) =>
@@ -221,4 +222,49 @@ test("doanh thu Admin khớp doanh thu thu ngân hôm nay, có tách Tiền mặ
   await expect(revenueTable.locator("thead").getByText("Tiền mặt", { exact: true })).toBeVisible();
   await expect(revenueTable.locator("thead").getByText("Chuyển khoản", { exact: true })).toBeVisible();
   await adminContext.close();
+});
+
+/** The kitchen cancels the whole order of an app guest (chef API, like the "HỦY" button). */
+async function kitchenCancelsOrder(baseURL: string, orderId: number) {
+  const chef = await playwrightRequest.newContext({ baseURL, extraHTTPHeaders: { Origin: baseURL } });
+  expect((await chef.post("/api/gateway/staff/auth/login", { data: { username: accounts.chef.username, password } })).ok()).toBeTruthy();
+  const cancelled = await chef.post(`/api/gateway/staff/chef/orders/${orderId}/cancel`, { data: { reason: "e2e: bếp hủy hết đơn" } });
+  expect(cancelled.ok(), `chef cancel HTTP ${cancelled.status()}`).toBeTruthy();
+  await chef.dispose();
+}
+
+// The kitchen cancelled everything: the guest is still seated (table "Có khách"), may leave with "Hủy bàn",
+// and the session never closes on its own.
+test("bếp hủy hết đơn: bàn vẫn Có khách, khách bấm Hủy bàn được", async ({ page, baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  await kitchenCancelsOrder(baseURL!, order.orderId);
+  expect(await sessionStatus(order)).toBe("ACTIVE");
+
+  await login(page, "cashier");
+  await expect(tableCard(page, order.tableNumber)).toContainText("Có khách");
+  await tableCard(page, order.tableNumber).click();
+  await expect(page.getByText("không còn món nào cần thanh toán")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Đóng bàn" })).toBeVisible();
+  await expectCleanScreen(page);
+
+  expect(await customerCancelsTable(order)).toBe(200);
+  expect(await sessionStatus(order)).toBe("CANCELLED");
+});
+
+test("bếp hủy hết đơn, khách bỏ đi: thu ngân Đóng bàn, khách mới check-in được bàn đó", async ({ page, baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  await kitchenCancelsOrder(baseURL!, order.orderId);
+  expect(await newGuestChecksIn(baseURL!, order.tableNumber), "table still held by the open session").toBe(409);
+
+  await login(page, "cashier");
+  await tableCard(page, order.tableNumber).click();
+  await page.getByRole("button", { name: "Đóng bàn" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText(`Đóng Bàn ${order.tableNumber}?`);
+  await dialog.getByRole("button", { name: "Đóng bàn" }).click();
+  await expect(page.getByText("Đã đóng bàn.").first()).toBeVisible();
+  await expect(tableCard(page, order.tableNumber)).toContainText("Trống");
+  expect(await sessionStatus(order)).toBe("CANCELLED");
+
+  expect(await newGuestChecksIn(baseURL!, order.tableNumber)).toBe(200);
 });

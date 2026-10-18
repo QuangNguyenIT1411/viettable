@@ -30,6 +30,10 @@ export type CashierTableDto = {
   seats: number;
   status: string;
   orderId?: number | null;
+  /** An app guest is seated (even when every order was cancelled). */
+  openSessionId?: number | null;
+  /** Nothing left to pay and no payment pending: the cashier may "Đóng bàn". */
+  canCloseSession?: boolean;
 };
 
 export type CashierOrderItemCardDto = {

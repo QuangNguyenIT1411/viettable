@@ -10,7 +10,9 @@ public sealed record CashierCheckoutApiRequest(
 public sealed record CashierAccountUpdateApiRequest(string Name, string Phone, string? Email = null);
 public sealed record CashierChangePasswordApiRequest(string CurrentPassword, string NewPassword, string ConfirmPassword);
 
-public sealed record CashierTableDto(int TableId, string Number, int Seats, string Status, int? OrderId);
+/// <summary>OpenSessionId: an app guest is seated (even if every order was cancelled); CanCloseSession enables "Đóng bàn".</summary>
+public sealed record CashierTableDto(int TableId, string Number, int Seats, string Status, int? OrderId,
+    int? OpenSessionId = null, bool CanCloseSession = false);
 
 public sealed record CashierOrderItemCardDto(
     string DishName,

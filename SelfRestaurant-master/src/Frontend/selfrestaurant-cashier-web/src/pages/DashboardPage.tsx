@@ -112,7 +112,7 @@ function getReservationTableIds(reservation: ReservationDto) {
 }
 
 export function DashboardPage({ onLogout }: Props) {
-  const { alert, prompt, Dialog } = useAppDialog();
+  const { alert, confirm, prompt, Dialog } = useAppDialog();
   const [dashboard, setDashboard] = useState<CashierDashboardDto | null>(null);
   const [reservations, setReservations] = useState<ReservationDto[]>([]);
   const [reservationsLoading, setReservationsLoading] = useState(false);
@@ -391,6 +391,26 @@ export function DashboardPage({ onLogout }: Props) {
     setPaymentAmount("");
   }
 
+  // "Đóng bàn": only when the guest left with nothing to pay; the server re-checks.
+  async function closeTable(sessionId: number, tableNumber: string) {
+    const ok = await confirm({
+      title: `Đóng ${tableNumber}?`,
+      message: "Chỉ đóng bàn khi khách đã rời đi. Phiên của khách trên ứng dụng sẽ kết thúc và bàn trở thành trống.",
+      confirmLabel: "Đóng bàn",
+      cancelLabel: "Không",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setError(null);
+    try {
+      const result = await cashierApi.closeDiningSession(sessionId);
+      setMessage(result.message || "Đã đóng bàn.");
+      await loadDashboard(true);
+    } catch (err) {
+      setError(userMessage(err, "Không thể đóng bàn."));
+    }
+  }
+
   async function processCheckout() {
     if (!dashboard || !activeOrder || !selectedTable || checkoutSubmitting) return;
     setError(null);
@@ -599,7 +619,21 @@ export function DashboardPage({ onLogout }: Props) {
             ) : !activeOrder ? (
               <div className="cashier-empty-state">
                 <i className="bi bi-info-circle" />
-                <p>Bàn này chưa có đơn hàng</p>
+                {selectedTable.openSessionId ? (
+                  <>
+                    <p>Khách đang ngồi bàn này (đặt qua ứng dụng) nhưng không còn món nào cần thanh toán.</p>
+                    {selectedTable.canCloseSession ? (
+                      <button className="cashier-button-outline" onClick={() => void closeTable(selectedTable.openSessionId!, selectedTable.number)}>
+                        <i className="bi bi-door-closed me-1" />
+                        Đóng bàn
+                      </button>
+                    ) : (
+                      <p className="muted">Khách đang yêu cầu thanh toán nên chưa thể đóng bàn.</p>
+                    )}
+                  </>
+                ) : (
+                  <p>Bàn này chưa có đơn hàng</p>
+                )}
               </div>
             ) : (
               <>

@@ -598,7 +598,10 @@ public sealed class StaffCashierGatewayController : ControllerBase
         var ordersTask = _billingClient.GetCashierOrdersAsync(branchId, cancellationToken);
         var tablesTask = _catalogClient.GetBranchTablesAsync(branchId, cancellationToken);
         var reportTask = _billingClient.GetBranchReportAsync(branchId, today, cancellationToken);
-        await Task.WhenAll(ordersTask, tablesTask, reportTask);
+        var openSessionsTask = GetOpenSessionsAsync(branchId, cancellationToken);
+        await Task.WhenAll(ordersTask, tablesTask, reportTask, openSessionsTask);
+        var openSessionByTableId = (await openSessionsTask)
+            .GroupBy(x => x.TableId).ToDictionary(g => g.Key, g => g.First());
         var orders = await ordersTask;
         var orderCards = orders.Select(o => new CashierOrderCardDto(
             o.OrderId,
@@ -633,12 +636,15 @@ public sealed class StaffCashierGatewayController : ControllerBase
                 }
 
                 var number = t.DisplayTableNumber > 0 ? t.DisplayTableNumber : t.TableId;
+                openSessionByTableId.TryGetValue(t.TableId, out var openSession);
                 return new CashierTableDto(
                     t.TableId,
                     $"Bàn {number}",
                     t.NumberOfSeats,
-                    order is not null ? "OCCUPIED" : MapTableStatusCode(t.StatusName, t.IsAvailable),
-                    order?.OrderId);
+                    order is not null || openSession is not null ? "OCCUPIED" : MapTableStatusCode(t.StatusName, t.IsAvailable),
+                    order?.OrderId,
+                    openSession?.DiningSessionId,
+                    openSession is { CanClose: true } && order is null);
             }).ToArray();
         }
         else
@@ -657,6 +663,32 @@ public sealed class StaffCashierGatewayController : ControllerBase
         _ = includeBills;
         _ = billsDate;
         return new CashierDashboardDto(staff, tableCards, orderCards, todayOrders, todayRevenue, BuildAccountDto(staff));
+    }
+
+    // The table map must still load if open sessions cannot be read; those tables then show their Catalog status.
+    private async Task<IReadOnlyList<OpenDiningSessionResponse>> GetOpenSessionsAsync(int branchId, CancellationToken ct)
+    {
+        try { return await _ordersClient.GetOpenDiningSessionsAsync(branchId, ct); }
+        catch (Exception ex) when (ex is ApiClientException or HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning("Open dining sessions unavailable for branch {BranchId} ({ErrorType}).", branchId, ex.GetType().Name);
+            return Array.Empty<OpenDiningSessionResponse>();
+        }
+    }
+
+    // "Đóng bàn": the guest left and nothing is left to pay. Orders re-checks; nothing closes on its own.
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
+    [HttpPost("dining-sessions/{sessionId:int}/close")]
+    public async Task<IActionResult> CloseDiningSession(int sessionId, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try
+        {
+            var session = await _ordersClient.StaffCloseDiningSessionAsync(sessionId, new StaffServiceRequestCommand(staff.BranchId, staff.EmployeeId), ct);
+            return Ok(new { success = true, message = "Đã đóng bàn.", tableId = session?.TableId });
+        }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "close_session_failed", ex.Message, ex.StatusCode); }
     }
 
     private CashierBillHistoryItemDto MapBill(CashierBillSummaryDto bill) => new(

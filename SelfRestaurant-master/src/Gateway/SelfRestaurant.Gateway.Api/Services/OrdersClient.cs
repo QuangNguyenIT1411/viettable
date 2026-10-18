@@ -89,6 +89,13 @@ public sealed class OrdersClient : ApiClientBase
         PostForAsync<DiningSessionCustomerRequest, ServiceRequestResponse>(
             $"/api/internal/dining-sessions/service-requests/{requestId}/cancel", new DiningSessionCustomerRequest(customerId), cancellationToken);
 
+    public async Task<IReadOnlyList<OpenDiningSessionResponse>> GetOpenDiningSessionsAsync(int branchId, CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<OpenDiningSessionResponse>>($"/api/internal/branches/{branchId}/dining-sessions/open", ct)
+        ?? Array.Empty<OpenDiningSessionResponse>();
+
+    public Task<MobileDiningSessionResponse?> StaffCloseDiningSessionAsync(int sessionId, StaffServiceRequestCommand command, CancellationToken ct) =>
+        PostForAsync<StaffServiceRequestCommand, MobileDiningSessionResponse>($"/api/internal/dining-sessions/{sessionId}/staff-close", command, ct);
+
     public async Task<IReadOnlyList<StaffServiceRequestResponse>> GetStaffServiceRequestsAsync(int branchId, CancellationToken ct) =>
         await GetAsync<IReadOnlyList<StaffServiceRequestResponse>>($"/api/internal/service-requests?branchId={branchId}", ct)
         ?? Array.Empty<StaffServiceRequestResponse>();

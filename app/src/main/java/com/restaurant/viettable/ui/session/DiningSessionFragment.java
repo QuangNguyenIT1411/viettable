@@ -255,7 +255,7 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
             binding.tvTotalDishesCount.setText(totalDishes + " món");
             binding.tvOrderRoundsCount.setText(session.getOrders().size() + " đợt");
             binding.btnCancelTable.setVisibility(SessionCancelPolicy.canCancel(session.getStatus(),
-                    session.getOrders().size(), session.getReservationId() != null) ? View.VISIBLE : View.GONE);
+                    SessionCancelPolicy.liveRounds(session.getOrders()), session.getReservationId() != null) ? View.VISIBLE : View.GONE);
             binding.tvEstimatedTotalAmount.setText(session.getFormattedSubtotal());
 
             // Orders list

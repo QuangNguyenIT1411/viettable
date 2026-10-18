@@ -21,5 +21,7 @@ public sealed record ServiceRequestResponse(int ServiceRequestId, int DiningSess
     string? Note, string Status, DateTime CreatedAtUtc, DateTime UpdatedAtUtc, DateTime? CancelledAtUtc,
     int BranchId = 0, int TableId = 0, int CustomerId = 0);
 public sealed record StaffServiceRequestCommand(int BranchId, int EmployeeId);
+/// <summary>An app guest's open dining session; CanClose when nothing is left to pay and no payment is pending.</summary>
+public sealed record OpenDiningSessionResponse(int DiningSessionId, int TableId, string Status, DateTime StartedAtUtc, bool CanClose);
 public sealed record StaffServiceRequestResponse(int ServiceRequestId, int DiningSessionId, int BranchId,
     int TableId, int CustomerId, string RequestType, string? Note, string Status, DateTime CreatedAtUtc, DateTime UpdatedAtUtc);

@@ -89,6 +89,58 @@ public sealed class CancelEmptySessionTests
         await AssertUnchanged(db, catalog);
     }
 
+    // The kitchen cancelled every order: the guest has effectively ordered nothing and may leave.
+    [Fact]
+    public async Task Owner_cancels_session_whose_orders_were_all_cancelled()
+    {
+        await using var db = NewDb();
+        var session = Session(1);
+        db.DiningSessions.Add(session);
+        db.Orders.Add(new SelfRestaurant.Orders.Api.Persistence.Entities.Orders { OrderID = 5, TableID = TableId,
+            DiningSessionCode = session.SessionCode, OrderTime = DateTime.UtcNow, IsActive = false,
+            Status = new OrderStatus { StatusID = 7, StatusCode = "CANCELLED", StatusName = "Cancelled" } });
+        await db.SaveChangesAsync();
+        var catalog = new ReleaseRecorder();
+
+        var result = await Controller(db, catalog).CancelEmptySession(1, new(Owner), CancellationToken.None);
+
+        Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Equal("CANCELLED", (await db.DiningSessions.SingleAsync()).Status);
+        Assert.Equal(new[] { TableId }, catalog.Released);
+    }
+
+    [Fact]
+    public async Task Cashier_closes_a_session_with_nothing_to_pay_but_never_one_with_live_orders()
+    {
+        await using var db = NewDb();
+        var cancelledOnly = Session(1);
+        var live = Session(2);
+        live.TableId = TableId + 1; live.CustomerId = Owner + 1; live.SessionCode = "DS-LIVE";
+        var paying = Session(3);
+        paying.TableId = TableId + 2; paying.CustomerId = Owner + 2; paying.SessionCode = "DS-PAY"; paying.Status = "PAYMENT_REQUESTED";
+        db.DiningSessions.AddRange(cancelledOnly, live, paying);
+        var cancelled = new OrderStatus { StatusID = 7, StatusCode = "CANCELLED", StatusName = "Cancelled" };
+        db.Orders.Add(new SelfRestaurant.Orders.Api.Persistence.Entities.Orders { OrderID = 5, TableID = TableId,
+            DiningSessionCode = cancelledOnly.SessionCode, OrderTime = DateTime.UtcNow, IsActive = false, Status = cancelled });
+        db.Orders.Add(new SelfRestaurant.Orders.Api.Persistence.Entities.Orders { OrderID = 6, TableID = live.TableId,
+            DiningSessionCode = live.SessionCode, OrderTime = DateTime.UtcNow, IsActive = true,
+            Status = new OrderStatus { StatusID = 1, StatusCode = "CONFIRMED", StatusName = "Confirmed" } });
+        await db.SaveChangesAsync();
+        var catalog = new ReleaseRecorder();
+        var controller = Controller(db, catalog);
+
+        var open = Assert.IsAssignableFrom<IReadOnlyList<DiningSessionsController.OpenSessionResponse>>(
+            Assert.IsType<OkObjectResult>((await controller.OpenSessions(3, CancellationToken.None)).Result).Value);
+        Assert.Equal(new[] { true, false, false }, open.OrderBy(x => x.DiningSessionId).Select(x => x.CanClose).ToArray());
+
+        AssertRejected(await controller.StaffClose(2, new(3, 99), CancellationToken.None), 409, "session_has_orders");
+        AssertRejected(await controller.StaffClose(3, new(3, 99), CancellationToken.None), 409, "session_payment_locked");
+        AssertRejected(await controller.StaffClose(1, new(4, 99), CancellationToken.None), 403, "forbidden");
+        Assert.IsType<OkObjectResult>((await controller.StaffClose(1, new(3, 99), CancellationToken.None)).Result);
+        Assert.Equal("CANCELLED", (await db.DiningSessions.SingleAsync(x => x.DiningSessionId == 1)).Status);
+        Assert.Equal(new[] { TableId }, catalog.Released);
+    }
+
     [Fact]
     public async Task Rejects_session_waiting_for_payment()
     {

@@ -2273,7 +2273,8 @@ public sealed class OrdersController : ControllerBase
 
         if (syncResult.StatusCode == "CANCELLED"
             && order.TableID is int tableId
-            && !await HasOtherActiveOrdersInSameSessionAsync(order, cancellationToken))
+            && !await HasOtherActiveOrdersInSameSessionAsync(order, cancellationToken)
+            && !await HasOpenDiningSessionAsync(tableId, cancellationToken))
         {
             await _catalogApi.ReleaseTableAsync(tableId, cancellationToken);
         }
@@ -3018,7 +3019,8 @@ public sealed class OrdersController : ControllerBase
         if (string.Equals(statusCode, "CANCELLED", StringComparison.OrdinalIgnoreCase)
             && syncResult.StatusCode == "CANCELLED"
             && order.TableID is int tableId
-            && !await HasOtherActiveOrdersInSameSessionAsync(order, cancellationToken))
+            && !await HasOtherActiveOrdersInSameSessionAsync(order, cancellationToken)
+            && !await HasOpenDiningSessionAsync(tableId, cancellationToken))
         {
             await _catalogApi.ReleaseTableAsync(tableId, cancellationToken);
         }
@@ -3706,6 +3708,10 @@ public sealed class OrdersController : ControllerBase
             .Select(x => x.CustomerID)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    // An app guest (explicit dining session) may still be seated after the kitchen cancels everything.
+    private Task<bool> HasOpenDiningSessionAsync(int tableId, CancellationToken cancellationToken) =>
+        _db.DiningSessions.AnyAsync(x => x.TableId == tableId && x.EndedAtUtc == null, cancellationToken);
 
     private async Task<bool> HasOtherActiveOrdersInSameSessionAsync(OrderEntity order, CancellationToken cancellationToken)
     {
