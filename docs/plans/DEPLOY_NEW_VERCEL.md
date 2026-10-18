@@ -1,5 +1,8 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 19/10/2026 01:30:** deploy Production `dpl_DPLgUGvTN99zvnrjkd1PZd9N3Utg` (commit `436ee23`: sửa chữ "null", làm sạch nhận xét "null" ở máy chủ, phiên khách không còn kẹt khi bếp hủy hết đơn + nút "Đóng bàn" cho thu ngân), `[syd1]`, Ready;
+> gọi 1 lần: `/` 200 1,1 s, `/app/cashier/` 200 0,7 s, `/app/chef/` 200 0,6 s, `/app/admin/` 200 0,6 s. Bản quay lui: `dpl_9qAcGgnbpqi4yXsK1j2GvMrBqmmL`. APK mới build, chưa cài.
+>
 > **Cập nhật 15/10/2026 18:55:** deploy Production `dpl_9qAcGgnbpqi4yXsK1j2GvMrBqmmL` (commit `911960a`: thanh toán Tiền mặt + Chuyển khoản VietQR, doanh thu Admin = tiền thực thu, đợt 1 dọn tính năng), `[syd1]`, Ready;
 > 4 biến `Payments__BankTransfer__*` đã có trên Vercel (chủ dự án thêm, kiểm tên bằng `vercel env ls`). Gọi 1 lần: `/` 200 2,2 s, `/app/cashier/` 200 7,0 s, `/app/chef/` 200 1,4 s, `/app/admin/` 200 7,2 s.
 > Bản quay lui: `dpl_HvjDLTFJ3WFkWf3b1kbt6JC2Bzcg`. APK `cloudProd` (commit `911960a`) cài đè lên Samsung lúc 18:52:27.
