@@ -21,6 +21,7 @@ public sealed class BillingDbContext : DbContext
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<SplitBill> SplitBills => Set<SplitBill>();
     public DbSet<SplitBillPart> SplitBillParts => Set<SplitBillPart>();
+    public DbSet<BankTransferEvent> BankTransferEvents => Set<BankTransferEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -167,6 +168,23 @@ public sealed class BillingDbContext : DbContext
         modelBuilder.Entity<SplitBillPart>(entity =>
         {
             entity.HasKey(x => x.SplitBillPartId); entity.Property(x => x.Label).HasMaxLength(100); entity.Property(x => x.Status).HasMaxLength(20).IsUnicode(false); entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+        });
+        modelBuilder.Entity<BankTransferEvent>(entity =>
+        {
+            entity.ToTable("BankTransferEvents");
+            entity.HasKey(x => x.BankTransferEventId);
+            // One row per bank transaction: a re-delivered webhook can never be processed twice.
+            entity.HasIndex(x => new { x.Provider, x.ProviderTransactionId }).IsUnique().HasDatabaseName("UX_BankTransferEvents_ProviderTransaction");
+            entity.HasIndex(x => new { x.BranchId, x.Outcome, x.ResolvedAtUtc }).HasDatabaseName("IX_BankTransferEvents_BranchOutcome");
+            entity.Property(x => x.Provider).HasMaxLength(20).IsUnicode(false);
+            entity.Property(x => x.ProviderTransactionId).HasMaxLength(100).IsUnicode(false);
+            entity.Property(x => x.ReferenceCode).HasMaxLength(100).IsUnicode(false);
+            entity.Property(x => x.AccountNumber).HasMaxLength(40).IsUnicode(false);
+            entity.Property(x => x.SubAccount).HasMaxLength(40).IsUnicode(false);
+            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.Content).HasMaxLength(500);
+            entity.Property(x => x.TransactionDate).HasMaxLength(40).IsUnicode(false);
+            entity.Property(x => x.Outcome).HasMaxLength(30).IsUnicode(false);
         });
 
         if (Database.IsNpgsql())

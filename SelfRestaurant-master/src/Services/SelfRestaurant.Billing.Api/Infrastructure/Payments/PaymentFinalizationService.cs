@@ -21,7 +21,7 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
         SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(db, "mobile-settlement:" + quoteId, ct);
 
     public async Task<Payment> ConfirmAsync(int paymentId, int? employeeId, int? branchId,
-        string? providerTransactionId, CancellationToken ct)
+        string? providerTransactionId, CancellationToken ct, string? providerName = null)
     {
         var quoteId = await db.Payments.Where(x => x.PaymentId == paymentId).Select(x => (int?)x.CheckoutQuoteId).SingleOrDefaultAsync(ct)
             ?? throw new PaymentDomainException("payment_not_found", "Không tìm thấy giao dịch.", 404);
@@ -40,6 +40,7 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
                 payment.Status = "SUCCEEDED";
                 payment.ConfirmedByEmployeeId = employeeId;
                 payment.ProviderTransactionId = providerTransactionId;
+                if (providerName is not null) payment.ProviderName = providerName; // e.g. SEPAY: "Đã thanh toán tự động"
                 payment.CompletedAtUtc = payment.UpdatedAtUtc = DateTime.UtcNow;
                 if (part is not null) part.Status = "PAID";
                 if (split is null || split.Parts.All(x => x.Status == "PAID"))

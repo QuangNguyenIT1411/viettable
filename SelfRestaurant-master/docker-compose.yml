@@ -151,6 +151,10 @@
       RabbitMq__Port: "5672"
       RabbitMq__Username: guest
       RabbitMq__Password: guest
+      # SePay bank-transfer webhook (local: throwaway values only; real secret only in Vercel env).
+      Payments__SePay__Enabled: ${SEPAY_ENABLED:-false}
+      Payments__SePay__WebhookSecret: ${SEPAY_WEBHOOK_SECRET:-}
+      Payments__SePay__AccountNumbers: ${SEPAY_ACCOUNT_NUMBERS:-}
       Payments__VnPay__Enabled: ${VNPAY_ENABLED:-false}
       Payments__VnPay__TmnCode: ${VNPAY_TMN_CODE:-}
       Payments__VnPay__HashSecret: ${VNPAY_HASH_SECRET:-}

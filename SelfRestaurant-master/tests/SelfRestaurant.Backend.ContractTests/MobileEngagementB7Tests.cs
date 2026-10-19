@@ -61,8 +61,11 @@ public sealed class MobileEngagementB7Tests
     {
         var gateway = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/StaffCashierGatewayController.cs");
         Assert.Contains("if (paymentId is not null) await NotifyCustomerPaymentAsync(result, ct);", gateway, StringComparison.Ordinal);
-        Assert.Contains("_customersClient.AddPaymentSucceededNotificationAsync(customerId, paymentId, diningSessionId, amount, ct)", gateway, StringComparison.Ordinal);
-        Assert.Contains("MobileNotificationsHub.CustomerGroup(customerId))\n                .SendAsync(\"paymentUpdated\"", gateway.Replace("\r\n", "\n"), StringComparison.Ordinal);
+        // The inbox row + realtime nudge live in CustomerPaymentNotifier, shared with the SePay auto-confirmation.
+        Assert.Contains("_paymentNotifier.NotifyAsync(customerId, paymentId, diningSessionId, amount, ct)", gateway, StringComparison.Ordinal);
+        var notifier = Read("src/Gateway/SelfRestaurant.Gateway.Api/Infrastructure/CustomerPaymentNotifier.cs").Replace("\r\n", "\n");
+        Assert.Contains("customers.AddPaymentSucceededNotificationAsync(customerId, paymentId, diningSessionId, amount, ct)", notifier, StringComparison.Ordinal);
+        Assert.Contains("MobileNotificationsHub.CustomerGroup(customerId))\n                .SendAsync(\"paymentUpdated\"", notifier, StringComparison.Ordinal);
         Assert.Contains("status.GetString() != \"SUCCEEDED\"", gateway, StringComparison.Ordinal);
         var billing = Read("src/Services/SelfRestaurant.Billing.Api/Controllers/CashierMobilePaymentsController.cs");
         Assert.Contains("payment.CustomerId, payment.DiningSessionId", billing, StringComparison.Ordinal);

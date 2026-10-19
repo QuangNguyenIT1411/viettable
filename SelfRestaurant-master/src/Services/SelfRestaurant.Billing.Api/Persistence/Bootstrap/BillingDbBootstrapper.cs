@@ -48,6 +48,18 @@ public static class BillingDbBootstrapper
                 ALTER TABLE dbo.Invoices ADD RecoveryLastAttemptAtUtc DATETIME2 NULL;
             IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id=OBJECT_ID(N'dbo.Invoices') AND name=N'IX_Invoices_RecoveryPending')
                 CREATE INDEX IX_Invoices_RecoveryPending ON dbo.Invoices(SettlementCompletedAtUtc, RecoveryLastAttemptAtUtc, InvoiceId);
+            IF OBJECT_ID(N'dbo.BankTransferEvents', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.BankTransferEvents(
+                    BankTransferEventId BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_BankTransferEvents PRIMARY KEY,
+                    Provider VARCHAR(20) NOT NULL, ProviderTransactionId VARCHAR(100) NOT NULL, ReferenceCode VARCHAR(100) NULL,
+                    AccountNumber VARCHAR(40) NOT NULL, SubAccount VARCHAR(40) NULL, Amount DECIMAL(18,2) NOT NULL,
+                    Content NVARCHAR(500) NOT NULL, TransactionDate VARCHAR(40) NULL, Outcome VARCHAR(30) NOT NULL,
+                    Overpaid BIT NOT NULL, BranchId INT NULL, PaymentId INT NULL, ReceivedAtUtc DATETIME2 NOT NULL,
+                    ProcessedAtUtc DATETIME2 NULL, ResolvedAtUtc DATETIME2 NULL, ResolvedByEmployeeId INT NULL);
+                CREATE UNIQUE INDEX UX_BankTransferEvents_ProviderTransaction ON dbo.BankTransferEvents(Provider, ProviderTransactionId);
+                CREATE INDEX IX_BankTransferEvents_BranchOutcome ON dbo.BankTransferEvents(BranchId, Outcome, ResolvedAtUtc);
+            END;
             """, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);
     }

@@ -46,6 +46,25 @@ public sealed class BillingClient : ApiClientBase
         return body;
     }
 
+    /// <summary>Forwards the SePay webhook to Billing unchanged (raw body + signature headers); Billing verifies it.</summary>
+    public async Task<(int Status, JsonElement Body)> ForwardSePayWebhookAsync(string rawBody, string timestamp, string signature, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/internal/payments/sepay/webhook")
+        {
+            Content = new StringContent(rawBody, System.Text.Encoding.UTF8, "application/json")
+        };
+        request.Headers.TryAddWithoutValidation("X-SePay-Timestamp", timestamp);
+        request.Headers.TryAddWithoutValidation("X-SePay-Signature", signature);
+        using var response = await Http.SendAsync(request, ct);
+        var text = await response.Content.ReadAsStringAsync(ct);
+        JsonElement body = default;
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            try { body = JsonSerializer.Deserialize<JsonElement>(text); } catch (JsonException) { }
+        }
+        return ((int)response.StatusCode, body);
+    }
+
     public async Task<IReadOnlyList<CashierOrderDto>> GetCashierOrdersAsync(int branchId, CancellationToken cancellationToken)
     {
         var list = await GetAsync<IReadOnlyList<CashierOrderDto>>($"/api/branches/{branchId}/cashier/orders", cancellationToken);

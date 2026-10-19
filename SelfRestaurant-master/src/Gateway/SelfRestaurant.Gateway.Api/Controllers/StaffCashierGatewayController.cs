@@ -25,8 +25,10 @@ public sealed class StaffCashierGatewayController : ControllerBase
     private readonly IHubContext<CustomerNotificationsHub> _customerNotificationsHub;
     private readonly IHubContext<MobileNotificationsHub> _mobileNotificationsHub;
     private readonly ILogger<StaffCashierGatewayController> _logger;
+    private readonly CustomerPaymentNotifier _paymentNotifier;
 
     public StaffCashierGatewayController(
+        CustomerPaymentNotifier paymentNotifier,
         BillingClient billingClient,
         IdentityClient identityClient,
         CatalogClient catalogClient,
@@ -44,6 +46,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
         _customerNotificationsHub = customerNotificationsHub;
         _mobileNotificationsHub = mobileNotificationsHub;
         _logger = logger;
+        _paymentNotifier = paymentNotifier;
     }
 
     [HttpGet("session")]
@@ -85,17 +88,8 @@ public sealed class StaffCashierGatewayController : ControllerBase
     }
 
     // Shared by the onsite-payments panel and the dashboard "Thanh toán" button so both notify identically.
-    private async Task NotifyCustomerPaymentAsync(int customerId, int paymentId, int diningSessionId, decimal amount, CancellationToken ct)
-    {
-        try { await _customersClient.AddPaymentSucceededNotificationAsync(customerId, paymentId, diningSessionId, amount, ct); }
-        catch (Exception ex) { _logger.LogWarning(ex, "Payment {PaymentId} notification deferred.", paymentId); }
-        try
-        {
-            await _mobileNotificationsHub.Clients.Group(MobileNotificationsHub.CustomerGroup(customerId))
-                .SendAsync("paymentUpdated", new { diningSessionId, paymentId, status = "SUCCEEDED" }, ct);
-        }
-        catch (Exception ex) { _logger.LogWarning(ex, "Payment {PaymentId} realtime update deferred.", paymentId); }
-    }
+    private Task NotifyCustomerPaymentAsync(int customerId, int paymentId, int diningSessionId, decimal amount, CancellationToken ct) =>
+        _paymentNotifier.NotifyAsync(customerId, paymentId, diningSessionId, amount, ct);
 
     [HttpPost("auth/login")]
     public async Task<ActionResult<object>> Login([FromBody] StaffLoginApiRequest request, CancellationToken cancellationToken)

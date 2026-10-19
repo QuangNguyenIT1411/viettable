@@ -23,6 +23,94 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.BankTransferEvent", b =>
+                {
+                    b.Property<long>("BankTransferEventId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("BankTransferEventId"));
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<bool>("Overpaid")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("ReceivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReferenceCode")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ResolvedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SubAccount")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("TransactionDate")
+                        .HasMaxLength(40)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("BankTransferEventId");
+
+                    b.HasIndex("Provider", "ProviderTransactionId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_BankTransferEvents_ProviderTransaction");
+
+                    b.HasIndex("BranchId", "Outcome", "ResolvedAtUtc")
+                        .HasDatabaseName("IX_BankTransferEvents_BranchOutcome");
+
+                    b.ToTable("BankTransferEvents", "billing");
+                });
+
             modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.Bills", b =>
                 {
                     b.Property<int>("BillID")

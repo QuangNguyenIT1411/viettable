@@ -81,6 +81,9 @@ builder.Services.Configure<VnPayOptions>(builder.Configuration.GetSection("Payme
 builder.Services.AddSingleton<IPaymentProvider, VnPayPaymentProvider>();
 builder.Services.Configure<BankTransferOptions>(builder.Configuration.GetSection("Payments:BankTransfer"));
 builder.Services.AddSingleton<BankTransferQrService>();
+builder.Services.Configure<SePayOptions>(builder.Configuration.GetSection("Payments:SePay"));
+builder.Services.AddScoped<ISePayPaymentConfirmer, SePayPaymentConfirmer>();
+builder.Services.AddScoped<SePayWebhookService>();
 
 registrationTiming?.Dispose();
 using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "builder-build");
