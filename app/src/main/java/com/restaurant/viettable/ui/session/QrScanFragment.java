@@ -45,7 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class QrScanFragment extends BaseFragment {
+public class QrScanFragment extends BaseFragment implements com.restaurant.viettable.ui.lock.LockExempt {
     private static final String CAMERA_PERMISSION_PREFS = "qr_camera_permission";
     private static final String KEY_CAMERA_PERMISSION_REQUESTED = "requested";
 
@@ -193,6 +193,7 @@ public class QrScanFragment extends BaseFragment {
         } else {
             Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                     Uri.fromParts("package", requireContext().getPackageName(), null));
+            com.restaurant.viettable.ui.lock.AppLock.get().expectExternalReturn();
             startActivity(intent);
         }
     }

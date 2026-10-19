@@ -43,4 +43,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- App lock (fingerprint): covers every screen and the bottom bar; filled by AppLockFragment. -->
+    <FrameLayout
+        android:id="@+id/lock_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/bg_cream"
+        android:clickable="true"
+        android:elevation="40dp"
+        android:focusable="true"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

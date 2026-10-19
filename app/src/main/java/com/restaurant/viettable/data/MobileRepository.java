@@ -215,7 +215,7 @@ public final class MobileRepository {
                     return;
                 }
                 User user = parseTokenUser(response.optJSONObject("user"));
-                state.setCurrentUser(user);
+                setSessionUser(user);
                 state.setLoggedIn(true);
                 SignalRManager.getInstance().startIfAuthenticated();
                 callback.onSuccess(user);
@@ -405,7 +405,7 @@ public final class MobileRepository {
         api().get("/api/mobile/v1/me", true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 User user = parseProfile((JSONObject) body);
-                state.setCurrentUser(user);
+                setSessionUser(user);
                 state.setLoggedIn(true);
                 callback.onSuccess(user);
             }
@@ -419,7 +419,7 @@ public final class MobileRepository {
             api().put("/api/mobile/v1/me", body, true, null, new ApiClient.Callback() {
                 @Override public void onSuccess(Object value) {
                     User user = parseProfile((JSONObject) value);
-                    state.setCurrentUser(user);
+                    setSessionUser(user);
                     callback.onSuccess(user);
                 }
                 @Override public void onError(ApiException error) { callback.onError(error); }
@@ -1233,17 +1233,63 @@ public final class MobileRepository {
         });
     }
 
+    /** Sets the in-memory user and remembers on this phone which account owns the session. */
+    private void setSessionUser(User user) {
+        state.setCurrentUser(user);
+        if (user != null) {
+            BiometricTokenStore.getInstance().rememberSession(user.getId(),
+                    BiometricLoginPolicy.maskedLabel(user.getEmail(), user.getPhone(), user.getFullName()),
+                    BiometricLoginPolicy.loginId(user.getEmail(), user.getPhone()));
+        }
+    }
+
     /**
      * "Đăng xuất, giữ đăng nhập vân tay": seals the refresh token for this account and forgets the session
      * locally; the server session stays alive until fingerprint login rotates it or it expires.
      * Throws (session untouched) when sealing fails, e.g. KeyPermanentlyInvalidatedException.
      */
-    public void logoutKeepingFingerprint(User user) throws Exception {
+    public void logoutKeepingFingerprint(String accountId, String label, String loginId) throws Exception {
         BiometricTokenStore store = BiometricTokenStore.getInstance();
-        String label = BiometricLoginPolicy.maskedLabel(user.getEmail(), user.getPhone(), user.getFullName());
-        String loginId = BiometricLoginPolicy.loginId(user.getEmail(), user.getPhone());
-        api().handOffRefreshToken(refreshToken -> store.seal(user.getId(), label, loginId, refreshToken));
+        api().handOffRefreshToken(refreshToken -> store.seal(accountId, label, loginId, refreshToken));
         clearLocalSession();
+    }
+
+    /**
+     * Checks a password (or Google id token) for the app lock without touching the current session: the new
+     * session the server creates is revoked right away. Returns the customer id the credentials belong to.
+     */
+    public void verifyPassword(String loginId, String password, Callback<String> callback) {
+        try {
+            JSONObject body = new JSONObject().put("username", loginId).put("password", password);
+            api().post("/api/mobile/v1/auth/login", body, false, null, verifyCallback(callback));
+        } catch (JSONException e) { callback.onError(jsonError()); }
+    }
+
+    public void verifyGoogle(String idToken, Callback<String> callback) {
+        try {
+            JSONObject body = new JSONObject().put("idToken", idToken);
+            api().post("/api/mobile/v1/auth/google", body, false, null, verifyCallback(callback));
+        } catch (JSONException e) { callback.onError(jsonError()); }
+    }
+
+    private ApiClient.Callback verifyCallback(Callback<String> callback) {
+        return new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject response = (JSONObject) body;
+                String extra = SafeText.json(response, "refreshToken");
+                if (!extra.isEmpty()) {
+                    try {
+                        api().post("/api/mobile/v1/auth/logout", new JSONObject().put("refreshToken", extra), false, null,
+                                new ApiClient.Callback() {
+                                    @Override public void onSuccess(Object ignored) { }
+                                    @Override public void onError(ApiException ignored) { }
+                                });
+                    } catch (JSONException ignored) { }
+                }
+                callback.onSuccess(parseTokenUser(response.optJSONObject("user")).getId());
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        };
     }
 
     /** Fingerprint login: exchanges the unsealed refresh token for a new session. */
@@ -1262,6 +1308,7 @@ public final class MobileRepository {
     }
 
     public void clearLocalSession() {
+        BiometricTokenStore.getInstance().forgetSession();
         SignalRManager.getInstance().stopAndClear();
         api().clearSession();
         state.clearAuthenticatedData();

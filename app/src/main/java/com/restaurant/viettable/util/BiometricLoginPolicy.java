@@ -62,10 +62,33 @@ public final class BiometricLoginPolicy {
         return deviceReady && !enabled && !alreadyAsked;
     }
 
-    /** Fingerprint data of owner must be deleted when currentAccount logs in with a password or Google. */
+    /** A real customer id. Blank, "0" (optInt default for a missing field) or "null" are not an account. */
+    public static boolean isKnownAccount(String accountId) {
+        String id = SafeText.clean(accountId).trim();
+        return !id.isEmpty() && !"0".equals(id);
+    }
+
+    /**
+     * Fingerprint data of owner may be deleted only when currentAccount is a known, different account.
+     * An unknown current account (profile not loaded yet on a cold start) never counts as "another account".
+     */
     public static boolean belongsToOtherAccount(String owner, String currentAccount) {
-        if (owner == null || owner.trim().isEmpty()) return false;
-        return currentAccount == null || !owner.equals(currentAccount);
+        if (!isKnownAccount(owner) || !isKnownAccount(currentAccount)) return false;
+        return !owner.equals(currentAccount);
+    }
+
+    /**
+     * Who is logged in: the loaded profile, else the account remembered on this phone with the session.
+     * On a cold start the profile arrives only after a network call; until then the remembered id is used.
+     */
+    public static String resolveAccount(String loadedUserId, String rememberedSessionAccount) {
+        if (isKnownAccount(loadedUserId)) return loadedUserId;
+        return isKnownAccount(rememberedSessionAccount) ? rememberedSessionAccount : null;
+    }
+
+    /** Only a key that Android itself declared dead (fingerprints changed) justifies deleting fingerprint data. */
+    public static boolean shouldWipeAfterKeyError(boolean keyPermanentlyInvalidated) {
+        return keyPermanentlyInvalidated;
     }
 
     /** "q***@gmail.com"; phone "09******78" when there is no e-mail; otherwise the name. */

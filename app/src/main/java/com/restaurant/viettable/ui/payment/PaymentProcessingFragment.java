@@ -21,7 +21,7 @@ import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
 
-public class PaymentProcessingFragment extends BaseFragment {
+public class PaymentProcessingFragment extends BaseFragment implements com.restaurant.viettable.ui.lock.LockExempt {
 
     private static final String ARG_INVOICE = "arg_invoice";
     private static final String ARG_METHOD = "arg_method";
@@ -109,6 +109,7 @@ public class PaymentProcessingFragment extends BaseFragment {
         if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) { showToast("Liên kết thanh toán không hợp lệ."); return; }
         try {
             providerOpened = true;
+            com.restaurant.viettable.ui.lock.AppLock.get().expectExternalReturn();
             startActivity(new Intent(Intent.ACTION_VIEW, uri));
         } catch (Exception error) { showToast("Không tìm thấy ứng dụng có thể mở cổng thanh toán."); }
     }

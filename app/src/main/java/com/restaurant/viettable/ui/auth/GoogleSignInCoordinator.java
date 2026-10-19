@@ -40,6 +40,7 @@ final class GoogleSignInCoordinator {
 
     void start(@NonNull Activity activity, @NonNull String clientId, @NonNull Callback callback) {
         if (!requestGuard.tryBegin()) return;
+        com.restaurant.viettable.ui.lock.AppLock.get().expectExternalReturn(); // Google's account picker
         if (!GoogleSignInConfig.isConfigured(clientId)) {
             requestGuard.finish();
             callback.onError("Google Sign-In chưa được cấu hình cho bản build này.");

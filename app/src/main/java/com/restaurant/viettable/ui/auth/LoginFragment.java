@@ -89,7 +89,7 @@ public class LoginFragment extends BaseFragment {
                 pendingAction = null;
                 if (ACTION_ENABLE.equals(action)) {
                     showToast("Chưa bật đăng nhập bằng vân tay. Bạn có thể bật trong Hồ sơ.");
-                    if (binding != null) navigateTo(new BranchListFragment());
+                    if (binding != null) resetTo(new BranchListFragment());
                     return;
                 }
                 // Cancel / "Dùng mật khẩu": stay here and type the password. Lockout: same, with a message.
@@ -206,8 +206,8 @@ public class LoginFragment extends BaseFragment {
         } catch (KeyPermanentlyInvalidatedException changed) {
             dropFingerprint(owner, BiometricLoginPolicy.KEY_CHANGED_MESSAGE);
             return false;
-        } catch (Exception unusable) {
-            dropFingerprint(owner, BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
+        } catch (Exception transientFailure) {
+            showError(BiometricLoginPolicy.UNAVAILABLE_MESSAGE); // delete nothing on doubt; the password still works
             return false;
         }
         binding.tvError.setVisibility(View.GONE);
@@ -226,8 +226,11 @@ public class LoginFragment extends BaseFragment {
         try {
             refreshToken = store.open(unlocked);
         } catch (Exception unusable) {
-            dropFingerprint(owner, unusable instanceof KeyPermanentlyInvalidatedException
-                    ? BiometricLoginPolicy.KEY_CHANGED_MESSAGE : BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
+            if (BiometricLoginPolicy.shouldWipeAfterKeyError(unusable instanceof KeyPermanentlyInvalidatedException)) {
+                dropFingerprint(owner, BiometricLoginPolicy.KEY_CHANGED_MESSAGE);
+            } else {
+                showError(BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
+            }
             return;
         }
         setAuthenticating(true, com.restaurant.viettable.R.string.auth_continue_with_google);
@@ -236,7 +239,7 @@ public class LoginFragment extends BaseFragment {
                 if (binding == null) return;
                 setAuthenticating(false, com.restaurant.viettable.R.string.auth_continue_with_google);
                 showToast("Đăng nhập thành công!");
-                navigateTo(new BranchListFragment());
+                resetTo(new BranchListFragment());
             }
 
             @Override public void onError(ApiException error) {
@@ -298,7 +301,7 @@ public class LoginFragment extends BaseFragment {
         showToast(message);
         if (accountId == null || !BiometricLoginPolicy.shouldOffer(BiometricGate.deviceReady(getContext()),
                 store.isEnabled(accountId), store.wasAsked(accountId))) {
-            navigateTo(new BranchListFragment());
+            resetTo(new BranchListFragment());
             return;
         }
         store.markAsked(accountId);
@@ -312,7 +315,7 @@ public class LoginFragment extends BaseFragment {
                     pendingEnableAccount = accountId;
                     if (!fingerprintGate.confirm()) {
                         pendingAction = null;
-                        navigateTo(new BranchListFragment());
+                        resetTo(new BranchListFragment());
                     }
                 })
                 .setNegativeButton("Để sau", (dialog, which) -> navigateTo(new BranchListFragment()))
@@ -329,7 +332,7 @@ public class LoginFragment extends BaseFragment {
             BiometricTokenStore.getInstance().disable(accountId);
             showToast(BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
         }
-        if (binding != null) navigateTo(new BranchListFragment());
+        if (binding != null) resetTo(new BranchListFragment());
     }
 
     private void startGoogleSignIn() {

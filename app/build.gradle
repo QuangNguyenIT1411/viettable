@@ -54,6 +54,10 @@ android {
         buildConfigField 'String', 'GOOGLE_WEB_CLIENT_ID', groovy.json.JsonOutput.toJson(googleWebClientId)
         buildConfigField 'int', 'API_READ_TIMEOUT_MS', '20000'
         buildConfigField 'int', 'IMAGE_READ_TIMEOUT_MS', '6000'
+        // App lock after this long in the background. 0 = AppLockPolicy.DEFAULT_TIMEOUT_MS (5 minutes).
+        // Test build only: gradlew ... -PVIETTABLE_APP_LOCK_SECONDS=30
+        def appLockSeconds = providers.gradleProperty('VIETTABLE_APP_LOCK_SECONDS').orElse('0').get().trim().toLong()
+        buildConfigField 'long', 'APP_LOCK_TIMEOUT_OVERRIDE_MS', "${appLockSeconds * 1000L}L"
     }
 
     buildTypes {

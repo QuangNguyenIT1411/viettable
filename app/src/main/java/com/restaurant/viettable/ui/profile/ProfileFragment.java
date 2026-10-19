@@ -190,10 +190,11 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
         });
     }
 
+    /** Loaded profile, else the account remembered with the session (cold start: profile not loaded yet). */
     private String currentAccountId() {
         User user = appStateManager.getCurrentUser();
-        String id = user == null ? null : user.getId();
-        return id == null || id.trim().isEmpty() ? null : id;
+        return BiometricLoginPolicy.resolveAccount(user == null ? null : user.getId(),
+                BiometricTokenStore.getInstance().sessionAccount());
     }
 
     /** The row exists only on phones with an enrolled strong fingerprint; re-checked on every resume. */
@@ -213,9 +214,8 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
                 store.disable(accountId);
                 enabled = false;
                 showToast("Vân tay trên máy đã thay đổi nên đăng nhập bằng vân tay đã tắt. Bạn có thể bật lại.");
-            } catch (Exception unusable) {
-                store.disable(accountId);
-                enabled = false;
+            } catch (Exception transientFailure) {
+                // Keystore hiccup (e.g. right after a cold start): show the stored setting, delete nothing.
             }
         }
         setFingerprintSwitch(enabled);
@@ -269,13 +269,18 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
     }
 
     private void logoutKeepingFingerprint() {
+        String accountId = currentAccountId();
+        BiometricTokenStore store = BiometricTokenStore.getInstance();
         User user = appStateManager.getCurrentUser();
-        if (user == null) { logoutCompletely(null, "Đã đăng xuất thành công!"); return; }
+        boolean loaded = user != null && accountId.equals(user.getId());
+        String label = loaded ? BiometricLoginPolicy.maskedLabel(user.getEmail(), user.getPhone(), user.getFullName())
+                : store.sessionLabel();
+        String loginId = loaded ? BiometricLoginPolicy.loginId(user.getEmail(), user.getPhone()) : store.sessionLoginId();
         try {
-            MobileRepository.getInstance().logoutKeepingFingerprint(user);
+            MobileRepository.getInstance().logoutKeepingFingerprint(accountId, label, loginId);
         } catch (Exception failure) {
             // Could not seal (fingerprints changed, key gone, no session): fall back to a full, revoking logout.
-            logoutCompletely(user.getId(), failure instanceof KeyPermanentlyInvalidatedException
+            logoutCompletely(accountId, failure instanceof KeyPermanentlyInvalidatedException
                     ? BiometricLoginPolicy.KEY_CHANGED_MESSAGE
                     : "Không giữ được đăng nhập bằng vân tay nên đã đăng xuất hẳn.");
             return;
@@ -300,6 +305,7 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
     public void onStateChanged() {
         if (binding != null) {
             bindUserData();
+            if (isResumed()) bindFingerprintRow(); // the profile may arrive after the screen opened (cold start)
         }
     }
 

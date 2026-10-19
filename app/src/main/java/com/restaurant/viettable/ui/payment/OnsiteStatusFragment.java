@@ -20,7 +20,7 @@ import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.SafeText;
 
-public class OnsiteStatusFragment extends BaseFragment {
+public class OnsiteStatusFragment extends BaseFragment implements com.restaurant.viettable.ui.lock.LockExempt {
 
     private static final String ARG_INVOICE = "arg_invoice";
     private static final String ARG_LOCATION = "arg_location";

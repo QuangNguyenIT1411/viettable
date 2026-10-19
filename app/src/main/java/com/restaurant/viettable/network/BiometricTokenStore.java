@@ -60,7 +60,7 @@ public final class BiometricTokenStore {
     public boolean wasAsked(String accountId) { return valid(accountId) && prefs.getBoolean("asked_" + accountId, false); }
 
     public void markAsked(String accountId) {
-        if (valid(accountId)) prefs.edit().putBoolean("asked_" + accountId, true).apply();
+        if (valid(accountId)) prefs.edit().putBoolean("asked_" + accountId, true).commit();
     }
 
     /** Creates this account's key; call only after the user confirmed with a fingerprint. */
@@ -143,6 +143,8 @@ public final class BiometricTokenStore {
      * account's fingerprint data (key, flag, token) is deleted. accountId's own setting is kept.
      */
     public void keepOnlyAccount(String accountId) {
+        // Never wipe on doubt: an unknown account id (e.g. a response without customerId) deletes nothing.
+        if (!BiometricLoginPolicy.isKnownAccount(accountId)) return;
         java.util.List<String> others = new java.util.ArrayList<>();
         for (String key : prefs.getAll().keySet()) {
             if (!key.startsWith("enabled_")) continue;
@@ -151,6 +153,25 @@ public final class BiometricTokenStore {
         }
         for (String owner : others) disable(owner);
         clearSealed();
+    }
+
+    /**
+     * Who owns the current session, saved on this phone (commit, so a swipe-kill right after login cannot lose it).
+     * On a cold start the profile is only known after a network call; Hồ sơ, Đăng xuất and the app lock use this.
+     */
+    public void rememberSession(String accountId, String label, String loginId) {
+        if (!valid(accountId)) return; // keep what we had rather than forget on doubt
+        prefs.edit().putString("session_account", accountId).putString("session_label", label == null ? "" : label)
+                .putString("session_login", loginId == null ? "" : loginId).commit();
+    }
+
+    public String sessionAccount() { return prefs.getString("session_account", null); }
+    public String sessionLabel() { return prefs.getString("session_label", ""); }
+    public String sessionLoginId() { return prefs.getString("session_login", ""); }
+
+    /** The session ended (logout or expired). Fingerprint settings are untouched. */
+    public void forgetSession() {
+        prefs.edit().remove("session_account").remove("session_label").remove("session_login").commit();
     }
 
     /** The sealed token was used (rotated by the server) or must not be used by another account. */
@@ -179,7 +200,7 @@ public final class BiometricTokenStore {
         return store;
     }
 
-    private static boolean valid(String accountId) { return accountId != null && !accountId.trim().isEmpty(); }
+    private static boolean valid(String accountId) { return BiometricLoginPolicy.isKnownAccount(accountId); }
 
     private static String alias(String accountId) { return ALIAS_PREFIX + accountId.replaceAll("[^A-Za-z0-9_-]", "_"); }
 }

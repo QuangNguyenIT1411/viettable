@@ -106,7 +106,7 @@ public class RegisterFragment extends BaseFragment {
                     if (binding == null) return;
                     setRegistering(false);
                     showToast("Đăng ký tài khoản thành công!");
-                    navigateTo(new BranchListFragment());
+                    resetTo(new BranchListFragment()); // Back never returns to the register/welcome screens
                 }
                 @Override public void onError(ApiException error) {
                     if (binding == null) return;

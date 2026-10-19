@@ -47,8 +47,32 @@ public class BiometricLoginPolicyTest {
     @Test public void only_another_account_wipes_fingerprint_data() {
         assertFalse(BiometricLoginPolicy.belongsToOtherAccount("12", "12"));
         assertTrue(BiometricLoginPolicy.belongsToOtherAccount("12", "34"));
-        assertTrue(BiometricLoginPolicy.belongsToOtherAccount("12", null));
         assertFalse(BiometricLoginPolicy.belongsToOtherAccount("", "34"));
+    }
+
+    // Bug 19/10 (lỗi 2): after a swipe-kill the profile is not loaded yet; an unknown/blank/"0" id must never be
+    // treated as "another account", so nothing is wiped on doubt.
+    @Test public void unknown_current_account_never_wipes_fingerprint_data() {
+        assertFalse(BiometricLoginPolicy.belongsToOtherAccount("12", null));
+        assertFalse(BiometricLoginPolicy.belongsToOtherAccount("12", ""));
+        assertFalse(BiometricLoginPolicy.belongsToOtherAccount("12", "0"));
+        assertFalse(BiometricLoginPolicy.belongsToOtherAccount("12", "null"));
+        assertFalse(BiometricLoginPolicy.isKnownAccount("0"));
+        assertTrue(BiometricLoginPolicy.isKnownAccount("26"));
+    }
+
+    // Bug 19/10 (lỗi 2): Hồ sơ and Đăng xuất asked the in-memory profile, which is empty right after a cold start, so
+    // the fingerprint row vanished and logout revoked the session instead of keeping fingerprint login.
+    @Test public void cold_start_uses_the_account_remembered_with_the_session() {
+        assertEquals("26", BiometricLoginPolicy.resolveAccount(null, "26"));
+        assertEquals("26", BiometricLoginPolicy.resolveAccount("0", "26"));
+        assertEquals("25", BiometricLoginPolicy.resolveAccount("25", "26")); // a loaded profile wins
+        assertEquals(null, BiometricLoginPolicy.resolveAccount(null, null));
+    }
+
+    @Test public void only_a_dead_key_wipes_fingerprint_data() {
+        assertTrue(BiometricLoginPolicy.shouldWipeAfterKeyError(true));
+        assertFalse(BiometricLoginPolicy.shouldWipeAfterKeyError(false));
     }
 
     @Test public void label_masks_email_then_phone_then_name() {

@@ -65,6 +65,11 @@ public final class BiometricGate {
         return show("Đăng nhập bằng vân tay", "Quét vân tay để vào VietTable", "Dùng mật khẩu", cipher);
     }
 
+    /** App lock: same key, so changed fingerprints cannot open it. */
+    public boolean unlockApp(@NonNull Cipher cipher) {
+        return show("Mở khoá VietTable", "Quét vân tay để tiếp tục", "Dùng mật khẩu", cipher);
+    }
+
     private boolean show(String title, String subtitle, String negative, @Nullable Cipher cipher) {
         // Only a visible, resumed screen may open the dialog (never a fragment being rebuilt off-screen).
         if (!fragment.isResumed() || fragment.isRemoving() || fragment.getChildFragmentManager().isStateSaved()) return false;
