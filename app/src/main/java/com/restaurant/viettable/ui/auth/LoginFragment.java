@@ -1,6 +1,7 @@
 package com.restaurant.viettable.ui.auth;
 
 import android.os.Bundle;
+import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,13 +11,18 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.restaurant.viettable.BuildConfig;
 import com.restaurant.viettable.databinding.FragmentLoginBinding;
 import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.model.User;
 import com.restaurant.viettable.network.ApiException;
+import com.restaurant.viettable.network.BiometricTokenStore;
+import com.restaurant.viettable.util.BiometricLoginPolicy;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.branch.BranchListFragment;
+
+import javax.crypto.Cipher;
 
 public class LoginFragment extends BaseFragment {
     private static final String GOOGLE_LOG_TAG = "GoogleSignIn";
@@ -41,6 +47,8 @@ public class LoginFragment extends BaseFragment {
         binding.btnGoRegister.setOnClickListener(v -> navigateTo(new RegisterFragment()));
         binding.btnForgotPassword.setOnClickListener(v -> navigateTo(new ForgotPasswordFragment()));
         binding.btnGoogleSignIn.setOnClickListener(v -> startGoogleSignIn());
+        binding.btnBiometricLogin.setOnClickListener(v -> startFingerprintLogin());
+        refreshFingerprintButton();
         binding.etPassword.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
                 binding.btnSubmitLogin.performClick();
@@ -72,8 +80,7 @@ public class LoginFragment extends BaseFragment {
                 @Override public void onSuccess(User value) {
                     if (binding == null) return;
                     setAuthenticating(false, com.restaurant.viettable.R.string.auth_continue_with_google);
-                    showToast("Đăng nhập thành công!");
-                    navigateTo(new BranchListFragment());
+                    afterInteractiveLogin(value, "Đăng nhập thành công!");
                 }
                 @Override public void onError(ApiException error) {
                     if (binding == null) return;
@@ -103,8 +110,7 @@ public class LoginFragment extends BaseFragment {
                         if (binding == null) return;
                         if (BuildConfig.DEBUG) Log.d(GOOGLE_LOG_TAG, "Gateway auth succeeded; VietTable session stored; navigating to branch selection");
                         binding.btnGoogleSignIn.setText(com.restaurant.viettable.R.string.auth_google_success_state);
-                        showToast(getString(com.restaurant.viettable.R.string.auth_google_success));
-                        navigateTo(new BranchListFragment());
+                        afterInteractiveLogin(value, getString(com.restaurant.viettable.R.string.auth_google_success));
                     }
 
                     @Override public void onError(ApiException error) {
@@ -130,6 +136,130 @@ public class LoginFragment extends BaseFragment {
         });
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshFingerprintButton(); // the guest may have added or removed fingerprints in system settings
+    }
+
+    private void refreshFingerprintButton() {
+        if (binding == null) return;
+        BiometricTokenStore store = BiometricTokenStore.getInstance();
+        boolean show = store.sealedOwner() != null && BiometricGate.deviceReady(getContext());
+        binding.btnBiometricLogin.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (show) binding.btnBiometricLogin.setText(BiometricLoginPolicy.loginButtonText(store.sealedLabel()));
+    }
+
+    private void startFingerprintLogin() {
+        if (authenticating) return;
+        BiometricTokenStore store = BiometricTokenStore.getInstance();
+        String owner = store.sealedOwner();
+        if (owner == null) { refreshFingerprintButton(); return; }
+        Cipher cipher;
+        try {
+            cipher = store.decryptCipher(owner);
+        } catch (KeyPermanentlyInvalidatedException changed) {
+            dropFingerprint(owner, BiometricLoginPolicy.KEY_CHANGED_MESSAGE);
+            return;
+        } catch (Exception unusable) {
+            dropFingerprint(owner, BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
+            return;
+        }
+        binding.tvError.setVisibility(View.GONE);
+        BiometricGate.unlock(this, cipher, new BiometricGate.Callback() {
+            @Override public void onSuccess(@Nullable Cipher unlocked) {
+                if (binding == null) return;
+                String refreshToken;
+                try {
+                    refreshToken = store.open(unlocked);
+                } catch (Exception unusable) {
+                    dropFingerprint(owner, unusable instanceof KeyPermanentlyInvalidatedException
+                            ? BiometricLoginPolicy.KEY_CHANGED_MESSAGE : BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
+                    return;
+                }
+                setAuthenticating(true, com.restaurant.viettable.R.string.auth_continue_with_google);
+                MobileRepository.getInstance().loginWithSealedToken(refreshToken, new MobileRepository.Callback<User>() {
+                    @Override public void onSuccess(User value) {
+                        if (binding == null) return;
+                        setAuthenticating(false, com.restaurant.viettable.R.string.auth_continue_with_google);
+                        showToast("Đăng nhập thành công!");
+                        navigateTo(new BranchListFragment());
+                    }
+
+                    @Override public void onError(ApiException error) {
+                        BiometricLoginPolicy.RefreshFailure failure =
+                                BiometricLoginPolicy.classifyRefreshFailure(error.getStatusCode(), error.getCode());
+                        // Expired/revoked tokens are dropped even if the screen is gone; anything else is kept for a retry.
+                        if (failure == BiometricLoginPolicy.RefreshFailure.REAUTH_REQUIRED) store.disable(owner);
+                        if (binding == null) return;
+                        setAuthenticating(false, com.restaurant.viettable.R.string.auth_continue_with_google);
+                        refreshFingerprintButton();
+                        showError(failure == BiometricLoginPolicy.RefreshFailure.REAUTH_REQUIRED
+                                ? BiometricLoginPolicy.SESSION_EXPIRED_MESSAGE
+                                : failure == BiometricLoginPolicy.RefreshFailure.NETWORK
+                                ? BiometricLoginPolicy.NETWORK_MESSAGE : apiError(error));
+                    }
+                });
+            }
+
+            @Override public void onError(BiometricLoginPolicy.PromptError kind, @NonNull String message) {
+                // Cancel, "Dùng mật khẩu" or too many wrong scans: stay on the normal login screen, data kept.
+                if (binding == null || kind == BiometricLoginPolicy.PromptError.CANCELLED) return;
+                showError(message);
+            }
+        });
+    }
+
+    /** Fingerprints changed or the key is unusable: turn the feature off and clean up, never crash. */
+    private void dropFingerprint(String owner, String message) {
+        BiometricTokenStore.getInstance().disable(owner);
+        refreshFingerprintButton();
+        showError(message);
+    }
+
+    /** Password or Google login succeeded: never reuse a sealed token, then offer fingerprint login once. */
+    private void afterInteractiveLogin(User user, String message) {
+        if (binding == null) return;
+        BiometricTokenStore store = BiometricTokenStore.getInstance();
+        store.clearSealed();
+        showToast(message);
+        String accountId = user == null ? null : user.getId();
+        if (accountId == null || !BiometricLoginPolicy.shouldOffer(BiometricGate.deviceReady(getContext()),
+                store.isEnabled(accountId), store.wasAsked(accountId))) {
+            navigateTo(new BranchListFragment());
+            return;
+        }
+        store.markAsked(accountId);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Bật đăng nhập bằng vân tay?")
+                .setMessage("Lần sau bạn có thể đăng nhập nhanh bằng vân tay trên máy này. "
+                        + "VietTable không lưu mật khẩu của bạn. Bạn có thể bật hoặc tắt trong Hồ sơ.")
+                .setCancelable(false)
+                .setPositiveButton("Bật", (dialog, which) -> enableFingerprintThenContinue(accountId))
+                .setNegativeButton("Để sau", (dialog, which) -> navigateTo(new BranchListFragment()))
+                .show();
+    }
+
+    private void enableFingerprintThenContinue(String accountId) {
+        BiometricGate.confirm(this, new BiometricGate.Callback() {
+            @Override public void onSuccess(@Nullable Cipher ignored) {
+                try {
+                    BiometricTokenStore.getInstance().enable(accountId);
+                    showToast("Đã bật đăng nhập bằng vân tay.");
+                } catch (Exception failure) {
+                    BiometricTokenStore.getInstance().disable(accountId);
+                    showToast(BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
+                }
+                if (binding != null) navigateTo(new BranchListFragment());
+            }
+
+            @Override public void onError(BiometricLoginPolicy.PromptError kind, @NonNull String message) {
+                showToast("Chưa bật đăng nhập bằng vân tay. Bạn có thể bật trong Hồ sơ.");
+                if (binding != null) navigateTo(new BranchListFragment());
+            }
+        });
+    }
+
     private void setAuthenticating(boolean value, int googleButtonText) {
         authenticating = value;
         if (binding == null) return;
@@ -138,6 +268,7 @@ public class LoginFragment extends BaseFragment {
         binding.btnGoogleSignIn.setEnabled(!value);
         binding.btnGoRegister.setEnabled(!value);
         binding.btnForgotPassword.setEnabled(!value);
+        binding.btnBiometricLogin.setEnabled(!value);
         binding.btnGoogleSignIn.setText(googleButtonText);
         binding.btnSubmitLogin.setText(value
                 ? com.restaurant.viettable.R.string.auth_logging_in

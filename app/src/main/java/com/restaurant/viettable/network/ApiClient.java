@@ -96,6 +96,19 @@ public final class ApiClient {
         tokens.clear();
     }
 
+    public interface RefreshTokenHandOff { void accept(String refreshToken) throws Exception; }
+
+    /**
+     * Gives the refresh token to sink, then forgets the session without revoking it on the server.
+     * Holds the refresh lock, so a rotation cannot happen between reading and forgetting the token.
+     */
+    public synchronized void handOffRefreshToken(RefreshTokenHandOff sink) throws Exception {
+        String refreshToken = getRefreshToken();
+        if (refreshToken.isEmpty()) throw new IllegalStateException("no_session");
+        sink.accept(refreshToken);
+        tokens.clear();
+    }
+
     public void get(String path, boolean authenticated, Callback callback) {
         request("GET", path, null, authenticated, null, callback);
     }

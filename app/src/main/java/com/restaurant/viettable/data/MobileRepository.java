@@ -3,6 +3,8 @@ package com.restaurant.viettable.data;
 import com.restaurant.viettable.BuildConfig;
 import com.restaurant.viettable.network.ApiClient;
 import com.restaurant.viettable.network.ApiException;
+import com.restaurant.viettable.network.BiometricTokenStore;
+import com.restaurant.viettable.util.BiometricLoginPolicy;
 import com.restaurant.viettable.network.SignalRManager;
 import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.model.Category;
@@ -1229,6 +1231,33 @@ public final class MobileRepository {
             @Override public void onSuccess(Object body) { clearLocalSession(); callback.onSuccess(null); }
             @Override public void onError(ApiException error) { clearLocalSession(); callback.onSuccess(null); }
         });
+    }
+
+    /**
+     * "Đăng xuất, giữ đăng nhập vân tay": seals the refresh token for this account and forgets the session
+     * locally; the server session stays alive until fingerprint login rotates it or it expires.
+     * Throws (session untouched) when sealing fails, e.g. KeyPermanentlyInvalidatedException.
+     */
+    public void logoutKeepingFingerprint(User user) throws Exception {
+        BiometricTokenStore store = BiometricTokenStore.getInstance();
+        String label = BiometricLoginPolicy.maskedLabel(user.getEmail(), user.getPhone(), user.getFullName());
+        api().handOffRefreshToken(refreshToken -> store.seal(user.getId(), label, refreshToken));
+        clearLocalSession();
+    }
+
+    /** Fingerprint login: exchanges the unsealed refresh token for a new session. */
+    public void loginWithSealedToken(String refreshToken, Callback<User> callback) {
+        try {
+            JSONObject body = new JSONObject().put("refreshToken", refreshToken);
+            api().post("/api/mobile/v1/auth/refresh", body, false, null, tokenCallback(new Callback<User>() {
+                @Override public void onSuccess(User value) {
+                    // The server rotated the token; using it again would revoke the whole session family.
+                    BiometricTokenStore.getInstance().clearSealed();
+                    callback.onSuccess(value);
+                }
+                @Override public void onError(ApiException error) { callback.onError(error); }
+            }));
+        } catch (JSONException e) { callback.onError(jsonError()); }
     }
 
     public void clearLocalSession() {

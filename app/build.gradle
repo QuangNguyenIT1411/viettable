@@ -111,6 +111,7 @@ dependencies {
     implementation libs.credentials
     implementation libs.credentials.play.services.auth
     implementation libs.google.id
+    implementation libs.biometric
     testImplementation libs.junit
     // Real org.json on the JVM so unit tests see JSON null the way the app must handle it.
     testImplementation 'org.json:json:20240303'

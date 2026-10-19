@@ -21,6 +21,8 @@ public class SettingsFragment extends BaseFragment {
     private FragmentSettingsBinding binding;
     private boolean loading = true;
     private String languageCode = "vi";
+    // Fingerprint login is per device (Hồ sơ); the account flag is only echoed back unchanged.
+    private boolean serverBiometricFlag;
 
     public static SettingsFragment newInstance() {
         return new SettingsFragment();
@@ -49,12 +51,6 @@ public class SettingsFragment extends BaseFragment {
         binding.switchSms.setOnCheckedChangeListener((btn, isChecked) -> {
             if (loading) return;
             showToast(isChecked ? "Đã bật thông báo SMS" : "Đã tắt thông báo SMS");
-            saveSettings();
-        });
-
-        binding.switchBiometric.setOnCheckedChangeListener((btn, isChecked) -> {
-            if (loading) return;
-            showToast(isChecked ? "Đã kích hoạt xác thực sinh trắc học" : "Đã tắt xác thực sinh trắc học");
             saveSettings();
         });
 
@@ -96,7 +92,7 @@ public class SettingsFragment extends BaseFragment {
                 if (binding == null) return;
                 binding.switchPushNotification.setChecked(value.optBoolean("pushNotificationsEnabled"));
                 binding.switchSms.setChecked(value.optBoolean("smsReservationRemindersEnabled"));
-                binding.switchBiometric.setChecked(value.optBoolean("biometricLoginEnabled"));
+                serverBiometricFlag = value.optBoolean("biometricLoginEnabled");
                 languageCode = SafeText.json(value, "languageCode", "vi"); loading = false;
             }
             @Override public void onError(ApiException error) { loading = false; if (binding != null) showToast(apiError(error)); }
@@ -106,7 +102,7 @@ public class SettingsFragment extends BaseFragment {
     private void saveSettings() {
         if (binding == null || loading) return;
         MobileRepository.getInstance().updateSettings(binding.switchPushNotification.isChecked(), binding.switchSms.isChecked(),
-                binding.switchBiometric.isChecked(), languageCode, new MobileRepository.Callback<JSONObject>() {
+                serverBiometricFlag, languageCode, new MobileRepository.Callback<JSONObject>() {
                     @Override public void onSuccess(JSONObject value) {}
                     @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
                 });

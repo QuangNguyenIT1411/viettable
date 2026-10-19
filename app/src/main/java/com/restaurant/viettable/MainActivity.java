@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         insetsController.setAppearanceLightStatusBars(true);
 
         ApiClient.initialize(getApplicationContext());
+        com.restaurant.viettable.network.BiometricTokenStore.initialize(getApplicationContext());
         com.restaurant.viettable.util.ImageLoader.getInstance().initialize(getApplicationContext());
         ApiClient.getInstance().setSessionInvalidatedListener(this::showExpiredSession);
         SignalRManager.getInstance().initialize();

@@ -1,6 +1,7 @@
 package com.restaurant.viettable.ui.profile;
 
 import android.os.Bundle;
+import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,9 @@ import com.restaurant.viettable.databinding.FragmentProfileBinding;
 import com.restaurant.viettable.databinding.ViewActiveDiningCardBinding;
 import com.restaurant.viettable.model.User;
 import com.restaurant.viettable.network.ApiException;
+import com.restaurant.viettable.network.BiometricTokenStore;
+import com.restaurant.viettable.ui.auth.BiometricGate;
+import com.restaurant.viettable.util.BiometricLoginPolicy;
 import com.restaurant.viettable.ui.auth.WelcomeFragment;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.common.ActiveDiningCardBinder;
@@ -32,6 +36,7 @@ import com.restaurant.viettable.util.SafeText;
 public class ProfileFragment extends BaseFragment implements AppStateManager.StateChangeListener {
 
     private FragmentProfileBinding binding;
+    private boolean bindingFingerprintSwitch;
 
     public static ProfileFragment newInstance() {
         return new ProfileFragment();
@@ -58,6 +63,7 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
     public void onResume() {
         super.onResume();
         setStatusBarLightIcons(false);
+        bindFingerprintRow();
         if (MobileRepository.getInstance().hasSession()) {
             MobileRepository.getInstance().loadProfile(new MobileRepository.Callback<User>() {
                 @Override public void onSuccess(User value) {}
@@ -149,25 +155,143 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
             navigateTo(SupportFragment.newInstance());
         });
 
+        binding.switchBiometricLogin.setOnCheckedChangeListener((button, checked) -> {
+            if (!bindingFingerprintSwitch) onFingerprintSwitchChanged(checked);
+        });
+
         binding.btnLogout.setOnClickListener(v -> {
+            String accountId = currentAccountId();
+            if (accountId != null && BiometricTokenStore.getInstance().isEnabled(accountId)) {
+                showFingerprintLogoutChoice();
+                return;
+            }
             com.restaurant.viettable.ui.common.DialogHelper.showDestructiveDialog(
                     requireContext(),
                     "Đăng xuất?",
                     "Bạn có chắc chắn muốn đăng xuất tài khoản?",
                     "Đăng xuất",
                     (dialog, which) -> {
-                        MobileRepository.getInstance().logout(new MobileRepository.Callback<Void>() {
-                            @Override public void onSuccess(Void value) {
-                                setBottomNavVisible(false);
-                                showToast("Đã đăng xuất thành công!");
-                                navigateTo(WelcomeFragment.newInstance());
-                            }
-                            @Override public void onError(ApiException error) {}
-                        });
+                        logoutCompletely(null, "Đã đăng xuất thành công!");
                     },
                     "Hủy",
                     null
             );
+        });
+    }
+
+    private String currentAccountId() {
+        User user = appStateManager.getCurrentUser();
+        String id = user == null ? null : user.getId();
+        return id == null || id.trim().isEmpty() ? null : id;
+    }
+
+    /** The row exists only on phones with an enrolled strong fingerprint; re-checked on every resume. */
+    private void bindFingerprintRow() {
+        if (binding == null) return;
+        String accountId = currentAccountId();
+        boolean show = accountId != null && BiometricGate.deviceReady(getContext());
+        binding.rowBiometricLogin.setVisibility(show ? View.VISIBLE : View.GONE);
+        binding.dividerBiometricLogin.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (!show) return;
+        BiometricTokenStore store = BiometricTokenStore.getInstance();
+        boolean enabled = store.isEnabled(accountId);
+        if (enabled) {
+            try {
+                store.decryptCipher(accountId);
+            } catch (KeyPermanentlyInvalidatedException changed) {
+                store.disable(accountId);
+                enabled = false;
+                showToast("Vân tay trên máy đã thay đổi nên đăng nhập bằng vân tay đã tắt. Bạn có thể bật lại.");
+            } catch (Exception unusable) {
+                store.disable(accountId);
+                enabled = false;
+            }
+        }
+        setFingerprintSwitch(enabled);
+    }
+
+    private void setFingerprintSwitch(boolean checked) {
+        if (binding == null) return;
+        bindingFingerprintSwitch = true;
+        binding.switchBiometricLogin.setChecked(checked);
+        bindingFingerprintSwitch = false;
+    }
+
+    private void onFingerprintSwitchChanged(boolean checked) {
+        String accountId = currentAccountId();
+        if (accountId == null) { setFingerprintSwitch(false); return; }
+        BiometricTokenStore store = BiometricTokenStore.getInstance();
+        if (!checked) {
+            store.disable(accountId); // key and any sealed token for this account are deleted
+            showToast("Đã tắt đăng nhập bằng vân tay.");
+            return;
+        }
+        binding.switchBiometricLogin.setEnabled(false);
+        BiometricGate.confirm(this, new BiometricGate.Callback() {
+            @Override public void onSuccess(@Nullable javax.crypto.Cipher ignored) {
+                boolean enabled;
+                try {
+                    store.enable(accountId);
+                    store.markAsked(accountId);
+                    enabled = true;
+                } catch (Exception failure) {
+                    store.disable(accountId);
+                    enabled = false;
+                }
+                showToast(enabled ? "Đã bật đăng nhập bằng vân tay." : BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
+                if (binding == null) return;
+                binding.switchBiometricLogin.setEnabled(true);
+                setFingerprintSwitch(enabled);
+            }
+
+            @Override public void onError(BiometricLoginPolicy.PromptError kind, @NonNull String message) {
+                if (kind != BiometricLoginPolicy.PromptError.CANCELLED) showToast(message);
+                if (binding == null) return;
+                binding.switchBiometricLogin.setEnabled(true);
+                setFingerprintSwitch(false);
+            }
+        });
+    }
+
+    private void showFingerprintLogoutChoice() {
+        String[] choices = {"Đăng xuất, giữ đăng nhập vân tay", "Đăng xuất hẳn trên máy này"};
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Đăng xuất?")
+                .setItems(choices, (dialog, which) -> {
+                    if (which == 0) logoutKeepingFingerprint();
+                    else logoutCompletely(currentAccountId(), "Đã đăng xuất và tắt đăng nhập bằng vân tay trên máy này.");
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void logoutKeepingFingerprint() {
+        User user = appStateManager.getCurrentUser();
+        if (user == null) { logoutCompletely(null, "Đã đăng xuất thành công!"); return; }
+        try {
+            MobileRepository.getInstance().logoutKeepingFingerprint(user);
+        } catch (Exception failure) {
+            // Could not seal (fingerprints changed, key gone, no session): fall back to a full, revoking logout.
+            logoutCompletely(user.getId(), failure instanceof KeyPermanentlyInvalidatedException
+                    ? BiometricLoginPolicy.KEY_CHANGED_MESSAGE
+                    : "Không giữ được đăng nhập bằng vân tay nên đã đăng xuất hẳn.");
+            return;
+        }
+        setBottomNavVisible(false);
+        showToast("Đã đăng xuất. Lần sau bạn có thể đăng nhập bằng vân tay.");
+        navigateTo(WelcomeFragment.newInstance());
+    }
+
+    /** Revokes the refresh token on the server; with an account id also deletes its fingerprint key and token. */
+    private void logoutCompletely(@Nullable String fingerprintAccountId, String message) {
+        if (fingerprintAccountId != null) BiometricTokenStore.getInstance().disable(fingerprintAccountId);
+        MobileRepository.getInstance().logout(new MobileRepository.Callback<Void>() {
+            @Override public void onSuccess(Void value) {
+                setBottomNavVisible(false);
+                showToast(message);
+                navigateTo(WelcomeFragment.newInstance());
+            }
+            @Override public void onError(ApiException error) {}
         });
     }
 
