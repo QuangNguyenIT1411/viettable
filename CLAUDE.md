@@ -139,16 +139,16 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 - Được phép không cần hỏi: sửa code, chạy build/unit test/contract test, đọc Vercel (lệnh chỉ đọc ở Mục 4) và đọc Supabase
 - **Phải hỏi trước TỪNG việc:** deploy, migration DB, đổi stable alias, cài app lên Samsung, sao lưu/khôi phục DB, push
 
-### 6a. Trạng thái hiện tại (cập nhật 19/10/2026 19:05)
+### 6a. Trạng thái hiện tại (cập nhật 19/10/2026 19:25)
 
 | Mục | Trạng thái |
 |---|---|
 | Deploy đang chạy | Production `dpl_DPLgUGvTN99zvnrjkd1PZd9N3Utg` (tạo 19/10/2026 01:24), project `viettable` (team `viet-table`), `https://viettable-beta.vercel.app`, `[syd1]`, Ready (`vercel inspect`). Code = `qa/vt-ho-01` `436ee23`: mọi thứ của `911960a` (giao diện mới, realtime, thanh toán Tiền mặt + Chuyển khoản VietQR, doanh thu Admin = tiền thực thu) + sửa chữ "null" (`13d85e3`: app + máy chủ làm sạch nhận xét "null") + **phiên khách không còn kẹt khi bếp hủy hết đơn** (`436ee23`: khách "Hủy bàn" được khi chỉ còn đơn đã hủy; bàn có phiên mở hiện "Có khách"; thu ngân có nút "Đóng bàn" khi không còn gì phải thanh toán; không tự đóng phiên). Gọi thử sau deploy: `/` 200 1,1 s, `/app/cashier/` 200 0,7 s, `/app/chef/` 200 0,6 s, `/app/admin/` 200 0,6 s; file JS thu ngân có "Đóng bàn" |
 | Bản quay lui | `dpl_9qAcGgnbpqi4yXsK1j2GvMrBqmmL` (`https://viettable-3yujsb2og-viet-table.vercel.app`, commit `911960a`). Quay lui (cần chủ dự án duyệt, chạy ngoài thư mục `SelfRestaurant-master`): `npx vercel@62.4.0 rollback https://viettable-3yujsb2og-viet-table.vercel.app --scope viet-table` |
-| APK đã cài | `cloudProd` (API `https://viettable-beta.vercel.app`) build 19/10/2026 18:58 từ commit `e06381f` (TN1 đăng nhập bằng vân tay, chỉ sửa app), unit test 92/92, cài đè (`adb install -r`, không gỡ, dữ liệu giữ nguyên) lên Samsung SM-A528B lúc 19:00:19 19/10/2026; mở thử chạy được, không crash. Chờ chủ dự án test tay TN1 bước 1–10 |
+| APK đã cài | `cloudProd` (API `https://viettable-beta.vercel.app`) build 19/10/2026 19:18 từ commit `6250121` (TN1 vân tay kiểu ngân hàng + sửa lỗi quét 2 lần, chỉ sửa app; SHA-256 bắt đầu `DC364931`), unit test 95/95, cài đè (`adb install -r`, không gỡ, dữ liệu giữ nguyên) lên Samsung SM-A528B lúc 19:23:47 19/10/2026; mở thử chạy được, không crash. Chờ chủ dự án test tay TN1 (11 bước) |
 | Code chờ deploy | Không có (Production = `436ee23`) |
 | Git | `qa/vt-ho-01` (gồm merge `159141f`, sửa `b63cbcf`, realtime `9afa0bb`, sửa Dockerfile `fcd83a9`, hủy món đã sẵn sàng `be88d4e`, đợt 1 `7d8873d`, thanh toán + doanh thu `911960a`, sửa "null" `13d85e3`, phiên kẹt `436ee23`) push lên `origin` cùng commit cập nhật mục này. `design/staff-redesign` đã push lên `origin` tới `4d7d645` (sao lưu) |
-| Việc đang làm (app Android, hạn code 01/11) | TN1 vân tay: code xong (`dd944be`, `e06381f`), chờ chủ dự án báo pass. Sau đó lần lượt TN2 bản đồ (osmdroid), TN3 tiện ích nhỏ, TN4 FCM; mỗi tính năng gửi kế hoạch và chờ duyệt |
+| Việc đang làm (app Android, hạn code 01/11) | TN1 vân tay: code xong (`dd944be`, `e06381f`, `6250121`); lần test 1 (bản `e06381f`) đạt bước 2,3,5–9, chủ dự án yêu cầu đổi sang kiểu ngân hàng và sửa lỗi quét 2 lần (đã làm ở `6250121`). "Đăng nhập tài khoản khác" chỉ xóa khóa trên máy, không thu hồi trên máy chủ (chủ dự án đồng ý 19/10). Chờ báo pass, sau đó lần lượt TN2 bản đồ (osmdroid), TN3 tiện ích nhỏ, TN4 FCM; mỗi tính năng gửi kế hoạch và chờ duyệt |
 | Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn), G17 (thanh bên Admin trên điện thoại) — làm sau demo. Chưa rõ request nào trả lỗi rỗng gây "null" (log Vercel Hobby chỉ giữ ~1 giờ, lúc đọc 23:01 đã hết). Việc giảm tải lại 4–5 s đã làm ở `9afa0bb` (đã deploy 15/10). Redesign xong 14/10/2026; từ nay tới 01/11 chỉ sửa lỗi giao diện. Demo 01–10/11 |
 
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
