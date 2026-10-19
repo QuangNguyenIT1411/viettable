@@ -29,6 +29,16 @@ public class BranchListFragment extends BaseFragment {
     private FragmentBranchListBinding binding;
     private final List<Branch> displayedBranches = new ArrayList<>();
     private BranchAdapter adapter;
+    private static final String ARG_AFTER_LOGIN = "afterLogin";
+
+    /** afterLogin: opened right after login/registration (nothing behind it in the back stack). */
+    public static BranchListFragment newInstance(boolean afterLogin) {
+        BranchListFragment fragment = new BranchListFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_AFTER_LOGIN, afterLogin);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -37,11 +47,33 @@ public class BranchListFragment extends BaseFragment {
         return binding.getRoot();
     }
 
+    private void goHome() {
+        setBottomNavVisible(true);
+        switchTab(R.id.nav_home);
+    }
+
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.btnBack.setOnClickListener(v -> navigateBack());
+        boolean afterLogin = getArguments() != null && getArguments().getBoolean(ARG_AFTER_LOGIN);
+        if (afterLogin) {
+            // Never chose a branch on this phone: must choose (no back button; Back puts the app in the background).
+            // Chose before: Back goes to Trang chủ, which keeps that branch.
+            boolean mustChoose = com.restaurant.viettable.util.BranchSelectionPolicy.mustChooseBranch(
+                    true, appStateManager.hasChosenBranch());
+            binding.btnBack.setVisibility(mustChoose ? View.GONE : View.VISIBLE);
+            binding.btnBack.setOnClickListener(v -> goHome());
+            requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(),
+                    new androidx.activity.OnBackPressedCallback(true) {
+                        @Override public void handleOnBackPressed() {
+                            if (mustChoose) requireActivity().moveTaskToBack(true);
+                            else goHome();
+                        }
+                    });
+        } else {
+            binding.btnBack.setOnClickListener(v -> navigateBack());
+        }
         binding.btnOpenMap.setVisibility(View.GONE);
 
         displayedBranches.clear();

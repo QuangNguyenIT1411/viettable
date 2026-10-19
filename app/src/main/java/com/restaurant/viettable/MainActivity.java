@@ -62,7 +62,8 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         ApiClient.getInstance().setSessionInvalidatedListener(this::showExpiredSession);
         SignalRManager.getInstance().initialize();
         appStateManager = AppStateManager.getInstance();
-        appStateManager.initializeBranchSelection(getApplicationContext());
+        appStateManager.initializeBranchSelection(getApplicationContext(),
+                MobileRepository.getInstance().hasSession() ? BiometricTokenStore.getInstance().sessionAccount() : null);
         appStateManager.setLoggedIn(MobileRepository.getInstance().hasSession());
         appStateManager.addListener(this);
 
@@ -131,7 +132,14 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
                 ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
         binding.bottomNav.setImportantForAccessibility(locked
                 ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
-        if (lockBackCallback != null) lockBackCallback.setEnabled(locked);
+        if (lockBackCallback != null) {
+            lockBackCallback.setEnabled(locked);
+            if (locked) {
+                // Newest callback wins: put the lock's Back above any screen's own Back handling.
+                lockBackCallback.remove();
+                getOnBackPressedDispatcher().addCallback(this, lockBackCallback);
+            }
+        }
     }
 
     @Override

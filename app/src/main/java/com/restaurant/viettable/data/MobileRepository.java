@@ -1236,6 +1236,7 @@ public final class MobileRepository {
     /** Sets the in-memory user and remembers on this phone which account owns the session. */
     private void setSessionUser(User user) {
         state.setCurrentUser(user);
+        if (user != null && BiometricLoginPolicy.isKnownAccount(user.getId())) state.useBranchScope(user.getId());
         if (user != null) {
             BiometricTokenStore.getInstance().rememberSession(user.getId(),
                     BiometricLoginPolicy.maskedLabel(user.getEmail(), user.getPhone(), user.getFullName()),
@@ -1309,6 +1310,7 @@ public final class MobileRepository {
 
     public void clearLocalSession() {
         BiometricTokenStore.getInstance().forgetSession();
+        state.useBranchScope(null);
         SignalRManager.getInstance().stopAndClear();
         api().clearSession();
         state.clearAuthenticatedData();

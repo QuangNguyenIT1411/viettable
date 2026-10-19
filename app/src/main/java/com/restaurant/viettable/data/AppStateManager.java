@@ -21,16 +21,43 @@ public class AppStateManager {
     private Branch selectedBranch;
     private SharedPreferences branchPreferences;
     private String restoredBranchId;
+    private String branchScopeKey = com.restaurant.viettable.util.BranchSelectionPolicy.prefKey(null);
     private String catalogBranchId;
     private String loadingCatalogBranchId;
     private String catalogError;
 
-    public void initializeBranchSelection(Context context) {
+    /** sessionAccount: the logged-in account remembered on this phone, or null for a guest. */
+    public void initializeBranchSelection(Context context, String sessionAccount) {
         // Selection is non-sensitive and isolated by Gateway environment; tokens use their own vault.
         branchPreferences = context.getApplicationContext().getSharedPreferences(
                 "branch_selection_" + Integer.toHexString(BuildConfig.API_BASE_URL.hashCode()), Context.MODE_PRIVATE);
-        restoredBranchId = branchPreferences.getString("selectedBranchId", null);
+        // The old per-phone choice is not given to any account: each account picks once (owner, 19/10).
+        branchPreferences.edit().remove(com.restaurant.viettable.util.BranchSelectionPolicy.LEGACY_KEY).apply();
+        branchScopeKey = com.restaurant.viettable.util.BranchSelectionPolicy.prefKey(sessionAccount);
+        restoredBranchId = branchPreferences.getString(branchScopeKey, null);
     }
+
+    /** Login, logout or another account: show that account's own branch choice (or none). */
+    public void useBranchScope(String accountId) {
+        String key = com.restaurant.viettable.util.BranchSelectionPolicy.prefKey(accountId);
+        if (key.equals(branchScopeKey)) return;
+        branchScopeKey = key;
+        restoredBranchId = branchPreferences == null ? null : branchPreferences.getString(key, null);
+        Branch next = restoredBranchId == null ? null : findBranch(restoredBranchId);
+        if (next == null || selectedBranch == null || !next.getId().equals(selectedBranch.getId())) {
+            cartItems.clear();
+            categories.clear();
+            foodItems.clear();
+            catalogBranchId = null;
+            loadingCatalogBranchId = null;
+            catalogError = null;
+        }
+        selectedBranch = next;
+        notifyStateChanged();
+    }
+
+    /** This account (or guest) picked a branch on this phone before. */
+    public boolean hasChosenBranch() { return restoredBranchId != null; }
 
     public String getCatalogBranchId() { return catalogBranchId; }
     public String getCatalogError() { return catalogError; }
@@ -117,7 +144,7 @@ public class AppStateManager {
         }
         this.selectedBranch = branch;
         restoredBranchId = branch.getId();
-        if (branchPreferences != null) branchPreferences.edit().putString("selectedBranchId", restoredBranchId).apply();
+        if (branchPreferences != null) branchPreferences.edit().putString(branchScopeKey, restoredBranchId).commit();
         notifyStateChanged();
     }
 
@@ -135,8 +162,11 @@ public class AppStateManager {
         branches.clear();
         branches.addAll(values);
         selectedBranch = null;
-        for (Branch branch : branches) if (branch.getId().equals(selectedId)) selectedBranch = branch;
-        if (selectedBranch == null && !branches.isEmpty()) selectedBranch = branches.get(0);
+        // Only a branch the user picked; never the first one of the list.
+        List<String> ids = new ArrayList<>();
+        for (Branch branch : branches) ids.add(branch.getId());
+        String keep = com.restaurant.viettable.util.BranchSelectionPolicy.restore(selectedId, ids);
+        for (Branch branch : branches) if (branch.getId().equals(keep)) selectedBranch = branch;
         if (selectedBranch == null || (catalogBranchId != null && !selectedBranch.getId().equals(catalogBranchId))) {
             categories.clear();
             foodItems.clear();

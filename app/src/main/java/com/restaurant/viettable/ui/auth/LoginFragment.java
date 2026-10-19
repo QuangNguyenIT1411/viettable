@@ -89,7 +89,7 @@ public class LoginFragment extends BaseFragment {
                 pendingAction = null;
                 if (ACTION_ENABLE.equals(action)) {
                     showToast("Chưa bật đăng nhập bằng vân tay. Bạn có thể bật trong Hồ sơ.");
-                    if (binding != null) resetTo(new BranchListFragment());
+                    if (binding != null) resetTo(BranchListFragment.newInstance(true));
                     return;
                 }
                 // Cancel / "Dùng mật khẩu": stay here and type the password. Lockout: same, with a message.
@@ -239,7 +239,7 @@ public class LoginFragment extends BaseFragment {
                 if (binding == null) return;
                 setAuthenticating(false, com.restaurant.viettable.R.string.auth_continue_with_google);
                 showToast("Đăng nhập thành công!");
-                resetTo(new BranchListFragment());
+                resetTo(BranchListFragment.newInstance(true));
             }
 
             @Override public void onError(ApiException error) {
@@ -301,7 +301,7 @@ public class LoginFragment extends BaseFragment {
         showToast(message);
         if (accountId == null || !BiometricLoginPolicy.shouldOffer(BiometricGate.deviceReady(getContext()),
                 store.isEnabled(accountId), store.wasAsked(accountId))) {
-            resetTo(new BranchListFragment());
+            resetTo(BranchListFragment.newInstance(true));
             return;
         }
         store.markAsked(accountId);
@@ -315,7 +315,7 @@ public class LoginFragment extends BaseFragment {
                     pendingEnableAccount = accountId;
                     if (!fingerprintGate.confirm()) {
                         pendingAction = null;
-                        resetTo(new BranchListFragment());
+                        resetTo(BranchListFragment.newInstance(true));
                     }
                 })
                 .setNegativeButton("Để sau", (dialog, which) -> navigateTo(new BranchListFragment()))
@@ -332,7 +332,7 @@ public class LoginFragment extends BaseFragment {
             BiometricTokenStore.getInstance().disable(accountId);
             showToast(BiometricLoginPolicy.UNAVAILABLE_MESSAGE);
         }
-        if (binding != null) resetTo(new BranchListFragment());
+        if (binding != null) resetTo(BranchListFragment.newInstance(true));
     }
 
     private void startGoogleSignIn() {
