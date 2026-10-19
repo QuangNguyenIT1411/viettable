@@ -82,8 +82,32 @@ public final class BiometricLoginPolicy {
         return SafeText.clean(name).trim();
     }
 
-    public static String loginButtonText(String label) {
+    public static String greeting(String label) {
         String clean = SafeText.clean(label).trim();
-        return clean.isEmpty() ? "Đăng nhập bằng vân tay" : "Đăng nhập bằng vân tay (" + clean + ")";
+        return clean.isEmpty() ? "Xin chào" : "Xin chào, " + clean;
+    }
+
+    /** E-mail, else phone: what the password field of the remembered account logs in with. */
+    public static String loginId(String email, String phone) {
+        String mail = SafeText.clean(email).trim();
+        return mail.isEmpty() ? SafeText.clean(phone).trim() : mail;
+    }
+
+    /**
+     * The login screen opens the fingerprint dialog by itself exactly once per screen: only for a remembered
+     * account, never once a session exists (already inside the app), never again after rotation or returning
+     * from the background (alreadyPrompted is kept in the saved state).
+     */
+    public static boolean shouldAutoPrompt(boolean rememberedAccount, boolean deviceReady, boolean hasSession,
+                                           boolean alreadyPrompted) {
+        return rememberedAccount && deviceReady && !hasSession && !alreadyPrompted;
+    }
+
+    /**
+     * A change of the Hồ sơ switch is the user's own tap only while the screen is resumed and the new value differs
+     * from the stored setting. Android restoring a rebuilt screen's old switch state must not open a dialog.
+     */
+    public static boolean isUserToggle(boolean screenResumed, boolean checked, boolean enabledNow) {
+        return screenResumed && checked != enabledNow;
     }
 }

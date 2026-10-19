@@ -104,7 +104,7 @@ public final class BiometricTokenStore {
     }
 
     /** Encrypts the refresh token for a later fingerprint login, replacing any other sealed token. */
-    public void seal(String accountId, String label, String refreshToken) throws Exception {
+    public void seal(String accountId, String label, String loginId, String refreshToken) throws Exception {
         if (!isEnabled(accountId) || refreshToken == null || refreshToken.isEmpty()) throw new IllegalStateException("not_enabled");
         decryptCipher(accountId); // fail now, not at the next login, if fingerprints already changed
         Certificate certificate = keyStore().getCertificate(alias(accountId));
@@ -116,6 +116,7 @@ public final class BiometricTokenStore {
         cipher.init(Cipher.ENCRYPT_MODE, publicKey, OAEP);
         String sealed = Base64.encodeToString(cipher.doFinal(refreshToken.getBytes(StandardCharsets.UTF_8)), Base64.NO_WRAP);
         if (!prefs.edit().putString("sealed_owner", accountId).putString("sealed_label", label == null ? "" : label)
+                .putString("sealed_login", loginId == null ? "" : loginId)
                 .putString("sealed_token", sealed).commit()) throw new java.io.IOException("prefs");
     }
 
@@ -126,6 +127,9 @@ public final class BiometricTokenStore {
     }
 
     public String sealedLabel() { return prefs.getString("sealed_label", ""); }
+
+    /** E-mail or phone of the remembered account, so its password can be typed without re-entering the e-mail. */
+    public String sealedLoginId() { return prefs.getString("sealed_login", ""); }
 
     /** Decrypts with the cipher BiometricPrompt just unlocked. */
     public String open(Cipher authenticated) throws Exception {
@@ -157,7 +161,7 @@ public final class BiometricTokenStore {
     }
 
     private static void clearSealed(SharedPreferences.Editor edit) {
-        edit.remove("sealed_owner").remove("sealed_label").remove("sealed_token");
+        edit.remove("sealed_owner").remove("sealed_label").remove("sealed_login").remove("sealed_token");
     }
 
     private boolean keyExists(String accountId) {

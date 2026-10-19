@@ -33,12 +33,54 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvLoginSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:text="Đăng nhập để đặt bàn, tích điểm và nhận ưu đãi riêng."
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
+
+        <!-- Remembered account (fingerprint login on): greeting + fingerprint button; the e-mail field is hidden. -->
+        <LinearLayout
+            android:id="@+id/groupRemembered"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvGreeting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Xin chào"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnFingerprint"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginTop="16dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Quét vân tay để đăng nhập"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_fingerprint"
+                app:tint="@color/primary" />
+
+            <TextView
+                android:id="@+id/tvFingerprintHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Chạm để quét vân tay"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilEmail"
@@ -122,14 +164,17 @@
             android:textColor="@color/text_primary"
             app:strokeColor="@color/text_secondary" />
 
-        <!-- Shown only when this phone holds a fingerprint-sealed session (Hồ sơ → Đăng nhập bằng vân tay). -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnBiometricLogin"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/btnOtherAccount"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Đăng nhập bằng vân tay"
-            android:textAllCaps="false"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:padding="8dp"
+            android:text="Đăng nhập tài khoản khác"
+            android:textColor="@color/primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
             android:visibility="gone" />
 
         <View

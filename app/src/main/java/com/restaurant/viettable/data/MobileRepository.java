@@ -1241,7 +1241,8 @@ public final class MobileRepository {
     public void logoutKeepingFingerprint(User user) throws Exception {
         BiometricTokenStore store = BiometricTokenStore.getInstance();
         String label = BiometricLoginPolicy.maskedLabel(user.getEmail(), user.getPhone(), user.getFullName());
-        api().handOffRefreshToken(refreshToken -> store.seal(user.getId(), label, refreshToken));
+        String loginId = BiometricLoginPolicy.loginId(user.getEmail(), user.getPhone());
+        api().handOffRefreshToken(refreshToken -> store.seal(user.getId(), label, loginId, refreshToken));
         clearLocalSession();
     }
 

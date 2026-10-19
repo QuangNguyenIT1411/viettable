@@ -160,6 +160,12 @@ public abstract class BaseFragment extends Fragment {
         }
     }
 
+    protected void resetTo(Fragment fragment) {
+        if (navigationCoordinator != null) {
+            navigationCoordinator.resetTo(fragment);
+        }
+    }
+
     protected void navigateBack() {
         if (navigationCoordinator != null) {
             navigationCoordinator.navigateBack();

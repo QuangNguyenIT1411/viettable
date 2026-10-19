@@ -59,8 +59,32 @@ public class BiometricLoginPolicyTest {
         assertEquals("09******67", BiometricLoginPolicy.maskedLabel("null", "0901234567", null));
     }
 
-    @Test public void button_text_includes_masked_account() {
-        assertEquals("Đăng nhập bằng vân tay (q***@gmail.com)", BiometricLoginPolicy.loginButtonText("q***@gmail.com"));
-        assertEquals("Đăng nhập bằng vân tay", BiometricLoginPolicy.loginButtonText(""));
+    @Test public void greeting_shows_masked_account() {
+        assertEquals("Xin chào, q***@gmail.com", BiometricLoginPolicy.greeting("q***@gmail.com"));
+        assertEquals("Xin chào", BiometricLoginPolicy.greeting(null));
+    }
+
+    @Test public void remembered_password_login_uses_email_then_phone() {
+        assertEquals("q@gmail.com", BiometricLoginPolicy.loginId("q@gmail.com", "0901234567"));
+        assertEquals("0901234567", BiometricLoginPolicy.loginId("null", "0901234567"));
+    }
+
+    @Test public void login_screen_prompts_by_itself_only_once_and_never_inside_the_app() {
+        assertTrue(BiometricLoginPolicy.shouldAutoPrompt(true, true, false, false));
+        // Already scanned on this screen (also after rotation / back from background): no second dialog.
+        assertFalse(BiometricLoginPolicy.shouldAutoPrompt(true, true, false, true));
+        // Logged in already (e.g. the screen is rebuilt while the user is in the app): never.
+        assertFalse(BiometricLoginPolicy.shouldAutoPrompt(true, true, true, false));
+        assertFalse(BiometricLoginPolicy.shouldAutoPrompt(false, true, false, false));
+        assertFalse(BiometricLoginPolicy.shouldAutoPrompt(true, false, false, false));
+    }
+
+    // Bug 19/10: after fingerprint login, picking a branch rebuilt the old Hồ sơ screen off-screen; Android restored
+    // its switch to "on", which looked like a tap and opened a second fingerprint dialog.
+    @Test public void restored_switch_state_is_not_a_user_tap() {
+        assertFalse(BiometricLoginPolicy.isUserToggle(false, true, false)); // rebuilt off-screen
+        assertFalse(BiometricLoginPolicy.isUserToggle(true, true, true));   // same as stored setting
+        assertTrue(BiometricLoginPolicy.isUserToggle(true, true, false));
+        assertTrue(BiometricLoginPolicy.isUserToggle(true, false, true));
     }
 }

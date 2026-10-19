@@ -172,6 +172,14 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     }
 
     @Override
+    public void resetTo(Fragment fragment) {
+        getSupportFragmentManager().popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        setBottomNavVisible(false);
+        setFabVisible(false);
+        navigateTo(fragment, false);
+    }
+
+    @Override
     public void navigateBack() {
         FragmentManager fm = getSupportFragmentManager();
         if (fm.getBackStackEntryCount() > 0) {
