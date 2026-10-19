@@ -7,6 +7,8 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.util.Base64;
 
+import com.restaurant.viettable.util.BiometricLoginPolicy;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
@@ -130,6 +132,21 @@ public final class BiometricTokenStore {
         String sealed = prefs.getString("sealed_token", null);
         if (sealed == null) throw new IllegalStateException("no_sealed_token");
         return new String(authenticated.doFinal(Base64.decode(sealed, Base64.NO_WRAP)), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * A password/Google login as accountId: the sealed token is superseded by the new session, and every other
+     * account's fingerprint data (key, flag, token) is deleted. accountId's own setting is kept.
+     */
+    public void keepOnlyAccount(String accountId) {
+        java.util.List<String> others = new java.util.ArrayList<>();
+        for (String key : prefs.getAll().keySet()) {
+            if (!key.startsWith("enabled_")) continue;
+            String owner = key.substring("enabled_".length());
+            if (BiometricLoginPolicy.belongsToOtherAccount(owner, accountId)) others.add(owner);
+        }
+        for (String owner : others) disable(owner);
+        clearSealed();
     }
 
     /** The sealed token was used (rotated by the server) or must not be used by another account. */

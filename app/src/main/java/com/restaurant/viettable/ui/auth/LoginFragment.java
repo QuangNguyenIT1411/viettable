@@ -221,9 +221,10 @@ public class LoginFragment extends BaseFragment {
     private void afterInteractiveLogin(User user, String message) {
         if (binding == null) return;
         BiometricTokenStore store = BiometricTokenStore.getInstance();
-        store.clearSealed();
-        showToast(message);
         String accountId = user == null ? null : user.getId();
+        // Same account: fingerprint stays on (only the old sealed token is superseded). Other account: wiped.
+        store.keepOnlyAccount(accountId);
+        showToast(message);
         if (accountId == null || !BiometricLoginPolicy.shouldOffer(BiometricGate.deviceReady(getContext()),
                 store.isEnabled(accountId), store.wasAsked(accountId))) {
             navigateTo(new BranchListFragment());

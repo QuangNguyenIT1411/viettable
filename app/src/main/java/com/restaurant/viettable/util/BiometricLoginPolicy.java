@@ -62,6 +62,12 @@ public final class BiometricLoginPolicy {
         return deviceReady && !enabled && !alreadyAsked;
     }
 
+    /** Fingerprint data of owner must be deleted when currentAccount logs in with a password or Google. */
+    public static boolean belongsToOtherAccount(String owner, String currentAccount) {
+        if (owner == null || owner.trim().isEmpty()) return false;
+        return currentAccount == null || !owner.equals(currentAccount);
+    }
+
     /** "q***@gmail.com"; phone "09******78" when there is no e-mail; otherwise the name. */
     public static String maskedLabel(String email, String phone, String name) {
         String mail = SafeText.clean(email).trim();

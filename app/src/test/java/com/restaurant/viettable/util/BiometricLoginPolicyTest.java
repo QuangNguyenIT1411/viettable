@@ -44,6 +44,13 @@ public class BiometricLoginPolicyTest {
         assertFalse(BiometricLoginPolicy.shouldOffer(true, false, true));
     }
 
+    @Test public void only_another_account_wipes_fingerprint_data() {
+        assertFalse(BiometricLoginPolicy.belongsToOtherAccount("12", "12"));
+        assertTrue(BiometricLoginPolicy.belongsToOtherAccount("12", "34"));
+        assertTrue(BiometricLoginPolicy.belongsToOtherAccount("12", null));
+        assertFalse(BiometricLoginPolicy.belongsToOtherAccount("", "34"));
+    }
+
     @Test public void label_masks_email_then_phone_then_name() {
         assertEquals("q***@gmail.com", BiometricLoginPolicy.maskedLabel("quang@gmail.com", "0901234567", "Quang"));
         assertEquals("q***@gmail.com", BiometricLoginPolicy.maskedLabel("q@gmail.com", null, null));
