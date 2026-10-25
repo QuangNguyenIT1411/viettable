@@ -73,7 +73,8 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
     }
 
     [HttpPost("check-ins/reservation")]
-    public async Task<ActionResult<MobileDiningSessionResponse>> CheckInReservation(MobileReservationCheckInRequest request, CancellationToken ct)
+    public async Task<ActionResult<MobileDiningSessionResponse>> CheckInReservation(MobileReservationCheckInRequest request,
+        [FromServices] CustomerInboxNotifier inbox, CancellationToken ct)
     {
         var actor = CurrentCustomerId();
         if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
@@ -110,6 +111,7 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
                 new CheckInReservationRequest(session.ConvertedOrderId, session.SessionCode, null,
                     DateTime.UtcNow, table.Table.TableId, new[] { table.Table.TableId }), ct);
             await _orders.OccupyTableAsync(table.Table.TableId, ct);
+            await inbox.PushAsync(actor, ct); // Customers wrote "Đã nhận bàn"
             return Ok(session);
         }
         catch (ApiClientException ex)

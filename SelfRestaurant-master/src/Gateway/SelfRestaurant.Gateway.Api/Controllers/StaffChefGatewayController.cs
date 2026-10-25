@@ -221,7 +221,7 @@ public sealed class StaffChefGatewayController : ControllerBase
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.ServiceRequests)]
     [HttpPost("chef/kitchen-requests/{requestId:int}/seen")]
-    public async Task<ActionResult<object>> MarkKitchenRequestSeen(int requestId, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> MarkKitchenRequestSeen(int requestId, [FromServices] CustomerInboxNotifier inbox, CancellationToken cancellationToken)
     {
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
@@ -244,6 +244,8 @@ public sealed class StaffChefGatewayController : ControllerBase
                         .SendAsync("serviceRequestUpdated", new { done.ServiceRequestId, done.DiningSessionId, done.Status, done.UpdatedAtUtc }, cancellationToken);
                 }
                 catch (Exception ex) { _logger.LogWarning("Kitchen request {RequestId} realtime update deferred ({ErrorType}).", requestId, ex.GetType().Name); }
+                await inbox.NotifyAsync(done.CustomerId, CustomerInboxNotifier.ServiceCompleted, requestId,
+                    $"Bếp đã xem yêu cầu {CustomerInboxNotifier.RequestLabel(request.RequestType)} của bạn.", null, cancellationToken);
             }
             return Ok(new { success = true, message = "Đã xem yêu cầu." });
         }
@@ -255,7 +257,7 @@ public sealed class StaffChefGatewayController : ControllerBase
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/start")]
-    public async Task<ActionResult<object>> Start(int orderId, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> Start(int orderId, [FromServices] CustomerInboxNotifier inbox, CancellationToken cancellationToken)
     {
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
@@ -264,7 +266,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         try
         {
             await _ordersClient.ChefStartAsync(orderId, cancellationToken);
-            await BroadcastMobileOrderUpdatedAsync(orderId, cancellationToken);
+            await NotifyKitchenStartedAsync(await BroadcastMobileOrderUpdatedAsync(orderId, cancellationToken), inbox, cancellationToken);
             return Ok(new { success = true, message = "Đã chuyển đơn sang đang chế biến." });
         }
         catch (InvalidOperationException ex)
@@ -295,7 +297,7 @@ public sealed class StaffChefGatewayController : ControllerBase
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/start")]
-    public async Task<ActionResult<object>> StartItem(int orderId, int itemId, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> StartItem(int orderId, int itemId, [FromServices] CustomerInboxNotifier inbox, CancellationToken cancellationToken)
     {
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
@@ -304,7 +306,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         try
         {
             await _ordersClient.ChefStartItemAsync(orderId, itemId, staff.EmployeeId, cancellationToken);
-            await BroadcastMobileOrderUpdatedAsync(orderId, cancellationToken);
+            await NotifyKitchenStartedAsync(await BroadcastMobileOrderUpdatedAsync(orderId, cancellationToken), inbox, cancellationToken);
             return Ok(new { success = true, message = "Đã chuyển món sang đang chế biến." });
         }
         catch (InvalidOperationException ex)
@@ -344,7 +346,8 @@ public sealed class StaffChefGatewayController : ControllerBase
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/cancel")]
-    public async Task<ActionResult<object>> Cancel(int orderId, [FromBody] ChefCancelOrderApiRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> Cancel(int orderId, [FromBody] ChefCancelOrderApiRequest request,
+        [FromServices] CustomerInboxNotifier inbox, CancellationToken cancellationToken)
     {
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
@@ -352,12 +355,17 @@ public sealed class StaffChefGatewayController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Reason)) return Error("invalid_reason", "Vui lòng nhập lý do hủy đơn.", 400);
         if (!await IsOrderInChefBranchAsync(staff.BranchId, orderId, cancellationToken)) return Error("forbidden", "Đơn hàng không thuộc chi nhánh của bạn.", 403);
         await _ordersClient.ChefCancelAsync(orderId, request.Reason.Trim(), cancellationToken);
+        var order = await TryBroadcastMobileOrderUpdatedAsync(orderId, cancellationToken);
+        if (order?.CustomerId is int customerId && customerId > 0)
+            await inbox.NotifyAsync(customerId, CustomerInboxNotifier.OrderCancelled, 0,
+                $"Đơn #{orderId} đã bị bếp hủy. Lý do: {request.Reason.Trim()}.", orderId, cancellationToken);
         return Ok(new { success = true, message = "Đã hủy đơn hàng." });
     }
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders)]
     [HttpPost("chef/orders/{orderId:int}/items/{itemId:int}/cancel")]
-    public async Task<ActionResult<object>> CancelItem(int orderId, int itemId, [FromBody] ChefCancelOrderApiRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> CancelItem(int orderId, int itemId, [FromBody] ChefCancelOrderApiRequest request,
+        [FromServices] CustomerInboxNotifier inbox, CancellationToken cancellationToken)
     {
         var staff = RequireChef();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản bếp.", 401);
@@ -368,6 +376,14 @@ public sealed class StaffChefGatewayController : ControllerBase
         try
         {
             await _ordersClient.ChefCancelItemAsync(orderId, itemId, request.Reason.Trim(), cancellationToken);
+            var order = await TryBroadcastMobileOrderUpdatedAsync(orderId, cancellationToken);
+            if (order?.CustomerId is int customerId && customerId > 0)
+            {
+                var dish = order.Items.FirstOrDefault(x => x.ItemId == itemId)?.DishName;
+                await inbox.NotifyAsync(customerId, CustomerInboxNotifier.OrderItemCancelled, itemId,
+                    $"Món {(string.IsNullOrWhiteSpace(dish) ? "#" + itemId : dish)} trong đơn #{orderId} đã bị hủy. Lý do: {request.Reason.Trim()}.",
+                    orderId, cancellationToken);
+            }
             return Ok(new { success = true, message = "Đã hủy món." });
         }
         catch (InvalidOperationException ex)
@@ -711,10 +727,10 @@ public sealed class StaffChefGatewayController : ControllerBase
         await BroadcastMobileOrderUpdatedAsync(orderId, cancellationToken);
     }
 
-    private async Task BroadcastMobileOrderUpdatedAsync(int orderId, CancellationToken cancellationToken)
+    private async Task<ActiveOrderResponse?> BroadcastMobileOrderUpdatedAsync(int orderId, CancellationToken cancellationToken)
     {
         var order = await _ordersClient.GetOrderByIdAsync(orderId, cancellationToken);
-        if (order?.CustomerId is not int customerId || customerId <= 0) return;
+        if (order?.CustomerId is not int customerId || customerId <= 0) return order;
         await _mobileNotificationsHub.Clients.Group(MobileNotificationsHub.CustomerGroup(customerId))
             .SendAsync("orderUpdated", new
             {
@@ -723,7 +739,22 @@ public sealed class StaffChefGatewayController : ControllerBase
                 order.StatusCode,
                 items = order.Items.Select(x => new { x.ItemId, x.Status }).ToArray()
             }, cancellationToken);
+        return order;
     }
+
+    // After a committed cancel: a failed refresh must not turn the chef's action into an error.
+    private async Task<ActiveOrderResponse?> TryBroadcastMobileOrderUpdatedAsync(int orderId, CancellationToken ct)
+    {
+        try { return await BroadcastMobileOrderUpdatedAsync(orderId, ct); }
+        catch (Exception ex) { _logger.LogWarning("Order {OrderId} customer refresh skipped ({ErrorType}).", orderId, ex.GetType().Name); return null; }
+    }
+
+    // First "start" of an order or one of its dishes tells the guest once that the kitchen has it.
+    private static Task NotifyKitchenStartedAsync(ActiveOrderResponse? order, CustomerInboxNotifier inbox, CancellationToken ct) =>
+        order?.CustomerId is int customerId && customerId > 0
+            ? inbox.NotifyAsync(customerId, CustomerInboxNotifier.KitchenStarted, 0,
+                $"Bếp đã nhận và đang chuẩn bị đơn #{order.OrderId}.", order.OrderId, ct)
+            : Task.CompletedTask;
 
     private async Task<ChefDashboardDto> BuildDashboardAsync(StaffSessionUserDto staff, int historyTake, CancellationToken cancellationToken)
     {

@@ -63,12 +63,31 @@ public sealed class StaffCashierGatewayController : ControllerBase
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.OnsitePayments)]
     [HttpPost("onsite-payments/{paymentId:int}/cancel")]
     [Consumes("application/json")]
-    public async Task<IActionResult> CancelMobileOnsitePayment(int paymentId, CancellationToken ct)
+    public async Task<IActionResult> CancelMobileOnsitePayment(int paymentId, [FromServices] CustomerInboxNotifier inbox, CancellationToken ct)
     {
         var staff = RequireCashier();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
         if (staff.BranchId <= 0) return Error("branch_required", "Tài khoản chưa được gán chi nhánh.", 403);
-        try { return Ok(await _billingClient.CancelCashierMobilePaymentAsync(staff, paymentId, ct)); }
+        try
+        {
+            var result = await _billingClient.CancelCashierMobilePaymentAsync(staff, paymentId, ct);
+            // The guest's waiting screen changes at once (not on its next status check) and the inbox says why.
+            if (result.TryGetProperty("customerId", out var c) && c.TryGetInt32(out var customerId) && customerId > 0
+                && result.TryGetProperty("diningSessionId", out var d) && d.TryGetInt32(out var sessionId))
+            {
+                var amount = result.TryGetProperty("amount", out var a) && a.TryGetDecimal(out var parsed) ? parsed : 0m;
+                try
+                {
+                    await _mobileNotificationsHub.Clients.Group(MobileNotificationsHub.CustomerGroup(customerId))
+                        .SendAsync("paymentUpdated", new { diningSessionId = sessionId, paymentId, status = "CANCELLED" }, ct);
+                }
+                catch (Exception ex) { _logger.LogWarning("Payment {PaymentId} cancel realtime skipped ({ErrorType}).", paymentId, ex.GetType().Name); }
+                await inbox.NotifyAsync(customerId, CustomerInboxNotifier.PaymentCancelled, paymentId,
+                    $"Thu ngân đã hủy giao dịch chờ {decimal.Round(amount).ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.')}đ. Vui lòng chọn lại cách thanh toán.",
+                    null, ct);
+            }
+            return Ok(result);
+        }
         catch (ApiClientException ex) { return Error(ex.Code ?? "cashier_payment_cancel_failed", ex.Message, ex.StatusCode); }
     }
 
@@ -165,13 +184,15 @@ public sealed class StaffCashierGatewayController : ControllerBase
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.ServiceRequests)]
     [HttpPost("service-requests/{requestId:int}/acknowledge")]
-    public Task<IActionResult> AcknowledgeServiceRequest(int requestId, CancellationToken ct) => UpdateServiceRequest(requestId, complete: false, ct);
+    public Task<IActionResult> AcknowledgeServiceRequest(int requestId, [FromServices] CustomerInboxNotifier inbox, CancellationToken ct) =>
+        UpdateServiceRequest(requestId, complete: false, inbox, ct);
 
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.ServiceRequests)]
     [HttpPost("service-requests/{requestId:int}/complete")]
-    public Task<IActionResult> CompleteServiceRequest(int requestId, CancellationToken ct) => UpdateServiceRequest(requestId, complete: true, ct);
+    public Task<IActionResult> CompleteServiceRequest(int requestId, [FromServices] CustomerInboxNotifier inbox, CancellationToken ct) =>
+        UpdateServiceRequest(requestId, complete: true, inbox, ct);
 
-    private async Task<IActionResult> UpdateServiceRequest(int requestId, bool complete, CancellationToken ct)
+    private async Task<IActionResult> UpdateServiceRequest(int requestId, bool complete, CustomerInboxNotifier inbox, CancellationToken ct)
     {
         var staff = RequireCashier();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản nhân viên chi nhánh.", 401);
@@ -184,6 +205,10 @@ public sealed class StaffCashierGatewayController : ControllerBase
             if (updated is null) return Error("service_request_not_found", "Không tìm thấy yêu cầu phục vụ.", 404);
             await _mobileNotificationsHub.Clients.Group(MobileNotificationsHub.CustomerGroup(updated.CustomerId))
                 .SendAsync("serviceRequestUpdated", new { updated.ServiceRequestId, updated.DiningSessionId, updated.Status, updated.UpdatedAtUtc }, ct);
+            var label = CustomerInboxNotifier.RequestLabel(updated.RequestType);
+            await inbox.NotifyAsync(updated.CustomerId,
+                complete ? CustomerInboxNotifier.ServiceCompleted : CustomerInboxNotifier.ServiceAcknowledged, updated.ServiceRequestId,
+                complete ? $"Yêu cầu {label} của bạn đã được nhân viên xử lý xong." : $"Nhân viên đã nhận yêu cầu {label} của bạn.", null, ct);
             return Ok(updated);
         }
         catch (ApiClientException ex) { return Error(ex.Code ?? "service_request_update_failed", ex.Message, ex.StatusCode); }
@@ -215,6 +240,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
     public async Task<ActionResult<CashierReservationCheckInResultDto>> CheckInReservation(
         int reservationId,
         [FromBody] CashierReservationCheckInRequest? request,
+        [FromServices] CustomerInboxNotifier inbox,
         CancellationToken cancellationToken)
     {
         var staff = RequireCashier();
@@ -292,7 +318,8 @@ public sealed class StaffCashierGatewayController : ControllerBase
                     existingOrder = await _ordersClient.GetOrderByIdAsync(reservation.ConvertedOrderId.Value, cancellationToken);
                 }
 
-                return Ok(new CashierReservationCheckInResultDto(
+                await inbox.PushAsync(previousState?.CustomerId, cancellationToken); // Customers wrote "Đã nhận bàn"
+            return Ok(new CashierReservationCheckInResultDto(
                     true,
                     "Đặt bàn đã được check-in trước đó.",
                     reservation,
@@ -333,7 +360,8 @@ public sealed class StaffCashierGatewayController : ControllerBase
 
                 await OccupyAssignedTablesAsync(selectedTableIds, primaryTableIdToSkip: null, cancellationToken);
 
-                return Ok(new CashierReservationCheckInResultDto(
+                await inbox.PushAsync(previousState?.CustomerId, cancellationToken); // Customers wrote "Đã nhận bàn"
+            return Ok(new CashierReservationCheckInResultDto(
                     true,
                     "Đã check-in đặt bàn. Chưa có món đặt trước nên chưa tạo đơn bếp.",
                     checkedInWithoutOrder,
@@ -413,6 +441,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
 
             await OccupyAssignedTablesAsync(selectedTableIds, primaryTableIdToSkip: tableId, cancellationToken);
 
+            await inbox.PushAsync(previousState?.CustomerId, cancellationToken);
             return Ok(new CashierReservationCheckInResultDto(
                 true,
                 "Đã check-in và tạo đơn hàng thành công.",

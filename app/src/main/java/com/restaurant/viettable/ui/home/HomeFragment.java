@@ -79,6 +79,12 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         binding.btnHeaderBranch.setOnClickListener(v -> navigateTo(new ChangeBranchFragment()));
         binding.btnHeaderSearch.setOnClickListener(v -> navigateTo(new SearchFragment()));
         binding.btnHeaderNotification.setOnClickListener(v -> navigateTo(new NotificationFragment()));
+        String badge = com.restaurant.viettable.util.NotificationRules.badge(
+                com.restaurant.viettable.util.NotificationRules.unread(appStateManager.getNotifications()));
+        binding.viewNotifBadge.setText(badge);
+        binding.viewNotifBadge.setVisibility(badge == null ? View.GONE : View.VISIBLE);
+        binding.btnHeaderNotification.setContentDescription(badge == null ? getString(R.string.a11y_notifications)
+                : getString(R.string.a11y_notifications) + ", " + badge + " chưa đọc");
         binding.btnHomeSearchBox.setOnClickListener(v -> navigateTo(new SearchFragment()));
 
         // 2. Active Dining Session Card (Screen 15)
@@ -272,6 +278,17 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
 
     private void refreshVisibleFavorites(RecyclerView list) {
         if (list.getAdapter() != null) list.getAdapter().notifyDataSetChanged();
+    }
+
+    /** The bell counts the server inbox: refresh it whenever Trang chủ comes back into view. */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (!appStateManager.isLoggedIn()) return;
+        MobileRepository.getInstance().loadNotifications(new MobileRepository.Callback<java.util.List<com.restaurant.viettable.model.NotificationItem>>() {
+            @Override public void onSuccess(java.util.List<com.restaurant.viettable.model.NotificationItem> value) { }
+            @Override public void onError(com.restaurant.viettable.network.ApiException error) { }
+        });
     }
 
     @Override

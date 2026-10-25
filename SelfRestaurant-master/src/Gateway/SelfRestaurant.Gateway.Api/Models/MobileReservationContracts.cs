@@ -15,7 +15,7 @@ public sealed record MobileAvailabilitySuggestion(DateTimeOffset ReservedAt, int
 public sealed record MobileQrContextResponse(int TableId, int BranchId, int TableNumber);
 
 public sealed record CreateMobileReservationRequest(int BranchId, int? TableId, int PartySize,
-    DateTimeOffset ReservedAt, string? Note = null);
+    DateTimeOffset ReservedAt, string? Note = null, string? ContactName = null, string? ContactPhone = null);
 public sealed record UpdateMobileReservationRequest(int? TableId, int PartySize,
     DateTimeOffset ReservedAt, string? Note = null);
 public sealed record MobileReservationListResponse(IReadOnlyList<ReservationDto> Items, string? NextCursor);

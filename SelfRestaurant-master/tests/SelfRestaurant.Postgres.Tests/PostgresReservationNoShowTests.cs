@@ -50,9 +50,16 @@ public sealed class PostgresReservationNoShowTests
             Assert.Equal("Confirmed", status[lateButInWindow.ReservationId]);
             Assert.Equal("CheckingIn", status[checkingIn.ReservationId]);
             Assert.Equal("Confirmed", status[otherCustomer.ReservationId]);    // another customer's read handles it
+
+            // Each missed reservation tells its guest once (notifications review 25/10); a second read adds nothing.
+            await new CustomersController(db, null!, null!).GetCustomerReservations(customerId, CancellationToken.None);
+            var inbox = await db.ReadyDishNotifications.AsNoTracking()
+                .Where(x => x.CustomerId == customerId && x.EventName == "reservation.no-show.v1").Select(x => x.OrderItemId).ToListAsync();
+            Assert.Equal(new int?[] { overdue.ReservationId, pendingOverdue.ReservationId }.OrderBy(x => x), inbox.OrderBy(x => x));
         }
         finally
         {
+            await db.ReadyDishNotifications.Where(x => x.CustomerId == customerId).ExecuteDeleteAsync();
             await db.Reservations.Where(x => x.CustomerName == "Disposable no-show test").ExecuteDeleteAsync();
         }
     }

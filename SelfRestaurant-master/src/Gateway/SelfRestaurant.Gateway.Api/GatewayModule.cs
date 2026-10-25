@@ -204,6 +204,7 @@ builder.Services.AddHttpClient("Gemini", http =>
 builder.Services.AddScoped<CustomerDishRecommendationService>();
 builder.Services.AddScoped<StaffBranchEvents>();
 builder.Services.AddScoped<CustomerPaymentNotifier>();
+builder.Services.AddScoped<CustomerInboxNotifier>();
 
 configureServices?.Invoke(builder);
 registrationTiming?.Dispose();

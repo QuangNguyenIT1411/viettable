@@ -68,6 +68,12 @@ builder.Services.AddHttpClient<CustomersApiClient>(http =>
     http.Timeout = servicesTimeout;
 });
 
+builder.Services.AddHttpClient<CustomerInboxClient>(http =>
+{
+    http.BaseAddress = new Uri(builder.Configuration["Services:Customers"] ?? "http://localhost:5103");
+    http.Timeout = servicesTimeout;
+});
+
 builder.Services.AddHttpClient<OrdersApiClient>(http =>
 {
     http.BaseAddress = new Uri(builder.Configuration["Services:Orders"] ?? "http://localhost:5102");

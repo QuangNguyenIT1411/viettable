@@ -35,4 +35,12 @@ public class NotificationItem implements Serializable {
     public String getTimestamp() { return timestamp; }
     public boolean isRead() { return isRead; }
     public void setRead(boolean read) { isRead = read; }
+
+    // The reservation / order / payment the notification is about (0 when unknown), and the server event name.
+    private long refId;
+    private String eventName;
+    public long getRefId() { return refId; }
+    public void setRefId(long refId) { this.refId = refId; }
+    public String getEventName() { return eventName; }
+    public void setEventName(String eventName) { this.eventName = eventName; }
 }

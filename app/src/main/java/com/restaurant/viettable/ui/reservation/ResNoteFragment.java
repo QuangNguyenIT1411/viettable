@@ -17,6 +17,8 @@ import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.PhoneRules;
+import com.restaurant.viettable.util.SafeText;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,7 +71,17 @@ public class ResNoteFragment extends BaseFragment {
             binding.tvResSummaryHeader.setText(draft.getBranch().getName() + " • " +
                     com.restaurant.viettable.data.MobileRepository.getInstance().tableLabel(draft.getBranch().getId(), draft.getTableId()));
         }
-        binding.tvResSummaryDetails.setText(draft.getTimeSlot() + ", " + DisplayFormatters.date(draft.getDate()) + " • " + draft.getGuestCount() + " khách • " + draft.getAreaName());
+        binding.tvResSummaryDetails.setText(draft.getTimeSlot() + ", " + DisplayFormatters.date(draft.getDate()) + " • " + draft.getGuestCount() + " khách");
+
+        // Contact: what the guest typed before, else the profile; the server uses exactly this number.
+        com.restaurant.viettable.model.User user = appStateManager.getCurrentUser();
+        binding.etContactName.setText(!draft.getContactName().isEmpty() ? draft.getContactName() : user == null ? "" : SafeText.clean(user.getFullName()));
+        binding.etContactPhone.setText(!draft.getContactPhone().isEmpty() ? draft.getContactPhone() : user == null ? "" : SafeText.clean(user.getPhone()));
+        binding.etContactPhone.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { binding.tilContactPhone.setError(null); }
+            @Override public void afterTextChanged(android.text.Editable s) { }
+        });
 
         if (draft.isNeedsDeposit()) {
             binding.btnContinueOrConfirm.setText("Tiếp tục đặt cọc (100.000đ)");
@@ -92,6 +104,15 @@ public class ResNoteFragment extends BaseFragment {
         binding.btnContinueOrConfirm.setOnClickListener(v -> {
             String note = binding.etReservationNote.getText() != null ? binding.etReservationNote.getText().toString().trim() : "";
             draft.setNote(note);
+            String phone = binding.etContactPhone.getText() != null ? binding.etContactPhone.getText().toString().trim() : "";
+            String normalized = PhoneRules.normalize(phone);
+            if (!phone.isEmpty() && normalized == null) {
+                binding.tilContactPhone.setError(PhoneRules.INVALID_MESSAGE);
+                binding.etContactPhone.requestFocus();
+                return;
+            }
+            draft.setContactPhone(normalized == null ? "" : normalized);
+            draft.setContactName(binding.etContactName.getText() != null ? binding.etContactName.getText().toString() : "");
             draft.setSpecialTags(selectedTags);
 
             binding.btnContinueOrConfirm.setEnabled(false);
@@ -103,7 +124,12 @@ public class ResNoteFragment extends BaseFragment {
                 }
                 @Override public void onError(ApiException error) {
                     if (binding == null) return;
-                    binding.btnContinueOrConfirm.setEnabled(true); showToast(apiError(error));
+                    binding.btnContinueOrConfirm.setEnabled(true);
+                    // The server names the phone field: show it on that field, not only as a toast.
+                    if ("contact_phone_invalid".equals(error.getCode()) || "contact_phone_required".equals(error.getCode())) {
+                        binding.tilContactPhone.setError(apiError(error));
+                        binding.etContactPhone.requestFocus();
+                    } else showToast(apiError(error));
                 }
             });
         });

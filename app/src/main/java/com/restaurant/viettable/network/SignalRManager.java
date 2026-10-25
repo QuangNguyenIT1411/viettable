@@ -47,6 +47,9 @@ public final class SignalRManager {
     }
 
     /** Sent on payment request (sessionId) and on cashier-confirmed payment (diningSessionId). */
+    /** "notificationCreated" carries no data; the inbox is re-read. */
+    public static final class NotificationCreatedEvent { }
+
     public static final class PaymentUpdatedEvent {
         public Integer diningSessionId;
         public Integer sessionId;
@@ -140,6 +143,9 @@ public final class SignalRManager {
         current.on("serviceRequestUpdated", event -> handleServiceRequestUpdated(current, event),
                 ServiceRequestUpdatedEvent.class);
         current.on("paymentUpdated", event -> handlePaymentUpdated(current, event), PaymentUpdatedEvent.class);
+        // A new inbox row (reservations, kitchen, service requests, cashier): refresh the bell and the list.
+        current.on("notificationCreated", event -> main.post(() -> { if (acceptsEvents(current)) scheduleInboxRefresh(0); }),
+                NotificationCreatedEvent.class);
         current.onClosed(error -> main.post(() -> handleClosed(current, error)));
     }
 
@@ -294,7 +300,21 @@ public final class SignalRManager {
             if (!deduplicator.shouldProcess(signature, System.currentTimeMillis())) return;
             Log.i(TAG, "orderUpdated orderId=" + event.orderId);
             refreshOrdersCanonical();
+            // "Món sẵn sàng" rows are written a moment after the chef's action: look again shortly after.
+            scheduleInboxRefresh(4000);
         });
+    }
+
+    private final Runnable inboxRefresh = () -> MobileRepository.getInstance().loadNotifications(
+            new MobileRepository.Callback<java.util.List<com.restaurant.viettable.model.NotificationItem>>() {
+                @Override public void onSuccess(java.util.List<com.restaurant.viettable.model.NotificationItem> value) {}
+                @Override public void onError(ApiException error) {}
+            });
+
+    /** Debounced: a burst of events (several dishes ready) costs one inbox read. */
+    private void scheduleInboxRefresh(long delayMs) {
+        main.removeCallbacks(inboxRefresh);
+        main.postDelayed(inboxRefresh, delayMs);
     }
 
     private void handleServiceRequestUpdated(HubConnection current, ServiceRequestUpdatedEvent event) {

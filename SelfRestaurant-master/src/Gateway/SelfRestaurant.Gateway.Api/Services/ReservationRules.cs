@@ -32,6 +32,20 @@ public static class ReservationRules
         return local >= openFrom && local <= lastSlot;
     }
 
+    /// <summary>
+    /// Vietnamese phone as 10 digits starting with 0: accepts "0343 000 273", "0343-000-273", "+84 343 000 273",
+    /// "84343000273". Null when empty, when it has letters, or when the digits are not a Vietnamese number.
+    /// </summary>
+    public static string? NormalizePhone(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var trimmed = value.Trim();
+        if (trimmed.Where((c, i) => !(char.IsDigit(c) || c is ' ' or '.' or '-' or '(' or ')' || (c == '+' && i == 0))).Any()) return null;
+        var digits = new string(trimmed.Where(char.IsDigit).ToArray());
+        if (digits.StartsWith("84", StringComparison.Ordinal) && digits.Length == 11) digits = "0" + digits[2..];
+        return digits.Length == 10 && digits[0] == '0' ? digits : null;
+    }
+
     public static TimeOnly ConfiguredTime(IConfiguration configuration, string key, TimeOnly fallback) =>
         TimeOnly.TryParse(configuration[key], System.Globalization.CultureInfo.InvariantCulture, out var value) ? value : fallback;
 

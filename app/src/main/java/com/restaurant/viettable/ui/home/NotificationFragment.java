@@ -49,7 +49,7 @@ public class NotificationFragment extends BaseFragment {
         binding.tabLayoutNotif.addTab(binding.tabLayoutNotif.newTab().setText("Đặt bàn"));
         binding.tabLayoutNotif.addTab(binding.tabLayoutNotif.newTab().setText("Đơn hàng"));
         binding.tabLayoutNotif.addTab(binding.tabLayoutNotif.newTab().setText("Thanh toán"));
-        binding.tabLayoutNotif.addTab(binding.tabLayoutNotif.newTab().setText("Khuyến mãi"));
+        binding.tabLayoutNotif.addTab(binding.tabLayoutNotif.newTab().setText("Ưu đãi")); // points, tiers, promotions
 
         adapter = new NotificationAdapter(filteredList, item -> {
             if (!item.isRead()) {
@@ -59,7 +59,7 @@ public class NotificationFragment extends BaseFragment {
                 });
             }
             if (item.getType() == NotificationItem.Type.RESERVATION) {
-                navigateTo(new ResHistoryFragment());
+                openReservation(item.getRefId());
             } else if (item.getType() == NotificationItem.Type.ORDER) {
                 navigateTo(new CurrentOrdersFragment());
             } else if (item.getType() == NotificationItem.Type.PAYMENT) {
@@ -86,14 +86,42 @@ public class NotificationFragment extends BaseFragment {
         });
 
         binding.btnMarkAllRead.setOnClickListener(v -> {
-            for (NotificationItem ni : appStateManager.getNotifications()) {
-                if (!ni.isRead()) MobileRepository.getInstance().markNotificationRead(ni, new MobileRepository.Callback<Void>() {
-                    @Override public void onSuccess(Void value) { if (binding != null) adapter.notifyDataSetChanged(); }
-                    @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
-                });
-            }
-            showToast("Đã đánh dấu đọc tất cả thông báo.");
+            binding.btnMarkAllRead.setEnabled(false);
+            MobileRepository.getInstance().markAllNotificationsRead(new MobileRepository.Callback<Void>() {
+                @Override public void onSuccess(Void value) {
+                    if (binding == null) return;
+                    binding.btnMarkAllRead.setEnabled(true);
+                    adapter.notifyDataSetChanged();
+                    showToast("Đã đánh dấu đọc tất cả thông báo.");
+                }
+                @Override public void onError(ApiException error) {
+                    if (binding == null) return;
+                    binding.btnMarkAllRead.setEnabled(true);
+                    showToast(apiError(error));
+                }
+            });
         });
+    }
+
+    /** The reservation the notification is about; the history list when it is not loaded (or was deleted). */
+    private void openReservation(long reservationId) {
+        com.restaurant.viettable.model.Reservation match = findReservation(reservationId);
+        if (match != null) { navigateTo(com.restaurant.viettable.ui.reservation.ResDetailFragment.newInstance(match)); return; }
+        MobileRepository.getInstance().loadReservations(new MobileRepository.Callback<List<com.restaurant.viettable.model.Reservation>>() {
+            @Override public void onSuccess(List<com.restaurant.viettable.model.Reservation> value) {
+                if (binding == null) return;
+                com.restaurant.viettable.model.Reservation loaded = findReservation(reservationId);
+                navigateTo(loaded != null ? com.restaurant.viettable.ui.reservation.ResDetailFragment.newInstance(loaded) : new ResHistoryFragment());
+            }
+            @Override public void onError(ApiException error) { if (binding != null) navigateTo(new ResHistoryFragment()); }
+        });
+    }
+
+    private com.restaurant.viettable.model.Reservation findReservation(long reservationId) {
+        if (reservationId <= 0) return null;
+        for (com.restaurant.viettable.model.Reservation r : appStateManager.getReservations())
+            if (String.valueOf(reservationId).equals(r.getId())) return r;
+        return null;
     }
 
     private void loadNotifications() {

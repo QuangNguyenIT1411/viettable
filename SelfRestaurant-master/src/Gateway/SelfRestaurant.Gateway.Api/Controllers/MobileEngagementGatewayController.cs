@@ -44,6 +44,9 @@ public sealed class MobileEngagementGatewayController : ControllerBase
     public Task<ActionResult<object>> Notifications([FromQuery] string? cursor, [FromQuery] int limit = 20, CancellationToken ct = default)
     { if (limit is < 1 or > 100) return Task.FromResult<ActionResult<object>>(Error("validation_failed", "limit phải từ 1 đến 100.", 400)); return Run(() => _customers.GetMobileNotificationsAsync(Actor()!.Value, cursor, limit, ct)); }
 
+    [HttpPost("notifications/read-all")]
+    public Task<ActionResult<object>> ReadAllNotifications(CancellationToken ct) => Run(() => _customers.ReadAllMobileNotificationsAsync(Actor()!.Value, ct));
+
     [HttpPost("notifications/{notificationId:long}/read")]
     public Task<ActionResult<object>> ReadNotification(long notificationId, CancellationToken ct) => Run(() => _customers.ReadMobileNotificationAsync(Actor()!.Value, notificationId, ct));
 

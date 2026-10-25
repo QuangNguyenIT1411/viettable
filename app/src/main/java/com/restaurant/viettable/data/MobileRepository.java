@@ -51,6 +51,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import com.restaurant.viettable.util.NotificationRules;
 import com.restaurant.viettable.util.SafeText;
 
 public final class MobileRepository {
@@ -467,11 +468,15 @@ public final class MobileRepository {
                 if (rows != null) for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
                     String type = SafeText.json(row, "type");
-                    values.add(new NotificationItem(String.valueOf(row.optLong("notificationId")),
-                            StatusLabels.EVENT_PAYMENT_SUCCEEDED.equals(type) ? NotificationItem.Type.PAYMENT : NotificationItem.Type.ORDER,
-                            StatusLabels.notificationTitle(type),
+                    String title = SafeText.json(row, "title", "");
+                    NotificationItem item = new NotificationItem(String.valueOf(row.optLong("notificationId")),
+                            NotificationRules.typeOf(SafeText.json(row, "category", null), type),
+                            SafeText.isBlank(title) ? StatusLabels.notificationTitle(type) : title,
                             StatusLabels.notificationMessage(SafeText.json(row, "message"), row.optLong("orderId")),
-                            SafeText.json(row, "createdAtUtc"), row.optBoolean("isRead")));
+                            SafeText.json(row, "createdAtUtc"), row.optBoolean("isRead"));
+                    item.setRefId(row.optLong("refId"));
+                    item.setEventName(type);
+                    values.add(item);
                 }
                 state.replaceNotifications(values);
                 callback.onSuccess(values);
@@ -499,6 +504,8 @@ public final class MobileRepository {
             JSONObject body = new JSONObject().put("branchId", Integer.parseInt(draft.getBranch().getId()))
                     .put("partySize", draft.getGuestCount()).put("reservedAt", reservationInstant(draft))
                     .put("note", draft.getNote());
+            if (!draft.getContactName().isEmpty()) body.put("contactName", draft.getContactName());
+            if (!draft.getContactPhone().isEmpty()) body.put("contactPhone", draft.getContactPhone());
             int selectedTable = Integer.parseInt(draft.getTableId());
             body.put("tableId", selectedTable > 0 ? selectedTable : JSONObject.NULL);
             api().post("/api/mobile/v1/reservations", body, true, key("reservation"), tableAware(new ApiClient.Callback() {
@@ -1237,6 +1244,18 @@ public final class MobileRepository {
             body.put("defaultBranchId", branch == null ? JSONObject.NULL : Integer.parseInt(branch.getId()));
             api().put("/api/mobile/v1/me/settings", body, true, null, objectCallback(callback));
         } catch (Exception e) { callback.onError(jsonError()); }
+    }
+
+    /** One request for the whole inbox (it used to send one per notification). */
+    public void markAllNotificationsRead(Callback<Void> callback) {
+        api().post("/api/mobile/v1/notifications/read-all", new JSONObject(), true, null, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                for (NotificationItem item : state.getNotifications()) item.setRead(true);
+                state.notifyStateChanged();
+                callback.onSuccess(null);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
     }
 
     public void markNotificationRead(NotificationItem item, Callback<Void> callback) {

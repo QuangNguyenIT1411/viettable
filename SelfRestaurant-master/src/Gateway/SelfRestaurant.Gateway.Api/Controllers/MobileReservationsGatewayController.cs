@@ -21,10 +21,13 @@ public sealed class MobileReservationsGatewayController : ControllerBase
     private readonly OrdersClient _orders;
     private readonly IConfiguration _configuration;
     private readonly ILogger<MobileReservationsGatewayController> _logger;
+    private readonly SelfRestaurant.Gateway.Api.Infrastructure.CustomerInboxNotifier _inbox;
 
     public MobileReservationsGatewayController(CustomersClient customers, CatalogClient catalog, IdentityClient identity, OrdersClient orders,
-        IConfiguration configuration, ILogger<MobileReservationsGatewayController> logger)
+        IConfiguration configuration, ILogger<MobileReservationsGatewayController> logger,
+        SelfRestaurant.Gateway.Api.Infrastructure.CustomerInboxNotifier inbox)
     {
+        _inbox = inbox;
         _customers = customers;
         _catalog = catalog;
         _identity = identity;
@@ -41,6 +44,12 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var key = RequireIdempotencyKey();
         if (key.Result is not null) return key.Result;
         var scopedKey = $"c{actorId}:create:{key.Value}";
+        // The contact typed on the booking screen wins over the profile (it used to be ignored, 25/10).
+        var contactPhone = ReservationRules.NormalizePhone(request.ContactPhone);
+        if (!string.IsNullOrWhiteSpace(request.ContactPhone) && contactPhone is null)
+            return MobileError("contact_phone_invalid",
+                "Số điện thoại liên hệ không hợp lệ. Nhập 10 số bắt đầu bằng 0 (ví dụ 0343000273) hoặc +84.", 400,
+                new { field = "contactPhone" });
         var retry = await _customers.GetReservationByIdempotencyKeyAsync(scopedKey, ct);
         if (retry is not null)
         {
@@ -49,7 +58,8 @@ public sealed class MobileReservationsGatewayController : ControllerBase
                 // replay must use the original selection, not compare it to null.
                 || (request.TableId is > 0 && retry.TableId != request.TableId)
                 || Math.Abs((retry.ReservedAt - request.ReservedAt.UtcDateTime).TotalSeconds) > 1
-                || !string.Equals(retry.Note?.Trim(), request.Note?.Trim(), StringComparison.Ordinal))
+                || !string.Equals(retry.Note?.Trim(), request.Note?.Trim(), StringComparison.Ordinal)
+                || (contactPhone is not null && retry.PhoneNumber != contactPhone))
                 return MobileError("idempotency_conflict", "Idempotency key đã được dùng với dữ liệu khác.", 409);
             return Ok(retry);
         }
@@ -67,15 +77,21 @@ public sealed class MobileReservationsGatewayController : ControllerBase
 
         var profile = await _identity.GetMobileProfileAsync(ct);
         if (profile is null) return MobileError("customer_not_found", "Không tìm thấy hồ sơ khách hàng.", 404);
-        var phone = NormalizeReservationPhone(profile.PhoneNumber);
-        if (phone is null) return MobileError("profile_phone_invalid", "Hãy cập nhật số điện thoại Việt Nam hợp lệ trước khi đặt bàn.", 422);
+        var phone = contactPhone ?? ReservationRules.NormalizePhone(profile.PhoneNumber);
+        if (phone is null)
+            return MobileError("contact_phone_required",
+                "Vui lòng nhập số điện thoại liên hệ (số trong hồ sơ của bạn chưa hợp lệ).", 422, new { field = "contactPhone" });
+        var contactName = string.IsNullOrWhiteSpace(request.ContactName) ? profile.Name : request.ContactName.Trim();
+        if (contactName.Length > 100) contactName = contactName[..100];
         var hash = Hash(new { request.BranchId, TableId = table.TableId, request.PartySize, ReservedAt = request.ReservedAt.UtcDateTime, Note = request.Note?.Trim() });
         try
         {
             var created = await _customers.CreateReservationAsync(new CreateReservationApiRequest(
-                profile.Name, phone, actorId, request.BranchId, table.TableId, request.PartySize,
+                contactName, phone, actorId, request.BranchId, table.TableId, request.PartySize,
                 request.ReservedAt.UtcDateTime, request.Note, scopedKey, hash, "Confirmed"), ct);
-            return created is null ? MobileError("create_reservation_failed", "Không thể tạo đặt bàn.", 502) : Ok(created);
+            if (created is null) return MobileError("create_reservation_failed", "Không thể tạo đặt bàn.", 502);
+            await _inbox.PushAsync(actorId, ct); // Customers wrote "Đặt bàn thành công"
+            return Ok(created);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "create_reservation_failed"); }
     }
@@ -134,7 +150,9 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             var updated = await _customers.UpdateReservationAsync(reservationId,
                 new UpdateReservationInternalRequest(table.TableId, request.PartySize, request.ReservedAt.UtcDateTime,
                     request.Note, $"c{CurrentCustomerId()}:update:{key.Value}", hash), ct);
-            return updated is null ? MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404) : Ok(updated);
+            if (updated is null) return MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
+            await _inbox.PushAsync(CurrentCustomerId(), ct);
+            return Ok(updated);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "update_reservation_failed"); }
     }
@@ -152,6 +170,7 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             // check in, so a missed call only leaves an unused pre-order row.
             try { await _orders.CancelReservationPreOrderAsync(reservationId, ct); }
             catch (Exception ex) { _logger.LogWarning("Pre-order cancel skipped for reservation {ReservationId} ({ErrorType}).", reservationId, ex.GetType().Name); }
+            await _inbox.PushAsync(CurrentCustomerId(), ct);
             return Ok(result);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "cancel_reservation_failed"); }
@@ -282,13 +301,6 @@ public sealed class MobileReservationsGatewayController : ControllerBase
 
     private int? CurrentCustomerId() =>
         int.TryParse(User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out var id) && id > 0 ? id : null;
-
-    private static string? NormalizeReservationPhone(string value)
-    {
-        var digits = new string(value.Where(char.IsDigit).ToArray());
-        if (digits.StartsWith("84", StringComparison.Ordinal) && digits.Length == 11) digits = "0" + digits[2..];
-        return digits.Length == 10 && digits[0] == '0' ? digits : null;
-    }
 
     private static string Hash(object value) => Convert.ToHexString(SHA256.HashData(
         Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value)))).ToLowerInvariant();

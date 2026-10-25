@@ -106,14 +106,25 @@
                     android:src="@drawable/ic_notification"
                     app:tint="@color/text_primary" />
 
-                <View
+                <!-- Unread count; hidden at 0 (it used to be a red dot that was always shown). -->
+                <TextView
                     android:id="@+id/viewNotifBadge"
-                    android:layout_width="8dp"
-                    android:layout_height="8dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="16dp"
+                    android:minWidth="16dp"
                     android:layout_gravity="top|end"
-                    android:layout_margin="9dp"
+                    android:layout_marginTop="5dp"
+                    android:layout_marginEnd="5dp"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:gravity="center"
                     android:background="@drawable/bg_badge"
-                    android:backgroundTint="@color/semantic_error" />
+                    android:backgroundTint="@color/semantic_error"
+                    android:textColor="@android:color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:importantForAccessibility="no" />
             </FrameLayout>
 
         </LinearLayout>

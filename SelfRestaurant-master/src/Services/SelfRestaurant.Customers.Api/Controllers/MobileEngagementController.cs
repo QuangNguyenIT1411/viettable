@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SelfRestaurant.Customers.Api.Infrastructure;
 using SelfRestaurant.Customers.Api.Persistence;
 using SelfRestaurant.Customers.Api.Persistence.Entities;
 
@@ -49,13 +50,63 @@ public sealed class MobileEngagementController : ControllerBase
         if (cursor is > 0) query = query.Where(x => x.ReadyDishNotificationId < cursor);
         var rows = await query.OrderByDescending(x => x.ReadyDishNotificationId).Take(limit + 1).ToListAsync(ct);
         var hasMore = rows.Count > limit; if (hasMore) rows.RemoveAt(rows.Count - 1);
+        // title/category come from the event: the app shows them as given and files the row under that tab.
         return Ok(new { items = rows.Select(x => new { notificationId = x.ReadyDishNotificationId, type = x.EventName,
-            title = "Cập nhật món ăn", x.Message, x.OrderId, x.OrderItemId, x.DishId, x.DishName,
+            title = CustomerInbox.Title(x.EventName), category = CustomerInbox.Category(x.EventName),
+            refId = x.OrderId > 0 ? x.OrderId : x.OrderItemId ?? 0, x.Message, x.OrderId, x.OrderItemId, x.DishId, x.DishName,
             isRead = x.Status != "OPEN", x.CreatedAtUtc, readAtUtc = x.ResolvedAtUtc }),
+            unreadCount = await _db.ReadyDishNotifications.CountAsync(x => x.CustomerId == customerId && x.Status == "OPEN", ct),
             nextCursor = hasMore ? rows[^1].ReadyDishNotificationId.ToString() : null });
     }
 
-    public const string PaymentSucceededEvent = "billing.payment-succeeded.v1";
+    /// <summary>One inbox row for a known event (Gateway: kitchen, service requests, cashier cancels). Idempotent.</summary>
+    [HttpPost("customers/{customerId:int}/notifications")]
+    public async Task<ActionResult<object>> AddNotification(int customerId, AddNotificationRequest request, CancellationToken ct)
+    {
+        if (customerId <= 0 || !CustomerInbox.IsKnown(request.EventName) || request.RefId < 0 || (request.OrderId ?? 0) < 0
+            || string.IsNullOrWhiteSpace(request.Message)) return Validation();
+        var (row, created) = await CustomerInbox.AddAsync(_db, customerId, request.EventName, request.RefId,
+            request.Message.Trim(), request.OrderId ?? 0, ct);
+        if (created) await _db.SaveChangesAsync(ct);
+        return Ok(new { notificationId = row.ReadyDishNotificationId, created });
+    }
+
+    /// <summary>Points earned for one paid invoice, and the new tier when it changed. Idempotent per payment.</summary>
+    [HttpPost("customers/{customerId:int}/notifications/loyalty")]
+    public async Task<ActionResult<object>> LoyaltySettled(int customerId, LoyaltyNotificationRequest request, CancellationToken ct)
+    {
+        if (customerId <= 0 || request.PaymentId <= 0 || request.PointsEarned < 0 || request.PointsAfter < 0) return Validation();
+        var created = 0;
+        if (request.PointsEarned > 0)
+        {
+            var (_, added) = await CustomerInbox.AddAsync(_db, customerId, CustomerInbox.PointsEarned, request.PaymentId,
+                $"Bạn được cộng {Points(request.PointsEarned)} điểm thưởng. Tổng điểm hiện có: {Points(request.PointsAfter)}.", 0, ct);
+            if (added) created++;
+        }
+        var before = CustomerInbox.Tier(request.PointsBefore);
+        var after = CustomerInbox.Tier(request.PointsAfter);
+        if (request.PointsAfter > request.PointsBefore && before.Code != after.Code)
+        {
+            var (_, added) = await CustomerInbox.AddAsync(_db, customerId, CustomerInbox.TierUp, request.PaymentId,
+                $"Chúc mừng! Bạn đã lên hạng {after.Name}.", 0, ct);
+            if (added) created++;
+        }
+        if (created > 0) await _db.SaveChangesAsync(ct);
+        return Ok(new { created });
+    }
+
+    [HttpPost("customers/{customerId:int}/notifications/read-all")]
+    public async Task<ActionResult<object>> ReadAllNotifications(int customerId, CancellationToken ct)
+    {
+        if (customerId <= 0) return Validation();
+        var now = DateTime.UtcNow;
+        var open = await _db.ReadyDishNotifications.Where(x => x.CustomerId == customerId && x.Status == "OPEN").ToListAsync(ct);
+        foreach (var row in open) { row.Status = "RESOLVED"; row.ResolvedAtUtc = now; }
+        if (open.Count > 0) await _db.SaveChangesAsync(ct);
+        return Ok(new { read = open.Count });
+    }
+
+    public const string PaymentSucceededEvent = CustomerInbox.PaymentSucceeded;
 
     // Inbox row for a collected payment. Payment rows have no order: OrderId is 0 and OrderItemId carries the
     // PaymentId, so the existing (OrderId, OrderItemId, EventName) index makes the call idempotent per payment.
@@ -77,6 +128,9 @@ public sealed class MobileEngagementController : ControllerBase
         await _db.SaveChangesAsync(ct);
         return Ok(new { notificationId = entity.ReadyDishNotificationId, created = true });
     }
+
+    private static string Points(int value) =>
+        value.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', '.');
 
     public static string PaymentSucceededMessage(decimal amount, int diningSessionId) =>
         // Vietnamese thousands separator without depending on ICU culture data in the container.
@@ -179,6 +233,8 @@ public sealed class MobileEngagementController : ControllerBase
 
     public sealed record FavoriteRequest(string DishName);
     public sealed record PaymentSucceededRequest(int PaymentId, int DiningSessionId, decimal Amount);
+    public sealed record AddNotificationRequest(string EventName, int RefId, string Message, int? OrderId = null);
+    public sealed record LoyaltyNotificationRequest(int PaymentId, int PointsBefore, int PointsEarned, int PointsAfter);
     public sealed record CreateReviewRequest(int InvoiceId, int DiningSessionId, int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls, string IdempotencyKey, string RequestHash);
     public sealed record UpdateReviewRequest(int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls);
     public sealed record CreateSupportRequest(string? Category, string? Subject, string? Message, int? OrderId, int? ReservationId, int? PaymentId, string IdempotencyKey, string RequestHash);

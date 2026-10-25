@@ -27,6 +27,14 @@ public class ReservationDraft implements Serializable {
     public String getTimeSlot() { return timeSlot; }
     public void setTimeSlot(String timeSlot) { this.timeSlot = timeSlot; }
 
+    // Typed on the note screen; empty means "use my profile" (they used to be ignored, 25/10).
+    private String contactName = "";
+    private String contactPhone = "";
+    public String getContactName() { return contactName; }
+    public void setContactName(String contactName) { this.contactName = contactName == null ? "" : contactName.trim(); }
+    public String getContactPhone() { return contactPhone; }
+    public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone == null ? "" : contactPhone.trim(); }
+
     public int getGuestCount() { return guestCount; }
     public void setGuestCount(int guestCount) {
         this.guestCount = guestCount;

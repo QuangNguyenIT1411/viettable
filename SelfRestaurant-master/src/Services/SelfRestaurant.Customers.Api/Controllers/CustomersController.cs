@@ -118,6 +118,9 @@ public sealed class CustomersController : ControllerBase
         try
         {
             await _db.SaveChangesAsync(cancellationToken);
+            // Needs the generated id; same transaction, so the booking and its notification commit together.
+            await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationCreated, reservation, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         }
         catch (Exception exception) when (_db.Database.IsNpgsql()
@@ -334,6 +337,7 @@ public sealed class CustomersController : ControllerBase
         reservation.ReservationTables.Clear();
         if (request.TableId is > 0)
             reservation.ReservationTables.Add(new ReservationTable { TableId = request.TableId.Value, IsPrimary = true, CreatedAtUtc = DateTime.UtcNow });
+        await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationUpdated, reservation, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return Ok(MapReservation(reservation));
@@ -478,6 +482,7 @@ public sealed class CustomersController : ControllerBase
             item.Status = "Cancelled";
             item.UpdatedAtUtc = now;
         }
+        await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationCancelled, reservation, cancellationToken);
 
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(MapReservation(reservation));
@@ -543,6 +548,7 @@ public sealed class CustomersController : ControllerBase
 
         CompleteCheckIn(entity, request);
         SyncReservationTables(entity, request);
+        await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationCheckedIn, entity, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(MapReservation(entity));
     }
@@ -592,6 +598,7 @@ public sealed class CustomersController : ControllerBase
         entity.CheckInIdempotencyKey ??= BuildCheckInIdempotencyKey(entity.ReservationId);
         CompleteCheckIn(entity, request);
         SyncReservationTables(entity, request);
+        await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationCheckedIn, entity, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(MapReservation(entity));
     }
@@ -618,7 +625,8 @@ public sealed class CustomersController : ControllerBase
 
         var query = _db.ReadyDishNotifications
             .AsNoTracking()
-            .Where(x => x.Status == normalizedStatus && x.EventName != MobileEngagementController.PaymentSucceededEvent)
+            // Only "dish ready" rows: this table-wide feed must never show payments or reservations.
+            .Where(x => x.Status == normalizedStatus && x.EventName == CustomerInbox.OrderReady)
             .AsQueryable();
 
         if (tableId is > 0)
@@ -901,7 +909,18 @@ public sealed class CustomersController : ControllerBase
         if (customerId is > 0) query = query.Where(x => x.CustomerId == customerId.Value);
         if (branchId is > 0) query = query.Where(x => x.BranchId == branchId.Value);
         if (reservationId is > 0) query = query.Where(x => x.ReservationId == reservationId.Value);
-        await query.ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, "NoShow").SetProperty(x => x.UpdatedAtUtc, now), ct);
+        var candidates = await query.Select(x => x.ReservationId).ToListAsync(ct);
+        if (candidates.Count == 0) return;
+        var changed = await _db.Reservations.Where(x => candidates.Contains(x.ReservationId)
+                && (x.Status == "Pending" || x.Status == "Confirmed") && x.ReservedAt < cutoff)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, "NoShow").SetProperty(x => x.UpdatedAtUtc, now), ct);
+        if (changed == 0) return;
+        // Tell each guest once; rows another read marked NoShow meanwhile are found by the inbox duplicate check.
+        var missed = await _db.Reservations.AsNoTracking()
+            .Where(x => candidates.Contains(x.ReservationId) && x.Status == "NoShow" && x.CustomerId != null).ToListAsync(ct);
+        foreach (var reservation in missed)
+            await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationNoShow, reservation, ct);
+        await _db.SaveChangesAsync(ct);
     }
 
     private static TimeZoneInfo GetRestaurantTimeZone()

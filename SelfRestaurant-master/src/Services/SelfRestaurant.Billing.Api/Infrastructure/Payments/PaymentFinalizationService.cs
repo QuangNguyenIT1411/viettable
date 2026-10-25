@@ -15,7 +15,7 @@ public sealed class PaymentDomainException(string code, string message, int stat
 // payment/part/invoice commit. Both receivers must be idempotent on their persisted key.
 public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiClient orders,
     CustomersApiClient customers, ILogger<PaymentFinalizationService> logger,
-    IConfiguration? configuration = null, IHostEnvironment? environment = null)
+    IConfiguration? configuration = null, IHostEnvironment? environment = null, CustomerInboxClient? inbox = null)
 {
     public static Task LockQuoteAsync(BillingDbContext db, int quoteId, CancellationToken ct) =>
         SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(db, "mobile-settlement:" + quoteId, ct);
@@ -181,6 +181,17 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
             invoice.SettlementCompletedAtUtc = DateTime.UtcNow;
             await db.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
+            // Best effort, once (a settled invoice is never reconciled again): the guest sees the points earned.
+            if (inbox is not null)
+            {
+                try
+                {
+                    await inbox.LoyaltySettledAsync(invoice.CustomerId, invoice.PaymentId, settled.PointsBefore,
+                        settled.PointsEarned, settled.CustomerPoints, ct);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+                { logger.LogWarning("Loyalty notification skipped for quote {QuoteId}; {ErrorType}", quoteId, ex.GetType().Name); }
+            }
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {

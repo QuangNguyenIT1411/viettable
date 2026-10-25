@@ -9,6 +9,15 @@ import { settleAfterTest } from "../support/cleanup";
 const tableCard = (page: Page, n: number) =>
   page.locator("article").filter({ hasText: new RegExp(`^\s*Bàn ${n}(?!\d)`) }).first();
 
+// Right after login the dashboard reads twice (again once realtime connects); a click landing between the two
+// reads could be lost (seen 25/10 in full runs). Click until the order panel shows that table as selected.
+async function selectTable(page: Page, n: number) {
+  await expect(async () => {
+    await tableCard(page, n).click();
+    await expect(page.locator(".soft-badge.info", { hasText: new RegExp(`^Bàn ${n}$`) })).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
+}
+
 // Give the test tables back after every test (only 10 exist), so later tests can always check in.
 test.afterEach(async ({ baseURL }) => { await settleAfterTest(baseURL!); });
 
@@ -18,7 +27,7 @@ test("thu ngân thấy bàn có khách trên sơ đồ bàn", async ({ page, bas
   await expect(page.getByRole("heading", { name: "Chọn bàn" })).toBeVisible();
   await expectCleanScreen(page);
   await expect(tableCard(page, order.tableNumber)).toContainText("Có khách");
-  await tableCard(page, order.tableNumber).click();
+  await selectTable(page, order.tableNumber);
   await expect(page.getByText(`Đơn #${order.orderId}`).first()).toBeVisible();
 });
 
@@ -40,7 +49,7 @@ test("nút Thanh toán trên dashboard: tiền mặt và đóng phiên", async (
   const order = await openTableWithOrder(baseURL!);
   await login(page, "cashier");
 
-  await tableCard(page, order.tableNumber).click();
+  await selectTable(page, order.tableNumber);
   await expect(page.getByText(`Đơn #${order.orderId}`).first()).toBeVisible();
   await page.getByRole("button", { name: /Tiền mặt/ }).click();
   await page.getByRole("button", { name: "Vừa đủ" }).click();
@@ -63,7 +72,7 @@ test("trang Lịch sử hóa đơn của thu ngân mở được", async ({ page
 test("hóa đơn của phiên app hiện trong Lịch sử hóa đơn và Báo cáo ngày của thu ngân", async ({ page, baseURL }) => {
   const order = await openTableWithOrder(baseURL!);
   await login(page, "cashier");
-  await tableCard(page, order.tableNumber).click();
+  await selectTable(page, order.tableNumber);
   await page.getByRole("button", { name: /Tiền mặt/ }).click();
   await page.getByRole("button", { name: "Vừa đủ" }).click();
   await page.getByRole("button", { name: "Xác nhận thanh toán" }).click();
@@ -138,7 +147,7 @@ function tlv(payload: string) {
 test("thanh toán chuyển khoản tại quầy: hiện mã VietQR đúng số tiền và nội dung, thu ngân bấm Đã nhận chuyển khoản", async ({ page, baseURL }) => {
   const order = await openTableWithOrder(baseURL!);
   await login(page, "cashier");
-  await tableCard(page, order.tableNumber).click();
+  await selectTable(page, order.tableNumber);
   await expect(page.getByText(`Đơn #${order.orderId}`).first()).toBeVisible();
 
   const qrResponse = page.waitForResponse((r) => r.url().includes("/api/gateway/staff/cashier/transfer-qr") && r.ok());
@@ -242,7 +251,7 @@ test("bếp hủy hết đơn: bàn vẫn Có khách, khách bấm Hủy bàn đ
 
   await login(page, "cashier");
   await expect(tableCard(page, order.tableNumber)).toContainText("Có khách");
-  await tableCard(page, order.tableNumber).click();
+  await selectTable(page, order.tableNumber);
   await expect(page.getByText("không còn món nào cần thanh toán")).toBeVisible();
   await expect(page.getByRole("button", { name: "Đóng bàn" })).toBeVisible();
   await expectCleanScreen(page);
@@ -257,7 +266,7 @@ test("bếp hủy hết đơn, khách bỏ đi: thu ngân Đóng bàn, khách m�
   expect(await newGuestChecksIn(baseURL!, order.tableNumber), "table still held by the open session").toBe(409);
 
   await login(page, "cashier");
-  await tableCard(page, order.tableNumber).click();
+  await selectTable(page, order.tableNumber);
   await page.getByRole("button", { name: "Đóng bàn" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText(`Đóng Bàn ${order.tableNumber}?`);
