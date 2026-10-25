@@ -45,6 +45,9 @@ public sealed class OrdersClient : ApiClientBase
         PostForAsync<ReservationPreOrderSubmitRequest, ReservationPreOrderResponse>(
             $"/api/internal/reservation-preorders/{reservationId}/submit", request, cancellationToken);
 
+    public Task CancelReservationPreOrderAsync(int reservationId, CancellationToken cancellationToken) =>
+        PostAsync($"/api/internal/reservation-preorders/{reservationId}/cancel", new { }, cancellationToken);
+
     public Task<MobileDiningSessionResponse?> CreateDiningSessionAsync(DiningSessionCreateRequest request, CancellationToken cancellationToken) =>
         PostForAsync<DiningSessionCreateRequest, MobileDiningSessionResponse>("/api/internal/dining-sessions/check-in", request, cancellationToken);
 

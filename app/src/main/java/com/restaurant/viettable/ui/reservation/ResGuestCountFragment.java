@@ -54,8 +54,8 @@ public class ResGuestCountFragment extends BaseFragment {
         binding.btnBack.setOnClickListener(v -> navigateBack());
 
         binding.wizardProgress.tvWizardStepName.setText(getString(R.string.res_wizard_step3));
-        binding.wizardProgress.tvWizardStepFraction.setText("3/6");
-        binding.wizardProgress.progressWizard.setProgress(50);
+        binding.wizardProgress.tvWizardStepFraction.setText("3/5");
+        binding.wizardProgress.progressWizard.setProgress(60);
 
         binding.tvDateTimeSummary.setText("Thời gian: " + draft.getTimeSlot() + " • " + DisplayFormatters.date(draft.getDate()));
 
@@ -87,7 +87,7 @@ public class ResGuestCountFragment extends BaseFragment {
 
         binding.btnContinue.setOnClickListener(v -> {
             draft.setGuestCount(adults + children);
-            navigateTo(ResAreaFragment.newInstance(draft));
+            navigateTo(ResTableLayoutFragment.newInstance(draft)); // the area step only had "Khu vực chung"
         });
     }
 

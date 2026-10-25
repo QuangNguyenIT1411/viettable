@@ -92,6 +92,23 @@ public sealed class ReservationPreOrdersController : ControllerBase
         return Ok(Map(entity));
     }
 
+    /// <summary>The reservation was cancelled: its draft/submitted dishes must never reach the kitchen. Idempotent.</summary>
+    [HttpPost("{reservationId:int}/cancel")]
+    public async Task<IActionResult> Cancel(int reservationId, CancellationToken ct)
+    {
+        var entity = await Load(reservationId, ct);
+        if (entity is null) return NoContent();
+        if (entity.ConvertedOrderId is > 0)
+            return Conflict(new { code = "preorder_converted", message = "Món đặt trước đã được chuyển thành đơn." });
+        if (!string.Equals(entity.Status, "CANCELLED", StringComparison.Ordinal))
+        {
+            entity.Status = "CANCELLED";
+            entity.UpdatedAtUtc = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+        }
+        return NoContent();
+    }
+
     private Task<ReservationPreOrder?> Load(int reservationId, CancellationToken ct) =>
         _db.ReservationPreOrders.Include(x => x.Items).FirstOrDefaultAsync(x => x.ReservationId == reservationId, ct);
     private static PreOrderResponse Map(ReservationPreOrder x) => new(x.ReservationId, x.CustomerId, x.BranchId,

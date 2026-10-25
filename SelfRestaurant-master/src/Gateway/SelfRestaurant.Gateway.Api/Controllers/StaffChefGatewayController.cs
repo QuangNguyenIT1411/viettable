@@ -578,7 +578,7 @@ public sealed class StaffChefGatewayController : ControllerBase
                 request.IsActive ?? true),
             cancellationToken);
 
-        return Ok(new { success = true, message = "?? th?m m?n m?i v?o th?c ??n h?m nay." });
+        return Ok(new { success = true, message = "Đã thêm món mới vào thực đơn hôm nay." });
     }
 
     [HttpPut("chef/dishes/{dishId:int}")]
@@ -671,7 +671,7 @@ public sealed class StaffChefGatewayController : ControllerBase
             await _identityClient.StaffChangePasswordAsync(
                 new StaffChangePasswordRequest(staff.EmployeeId, request.CurrentPassword, request.NewPassword),
                 cancellationToken);
-            return Ok(new { success = true, message = "??i m?t kh?u th?nh c?ng." });
+            return Ok(new { success = true, message = "Đổi mật khẩu thành công." });
         }
         catch (Exception ex)
         {
@@ -997,7 +997,7 @@ public sealed class StaffChefGatewayController : ControllerBase
         var normalized = message.Trim();
         if (normalized.Contains("Đơn hàng không có món để chuyển sang bếp.", StringComparison.OrdinalIgnoreCase))
         {
-            return "??n h?ng ch?a c? m?n h?p l? ?? b?t ??u n?u.";
+            return "Đơn hàng chưa có món hợp lệ để bắt đầu nấu.";
         }
 
         if (normalized.Contains("Order is already in kitchen processing state", StringComparison.OrdinalIgnoreCase))
@@ -1007,7 +1007,7 @@ public sealed class StaffChefGatewayController : ControllerBase
 
         if (normalized.Contains("Order is not in a status that can enter kitchen processing", StringComparison.OrdinalIgnoreCase))
         {
-            return "??n n?y ch?a ? tr?ng th?i c? th? b?t ??u n?u.";
+            return "Đơn này chưa ở trạng thái có thể bắt đầu nấu.";
         }
 
         if (normalized.Contains("Không thể trừ nguyên liệu trong kho", StringComparison.OrdinalIgnoreCase))

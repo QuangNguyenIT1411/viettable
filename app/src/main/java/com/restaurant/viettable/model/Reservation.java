@@ -32,6 +32,7 @@ public class Reservation implements Serializable {
     private boolean hasPreOrder;
     private String contactName;
     private String contactPhone;
+    private String reservedAt; // server instant (ISO); date/timeSlot are its display texts
 
     public Reservation() {
         this.specialTags = new ArrayList<>();
@@ -87,6 +88,8 @@ public class Reservation implements Serializable {
     public void setDepositAmount(long depositAmount) { this.depositAmount = depositAmount; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    public String getReservedAt() { return reservedAt; }
+    public void setReservedAt(String reservedAt) { this.reservedAt = reservedAt; }
     public boolean hasPreOrder() { return hasPreOrder; }
     public void setHasPreOrder(boolean hasPreOrder) { this.hasPreOrder = hasPreOrder; }
     public String getContactName() { return contactName; }

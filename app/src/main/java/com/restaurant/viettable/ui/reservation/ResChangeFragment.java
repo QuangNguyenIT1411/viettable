@@ -15,10 +15,12 @@ import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 
+import com.restaurant.viettable.util.ReservationSchedule;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -29,7 +31,7 @@ public class ResChangeFragment extends BaseFragment {
     private Reservation reservation;
 
     private final List<String> dates = new ArrayList<>();
-    private final List<String> times = Arrays.asList("18:30", "19:00", "19:30", "20:00");
+    private static final int MAX_GUESTS = 30;
     private String selectedDate;
     private String selectedTime;
     private int guests = 4;
@@ -77,34 +79,33 @@ public class ResChangeFragment extends BaseFragment {
             guests = reservation.getGuestCount();
             binding.tvChangeGuestCount.setText(String.valueOf(guests));
 
+            // Same days and slots as a new booking; the reservation's own day and time stay selected (it used to
+            // offer only 18:30–20:00, forcing a lunch booking into the evening).
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", new Locale("vi", "VN"));
-            for (int offset = 1; offset <= 7; offset++) dates.add(LocalDate.now().plusDays(offset).format(formatter));
+            LocalDateTime now = LocalDateTime.now();
+            LocalDate current = ReservationSchedule.parseDate(selectedDate, now.toLocalDate());
+            List<LocalDate> days = new ArrayList<>(ReservationSchedule.bookableDays(now));
+            if (current != null && !days.contains(current) && !current.isBefore(now.toLocalDate())) days.add(0, current);
+            dates.clear();
+            for (LocalDate day : days) dates.add(day.format(formatter));
 
-            // Date chips
             binding.chipGroupChangeDate.removeAllViews();
-            for (String d : dates) {
+            for (int i = 0; i < days.size(); i++) {
+                LocalDate day = days.get(i);
+                String label = dates.get(i);
                 Chip chip = new Chip(getContext());
-                chip.setText(d);
+                chip.setText(label);
                 chip.setCheckable(true);
-                if (d.contains(selectedDate) || selectedDate.contains(d)) chip.setChecked(true);
+                if (day.equals(current)) chip.setChecked(true);
                 chip.setOnCheckedChangeListener((btn, isChecked) -> {
-                    if (isChecked) selectedDate = d;
+                    if (!isChecked) return;
+                    selectedDate = label;
+                    renderTimes(day);
                 });
                 binding.chipGroupChangeDate.addView(chip);
             }
-
-            // Time chips
-            binding.chipGroupChangeTime.removeAllViews();
-            for (String t : times) {
-                Chip chip = new Chip(getContext());
-                chip.setText(t);
-                chip.setCheckable(true);
-                if (t.equals(selectedTime)) chip.setChecked(true);
-                chip.setOnCheckedChangeListener((btn, isChecked) -> {
-                    if (isChecked) selectedTime = t;
-                });
-                binding.chipGroupChangeTime.addView(chip);
-            }
+            if (current == null || !days.contains(current)) { current = days.get(0); selectedDate = dates.get(0); }
+            renderTimes(current);
 
             binding.btnChangeMinusGuest.setOnClickListener(v -> {
                 if (guests > 1) {
@@ -114,11 +115,13 @@ public class ResChangeFragment extends BaseFragment {
             });
 
             binding.btnChangePlusGuest.setOnClickListener(v -> {
+                if (guests >= MAX_GUESTS) { showToast("Tối đa " + MAX_GUESTS + " khách cho một đặt bàn."); return; }
                 guests++;
                 binding.tvChangeGuestCount.setText(String.valueOf(guests));
             });
 
             binding.btnSubmitChange.setOnClickListener(v -> {
+                if (selectedTime == null) { showToast("Ngày này đã hết giờ nhận đặt bàn. Vui lòng chọn ngày khác."); return; }
                 String note = binding.etChangeNote.getText() != null ? binding.etChangeNote.getText().toString().trim() : "";
                 binding.btnSubmitChange.setEnabled(false);
                 MobileRepository.getInstance().updateReservation(reservation, selectedDate, selectedTime, guests, note,
@@ -136,6 +139,24 @@ public class ResChangeFragment extends BaseFragment {
                             }
                         });
             });
+        }
+    }
+
+    /** Slots of that day; the current time stays selected when still bookable, else the first bookable one. */
+    private void renderTimes(LocalDate day) {
+        if (binding == null) return;
+        LocalDateTime now = LocalDateTime.now();
+        selectedTime = ReservationSchedule.firstSelectable(day, now, selectedTime);
+        binding.chipGroupChangeTime.removeAllViews();
+        for (String t : ReservationSchedule.slots()) {
+            boolean bookable = ReservationSchedule.selectable(day, t, now);
+            Chip chip = new Chip(getContext());
+            chip.setText(t);
+            chip.setCheckable(bookable);
+            chip.setEnabled(bookable);
+            if (t.equals(selectedTime)) chip.setChecked(true);
+            chip.setOnCheckedChangeListener((btn, isChecked) -> { if (isChecked) selectedTime = t; });
+            binding.chipGroupChangeTime.addView(chip);
         }
     }
 

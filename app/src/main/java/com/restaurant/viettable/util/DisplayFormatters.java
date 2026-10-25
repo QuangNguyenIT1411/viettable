@@ -54,6 +54,12 @@ public final class DisplayFormatters {
         }
     }
 
+    /** The server timestamp as an instant (UTC when no offset is given); null when missing or unreadable. */
+    public static Instant instant(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        try { return parseUtcInstant(value.trim()); } catch (DateTimeParseException ignored) { return null; }
+    }
+
     private static Instant parseUtcInstant(String value) {
         try {
             return OffsetDateTime.parse(value).toInstant();

@@ -48,16 +48,18 @@ public class ResDateFragment extends BaseFragment {
         draft = new ReservationDraft();
         draft.setBranch(appStateManager.getSelectedBranch());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", new Locale("vi", "VN"));
-        for (int offset = 1; offset <= 7; offset++)
-            dateOptions.add(LocalDate.now().plusDays(offset).format(formatter));
+        // Today too, while it still has a bookable slot (it used to start tomorrow).
+        dateOptions.clear(); // the view is rebuilt on Back; the list must not grow
+        for (LocalDate day : com.restaurant.viettable.util.ReservationSchedule.bookableDays(java.time.LocalDateTime.now()))
+            dateOptions.add(day.format(formatter));
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
         binding.btnHistoryShortcut.setOnClickListener(v -> navigateTo(new ResHistoryFragment()));
 
         // Wizard progress
         binding.wizardProgress.tvWizardStepName.setText(getString(R.string.res_wizard_step1));
-        binding.wizardProgress.tvWizardStepFraction.setText("1/6");
-        binding.wizardProgress.progressWizard.setProgress(16);
+        binding.wizardProgress.tvWizardStepFraction.setText("1/5");
+        binding.wizardProgress.progressWizard.setProgress(20);
 
         if (draft.getBranch() != null) {
             binding.tvBranchHeader.setText("Chi nhánh: " + draft.getBranch().getName());

@@ -697,7 +697,7 @@ public sealed class AdminCatalogController : ControllerBase
             .FirstOrDefaultAsync(cancellationToken);
         if (dish is null)
         {
-            return NotFound(new { message = "Kh?ng t?m th?y m?n ?n." });
+            return NotFound(new { message = "Không tìm thấy món ăn." });
         }
 
         var ingredients = await _db.DishIngredients

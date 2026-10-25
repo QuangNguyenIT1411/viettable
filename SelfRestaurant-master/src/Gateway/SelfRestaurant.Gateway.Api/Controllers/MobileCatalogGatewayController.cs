@@ -104,7 +104,10 @@ public sealed class MobileCatalogGatewayController : ControllerBase
         if (layout is null) return null;
         var occupied = (await _customers.GetOccupiedTableIdsAsync(branchId, at.UtcDateTime,
             at.AddMinutes(duration).UtcDateTime, excludeReservationId, ct)).ToHashSet();
-        var suitable = layout.Tables.Where(x => x.NumberOfSeats >= partySize && x.IsAvailable && !occupied.Contains(x.TableId)).ToArray();
+        var now = DateTimeOffset.UtcNow;
+        // Seated guests now only matter for a booking that starts soon (ReservationRules.LiveStatusHorizon).
+        var suitable = layout.Tables.Where(x => x.NumberOfSeats >= partySize && ReservationRules.TableBookableAt(x, at, now)
+            && !occupied.Contains(x.TableId)).ToArray();
         var suggestions = new List<MobileAvailabilitySuggestion>();
         if (suitable.Length == 0)
         {
@@ -114,7 +117,8 @@ public sealed class MobileCatalogGatewayController : ControllerBase
                 if (candidate <= DateTimeOffset.UtcNow.AddMinutes(-5)) continue;
                 var taken = (await _customers.GetOccupiedTableIdsAsync(branchId, candidate.UtcDateTime,
                     candidate.AddMinutes(duration).UtcDateTime, excludeReservationId, ct)).ToHashSet();
-                var count = layout.Tables.Count(x => x.NumberOfSeats >= partySize && x.IsAvailable && !taken.Contains(x.TableId));
+                var count = layout.Tables.Count(x => x.NumberOfSeats >= partySize && ReservationRules.TableBookableAt(x, candidate, now)
+                    && !taken.Contains(x.TableId));
                 if (count > 0) suggestions.Add(new MobileAvailabilitySuggestion(candidate, count));
             }
         }

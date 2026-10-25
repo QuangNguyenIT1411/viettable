@@ -104,6 +104,14 @@ public sealed class CustomersClient : ApiClientBase
             request,
             cancellationToken);
 
+    /// <summary>The earliest open reservation of the table starting in [fromUtc, toUtc]; null when none.</summary>
+    public Task<ReservationTableHoldDto?> GetTableHoldAsync(int branchId, int tableId, DateTime fromUtc, DateTime toUtc,
+        CancellationToken cancellationToken) =>
+        GetAsync<ReservationTableHoldDto>($"/api/internal/reservations/table-hold?branchId={branchId}&tableId={tableId}"
+            + $"&fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}&toUtc={Uri.EscapeDataString(toUtc.ToString("O"))}", cancellationToken);
+
+    public sealed record ReservationTableHoldDto(int ReservationId, int? CustomerId, DateTime ReservedAt);
+
     public Task<ReservationDto?> CancelReservationAsync(int reservationId, CancellationToken cancellationToken) =>
         PostForAsync<object, ReservationDto>(
             $"/api/customers/reservations/{reservationId}/cancel",

@@ -16,6 +16,7 @@ import com.restaurant.viettable.ui.preorder.PreorderDetailFragment;
 import com.restaurant.viettable.ui.preorder.PreorderMenuFragment;
 import com.restaurant.viettable.ui.session.QrScanFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.ReservationSchedule;
 import com.restaurant.viettable.util.SafeText;
 
 public class ResDetailFragment extends BaseFragment {
@@ -81,6 +82,7 @@ public class ResDetailFragment extends BaseFragment {
                     binding.tvDetailStatusBadge.setTextColor(0xFF616161);
                     break;
                 case CANCELLED:
+                case NO_SHOW:
                     binding.tvDetailStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
                     binding.tvDetailStatusBadge.setTextColor(0xFFB71C1C);
                     break;
@@ -103,6 +105,17 @@ public class ResDetailFragment extends BaseFragment {
             binding.btnScanQrCheckin.setOnClickListener(v -> navigateTo(new QrScanFragment()));
             binding.btnChangeRes.setOnClickListener(v -> navigateTo(ResChangeFragment.newInstance(reservation)));
             binding.btnCancelRes.setOnClickListener(v -> navigateTo(ResCancelFragment.newInstance(reservation)));
+
+            // Only the actions the server would accept now (before: always shown, even when cancelled or checked in).
+            java.time.Instant reservedAt = DisplayFormatters.instant(reservation.getReservedAt());
+            java.time.Instant now = java.time.Instant.now();
+            Reservation.Status status = reservation.getStatus();
+            binding.btnScanQrCheckin.setVisibility(ReservationSchedule.canCheckIn(status, reservedAt, now) ? View.VISIBLE : View.GONE);
+            binding.btnChangeRes.setVisibility(ReservationSchedule.canChange(status, reservedAt, now) ? View.VISIBLE : View.GONE);
+            binding.btnCancelRes.setVisibility(ReservationSchedule.canCancel(status, reservedAt, now) ? View.VISIBLE : View.GONE);
+            boolean preOrderOpen = ReservationSchedule.canPreOrder(status, reservedAt, now);
+            binding.btnGoPreOrder.setVisibility(preOrderOpen || reservation.hasPreOrder() ? View.VISIBLE : View.GONE);
+            if (!preOrderOpen && !reservation.hasPreOrder()) binding.tvPreOrderNotice.setVisibility(View.GONE);
         }
     }
 

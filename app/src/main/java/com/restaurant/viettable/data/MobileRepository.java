@@ -1388,6 +1388,7 @@ public final class MobileRepository {
                 new ArrayList<>(), 0, reservationStatus(SafeText.json(row, "status")), row.optJSONArray("preOrderItems") != null && row.optJSONArray("preOrderItems").length() > 0,
                 SafeText.json(row, "customerName"), SafeText.json(row, "phoneNumber"));
         reservation.setTableLabel(tableLabel(branchId, reservation.getTableId()));
+        reservation.setReservedAt(reserved);
         return reservation;
     }
 

@@ -79,9 +79,9 @@ public class ResTableLayoutFragment extends BaseFragment {
         binding.btnBack.setOnClickListener(v -> navigateBack());
         binding.btnNoTableSuggestion.setOnClickListener(v -> navigateTo(new ResNoTableFragment()));
 
-        binding.wizardProgress.tvWizardStepName.setText(getString(R.string.res_wizard_step5));
-        binding.wizardProgress.tvWizardStepFraction.setText("5/6");
-        binding.wizardProgress.progressWizard.setProgress(83);
+        binding.wizardProgress.tvWizardStepName.setText(getString(R.string.res_wizard_step4));
+        binding.wizardProgress.tvWizardStepFraction.setText("4/5");
+        binding.wizardProgress.progressWizard.setProgress(80);
 
         binding.tabLayoutFloors.addTab(binding.tabLayoutFloors.newTab().setText("Bàn phù hợp đang còn trống"));
 
@@ -93,11 +93,11 @@ public class ResTableLayoutFragment extends BaseFragment {
                 floor1Tables.clear();
                 for (MobileRepository.AvailableTable table : value)
                     floor1Tables.add(new TableNode(table.tableId, table.tableNumber, table.capacity, false));
+                // The guest picks the table (it used to silently pick the first one).
+                selectedTableId = null;
+                binding.btnContinue.setEnabled(false);
                 if (!floor1Tables.isEmpty()) {
-                    selectedTableId = floor1Tables.get(0).id;
-                    binding.tvSelectedTableBanner.setText("Đang chọn: Bàn " + floor1Tables.get(0).displayNumber
-                            + " (" + floor1Tables.get(0).capacity + " người)");
-                    binding.btnContinue.setEnabled(true);
+                    binding.tvSelectedTableBanner.setText("Chạm vào một bàn để chọn");
                 } else {
                     binding.tvSelectedTableBanner.setText("Khung giờ này chưa còn bàn phù hợp");
                 }
@@ -170,6 +170,7 @@ public class ResTableLayoutFragment extends BaseFragment {
                 card.setOnClickListener(v -> {
                     selectedTableId = node.id;
                     binding.tvSelectedTableBanner.setText("Đang chọn: Bàn " + node.displayNumber + " (" + node.capacity + " người)");
+                    binding.btnContinue.setEnabled(true);
                     renderTableGrid();
                 });
             }

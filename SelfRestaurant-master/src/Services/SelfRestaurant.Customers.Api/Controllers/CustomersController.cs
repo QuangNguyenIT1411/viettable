@@ -182,6 +182,7 @@ public sealed class CustomersController : ControllerBase
             return BadRequest(new { message = "Đặt bàn không hợp lệ." });
         }
 
+        await MarkNoShowsAsync(null, null, reservationId, cancellationToken);
         var reservation = await _db.Reservations
             .AsNoTracking()
             .Include(x => x.PreOrderItems)
@@ -215,6 +216,7 @@ public sealed class CustomersController : ControllerBase
         var utcStart = TimeZoneInfo.ConvertTimeToUtc(localStart, restaurantTimeZone);
         var utcEnd = TimeZoneInfo.ConvertTimeToUtc(localEnd, restaurantTimeZone);
         var normalizedStatus = NormalizeOptional(status, 30);
+        await MarkNoShowsAsync(null, branchId, null, cancellationToken);
 
         var query = _db.Reservations
             .AsNoTracking()
@@ -249,6 +251,7 @@ public sealed class CustomersController : ControllerBase
             return BadRequest(new { message = "Khách hàng không hợp lệ." });
         }
 
+        await MarkNoShowsAsync(customerId, null, null, cancellationToken);
         var reservations = await _db.Reservations
             .AsNoTracking()
             .Include(x => x.PreOrderItems)
@@ -273,6 +276,25 @@ public sealed class CustomersController : ControllerBase
                 && !ClosedReservationStatuses.Contains(x.Status));
         if (excludeReservationId is > 0) query = query.Where(x => x.ReservationId != excludeReservationId.Value);
         return Ok(await query.Select(x => x.TableId!.Value).Distinct().ToListAsync(cancellationToken));
+    }
+
+    /// <summary>
+    /// The earliest open reservation (Pending/Confirmed/CheckingIn) of one table starting in [fromUtc, toUtc], or 404.
+    /// A walk-in must not take a table that a booked guest is about to use.
+    /// </summary>
+    [HttpGet("api/internal/reservations/table-hold")]
+    public async Task<IActionResult> GetTableHold([FromQuery] int branchId, [FromQuery] int tableId,
+        [FromQuery] DateTime fromUtc, [FromQuery] DateTime toUtc, CancellationToken cancellationToken)
+    {
+        if (branchId <= 0 || tableId <= 0 || fromUtc >= toUtc)
+            return BadRequest(new { code = "validation_failed", message = "Khoảng thời gian không hợp lệ." });
+        var hold = await _db.Reservations.AsNoTracking()
+            .Where(x => x.BranchId == branchId && x.TableId == tableId && x.ReservedAt >= fromUtc && x.ReservedAt <= toUtc
+                && (x.Status == "Pending" || x.Status == "Confirmed" || x.Status == "CheckingIn"))
+            .OrderBy(x => x.ReservedAt)
+            .Select(x => new { x.ReservationId, x.CustomerId, x.ReservedAt })
+            .FirstOrDefaultAsync(cancellationToken);
+        return hold is null ? NotFound() : Ok(hold);
     }
 
     [HttpPut("api/internal/reservations/{reservationId:int}")]
@@ -431,10 +453,19 @@ public sealed class CustomersController : ControllerBase
         {
             return NotFound(new { message = "Không tìm thấy đặt bàn." });
         }
-        if (string.Equals(reservation.Status, "CheckedIn", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(reservation.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(reservation.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
         {
-            return Conflict(new { message = "Không thể hủy đặt bàn đã check-in hoặc hoàn tất." });
+            return Ok(MapReservation(reservation)); // a repeated cancel changes nothing
+        }
+        if (string.Equals(reservation.Status, "CheckedIn", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(reservation.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(reservation.Status, "CheckingIn", StringComparison.OrdinalIgnoreCase))
+        {
+            return Conflict(new { code = "reservation_state_conflict", message = "Không thể hủy đặt bàn đang check-in, đã check-in hoặc đã hoàn tất." });
+        }
+        if (string.Equals(reservation.Status, "NoShow", StringComparison.OrdinalIgnoreCase) || IsOverdue(reservation, DateTime.UtcNow))
+        {
+            return Conflict(new { code = "reservation_expired", message = "Đặt bàn đã quá giờ hẹn nên không thể hủy." });
         }
 
         var now = DateTime.UtcNow;
@@ -470,7 +501,7 @@ public sealed class CustomersController : ControllerBase
         if (!string.Equals(entity.Status, "Pending", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(entity.Status, "Confirmed", StringComparison.OrdinalIgnoreCase))
         {
-            return Conflict(new { message = "Kh?ng th? b?t ??u check-in cho ??t b?n ? tr?ng th?i hi?n t?i." });
+            return Conflict(new { message = "Không thể bắt đầu check-in cho đặt bàn ở trạng thái hiện tại." });
         }
 
         var now = DateTime.UtcNow;
@@ -499,7 +530,7 @@ public sealed class CustomersController : ControllerBase
                 && entity.ConvertedOrderId is int existingOrderId
                 && requestOrderId != existingOrderId)
             {
-                return Conflict(new { message = "??t b?n ?? check-in v?i ??n h?ng kh?c." });
+                return Conflict(new { message = "Đặt bàn đã check-in với đơn hàng khác." });
             }
 
             return Ok(MapReservation(entity));
@@ -507,7 +538,7 @@ public sealed class CustomersController : ControllerBase
 
         if (!string.Equals(entity.Status, "CheckingIn", StringComparison.OrdinalIgnoreCase))
         {
-            return Conflict(new { message = "??t b?n ch?a ? tr?ng th?i ?ang check-in." });
+            return Conflict(new { message = "Đặt bàn chưa ở trạng thái đang check-in." });
         }
 
         CompleteCheckIn(entity, request);
@@ -553,7 +584,7 @@ public sealed class CustomersController : ControllerBase
             || string.Equals(entity.Status, "NoShow", StringComparison.OrdinalIgnoreCase)
             || string.Equals(entity.Status, "Completed", StringComparison.OrdinalIgnoreCase))
         {
-            return Conflict(new { message = "Kh?ng th? check-in ??t b?n ?? h?y, kh?ng ??n ho?c ho?n t?t." });
+            return Conflict(new { message = "Không thể check-in đặt bàn đã hủy, không đến hoặc đã hoàn tất." });
         }
 
         entity.Status = "CheckingIn";
@@ -845,6 +876,33 @@ public sealed class CustomersController : ControllerBase
     }
 
     private static string BuildCheckInIdempotencyKey(int reservationId) => $"reservation-checkin-{reservationId}";
+
+    // Every reservation is created with a 30-minute arrival window; the query uses that constant so it translates
+    // on SQL Server and PostgreSQL, and IsOverdue re-checks the stored window.
+    private const int DefaultArrivalWindowMinutes = 30;
+
+    /// <summary>Pending/Confirmed but the arrival window (reserved time + window) is over: the guest did not come.</summary>
+    public static bool IsOverdue(Reservation x, DateTime nowUtc) =>
+        (string.Equals(x.Status, "Pending", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(x.Status, "Confirmed", StringComparison.OrdinalIgnoreCase))
+        && x.ReservedAt.AddMinutes(Math.Max(1, x.ArrivalWindowMinutes)) < nowUtc;
+
+    /// <summary>
+    /// Nothing else marks a missed reservation, so it stayed "Confirmed" (and "Sắp tới") forever. Reads that list
+    /// reservations mark the overdue ones NoShow first. The status condition is part of the UPDATE, so a check-in
+    /// that started meanwhile (CheckingIn) is never overwritten.
+    /// </summary>
+    private async Task MarkNoShowsAsync(int? customerId, int? branchId, int? reservationId, CancellationToken ct)
+    {
+        if (!_db.Database.IsRelational()) return;
+        var now = DateTime.UtcNow;
+        var cutoff = now.AddMinutes(-DefaultArrivalWindowMinutes);
+        var query = _db.Reservations.Where(x => (x.Status == "Pending" || x.Status == "Confirmed") && x.ReservedAt < cutoff);
+        if (customerId is > 0) query = query.Where(x => x.CustomerId == customerId.Value);
+        if (branchId is > 0) query = query.Where(x => x.BranchId == branchId.Value);
+        if (reservationId is > 0) query = query.Where(x => x.ReservationId == reservationId.Value);
+        await query.ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, "NoShow").SetProperty(x => x.UpdatedAtUtc, now), ct);
+    }
 
     private static TimeZoneInfo GetRestaurantTimeZone()
     {

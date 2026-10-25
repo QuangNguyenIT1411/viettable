@@ -93,10 +93,8 @@
     <string name="res_wizard_step1">1. Chọn ngày</string>
     <string name="res_wizard_step2">2. Chọn giờ</string>
     <string name="res_wizard_step3">3. Số lượng khách</string>
-    <string name="res_wizard_step4">4. Chọn khu vực</string>
-    <string name="res_wizard_step5">5. Chọn bàn</string>
-    <string name="res_wizard_step6">6. Ghi chú</string>
-    <string name="res_wizard_step7">7. Đặt cọc</string>
+    <string name="res_wizard_step4">4. Chọn bàn</string>
+    <string name="res_wizard_step5">5. Ghi chú</string>
     <string name="res_confirm_title">Xác nhận đặt bàn thành công</string>
     <string name="res_code">Mã đặt bàn</string>
     <string name="res_detail_title">Chi tiết đặt bàn</string>

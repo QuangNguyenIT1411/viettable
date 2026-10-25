@@ -226,11 +226,11 @@ public sealed class StaffCashierGatewayController : ControllerBase
             var previousState = await _customersClient.GetReservationByIdAsync(reservationId, cancellationToken);
             if (previousState is null)
             {
-                return Error("reservation_not_found", "Kh?ng t?m th?y ??t b?n.", 404);
+                return Error("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
             }
             if (previousState.BranchId != staff.BranchId)
             {
-                return Error("branch_mismatch", "??t b?n kh?ng thu?c chi nh?nh c?a thu ng?n hi?n t?i.", 403);
+                return Error("branch_mismatch", "Đặt bàn không thuộc chi nhánh của thu ngân hiện tại.", 403);
             }
 
             var wasAlreadyCheckingIn = string.Equals(previousState.Status, "CheckingIn", StringComparison.OrdinalIgnoreCase);

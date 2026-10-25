@@ -19,13 +19,18 @@ public sealed class MobileReservationsGatewayController : ControllerBase
     private readonly CatalogClient _catalog;
     private readonly IdentityClient _identity;
     private readonly OrdersClient _orders;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<MobileReservationsGatewayController> _logger;
 
-    public MobileReservationsGatewayController(CustomersClient customers, CatalogClient catalog, IdentityClient identity, OrdersClient orders)
+    public MobileReservationsGatewayController(CustomersClient customers, CatalogClient catalog, IdentityClient identity, OrdersClient orders,
+        IConfiguration configuration, ILogger<MobileReservationsGatewayController> logger)
     {
         _customers = customers;
         _catalog = catalog;
         _identity = identity;
         _orders = orders;
+        _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -84,12 +89,13 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         if (limit is < 1 or > 100) return MobileError("validation_failed", "limit phải từ 1 đến 100.", 400);
         var cursorId = DecodeCursor(cursor);
         if (cursor is not null && cursorId is null) return MobileError("invalid_cursor", "Cursor không hợp lệ.", 400);
-        var now = DateTime.UtcNow;
+        // Customers marks missed reservations NoShow on this read, so "upcoming" is simply the open statuses: a guest
+        // a few minutes late (still inside the arrival window) keeps the reservation in "Sắp tới".
         var query = (await _customers.GetCustomerReservationsAsync(actorId.Value, ct)).AsEnumerable();
         if (string.Equals(scope, "upcoming", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(x => x.ReservedAt >= now && !string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
+            query = query.Where(IsOpenReservation);
         else if (string.Equals(scope, "history", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(x => x.ReservedAt < now || string.Equals(x.Status, "Cancelled", StringComparison.OrdinalIgnoreCase));
+            query = query.Where(x => !IsOpenReservation(x));
         if (cursorId is > 0) query = query.Where(x => x.ReservationId < cursorId.Value);
         var page = query.OrderByDescending(x => x.ReservationId).Take(limit + 1).ToArray();
         var hasMore = page.Length > limit;
@@ -115,9 +121,10 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var validation = ValidateSchedule(request.PartySize, request.ReservedAt);
         if (validation is not null) return validation;
         var available = await FindAvailableTables(owned.Reservation!.BranchId, request.ReservedAt, request.PartySize, reservationId, ct);
-        var table = request.TableId is > 0
-            ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value)
-            : available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
+        // Keep the guest's table when it still fits the new time and party; otherwise move them to the best free one
+        // (more guests used to fail with "hết bàn" although other tables were free).
+        var table = (request.TableId is > 0 ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value) : null)
+            ?? available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
         if (table is null)
             return MobileError("reservation_slot_unavailable", "Khung giờ đã hết bàn phù hợp.", 409,
                 new { suggestions = await BuildSuggestions(owned.Reservation.BranchId, request.ReservedAt, request.PartySize, reservationId, ct) });
@@ -140,7 +147,12 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         try
         {
             var result = await _customers.CancelReservationAsync(reservationId, ct);
-            return result is null ? MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404) : Ok(result);
+            if (result is null) return MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
+            // The dishes ordered ahead must never reach the kitchen. Best effort: a cancelled reservation cannot
+            // check in, so a missed call only leaves an unused pre-order row.
+            try { await _orders.CancelReservationPreOrderAsync(reservationId, ct); }
+            catch (Exception ex) { _logger.LogWarning("Pre-order cancel skipped for reservation {ReservationId} ({ErrorType}).", reservationId, ex.GetType().Name); }
+            return Ok(result);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "cancel_reservation_failed"); }
     }
@@ -212,7 +224,9 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         if (layout is null) return (null, Array.Empty<BranchTableDto>());
         var occupied = (await _customers.GetOccupiedTableIdsAsync(branchId, at.UtcDateTime,
             at.AddHours(2).UtcDateTime, excludeReservationId, ct)).ToHashSet();
-        return (layout, layout.Tables.Where(x => x.IsAvailable && x.NumberOfSeats >= partySize && !occupied.Contains(x.TableId)).ToArray());
+        var now = DateTimeOffset.UtcNow;
+        return (layout, layout.Tables.Where(x => ReservationRules.TableBookableAt(x, at, now)
+            && x.NumberOfSeats >= partySize && !occupied.Contains(x.TableId)).ToArray());
     }
 
     private async Task<IReadOnlyList<MobileAvailabilitySuggestion>> BuildSuggestions(
@@ -239,6 +253,9 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             : (null, MobileError("forbidden", "Bạn không có quyền truy cập đặt bàn này.", 403));
     }
 
+    private static bool IsOpenReservation(ReservationDto x) =>
+        x.Status is not null && new[] { "Pending", "Confirmed", "CheckingIn" }.Contains(x.Status, StringComparer.OrdinalIgnoreCase);
+
     private ObjectResult? ValidateSchedule(int partySize, DateTimeOffset at)
     {
         if (partySize is < 1 or > 30)
@@ -247,6 +264,11 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             return MobileError("validation_failed", "Thời gian đặt bàn phải cách hiện tại ít nhất 15 phút.", 400);
         if (at > DateTimeOffset.UtcNow.AddDays(90))
             return MobileError("validation_failed", "Chỉ có thể đặt bàn trước tối đa 90 ngày.", 400);
+        var openFrom = ReservationRules.ConfiguredTime(_configuration, "Reservations:OpenFrom", ReservationRules.DefaultOpenFrom);
+        var lastSlot = ReservationRules.ConfiguredTime(_configuration, "Reservations:LastSlot", ReservationRules.DefaultLastSlot);
+        if (!ReservationRules.WithinBookingHours(at, openFrom, lastSlot))
+            return MobileError("outside_booking_hours",
+                $"Nhà hàng nhận đặt bàn từ {openFrom:HH:mm} đến {lastSlot:HH:mm}. Vui lòng chọn giờ khác.", 400);
         return null;
     }
 

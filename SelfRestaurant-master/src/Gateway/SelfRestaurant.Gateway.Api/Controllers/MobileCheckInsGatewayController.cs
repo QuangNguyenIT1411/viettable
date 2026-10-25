@@ -134,6 +134,17 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
         var table = await ResolveTable(request.QrCode, ct);
         if (table.Error is not null) return table.Error;
         var resolvedTable = table.Table!;
+        // A booked guest arriving within the hour (or still inside their arrival window) keeps the table.
+        var now = DateTime.UtcNow;
+        var hold = await _customers.GetTableHoldAsync(resolvedTable.BranchId, resolvedTable.TableId,
+            now - ReservationRules.ArrivalWindow, now + ReservationRules.WalkInGuard, ct);
+        if (hold is not null)
+            return hold.CustomerId == actor
+                ? Error("reservation_check_in_required",
+                    $"Bạn đã đặt bàn này lúc {ReservationRules.LocalClock(hold.ReservedAt)}. Vui lòng check-in theo đặt bàn trong mục Đặt bàn.", 409,
+                    new { hold.ReservationId })
+                : Error("table_reserved_soon",
+                    $"Bàn này đã có khách đặt lúc {ReservationRules.LocalClock(hold.ReservedAt)}. Vui lòng chọn bàn khác hoặc hỏi nhân viên.", 409);
         var hash = Hash(new { actor, resolvedTable.BranchId, resolvedTable.TableId, Type = "walk-in" });
         try
         {

@@ -61,8 +61,8 @@ public class ResNoteFragment extends BaseFragment {
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
 
-        binding.wizardProgress.tvWizardStepName.setText(getString(R.string.res_wizard_step6));
-        binding.wizardProgress.tvWizardStepFraction.setText("6/6");
+        binding.wizardProgress.tvWizardStepName.setText(getString(R.string.res_wizard_step5));
+        binding.wizardProgress.tvWizardStepFraction.setText("5/5");
         binding.wizardProgress.progressWizard.setProgress(100);
 
         if (draft.getBranch() != null) {

@@ -347,9 +347,9 @@ public sealed class AdminGatewayController : ControllerBase
     [HttpGet("dishes/{dishId:int}/ingredients")]
     public async Task<ActionResult<AdminDishIngredientsDto>> GetDishIngredients(int dishId, CancellationToken cancellationToken)
     {
-        if (RequireAdmin() is null) return Error("unauthorized", "B?n c?n ??ng nh?p b?ng t?i kho?n qu?n tr?.", 401);
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
         var response = await _catalogClient.GetDishIngredientsAsync(dishId, cancellationToken);
-        return response is null ? Error("dish_not_found", "Kh?ng t?m th?y m?n ?n.", 404) : Ok(response);
+        return response is null ? Error("dish_not_found", "Không tìm thấy món ăn.", 404) : Ok(response);
     }
 
     [HttpPut("dishes/{dishId:int}/ingredients")]
