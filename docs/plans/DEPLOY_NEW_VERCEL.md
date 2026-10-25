@@ -1,5 +1,7 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 25/10/2026 19:45:** deploy Production `dpl_GRLZxCYV4cjHGuR7cqR4knmsuwk1` (commit `89c10cb`: đặt bàn mục 1 A1–A10; không migration), `[syd1]`, Ready, cờ SePay bật; gọi thử: `/` 200, `/app/chef/` 200, `/app/admin/` 200, `/api/mobile/v1/branches` 200, `/healthz` 200; `/app/cashier/` lần đầu không trả lời 31 s (khởi động lạnh, không có trong log), gọi lại 200. Bản quay lui: `dpl_38w8SXjzH3zEdTRyVcocgmwCeqec`. APK `cloudProd` `1DA8C9F9` cài đè lên Samsung 19:41:51.
+
 > **Cập nhật 25/10/2026 18:55:** deploy Production `dpl_38w8SXjzH3zEdTRyVcocgmwCeqec` (commit `d02be4c`: thu ngân hủy giao dịch chờ; không migration), `[syd1]`, Ready, cờ SePay bật; gọi 1 lần: `/` 200 1,6 s, `/app/cashier/` 200 2,0 s, `/app/chef/` 200 0,9 s, `/app/admin/` 200 1,2 s, `/api/mobile/v1/branches` 200 1,0 s, `/healthz` 200 0,9 s. Bản quay lui: `dpl_4r23uFu1217Jep9FMrdBBs9QW9RM`. APK `cloudProd` `55EB0C96` cài đè lên Samsung 18:50:02.
 
 > **Cập nhật 25/10/2026 16:05:** deploy Production `dpl_72hHxjRH9uo24DKGyYwo1m183iPb` (commit `9c76c94`: sửa sự cố phiên #34/TT28, giao dịch chờ/đã trả khoá cả phiên; không có migration), `[syd1]`, Ready, cờ SePay tắt;
