@@ -74,4 +74,20 @@ public sealed class CashierMobilePaymentsController(BillingDbContext db, Payment
         catch (PaymentDomainException ex)
         { return StatusCode(ex.Status, new { success = false, code = ex.Code, message = ex.Message, correlationId = HttpContext.TraceIdentifier }); }
     }
+
+    // Guest changes their mind (e.g. cash instead of the transfer): the waiting payment is cancelled and the session
+    // unlocked, so a new payment can be made. The cashier must be sure no money was sent (web asks before calling).
+    [HttpPost("{paymentId:int}/cancel")]
+    public async Task<IActionResult> Cancel(int paymentId, CancellationToken ct)
+    {
+        if (!int.TryParse(User.FindFirst("branchId")?.Value, out var branchId) || branchId <= 0
+            || !int.TryParse(User.FindFirst("employeeId")?.Value, out var employeeId) || employeeId <= 0) return Forbid();
+        try
+        {
+            var payment = await finalization.CancelPendingAsync(paymentId, employeeId, branchId, ct);
+            return Ok(new { payment.PaymentId, payment.Status, payment.Amount, payment.CustomerId, payment.DiningSessionId });
+        }
+        catch (PaymentDomainException ex)
+        { return StatusCode(ex.Status, new { success = false, code = ex.Code, message = ex.Message, correlationId = HttpContext.TraceIdentifier }); }
+    }
 }

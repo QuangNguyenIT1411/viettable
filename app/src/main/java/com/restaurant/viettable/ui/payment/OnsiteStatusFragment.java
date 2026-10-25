@@ -130,6 +130,7 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
                 binding.tvOnsiteStatusDesc.setText("Yêu cầu thanh toán của bạn đã được gửi tới nhân viên phụ trách khu vực.");
                 String status = value.getStatus();
                 if ("SUCCEEDED".equals(status)) { finishing = true; handleSucceeded(); }
+                else if ("CANCELLED".equals(status) && splitBillId <= 0) { finishing = true; handleCancelledByCashier(); }
                 else if ("FAILED".equals(status) || "CANCELLED".equals(status) || "EXPIRED".equals(status)) {
                     finishing = true;
                     if (splitBillId > 0) { showToast("Phần thanh toán chưa thành công. Bạn có thể thử lại."); navigateTo(SplitBillFragment.newInstance(invoice)); }
@@ -170,6 +171,25 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
         if (pollRunnable != null) handler.removeCallbacks(pollRunnable);
         finishing = false;
         super.onPause();
+    }
+
+    /**
+     * Only the cashier cancels a waiting onsite payment (the guest cannot while it waits). The server has unlocked
+     * the session, so start checkout again from Trang chủ: a new quote and request, e.g. by cash. The old payment
+     * screens are cleared so Back never returns to the cancelled QR.
+     */
+    private void handleCancelledByCashier() {
+        showToast("Thu ngân đã hủy giao dịch này. Vui lòng chọn lại cách thanh toán.");
+        MobileRepository.getInstance().loadActiveSession(new MobileRepository.Callback<DiningSession>() {
+            @Override public void onSuccess(DiningSession value) { restartCheckout(); }
+            @Override public void onError(ApiException error) { restartCheckout(); }
+        });
+    }
+
+    private void restartCheckout() {
+        if (binding == null || !isResumed()) return;
+        switchTab(com.restaurant.viettable.R.id.nav_home);
+        navigateTo(PaymentCheckoutFragment.newInstance());
     }
 
     private void handleSucceeded() {

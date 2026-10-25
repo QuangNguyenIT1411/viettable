@@ -19,6 +19,25 @@ public sealed class PaymentFinalizationTests
         Assert.Equal("payment_state_conflict", Assert.Throws<PaymentDomainException>(() => PaymentFinalizationService.ValidatePendingTransition(payment, Quote(), null)).Code);
     }
 
+    // Cashier cancel (25/10): only a waiting, unsplit payment; a paid one never; a repeated cancel is a no-op.
+    [Fact]
+    public void Cashier_cancel_only_of_a_waiting_payment()
+    {
+        Assert.Equal(PaymentFinalizationService.CancelStep.Cancel, PaymentFinalizationService.CancelDecision("PENDING", null, false));
+        Assert.Equal(PaymentFinalizationService.CancelStep.AlreadyCancelled,
+            PaymentFinalizationService.CancelDecision("CANCELLED", "cashier_cancelled:7", false));
+        Assert.Equal("payment_already_succeeded", Assert.Throws<PaymentDomainException>(() =>
+            PaymentFinalizationService.CancelDecision("SUCCEEDED", null, false)).Code);
+        foreach (var status in new[] { "FAILED", "EXPIRED", "PROCESSING" })
+            Assert.Equal("payment_state_conflict", Assert.Throws<PaymentDomainException>(() =>
+                PaymentFinalizationService.CancelDecision(status, null, false)).Code);
+        // Cancelled some other way (e.g. a provider) is not a cashier cancel: refused, not reported as done.
+        Assert.Equal("payment_state_conflict", Assert.Throws<PaymentDomainException>(() =>
+            PaymentFinalizationService.CancelDecision("CANCELLED", "provider_session_expired", false)).Code);
+        Assert.Equal("split_bill_in_app", Assert.Throws<PaymentDomainException>(() =>
+            PaymentFinalizationService.CancelDecision("PENDING", null, true)).Code);
+    }
+
     [Fact]
     public void Persisted_amount_must_match_obligation()
     {

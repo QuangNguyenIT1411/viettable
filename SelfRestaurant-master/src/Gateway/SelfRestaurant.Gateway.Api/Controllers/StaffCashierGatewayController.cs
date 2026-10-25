@@ -60,6 +60,18 @@ public sealed class StaffCashierGatewayController : ControllerBase
     [Consumes("application/json")]
     public async Task<IActionResult> ConfirmMobileOnsitePayment(int paymentId, CancellationToken ct) => await CashierPayment(paymentId, ct);
 
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.OnsitePayments)]
+    [HttpPost("onsite-payments/{paymentId:int}/cancel")]
+    [Consumes("application/json")]
+    public async Task<IActionResult> CancelMobileOnsitePayment(int paymentId, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        if (staff.BranchId <= 0) return Error("branch_required", "Tài khoản chưa được gán chi nhánh.", 403);
+        try { return Ok(await _billingClient.CancelCashierMobilePaymentAsync(staff, paymentId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "cashier_payment_cancel_failed", ex.Message, ex.StatusCode); }
+    }
+
     private async Task<IActionResult> CashierPayment(int? paymentId, CancellationToken ct)
     {
         var staff = RequireCashier();

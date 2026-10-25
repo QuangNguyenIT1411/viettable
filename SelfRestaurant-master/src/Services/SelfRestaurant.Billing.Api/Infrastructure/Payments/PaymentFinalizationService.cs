@@ -50,6 +50,62 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
         return await db.Payments.SingleAsync(x => x.PaymentId == paymentId, ct);
     }
 
+    public const string CashierCancelledCode = "cashier_cancelled";
+
+    /// <summary>
+    /// Cashier cancels a waiting ONSITE payment (e.g. the guest pays cash instead of the transfer) and unlocks the session
+    /// so the guest or cashier can start a new payment. Holds the same quote lock as <see cref="ConfirmAsync"/>: a cancel
+    /// and a confirmation (cashier or SePay) of the same payment never both win. Orders is unlocked inside the lock,
+    /// before the Billing commit; a failed commit leaves the payment PENDING and a retry finishes it (Orders is idempotent).
+    /// </summary>
+    public async Task<Payment> CancelPendingAsync(int paymentId, int employeeId, int branchId, CancellationToken ct)
+    {
+        var quoteId = await db.Payments.AsNoTracking().Where(x => x.PaymentId == paymentId)
+            .Select(x => (int?)x.CheckoutQuoteId).SingleOrDefaultAsync(ct)
+            ?? throw new PaymentDomainException("payment_not_found", "Không tìm thấy giao dịch.", 404);
+        await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
+        await LockQuoteAsync(db, quoteId, ct);
+        var payment = await db.Payments.SingleAsync(x => x.PaymentId == paymentId, ct);
+        var quote = await db.CheckoutQuotes.SingleAsync(x => x.CheckoutQuoteId == quoteId, ct);
+        if (payment.Channel != "ONSITE" || quote.BranchId != branchId)
+            throw new PaymentDomainException("payment_not_collectible", "Giao dịch không thuộc thanh toán tại chỗ của chi nhánh này.", 403);
+        var decision = CancelDecision(payment.Status, payment.FailureCode,
+            await db.SplitBills.AnyAsync(x => x.CheckoutQuoteId == quoteId, ct));
+        if (decision == CancelStep.AlreadyCancelled) { await tx.CommitAsync(ct); return payment; }
+        try { await orders.CancelPaymentRequestForQuoteAsync(payment.DiningSessionId, payment.CustomerId, quoteId, ct); }
+        catch (HttpRequestException ex)
+        {
+            throw new PaymentDomainException("session_unlock_failed",
+                "Không mở khóa được phiên để khách chọn lại cách thanh toán. Giao dịch vẫn đang chờ, vui lòng thử lại.", (int?)ex.StatusCode is 409 ? 409 : 503);
+        }
+        var now = DateTime.UtcNow;
+        payment.Status = "CANCELLED";
+        payment.FailureCode = $"{CashierCancelledCode}:{employeeId}";
+        payment.CompletedAtUtc = payment.UpdatedAtUtc = now;
+        quote.Status = "CANCELLED"; quote.UpdatedAtUtc = now;
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        logger.LogInformation("Payment {PaymentId} ({Method}) cancelled by cashier {EmployeeId}; session {SessionId} unlocked",
+            payment.PaymentId, payment.Method, employeeId, payment.DiningSessionId);
+        return payment;
+    }
+
+    public enum CancelStep { Cancel, AlreadyCancelled }
+
+    /// <summary>Pure rule (unit-tested): only a waiting, unsplit payment can be cancelled; a repeated cancel is a no-op.</summary>
+    public static CancelStep CancelDecision(string status, string? failureCode, bool hasSplitBill)
+    {
+        if (status == "CANCELLED" && failureCode?.StartsWith(CashierCancelledCode + ":", StringComparison.Ordinal) == true)
+            return CancelStep.AlreadyCancelled;
+        if (status == "SUCCEEDED")
+            throw new PaymentDomainException("payment_already_succeeded", "Giao dịch đã được thanh toán nên không thể hủy.");
+        if (status != "PENDING")
+            throw new PaymentDomainException("payment_state_conflict", "Giao dịch đã kết thúc nên không thể hủy.");
+        if (hasSplitBill)
+            throw new PaymentDomainException("split_bill_in_app", "Khách đã chia hóa đơn trong ứng dụng; chưa hỗ trợ hủy từng phần.");
+        return CancelStep.Cancel;
+    }
+
     /// <summary>True when Orders still waits for payment of exactly this quote (pure rule, unit-tested).</summary>
     public static bool SessionAwaitsQuote(OrdersApiClient.SessionPaymentState? state, int quoteId) =>
         state is { Ended: false, Status: "PAYMENT_REQUESTED" } && state.CheckoutQuoteId == quoteId;

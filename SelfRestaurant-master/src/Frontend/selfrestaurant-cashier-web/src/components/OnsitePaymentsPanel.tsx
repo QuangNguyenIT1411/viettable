@@ -47,6 +47,19 @@ export function OnsitePaymentsPanel({ onPendingCountChange, events, live = false
     } catch (e) { if (mounted.current) setError(userMessage(e, "Không thể xác nhận giao dịch.")); }
     finally { submitting.current = false; if (mounted.current) setBusy(null); }
   };
+  const cancel = async (payment: OnsitePayment) => {
+    if (submitting.current) return;
+    const warning = paymentMethodGroup(payment.method) === "TRANSFER"
+      ? "Chỉ hủy khi chắc chắn khách CHƯA chuyển khoản (hỏi khách và xem app ngân hàng của khách)."
+      : "Chỉ hủy khi chắc chắn CHƯA thu tiền của khách.";
+    if (!window.confirm(`Hủy giao dịch chờ ${payment.paymentCode} (${payment.amount.toLocaleString("vi-VN")} đ)?\n\n${warning}\n\nSau khi hủy, khách hoặc thu ngân chọn lại cách thanh toán.`)) return;
+    submitting.current = true; setBusy(payment.paymentId);
+    try {
+      await cashierApi.cancelOnsitePayment(payment.paymentId);
+      await refresh();
+    } catch (e) { if (mounted.current) setError(userMessage(e, "Không thể hủy giao dịch.")); }
+    finally { submitting.current = false; if (mounted.current) setBusy(null); }
+  };
   return <section id="onsite-payments" className="panel cashier-panel-card" aria-label="Thanh toán ứng dụng tại chỗ">
     <div className="cashier-panel-header"><div><h2><i className="bi bi-phone me-2" />Thanh toán ứng dụng tại chỗ</h2><p className="muted">Chỉ xác nhận sau khi thực nhận tiền. Giao dịch ứng dụng được xử lý tại đây, không thu lại qua hóa đơn legacy.</p></div>{pendingCount > 0 ? <span className="soft-badge warning">{pendingCount} chờ thu tiền</span> : null}</div>
     {cleanText(error) && <div className="error-box" role="alert">{cleanText(error)}<button onClick={() => void refresh()}>Thử lại</button></div>}
@@ -62,7 +75,8 @@ export function OnsitePaymentsPanel({ onPendingCountChange, events, live = false
           <td>{p.status === "PENDING" && p.isCurrentAttempt && <div className="onsite-actions">
             {paymentMethodGroup(p.method) === "TRANSFER" && <button className="cashier-button-outline" onClick={() => void showQr(p)}>Hiện mã QR</button>}
             <button disabled={busy !== null} onClick={() => void confirm(p)}>
-              {busy === p.paymentId ? "Đang xác nhận…" : paymentMethodGroup(p.method) === "TRANSFER" ? "Đã nhận chuyển khoản" : "Xác nhận đã thu tiền"}</button>
+              {busy === p.paymentId ? "Đang xử lý…" : paymentMethodGroup(p.method) === "TRANSFER" ? "Đã nhận chuyển khoản" : "Xác nhận đã thu tiền"}</button>
+            {!p.splitPart && <button className="danger" disabled={busy !== null} onClick={() => void cancel(p)}>Hủy giao dịch chờ</button>}
           </div>}</td>
         </tr>)}</tbody></table></div>}
     {qrView && <div className="modal-backdrop" onClick={() => setQrView(null)}>

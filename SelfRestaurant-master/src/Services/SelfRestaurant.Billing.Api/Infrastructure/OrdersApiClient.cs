@@ -67,6 +67,14 @@ public sealed class OrdersApiClient
         response.EnsureSuccessStatusCode();
     }
 
+    /// <summary>Unlocks the session only if it waits for exactly this quote; an already unlocked session is fine (retry).</summary>
+    public async Task CancelPaymentRequestForQuoteAsync(int sessionId, int customerId, int quoteId, CancellationToken ct)
+    {
+        using var response = await _http.PostAsJsonAsync($"/api/internal/dining-sessions/{sessionId}/cancel-payment-request",
+            new { customerId, checkoutQuoteId = quoteId }, ct);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task CompletePaymentAsync(int sessionId, int customerId, int quoteId, int paymentId, CancellationToken ct)
     {
         using var response = await _http.PostAsJsonAsync($"/api/internal/dining-sessions/{sessionId}/payment-succeeded", new { customerId, checkoutQuoteId = quoteId, paymentId }, ct);

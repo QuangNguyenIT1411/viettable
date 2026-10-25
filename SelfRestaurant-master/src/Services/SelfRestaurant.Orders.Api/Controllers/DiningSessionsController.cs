@@ -178,12 +178,16 @@ public sealed class DiningSessionsController : ControllerBase
     }
 
     [HttpPost("{sessionId:int}/cancel-payment-request")]
-    public async Task<ActionResult<DiningSessionResponse>> CancelPaymentRequest(int sessionId, [FromBody] CustomerSessionRequest request, CancellationToken ct)
+    public async Task<ActionResult<DiningSessionResponse>> CancelPaymentRequest(int sessionId, [FromBody] CancelPaymentRequestRequest request, CancellationToken ct)
     {
         var entity = await _db.DiningSessions.FirstOrDefaultAsync(x => x.DiningSessionId == sessionId, ct);
         if (entity is null) return NotFound(new { code = "session_not_found", message = "Không tìm thấy phiên phục vụ." });
         if (entity.CustomerId != request.CustomerId) return StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu phiên phục vụ này." });
         if (entity.EndedAtUtc is not null) return Conflict(new { code = "session_closed", message = "Phiên phục vụ đã kết thúc." });
+        // Cashier cancel of a waiting payment: unlock only a session waiting for THAT quote (already unlocked = done).
+        if (request.CheckoutQuoteId is { } quoteId && string.Equals(entity.Status, "PAYMENT_REQUESTED", StringComparison.OrdinalIgnoreCase)
+            && entity.CheckoutQuoteId != quoteId)
+            return Conflict(new { code = "payment_request_conflict", message = "Phiên đang được thanh toán bằng báo giá khác." });
         if (string.Equals(entity.Status, "PAYMENT_REQUESTED", StringComparison.OrdinalIgnoreCase))
         {
             entity.Status = "ACTIVE";
@@ -643,6 +647,7 @@ public sealed class DiningSessionsController : ControllerBase
     public sealed record CreateDiningSessionRequest(int CustomerId, int BranchId, int TableId, int? ReservationId,
         string IdempotencyKey, string RequestHash);
     public sealed record CustomerSessionRequest(int CustomerId);
+    public sealed record CancelPaymentRequestRequest(int CustomerId, int? CheckoutQuoteId = null);
     public sealed record PaymentSessionRequest(int CustomerId, int CheckoutQuoteId);
     public sealed record CompletePaymentRequest(int CustomerId, int CheckoutQuoteId, int PaymentId);
     public sealed record CheckoutItem(int ItemId, int OrderId, int DishId, string DishName, int Quantity, decimal UnitPrice, decimal LineTotal);

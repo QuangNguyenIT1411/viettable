@@ -65,6 +65,8 @@ export const cashierApi = {
   getOnsitePayments: (signal?: AbortSignal) => request<OnsitePayment[]>("/api/gateway/staff/cashier/onsite-payments", { signal }),
   confirmOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
     `/api/gateway/staff/cashier/onsite-payments/${id}/confirm`, { method: "POST", body: "{}" }),
+  cancelOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
+    `/api/gateway/staff/cashier/onsite-payments/${id}/cancel`, { method: "POST", body: "{}" }),
   getBankTransferAlerts: (signal?: AbortSignal) =>
     request<BankTransferAlert[]>("/api/gateway/staff/cashier/bank-transfers/alerts", { signal }),
   resolveBankTransferAlert: (eventId: number) =>

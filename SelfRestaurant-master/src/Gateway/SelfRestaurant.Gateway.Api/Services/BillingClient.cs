@@ -15,6 +15,9 @@ public sealed class BillingClient : ApiClientBase
         CashierRequestAsync(staff, paymentId.HasValue ? HttpMethod.Post : HttpMethod.Get,
             "/api/internal/cashier/onsite-payments" + (paymentId.HasValue ? $"/{paymentId.Value}/confirm" : ""), "Không thể xác nhận giao dịch.", ct);
 
+    public Task<JsonElement> CancelCashierMobilePaymentAsync(StaffSessionUserDto staff, int paymentId, CancellationToken ct) =>
+        CashierRequestAsync(staff, HttpMethod.Post, $"/api/internal/cashier/onsite-payments/{paymentId}/cancel", "Không thể hủy giao dịch.", ct);
+
     /// <summary>VietQR for the counter screen when the cashier checks out one order by bank transfer.</summary>
     public Task<JsonElement> CashierOrderTransferQrAsync(StaffSessionUserDto staff, int orderId, decimal amount, CancellationToken ct) =>
         CashierRequestAsync(staff, HttpMethod.Get,
