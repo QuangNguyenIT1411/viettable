@@ -226,6 +226,7 @@ export function HistoryPage() {
                           <td className="text-end">{bill.totalAmount.toLocaleString("vi-VN")} {"\u0111"}</td>
                           <td>
                             {paymentMethodLabel(bill.paymentMethod)}
+                            {bill.autoConfirmed ? <><br /><span className="soft-badge success">Đã thanh toán tự động</span></> : null}
                           </td>
                         </tr>
                       ))}
@@ -233,7 +234,7 @@ export function HistoryPage() {
                   </table>
                 </div>
                 <small className="muted history-footnote">
-                  {"Hi\u1ec3n th\u1ecb t\u1ed1i \u0111a 50 h\u00f3a \u0111\u01a1n g\u1ea7n nh\u1ea5t do b\u1ea1n thanh to\u00e1n."}
+                  {"Hi\u1ec3n th\u1ecb t\u1ed1i \u0111a 50 h\u00f3a \u0111\u01a1n g\u1ea7n nh\u1ea5t do b\u1ea1n thanh to\u00e1n ho\u1eb7c t\u1ef1 \u0111\u1ed9ng x\u00e1c nh\u1eadn chuy\u1ec3n kho\u1ea3n t\u1ea1i chi nh\u00e1nh."}
                 </small>
               </>
             ) : (

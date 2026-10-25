@@ -56,7 +56,9 @@ export function OnsitePaymentsPanel({ onPendingCountChange, events, live = false
           <td>{p.paymentCode}<br/><small>{p.diningSessionCode}</small></td>
           <td>Bàn #{p.tableId}{p.splitPart && <><br/>{p.splitPart}</>}</td>
           <td>{p.amount.toLocaleString("vi-VN")} đ</td><td>{paymentMethodLabel(p.method)}{p.location ? <><br/><small>{p.location === "CASHIER" ? "Tại quầy" : p.location === "TABLE" ? "Tại bàn" : p.location}</small></> : null}</td>
-          <td>{labels[p.status] ?? p.status}{!p.isCurrentAttempt && " (đã thay thế)"}</td>
+          <td>{p.status === "SUCCEEDED" && p.providerName === "SEPAY"
+            ? <span className="soft-badge success">Đã thanh toán tự động</span>
+            : labels[p.status] ?? p.status}{!p.isCurrentAttempt && " (đã thay thế)"}</td>
           <td>{p.status === "PENDING" && p.isCurrentAttempt && <div className="onsite-actions">
             {paymentMethodGroup(p.method) === "TRANSFER" && <button className="cashier-button-outline" onClick={() => void showQr(p)}>Hiện mã QR</button>}
             <button disabled={busy !== null} onClick={() => void confirm(p)}>

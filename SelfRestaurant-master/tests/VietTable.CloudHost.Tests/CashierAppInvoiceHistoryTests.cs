@@ -88,6 +88,27 @@ public sealed class CashierAppInvoiceHistoryTests
         Assert.Equal(new[] { "Hóa đơn #12" }, rows.Select(x => x.BillCode));
     }
 
+    // SePay auto-confirmed invoices have no cashier: every cashier of that branch sees them, labelled automatic.
+    [Fact]
+    public async Task Sepay_auto_confirmed_invoice_is_listed_for_every_cashier_of_the_branch()
+    {
+        await using var db = await SeedAsync();
+        AddAppInvoice(db, 16, Branch, DateTime.UtcNow.AddMinutes(-1), 120_000m, "TRANSFER", null, orderId: 50);
+        AddAppInvoice(db, 17, 2, DateTime.UtcNow.AddMinutes(-2), 60_000m, "TRANSFER", null, orderId: 51);
+        await db.SaveChangesAsync();
+        foreach (var id in new[] { 16, 17 }) (await db.Payments.SingleAsync(p => p.PaymentId == id)).ProviderName = "SEPAY";
+        await db.SaveChangesAsync();
+
+        foreach (var cashier in new[] { Cashier, OtherCashier })
+        {
+            var rows = Rows((await Controller(db).GetBills(cashier, Branch, Today(), take: 50)).Result);
+            var auto = Assert.Single(rows, x => x.BillCode == "Hóa đơn #16");
+            Assert.True(auto.AutoConfirmed);
+            Assert.DoesNotContain(rows, x => x.BillCode == "Hóa đơn #17"); // other branch
+            Assert.All(rows.Where(x => x.BillCode != "Hóa đơn #16"), x => Assert.False(x.AutoConfirmed));
+        }
+    }
+
     private static DateOnly Today() => DateOnly.FromDateTime(DateTime.Today);
 
     private static List<CashierBillsController.BillSummaryResponse> Rows(ActionResult? result) =>

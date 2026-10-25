@@ -71,6 +71,8 @@ export type CashierBillHistoryItemDto = {
   pointsUsed?: number | null;
   totalAmount: number;
   paymentMethod: string;
+  /** Bank transfer confirmed automatically (SePay), not by a cashier. */
+  autoConfirmed?: boolean;
   paymentAmount?: number | null;
   changeAmount?: number | null;
   customerName: string;

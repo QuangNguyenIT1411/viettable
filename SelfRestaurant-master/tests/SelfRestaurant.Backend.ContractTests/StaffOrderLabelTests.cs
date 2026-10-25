@@ -15,8 +15,8 @@ public sealed class StaffOrderLabelTests
         Assert.Contains("decimal? ChangeAmount,\n    int? OrderId = null);", Normalize(identityContracts), StringComparison.Ordinal);
         Assert.Contains("b.ChangeAmount,\n                        b.OrderId)).ToList());", Normalize(identity), StringComparison.Ordinal);
         Assert.Contains("decimal? ChangeAmount,\n    int? OrderId = null);", Normalize(gatewayContracts), StringComparison.Ordinal);
-        Assert.Contains("string CustomerName,\n    int? OrderId = null);", Normalize(cashierContracts), StringComparison.Ordinal);
-        Assert.Contains("bill.CustomerName ?? string.Empty,\n        bill.OrderId);", Normalize(cashier), StringComparison.Ordinal);
+        Assert.Contains("string CustomerName,\n    int? OrderId = null,\n    bool AutoConfirmed = false);", Normalize(cashierContracts), StringComparison.Ordinal);
+        Assert.Contains("bill.CustomerName ?? string.Empty,\n        bill.OrderId,\n        bill.AutoConfirmed);", Normalize(cashier), StringComparison.Ordinal);
     }
 
     [Theory]

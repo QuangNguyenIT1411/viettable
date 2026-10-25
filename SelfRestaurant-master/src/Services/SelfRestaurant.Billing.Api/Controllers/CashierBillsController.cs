@@ -295,9 +295,11 @@ public sealed class CashierBillsController : ControllerBase
             var toUtc = ToUtc(toLocal.Value);
             invoices = invoices.Where(i => i.IssuedAtUtc < toUtc);
         }
+        // SePay auto-confirmed invoices have no cashier: every cashier of the branch sees them (label "tự động").
         if (employeeId is not null)
             invoices = invoices.Where(i => _db.Payments.Any(p => p.CheckoutQuoteId == i.CheckoutQuoteId
-                && p.Status == "SUCCEEDED" && p.ConfirmedByEmployeeId == employeeId));
+                && p.Status == "SUCCEEDED" && (p.ConfirmedByEmployeeId == employeeId
+                    || (p.ConfirmedByEmployeeId == null && p.ProviderName == "SEPAY"))));
         var quotes = _db.CheckoutQuotes.AsNoTracking();
         if (branchId is not null) quotes = quotes.Where(q => q.BranchId == branchId);
         return from invoice in invoices
@@ -317,6 +319,9 @@ public sealed class CashierBillsController : ControllerBase
         var paymentIds = rows.Select(x => x.Invoice.PaymentId).Distinct().ToArray();
         var methods = await _db.Payments.AsNoTracking().Where(p => paymentIds.Contains(p.PaymentId))
             .ToDictionaryAsync(p => p.PaymentId, p => p.Method, cancellationToken);
+        var autoConfirmed = (await _db.Payments.AsNoTracking()
+            .Where(p => paymentIds.Contains(p.PaymentId) && p.ProviderName == "SEPAY" && p.ConfirmedByEmployeeId == null)
+            .Select(p => p.PaymentId).ToListAsync(cancellationToken)).ToHashSet();
         var orderIds = rows.ToDictionary(x => x.Invoice.InvoiceId, x => FirstOrderId(x.Invoice.ItemsJson));
         var orderLookup = (await _ordersApi.GetOrderBillContextsAsync(
                 orderIds.Values.Where(id => id > 0).Distinct().ToArray(), cancellationToken))
@@ -344,7 +349,8 @@ public sealed class CashierBillsController : ControllerBase
                 x.Invoice.TotalAmount,
                 methods.GetValueOrDefault(x.Invoice.PaymentId) ?? "APP",
                 null,
-                null);
+                null,
+                autoConfirmed.Contains(x.Invoice.PaymentId));
         }).ToList();
     }
 
@@ -418,7 +424,8 @@ public sealed class CashierBillsController : ControllerBase
         decimal TotalAmount,
         string PaymentMethod,
         decimal? PaymentAmount,
-        decimal? ChangeAmount);
+        decimal? ChangeAmount,
+        bool AutoConfirmed = false);
 
     public sealed record CashierReportResponse(
         DateOnly Date,

@@ -49,7 +49,8 @@ public sealed record CashierBillHistoryItemDto(
     decimal? PaymentAmount,
     decimal? ChangeAmount,
     string CustomerName,
-    int? OrderId = null);
+    int? OrderId = null,
+    bool AutoConfirmed = false);
 
 public sealed record CashierAccountDto(
     int EmployeeId,

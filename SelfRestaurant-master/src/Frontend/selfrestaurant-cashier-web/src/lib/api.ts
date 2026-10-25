@@ -29,6 +29,15 @@ export type OnsitePayment = {
   paymentId: number; paymentCode: string; amount: number; currency: string;
   method: string; location: string; status: string; diningSessionId: number;
   diningSessionCode: string; tableId: number; splitPart: string | null; isCurrentAttempt: boolean;
+  /** "SEPAY" when the bank transfer was confirmed automatically. */
+  providerName?: string | null;
+};
+
+/** A received transfer (SePay) that was not confirmed automatically and needs the cashier. */
+export type BankTransferAlert = {
+  eventId: number; amount: number; content: string; outcome: string; paymentId: number | null;
+  referenceCode: string | null; receivedAtUtc: string; transactionDate: string | null;
+  expectedAmount: number | null; tableId: number | null;
 };
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
@@ -54,6 +63,10 @@ export const cashierApi = {
   getOnsitePayments: (signal?: AbortSignal) => request<OnsitePayment[]>("/api/gateway/staff/cashier/onsite-payments", { signal }),
   confirmOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
     `/api/gateway/staff/cashier/onsite-payments/${id}/confirm`, { method: "POST", body: "{}" }),
+  getBankTransferAlerts: (signal?: AbortSignal) =>
+    request<BankTransferAlert[]>("/api/gateway/staff/cashier/bank-transfers/alerts", { signal }),
+  resolveBankTransferAlert: (eventId: number) =>
+    request<{ success: boolean; message: string }>(`/api/gateway/staff/cashier/bank-transfers/${eventId}/resolve`, { method: "POST", body: "{}" }),
   getSession: () => request<StaffSessionDto>("/api/gateway/staff/cashier/session"),
   login: (username: string, password: string) =>
     request<{ success: boolean; nextPath?: string; session: StaffSessionDto }>("/api/gateway/staff/auth/login", {

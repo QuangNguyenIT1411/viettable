@@ -2,6 +2,7 @@ import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { appTransferQr, openTableWithOrder, requestOnsitePayment, sessionStatus } from "../support/customer";
 import { settleAfterTest } from "../support/cleanup";
+import { login } from "../support/staff";
 
 // SePay auto-confirmation against the LOCAL docker stack only. Runs only when the local billing container was
 // started with a throwaway secret, e.g. SEPAY_ENABLED=true SEPAY_WEBHOOK_SECRET=<local> SEPAY_ACCOUNT_NUMBERS=LOCALTEST01,
@@ -53,4 +54,30 @@ test("chữ ký sai: 401, không xác nhận gì", async ({ baseURL }) => {
       "X-SePay-Signature": "sha256=" + "0".repeat(64) } });
   expect(response.status).toBe(401);
   expect(await sessionStatus(order)).not.toBe("CLOSED");
+});
+
+test("thu ngân: chuyển thiếu hiện ở 'Chuyển khoản cần xử lý', bấm Đã xử lý; chuyển đủ hiện 'Đã thanh toán tự động'", async ({ page, baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  const paymentId = await requestOnsitePayment(order, "TRANSFER");
+  const content = (await appTransferQr(order, paymentId)).content as string;
+  await webhook(baseURL!, content, order.total - 1000);
+
+  await login(page, "cashier");
+  const alerts = page.locator("#bank-transfer-alerts");
+  await expect(alerts).toContainText("Chuyển khoản cần xử lý");
+  const alertRow = alerts.locator("tr", { hasText: `Giao dịch #${paymentId}` });
+  await expect(alertRow).toContainText("Chuyển thiếu tiền");
+  await expect(alertRow).toContainText(`Phải trả ${order.total.toLocaleString("vi-VN")} đ`);
+  page.once("dialog", (d) => void d.accept());
+  await alertRow.getByRole("button", { name: "Đã xử lý" }).click();
+  await expect(alertRow).toHaveCount(0);
+
+  await webhook(baseURL!, content, order.total);
+  const paymentRow = page.locator(`tr[data-payment-id="${paymentId}"]`);
+  await expect(paymentRow).toContainText("Đã thanh toán tự động", { timeout: 30_000 });
+  await expect(paymentRow.getByRole("button", { name: "Đã nhận chuyển khoản" })).toHaveCount(0);
+
+  const history = await (await page.request.get("/api/gateway/staff/cashier/history")).json();
+  const bill = history.bills.find((b: { autoConfirmed?: boolean; totalAmount: number }) => b.autoConfirmed && b.totalAmount === order.total);
+  expect(bill, "auto-confirmed invoice is in the cashier history").toBeTruthy();
 });

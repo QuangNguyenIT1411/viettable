@@ -19,7 +19,7 @@ public sealed class CashierMobilePaymentsController(BillingDbContext db, Payment
             join q in db.CheckoutQuotes on p.CheckoutQuoteId equals q.CheckoutQuoteId
             where q.BranchId == branchId && p.Channel == "ONSITE"
             orderby p.Status == "PENDING" descending, p.PaymentId descending
-            select new { p.PaymentId, p.PaymentCode, p.Amount, p.Currency, p.Method, p.Location, p.Status,
+            select new { p.PaymentId, p.PaymentCode, p.Amount, p.Currency, p.Method, p.Location, p.Status, p.ProviderName,
                 p.DiningSessionId, q.DiningSessionCode, q.TableId, p.CompletedAtUtc, p.ConfirmedByEmployeeId,
                 splitPart = db.SplitBillParts.Where(x => x.PaymentId == p.PaymentId).Select(x => x.Label).FirstOrDefault(),
                 isCurrentAttempt = !db.SplitBills.Any(x => x.CheckoutQuoteId == q.CheckoutQuoteId)

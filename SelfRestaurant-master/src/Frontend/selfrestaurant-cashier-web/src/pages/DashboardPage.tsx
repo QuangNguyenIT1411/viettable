@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CashierTopbar } from "../components/CashierTopbar";
 import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
+import { BankTransferAlertsPanel } from "../components/BankTransferAlertsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { cashierApi } from "../lib/api";
 import { useControlledRead } from "../lib/useControlledRead";
@@ -827,6 +828,7 @@ export function DashboardPage({ onLogout }: Props) {
       </section>
 
       <section className="cashier-secondary-grid">
+        <BankTransferAlertsPanel events={staffEvents} live={realtimeLive} />
         <OnsitePaymentsPanel onPendingCountChange={setPendingOnsiteCount} events={staffEvents} live={realtimeLive} />
         <ServiceRequestsPanel tables={dashboard.tables} events={staffEvents} live={realtimeLive} />
       </section>

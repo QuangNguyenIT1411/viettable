@@ -21,6 +21,12 @@ public sealed class BillingClient : ApiClientBase
             $"/api/internal/cashier/transfer-qr?orderId={orderId}&amount={amount.ToString(System.Globalization.CultureInfo.InvariantCulture)}",
             "Không tạo được mã QR chuyển khoản.", ct);
 
+    public Task<JsonElement> CashierBankTransferAlertsAsync(StaffSessionUserDto staff, CancellationToken ct) =>
+        CashierRequestAsync(staff, HttpMethod.Get, "/api/internal/cashier/bank-transfers/alerts", "Không tải được chuyển khoản cần xử lý.", ct);
+
+    public Task<JsonElement> ResolveBankTransferAlertAsync(StaffSessionUserDto staff, long eventId, CancellationToken ct) =>
+        CashierRequestAsync(staff, HttpMethod.Post, $"/api/internal/cashier/bank-transfers/{eventId}/resolve", "Không thể đánh dấu đã xử lý.", ct);
+
     /// <summary>VietQR of a pending app payment by bank transfer, shown on the counter screen.</summary>
     public Task<JsonElement> CashierPaymentTransferQrAsync(StaffSessionUserDto staff, int paymentId, CancellationToken ct) =>
         CashierRequestAsync(staff, HttpMethod.Get, $"/api/internal/cashier/onsite-payments/{paymentId}/transfer-qr",

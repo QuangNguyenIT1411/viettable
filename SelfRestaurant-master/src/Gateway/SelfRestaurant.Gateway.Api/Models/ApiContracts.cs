@@ -297,7 +297,8 @@ public sealed record CashierBillSummaryDto(
     decimal TotalAmount,
     string PaymentMethod,
     decimal? PaymentAmount,
-    decimal? ChangeAmount);
+    decimal? ChangeAmount,
+    bool AutoConfirmed = false);
 
 public sealed record CashierReportDto(
     DateOnly Date,

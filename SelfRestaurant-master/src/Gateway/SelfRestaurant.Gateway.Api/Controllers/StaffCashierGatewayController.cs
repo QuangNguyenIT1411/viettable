@@ -464,6 +464,26 @@ public sealed class StaffCashierGatewayController : ControllerBase
         catch (ApiClientException ex) { return Error(ex.Code ?? "transfer_qr_failed", ex.Message, ex.StatusCode); }
     }
 
+    // SePay transfers that were NOT auto-confirmed (too little money, unknown code, wrong branch, already paid…).
+    [HttpGet("bank-transfers/alerts")]
+    public async Task<IActionResult> BankTransferAlerts(CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await _billingClient.CashierBankTransferAlertsAsync(staff, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "bank_transfer_alerts_failed", ex.Message, ex.StatusCode); }
+    }
+
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.OnsitePayments)]
+    [HttpPost("bank-transfers/{eventId:long}/resolve")]
+    public async Task<IActionResult> ResolveBankTransferAlert(long eventId, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await _billingClient.ResolveBankTransferAlertAsync(staff, eventId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "bank_transfer_resolve_failed", ex.Message, ex.StatusCode); }
+    }
+
     [HttpGet("onsite-payments/{paymentId:int}/transfer-qr")]
     public async Task<IActionResult> PaymentTransferQr(int paymentId, CancellationToken ct)
     {
@@ -700,7 +720,8 @@ public sealed class StaffCashierGatewayController : ControllerBase
         bill.PaymentAmount,
         bill.ChangeAmount,
         bill.CustomerName ?? string.Empty,
-        bill.OrderId);
+        bill.OrderId,
+        bill.AutoConfirmed);
 
     private CashierAccountDto BuildAccountDto(StaffSessionUserDto staff) => new(
         staff.EmployeeId,
