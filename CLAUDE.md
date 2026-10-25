@@ -127,6 +127,8 @@ Chỉ chạy các lệnh **build, unit test, contract test** khi được phép 
 | Stable | Alias **không được đổi** nếu chưa có phê duyệt |
 | **Production mới** (đang dùng) | Tài khoản Vercel mới, team `viet-table`, project `viettable`, `https://viettable-beta.vercel.app`, region `syd1`. Chi tiết và trạng thái: mục 6a |
 
+**Bảng mới trên Supabase (bài học 25/10/2026):** migration chạy bằng tài khoản quản trị; tài khoản runtime `viettable_<owner>` KHÔNG tự có quyền trên bảng mới → lỗi `42501 permission denied`. Mỗi migration tạo bảng phải kèm SQL `GRANT` cho runtime role (mẫu: `SelfRestaurant-master/docs/SEPAY_GRANTS_20261025.sql`) và kiểm tra `has_table_privilege` trước khi bật tính năng.
+
 Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit, in ra log, hay nhúng vào APK.
 
 ## 6. Phạm vi được phép hiện tại
