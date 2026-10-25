@@ -1,5 +1,8 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 25/10/2026 16:05:** deploy Production `dpl_72hHxjRH9uo24DKGyYwo1m183iPb` (commit `9c76c94`: sửa sự cố phiên #34/TT28, giao dịch chờ/đã trả khoá cả phiên; không có migration), `[syd1]`, Ready, cờ SePay tắt;
+> gọi 1 lần: `/` 200 1,2 s, `/app/cashier/` 200 0,9 s, `/app/chef/` 200 0,6 s, `/app/admin/` 200 0,9 s, `/api/mobile/v1/branches` 200 4,5 s, `/healthz` 200 0,9 s. Bản quay lui: `dpl_2EP1YtFdBASso8oQ5scbbnjnXbVs`. APK `cloudProd` (`9c76c94`, `AA99A2FF`) cài đè lên Samsung 16:01:41.
+
 > **Cập nhật 19/10/2026 01:30:** deploy Production `dpl_DPLgUGvTN99zvnrjkd1PZd9N3Utg` (commit `436ee23`: sửa chữ "null", làm sạch nhận xét "null" ở máy chủ, phiên khách không còn kẹt khi bếp hủy hết đơn + nút "Đóng bàn" cho thu ngân), `[syd1]`, Ready;
 > gọi 1 lần: `/` 200 1,1 s, `/app/cashier/` 200 0,7 s, `/app/chef/` 200 0,6 s, `/app/admin/` 200 0,6 s. Bản quay lui: `dpl_9qAcGgnbpqi4yXsK1j2GvMrBqmmL`. APK mới build, chưa cài.
 >
