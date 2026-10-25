@@ -23,8 +23,13 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
     public async Task<Payment> ConfirmAsync(int paymentId, int? employeeId, int? branchId,
         string? providerTransactionId, CancellationToken ct, string? providerName = null)
     {
-        var quoteId = await db.Payments.Where(x => x.PaymentId == paymentId).Select(x => (int?)x.CheckoutQuoteId).SingleOrDefaultAsync(ct)
+        var known = await db.Payments.AsNoTracking().Where(x => x.PaymentId == paymentId)
+            .Select(x => new { x.CheckoutQuoteId, x.DiningSessionId, x.Status }).SingleOrDefaultAsync(ct)
             ?? throw new PaymentDomainException("payment_not_found", "Không tìm thấy giao dịch.", 404);
+        var quoteId = known.CheckoutQuoteId;
+        // Money may only be confirmed while Orders still waits for exactly this quote; otherwise the session could
+        // never be closed (incident 25/10: paid quote 35 while the session was locked for quote 36).
+        if (known.Status == "PENDING") await EnsureSessionAwaitsQuoteAsync(known.DiningSessionId, quoteId, ct);
         await using (var tx = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct))
         {
             await LockQuoteAsync(db, quoteId, ct);
@@ -35,33 +40,58 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
             if (payment.Status == "SUCCEEDED") { await tx.CommitAsync(ct); }
             else
             {
-                var split = await db.SplitBills.Include(x => x.Parts).SingleOrDefaultAsync(x => x.CheckoutQuoteId == quoteId, ct);
-                var part = ValidatePendingTransition(payment, quote, split);
-                payment.Status = "SUCCEEDED";
-                payment.ConfirmedByEmployeeId = employeeId;
-                payment.ProviderTransactionId = providerTransactionId;
-                if (providerName is not null) payment.ProviderName = providerName; // e.g. SEPAY: "Đã thanh toán tự động"
-                payment.CompletedAtUtc = payment.UpdatedAtUtc = DateTime.UtcNow;
-                if (part is not null) part.Status = "PAID";
-                if (split is null || split.Parts.All(x => x.Status == "PAID"))
-                {
-                    if (split is not null) { split.Status = "PAID"; split.UpdatedAtUtc = DateTime.UtcNow; }
-                    quote.Status = "PAID"; quote.UpdatedAtUtc = DateTime.UtcNow;
-                    if (!await db.Invoices.AnyAsync(x => x.CheckoutQuoteId == quoteId, ct))
-                        db.Invoices.Add(new Invoice { InvoiceCode = $"INV-{Guid.NewGuid():N}", CheckoutQuoteId = quoteId,
-                            PaymentId = paymentId, DiningSessionId = quote.DiningSessionId, CustomerId = quote.CustomerId,
-                            Subtotal = quote.Subtotal, Discount = quote.VoucherDiscount + quote.PointsDiscount,
-                            TotalAmount = quote.TotalAmount, ItemsJson = quote.ItemsJson, IssuedAtUtc = DateTime.UtcNow });
-                }
-                await db.SaveChangesAsync(ct);
+                await ApplySuccessAsync(payment, quote, employeeId, providerTransactionId, providerName, ct);
                 await tx.CommitAsync(ct);
-                logger.LogInformation("Payment {PaymentId} collected via {Channel}, cashier {EmployeeId}, split part {PartId}", paymentId, payment.Channel, employeeId, part?.SplitBillPartId);
             }
         }
         if (environment?.IsDevelopment() == true && configuration?.GetValue<bool>("Recovery:TestFailAfterPaymentCommit") == true)
             throw new InvalidOperationException("Injected failure after durable payment commit.");
         await ReconcileSafelyAsync(quoteId, ct);
         return await db.Payments.SingleAsync(x => x.PaymentId == paymentId, ct);
+    }
+
+    /// <summary>True when Orders still waits for payment of exactly this quote (pure rule, unit-tested).</summary>
+    public static bool SessionAwaitsQuote(OrdersApiClient.SessionPaymentState? state, int quoteId) =>
+        state is { Ended: false, Status: "PAYMENT_REQUESTED" } && state.CheckoutQuoteId == quoteId;
+
+    /// <summary>Throws session_not_payable when Orders no longer waits for this quote. Orders unreachable → the HTTP error escapes.</summary>
+    public async Task EnsureSessionAwaitsQuoteAsync(int sessionId, int quoteId, CancellationToken ct)
+    {
+        var state = await orders.GetPaymentStateAsync(sessionId, ct);
+        if (!SessionAwaitsQuote(state, quoteId))
+            throw new PaymentDomainException("session_not_payable",
+                "Phiên không còn chờ thanh toán cho giao dịch này, nên không thể xác nhận. Hãy kiểm tra lại với khách.");
+    }
+
+    /// <summary>
+    /// Marks a PENDING payment SUCCEEDED and issues the invoice. Caller owns the transaction and the quote lock, so a
+    /// payment can be created and confirmed atomically (cashier checkout) — any failure rolls both back.
+    /// </summary>
+    public async Task ApplySuccessAsync(Payment payment, CheckoutQuote quote, int? employeeId,
+        string? providerTransactionId, string? providerName, CancellationToken ct)
+    {
+        var split = await db.SplitBills.Include(x => x.Parts).SingleOrDefaultAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct);
+        var part = ValidatePendingTransition(payment, quote, split);
+        payment.Status = "SUCCEEDED";
+        payment.ConfirmedByEmployeeId = employeeId;
+        payment.ProviderTransactionId = providerTransactionId;
+        if (providerName is not null) payment.ProviderName = providerName; // e.g. SEPAY: "Đã thanh toán tự động"
+        payment.CompletedAtUtc = payment.UpdatedAtUtc = DateTime.UtcNow;
+        if (part is not null) part.Status = "PAID";
+        if (split is null || split.Parts.All(x => x.Status == "PAID"))
+        {
+            if (split is not null) { split.Status = "PAID"; split.UpdatedAtUtc = DateTime.UtcNow; }
+            quote.Status = "PAID"; quote.UpdatedAtUtc = DateTime.UtcNow;
+            if (await db.Invoices.AnyAsync(x => x.DiningSessionId == quote.DiningSessionId && x.CheckoutQuoteId != quote.CheckoutQuoteId, ct))
+                throw new PaymentDomainException("session_already_invoiced", "Phiên này đã có hóa đơn từ một lần thanh toán khác. Không thu thêm.");
+            if (!await db.Invoices.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct))
+                db.Invoices.Add(new Invoice { InvoiceCode = $"INV-{Guid.NewGuid():N}", CheckoutQuoteId = quote.CheckoutQuoteId,
+                    PaymentId = payment.PaymentId, DiningSessionId = quote.DiningSessionId, CustomerId = quote.CustomerId,
+                    Subtotal = quote.Subtotal, Discount = quote.VoucherDiscount + quote.PointsDiscount,
+                    TotalAmount = quote.TotalAmount, ItemsJson = quote.ItemsJson, IssuedAtUtc = DateTime.UtcNow });
+        }
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Payment {PaymentId} collected via {Channel}, cashier {EmployeeId}, split part {PartId}", payment.PaymentId, payment.Channel, employeeId, part?.SplitBillPartId);
     }
 
     public static SplitBillPart? ValidatePendingTransition(Payment payment, CheckoutQuote quote, SplitBill? split)

@@ -25,8 +25,10 @@ public sealed class BankTransferOptions
 }
 
 /// <summary>What the customer scans: amount and transfer content are already filled in.</summary>
+/// <summary>AutoConfirm: SePay is on and this is an app payment, so the system confirms by itself when money arrives.</summary>
 public sealed record TransferQrResponse(
-    string BankName, string AccountNumber, string AccountName, decimal Amount, string Content, string Payload, string QrPngBase64);
+    string BankName, string AccountNumber, string AccountName, decimal Amount, string Content, string Payload, string QrPngBase64,
+    bool AutoConfirm = false);
 
 public sealed class BankTransferQrService(IOptions<BankTransferOptions> options)
 {

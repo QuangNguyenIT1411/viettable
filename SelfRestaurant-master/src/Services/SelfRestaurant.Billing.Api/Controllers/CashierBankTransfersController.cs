@@ -19,7 +19,7 @@ public sealed class CashierBankTransfersController(BillingDbContext db) : Contro
     public static readonly string[] WarningOutcomes =
     [
         SePayMatchRules.AmountTooLow, SePayMatchRules.NoMatch, SePayMatchRules.BranchMismatch,
-        SePayMatchRules.NotTransfer, SePayMatchRules.PaymentNotPending
+        SePayMatchRules.NotTransfer, SePayMatchRules.PaymentNotPending, SePayMatchRules.SessionNotPayable
     ];
 
     [HttpGet("alerts")]

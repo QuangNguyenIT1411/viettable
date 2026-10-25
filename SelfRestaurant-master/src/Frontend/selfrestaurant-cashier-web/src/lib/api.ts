@@ -23,6 +23,8 @@ export type TransferQrDto = {
   content: string;
   payload: string;
   qrPngBase64: string;
+  /** The system confirms this transfer by itself when the money arrives (SePay on, app payment). */
+  autoConfirm?: boolean;
 };
 
 export type OnsitePayment = {

@@ -106,7 +106,12 @@ public class PaymentCheckoutFragment extends BaseFragment {
         binding.btnProceedToInvoice.setEnabled(false);
         MobileRepository.getInstance().beginCheckout(new MobileRepository.Callback<Invoice>() {
             @Override public void onSuccess(Invoice value) { if (binding != null) navigateTo(InvoiceFragment.newInstance()); }
-            @Override public void onError(ApiException error) { if (binding != null) { binding.btnProceedToInvoice.setEnabled(true); showToast(apiError(error)); } }
+            @Override public void onError(ApiException error) {
+                if (binding == null) return;
+                binding.btnProceedToInvoice.setEnabled(true);
+                if (PaymentResume.isPaymentBlocked(error)) PaymentResume.open(PaymentCheckoutFragment.this, error);
+                else showToast(apiError(error));
+            }
         });
     }
 

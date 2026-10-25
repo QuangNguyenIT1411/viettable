@@ -193,13 +193,17 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
 
     [StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.OnsitePayments)]
     [HttpPost("dining-sessions/{sessionId:int}/cancel-payment-request")]
-    public async Task<ActionResult<MobileDiningSessionResponse>> CancelPaymentRequest(int sessionId, CancellationToken ct)
+    public async Task<ActionResult<MobileDiningSessionResponse>> CancelPaymentRequest(int sessionId,
+        [FromServices] BillingClient billing, CancellationToken ct)
     {
         var actor = CurrentCustomerId();
         if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
         try
         {
-            var session = await _orders.CancelPaymentRequestAsync(sessionId, actor.Value, ct);
+            // Through Billing, never straight to Orders: Billing refuses while a payment is waiting or done, so the
+            // session cannot be unlocked under a transfer that may still arrive (incident 25/10).
+            await billing.CancelMobilePaymentRequestAsync(sessionId, new { customerId = actor.Value }, ct);
+            var session = await _orders.GetDiningSessionAsync(sessionId, actor.Value, ct);
             return session is null ? Error("session_not_found", "Không tìm thấy phiên phục vụ.", 404) : Ok(session);
         }
         catch (ApiClientException ex) { return Downstream(ex, "cancel_payment_request_failed"); }

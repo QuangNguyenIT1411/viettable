@@ -216,7 +216,8 @@ public final class ApiClient {
         if (status < 200 || status >= 300) {
             JSONObject error = parsed instanceof JSONObject ? (JSONObject) parsed : new JSONObject();
             throw new ApiException(status, SafeText.json(error, "code", "request_failed"),
-                    SafeText.json(error, "message", "Yêu cầu không thành công."), SafeText.json(error, "correlationId", null));
+                    com.restaurant.viettable.util.UserText.serverMessage(SafeText.json(error, "message", null), status),
+                    SafeText.json(error, "correlationId", null));
         }
         return parsed;
     }

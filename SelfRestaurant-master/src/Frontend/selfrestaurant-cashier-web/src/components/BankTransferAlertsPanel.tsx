@@ -14,6 +14,7 @@ export const bankTransferReasons: Record<string, string> = {
   BRANCH_MISMATCH: "Mã đơn của chi nhánh khác",
   NOT_TRANSFER: "Đơn không chọn chuyển khoản",
   PAYMENT_NOT_PENDING: "Đơn đã thanh toán hoặc đã hủy",
+  SESSION_NOT_PAYABLE: "Phiên không còn chờ thanh toán đơn này",
 };
 
 /**

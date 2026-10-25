@@ -948,6 +948,27 @@ public final class MobileRepository {
         } catch (JSONException e) { callback.onError(jsonError()); }
     }
 
+    /** The session's waiting payment (and its quote, kept as the current checkout); null when nothing waits. */
+    public void loadActivePayment(Callback<PaymentInfo> callback) {
+        DiningSession session = state.getActiveDiningSession();
+        if (session == null) { callback.onError(new ApiException(0, "session_required", "Chưa có phiên phục vụ.", null)); return; }
+        api().get("/api/mobile/v1/dining-sessions/" + session.getId() + "/active-payment", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject value = (JSONObject) body;
+                JSONObject quote = value.optJSONObject("quote");
+                JSONObject row = value.optJSONObject("payment");
+                if (quote == null || row == null) { callback.onSuccess(null); return; }
+                currentQuote = quote;
+                PaymentInfo payment = parsePayment(row);
+                currentPaymentId = payment.getPaymentId();
+                callback.onSuccess(payment);
+            }
+            @Override public void onError(ApiException error) {
+                if (error.getStatusCode() == 404) callback.onSuccess(null); else callback.onError(error);
+            }
+        });
+    }
+
     public void refreshPayment(Callback<PaymentInfo> callback) { refreshPayment(currentPaymentId, callback); }
 
     public void refreshPayment(int paymentId, Callback<PaymentInfo> callback) {

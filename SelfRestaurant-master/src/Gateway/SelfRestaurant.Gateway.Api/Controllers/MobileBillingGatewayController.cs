@@ -53,6 +53,16 @@ public sealed class MobileBillingGatewayController : ControllerBase
     [HttpGet("payments/{paymentId:int}/transfer-qr")]
     public Task<ActionResult<object>> TransferQr(int paymentId, CancellationToken ct) => Get(() => _billing.GetMobileTransferQrAsync(paymentId, Actor()!.Value, ct));
 
+    /// <summary>The waiting payment (with its quote) the app returns to instead of starting a second one; 404 when none.</summary>
+    [HttpGet("dining-sessions/{sessionId:int}/active-payment")]
+    public async Task<ActionResult<object>> ActivePayment(int sessionId, CancellationToken ct)
+    {
+        var actor = Actor();
+        if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
+        try { return Ok(await _billing.GetMobileActivePaymentAsync(sessionId, actor.Value, ct)); }
+        catch (ApiClientException ex) { return Downstream(ex); }
+    }
+
     [HttpGet("payments/{paymentId:int}")]
     public async Task<ActionResult<object>> Payment(int paymentId, CancellationToken ct) { var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401); try { return Ok(await _billing.GetMobilePaymentAsync(paymentId, actor.Value, ct)); } catch (ApiClientException ex) { return Downstream(ex); } }
 

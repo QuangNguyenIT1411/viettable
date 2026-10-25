@@ -33,10 +33,13 @@ public sealed class MobileCheckoutController : ControllerBase
         if (!ValidCommand(request.CustomerId, request.IdempotencyKey, request.RequestHash)) return Validation();
         var replay = await _db.CheckoutQuotes.AsNoTracking().FirstOrDefaultAsync(x => x.IdempotencyKey == request.IdempotencyKey, ct);
         if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(MapQuote(replay)) : IdempotencyConflict();
+        var blocking = await BlockingPaymentAsync(sessionId, null, ct);
+        if (blocking is not null) return PaymentInProgress(blocking);
         OrdersApiClient.DiningSessionCheckoutContext context;
         try { context = await _orders.GetDiningSessionCheckoutContextAsync(sessionId, request.CustomerId, ct)
                 ?? throw new InvalidOperationException("Không tìm thấy phiên phục vụ."); }
-        catch (HttpRequestException ex) { return StatusCode((int?)ex.StatusCode ?? 503, new { code = "checkout_context_failed", message = ex.Message }); }
+        catch (HttpRequestException ex) { return StatusCode((int?)ex.StatusCode ?? 503, new { code = "checkout_context_failed",
+            message = "Không lấy được món của phiên để tính tiền. Phiên có thể đã kết thúc hoặc chưa có món." }); }
         var now = DateTime.UtcNow;
         var quote = new CheckoutQuote
         {
@@ -65,7 +68,7 @@ public sealed class MobileCheckoutController : ControllerBase
     // VietQR for an app payment the customer chose to pay by bank transfer; the cashier confirms receipt.
     [HttpGet("payments/{paymentId:int}/transfer-qr")]
     public async Task<ActionResult<object>> TransferQr(int paymentId, [FromQuery] int customerId,
-        [FromServices] BankTransferQrService transfer, CancellationToken ct)
+        [FromServices] BankTransferQrService transfer, [FromServices] Microsoft.Extensions.Options.IOptions<SePayOptions> sepay, CancellationToken ct)
     {
         if (customerId <= 0) return Validation();
         var row = await (from p in _db.Payments.AsNoTracking()
@@ -80,7 +83,8 @@ public sealed class MobileCheckoutController : ControllerBase
             return Conflict(new { code = "payment_not_pending", message = "Giao dịch không còn chờ thanh toán." });
         if (!transfer.IsConfigured)
             return Conflict(new { code = "bank_transfer_unavailable", message = "Nhà hàng chưa cấu hình tài khoản nhận chuyển khoản." });
-        return Ok(transfer.Create(row.Payment.Amount, BankTransferQrService.PaymentContent(row.BranchId, row.Payment.PaymentId)));
+        return Ok(transfer.Create(row.Payment.Amount, BankTransferQrService.PaymentContent(row.BranchId, row.Payment.PaymentId))
+            with { AutoConfirm = sepay.Value.Enabled });
     }
 
     internal static bool IsTransferPayment(string? channel, string? method) =>
@@ -140,8 +144,11 @@ public sealed class MobileCheckoutController : ControllerBase
         if (quote.ExpiresAtUtc <= DateTime.UtcNow) { quote.Status = "EXPIRED"; await _db.SaveChangesAsync(ct); return Conflict(new { code = "quote_expired", message = "Báo giá đã hết hạn." }); }
         if (quote.Status == "PAYMENT_REQUESTED") return Ok(MapQuote(quote));
         if (quote.Status != "OPEN") return StateConflict();
+        var blocking = await BlockingPaymentAsync(sessionId, quote.CheckoutQuoteId, ct);
+        if (blocking is not null) return PaymentInProgress(blocking);
         try { await _orders.RequestPaymentAsync(sessionId, request.CustomerId, quote.CheckoutQuoteId, ct); }
-        catch (HttpRequestException ex) { return StatusCode((int?)ex.StatusCode ?? 503, new { code = "payment_lock_failed", message = ex.Message }); }
+        catch (HttpRequestException ex) { return StatusCode((int?)ex.StatusCode ?? 503, new { code = "payment_lock_failed",
+            message = "Phiên đang chờ thanh toán ở một yêu cầu khác hoặc đã kết thúc. Vui lòng mở lại màn thanh toán." }); }
         quote.Status = "PAYMENT_REQUESTED"; quote.UpdatedAtUtc = DateTime.UtcNow; await _db.SaveChangesAsync(ct);
         return Ok(MapQuote(quote));
     }
@@ -149,12 +156,17 @@ public sealed class MobileCheckoutController : ControllerBase
     [HttpPost("dining-sessions/{sessionId:int}/payment-request/cancel")]
     public async Task<ActionResult<object>> CancelPaymentRequest(int sessionId, CustomerRequest request, CancellationToken ct)
     {
-        var quote = await _db.CheckoutQuotes.OrderByDescending(x => x.CreatedAtUtc).FirstOrDefaultAsync(x => x.DiningSessionId == sessionId && x.CustomerId == request.CustomerId && x.Status == "PAYMENT_REQUESTED", ct);
-        if (quote is null) return NotFound(new { code = "payment_request_not_found", message = "Không có yêu cầu thanh toán đang hoạt động." });
-        if (await _db.Payments.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId && (x.Status == "PENDING" || x.Status == "PROCESSING" || x.Status == "SUCCEEDED"), ct))
-            return Conflict(new { code = "payment_in_progress", message = "Không thể hủy khi giao dịch đang xử lý." });
-        await _orders.CancelPaymentRequestAsync(sessionId, request.CustomerId, ct);
-        quote.Status = "CANCELLED"; quote.UpdatedAtUtc = DateTime.UtcNow; await _db.SaveChangesAsync(ct); return Ok(MapQuote(quote));
+        // The ONLY way to unlock a session: a payment waiting or done anywhere in the session keeps it locked, since
+        // money for it may still arrive (incident 25/10: the app unlocked through Orders while TT28 was pending).
+        var blocking = await BlockingPaymentAsync(sessionId, null, ct);
+        if (blocking is not null) return PaymentInProgress(blocking);
+        var quotes = await _db.CheckoutQuotes.Where(x => x.DiningSessionId == sessionId && x.CustomerId == request.CustomerId && x.Status == "PAYMENT_REQUESTED").ToListAsync(ct);
+        try { await _orders.CancelPaymentRequestAsync(sessionId, request.CustomerId, ct); }
+        catch (HttpRequestException ex) { return StatusCode((int?)ex.StatusCode ?? 503, new { code = "cancel_payment_request_failed",
+            message = "Không hủy được yêu cầu thanh toán. Vui lòng thử lại." }); }
+        foreach (var quote in quotes) { quote.Status = "CANCELLED"; quote.UpdatedAtUtc = DateTime.UtcNow; }
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { sessionId, cancelledQuotes = quotes.Count });
     }
 
     [HttpPost("checkout/quotes/{quoteId:int}/payments")]
@@ -172,11 +184,40 @@ public sealed class MobileCheckoutController : ControllerBase
         if (await _db.SplitBills.AnyAsync(x => x.CheckoutQuoteId == quoteId, ct)
             || await _db.Payments.AnyAsync(x => x.CheckoutQuoteId == quoteId && (x.Status == "PENDING" || x.Status == "SUCCEEDED"), ct))
             return Conflict(new { code = "payment_in_progress", message = "Báo giá đã có giao dịch hoặc chia hóa đơn." });
+        var blocking = await BlockingPaymentAsync(quote.DiningSessionId, quoteId, ct);
+        if (blocking is not null) return PaymentInProgress(blocking);
         var validation = ValidatePaymentMethod(request.Channel, request.Method, request.Location); if (validation is not null) return validation;
         var payment = NewPayment(quote, request.Channel, request.Method, request.Location, request.IdempotencyKey, request.RequestHash, 1, quote.TotalAmount);
         var providerError = await InitializeProviderAsync(payment, ct); if (providerError is not null) return providerError;
         _db.Payments.Add(payment); await _db.SaveChangesAsync(ct); await transaction.CommitAsync(ct); return Ok(MapPayment(payment));
     }
+
+    /// <summary>
+    /// The payment the app must return to: the session's latest waiting (PENDING/PROCESSING) payment, with its quote.
+    /// 404 when nothing is waiting. Used after Back / reopen so the guest never starts a second payment.
+    /// </summary>
+    [HttpGet("dining-sessions/{sessionId:int}/active-payment")]
+    public async Task<ActionResult<object>> ActivePayment(int sessionId, [FromQuery] int customerId, CancellationToken ct)
+    {
+        var payment = await _db.Payments.AsNoTracking()
+            .Where(x => x.DiningSessionId == sessionId && (x.Status == "PENDING" || x.Status == "PROCESSING"))
+            .OrderByDescending(x => x.PaymentId).FirstOrDefaultAsync(ct);
+        if (payment is null) return NotFound(new { code = "no_active_payment", message = "Phiên không có giao dịch đang chờ." });
+        if (payment.CustomerId != customerId) return ForbidResult();
+        var quote = await _db.CheckoutQuotes.AsNoTracking().FirstAsync(x => x.CheckoutQuoteId == payment.CheckoutQuoteId, ct);
+        return Ok(new { payment = MapPayment(payment), quote = MapQuote(quote) });
+    }
+
+    /// <summary>A payment waiting or done in the session (outside exceptQuoteId) that forbids new quotes/requests/payments.</summary>
+    private Task<Payment?> BlockingPaymentAsync(int sessionId, int? exceptQuoteId, CancellationToken ct) =>
+        _db.Payments.AsNoTracking()
+            .Where(x => x.DiningSessionId == sessionId && (exceptQuoteId == null || x.CheckoutQuoteId != exceptQuoteId)
+                && (x.Status == "PENDING" || x.Status == "PROCESSING" || x.Status == "SUCCEEDED"))
+            .OrderByDescending(x => x.PaymentId).FirstOrDefaultAsync(ct);
+
+    private ObjectResult PaymentInProgress(Payment payment) => Conflict(payment.Status == "SUCCEEDED"
+        ? new { code = "session_already_paid", message = "Phiên này đã được thanh toán.", paymentId = payment.PaymentId }
+        : new { code = "payment_in_progress", message = "Bạn đang có một giao dịch chờ xác nhận. Vui lòng chờ hoặc liên hệ thu ngân.", paymentId = payment.PaymentId });
 
     [HttpGet("payments/{paymentId:int}")]
     public async Task<ActionResult<object>> GetPayment(int paymentId, [FromQuery] int customerId, CancellationToken ct)
@@ -218,6 +259,8 @@ public sealed class MobileCheckoutController : ControllerBase
             return Conflict(new { code = "payment_attempt_replaced", message = "Giao dịch đã được thay thế." });
         if (splitPart is null && await _db.Payments.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId && (x.Status == "PENDING" || x.Status == "SUCCEEDED"), ct))
             return Conflict(new { code = "payment_in_progress", message = "Đã có giao dịch đang thanh toán." });
+        var blocking = await BlockingPaymentAsync(quote.DiningSessionId, quote.CheckoutQuoteId, ct);
+        if (blocking is not null) return PaymentInProgress(blocking);
         var payment = NewPayment(quote, old.Channel, old.Method, old.Location, request.IdempotencyKey, request.RequestHash, old.AttemptNumber + 1, old.Amount);
         var providerError = await InitializeProviderAsync(payment, ct); if (providerError is not null) return providerError;
         _db.Payments.Add(payment); await _db.SaveChangesAsync(ct);

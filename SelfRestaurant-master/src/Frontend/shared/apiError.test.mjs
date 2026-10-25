@@ -1,6 +1,20 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { apiFailureMessage, cleanText, parseBody, userMessage } from "./apiError.ts";
+import { apiFailureMessage, cleanText, isTechnicalEnglish, parseBody, userMessage } from "./apiError.ts";
+
+// Incident 25/10: the app/web showed "Response status code does not indicate success: 409".
+test("raw English technical messages are replaced by Vietnamese", () => {
+  assert.equal(isTechnicalEnglish("Response status code does not indicate success: 409 (Conflict)."), true);
+  assert.equal(isTechnicalEnglish("An error occurred while saving the entity changes. See the inner exception for details."), true);
+  assert.equal(isTechnicalEnglish("Phiên này đã được thanh toán."), false);
+  assert.equal(isTechnicalEnglish("VT B1 TT28"), false);
+  assert.equal(apiFailureMessage(409, { message: "Response status code does not indicate success: 409 (Conflict)." }),
+    "Yêu cầu không thành công (mã 409). Vui lòng thử lại.");
+  assert.equal(apiFailureMessage(500, { message: "An error occurred while saving the entity changes." }),
+    "Máy chủ đang gặp sự cố (mã 500). Vui lòng thử lại sau ít phút.");
+  assert.equal(userMessage(new Error("Response status code does not indicate success: 409"), "Không thể thanh toán."), "Không thể thanh toán.");
+  assert.equal(apiFailureMessage(409, { message: "Phiên này đã được thanh toán." }), "Phiên này đã được thanh toán.");
+});
 
 test("cleanText drops values that mean nothing to a person", () => {
   for (const value of [null, undefined, "", "  ", "null", "undefined", "NaN", "[object Object]"]) {

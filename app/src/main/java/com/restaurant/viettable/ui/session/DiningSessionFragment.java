@@ -125,7 +125,10 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
                                 }
 
                                 @Override public void onError(ApiException error) {
-                                    if (binding != null) showToast(apiError(error));
+                                    if (binding == null) return;
+                                    if (com.restaurant.viettable.ui.payment.PaymentResume.isPaymentBlocked(error))
+                                        com.restaurant.viettable.ui.payment.PaymentResume.open(DiningSessionFragment.this, error);
+                                    else showToast(apiError(error));
                                 }
                             });
                         },

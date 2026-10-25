@@ -81,3 +81,32 @@ test("thu ngân: chuyển thiếu hiện ở 'Chuyển khoản cần xử lý', 
   const bill = history.bills.find((b: { autoConfirmed?: boolean; totalAmount: number }) => b.autoConfirmed && b.totalAmount === order.total);
   expect(bill, "auto-confirmed invoice is in the cashier history").toBeTruthy();
 });
+
+// Incident 25/10 replayed end to end: Back is refused, the transfer then confirms and closes the session.
+test("sự cố 25/10: bấm Back khi đang chờ chuyển khoản bị từ chối; tiền về thì phiên đóng, bàn trống", async ({ baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  const paymentId = await requestOnsitePayment(order, "TRANSFER");
+  const content = (await appTransferQr(order, paymentId)).content as string;
+  const cancel = await order.api.post(`/api/mobile/v1/dining-sessions/${order.sessionId}/cancel-payment-request`, {
+    headers: { Authorization: `Bearer ${order.token}` }, data: {} });
+  expect(cancel.status()).toBe(409);
+  expect((await webhook(baseURL!, content, order.total)).status).toBe(200);
+  await expect.poll(() => sessionStatus(order), { timeout: 30_000 }).toBe("CLOSED");
+});
+
+// The owner's question: a transfer with an unreadable content must show up for the cashier.
+test("nội dung sai hẳn ('an trua'): không xác nhận, thu ngân thấy 'Không đọc được mã đơn'", async ({ page, baseURL }) => {
+  const order = await openTableWithOrder(baseURL!);
+  const paymentId = await requestOnsitePayment(order, "TRANSFER");
+  const amount = order.total + 7;  // unique amount to find the row
+  await webhook(baseURL!, "an trua", amount);
+  expect(await sessionStatus(order)).not.toBe("CLOSED");
+  await login(page, "cashier");
+  const row = page.locator("#bank-transfer-alerts tr", { hasText: `${amount.toLocaleString("vi-VN")} đ` });
+  await expect(row).toContainText("Không đọc được mã đơn");
+  await expect(row).toContainText("an trua");
+  page.once("dialog", (d) => void d.accept());
+  await row.getByRole("button", { name: "Đã xử lý" }).click();
+  await expect(row).toHaveCount(0);
+  expect(paymentId).toBeGreaterThan(0);
+});

@@ -354,6 +354,21 @@ public sealed class DiningSessionsController : ControllerBase
         return Ok(Map(entity, false));
     }
 
+    /// <summary>
+    /// Read by Billing right before a payment is marked SUCCEEDED (cashier or SePay): money may only be confirmed while
+    /// this session is still locked for that exact quote, otherwise the session could never be closed (incident 25/10).
+    /// </summary>
+    [HttpGet("{sessionId:int}/payment-state")]
+    public async Task<ActionResult<SessionPaymentStateResponse>> PaymentState(int sessionId, CancellationToken ct)
+    {
+        var entity = await _db.DiningSessions.AsNoTracking().FirstOrDefaultAsync(x => x.DiningSessionId == sessionId, ct);
+        if (entity is null) return NotFound(new { code = "session_not_found", message = "Không tìm thấy phiên phục vụ." });
+        return Ok(new SessionPaymentStateResponse(entity.DiningSessionId, entity.Status, entity.CheckoutQuoteId, entity.PaymentId,
+            entity.EndedAtUtc is not null));
+    }
+
+    public sealed record SessionPaymentStateResponse(int DiningSessionId, string Status, int? CheckoutQuoteId, int? PaymentId, bool Ended);
+
     [HttpPost("{sessionId:int}/payment-succeeded")]
     public async Task<ActionResult<DiningSessionResponse>> PaymentSucceeded(
         int sessionId, [FromBody] CompletePaymentRequest request, CancellationToken ct)

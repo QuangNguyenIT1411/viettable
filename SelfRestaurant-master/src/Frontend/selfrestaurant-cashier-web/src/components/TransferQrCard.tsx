@@ -34,8 +34,11 @@ export function TransferQrCard({ qr, loading, error, onCopy }: {
           </div>
         ) : null}
         <div className="cashier-info-note qr-payment-note">
-          Khách quét mã bằng ứng dụng ngân hàng: số tài khoản, số tiền và nội dung đã điền sẵn. Chỉ bấm
-          "Đã nhận chuyển khoản" sau khi kiểm tra tiền đã vào tài khoản.
+          {qr.autoConfirm
+            ? <>Hệ thống sẽ tự xác nhận khi nhận được tiền. Nếu sau vài phút chưa tự xác nhận, kiểm tra app ngân hàng rồi bấm
+              "Đã nhận chuyển khoản".</>
+            : <>Khách quét mã bằng ứng dụng ngân hàng: số tài khoản, số tiền và nội dung đã điền sẵn. Chỉ bấm
+              "Đã nhận chuyển khoản" sau khi kiểm tra tiền đã vào tài khoản.</>}
         </div>
       </div>
     </div>

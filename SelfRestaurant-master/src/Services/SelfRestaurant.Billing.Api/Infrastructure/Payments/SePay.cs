@@ -99,6 +99,8 @@ public static class SePayMatchRules
     public const string BranchMismatch = "BRANCH_MISMATCH";
     public const string NotTransfer = "NOT_TRANSFER";
     public const string PaymentNotPending = "PAYMENT_NOT_PENDING";
+    /// <summary>Money matches a waiting payment, but Orders no longer waits for that quote (e.g. the guest re-requested).</summary>
+    public const string SessionNotPayable = "SESSION_NOT_PAYABLE";
 
     /// <summary>Confirms only when the code matches a pending transfer payment of that branch and enough money arrived.</summary>
     public static string Decide(SePayContentParser.PaymentReference? reference, Payment? payment, int? paymentBranchId, decimal amount)
@@ -205,9 +207,16 @@ public sealed class SePayWebhookService(BillingDbContext db, IOptions<SePayOptio
         if (outcome == SePayMatchRules.AutoConfirmed)
         {
             try { confirmed = await confirmer.ConfirmAsync(payment!.PaymentId, "SEPAY:" + transfer.Id, ct); }
-            catch (PaymentDomainException) { outcome = SePayMatchRules.PaymentNotPending; }
+            catch (PaymentDomainException ex)
+            {
+                outcome = ex.Code is "session_not_payable" or "session_already_invoiced"
+                    ? SePayMatchRules.SessionNotPayable : SePayMatchRules.PaymentNotPending;
+            }
         }
 
+        // Re-read the row: confirming may clear this context's change tracker (reconciliation failure), which used to
+        // drop this update and leave the row stuck at RECEIVED (incident 25/10, SePay 41419).
+        row = await db.BankTransferEvents.SingleAsync(x => x.BankTransferEventId == row.BankTransferEventId, ct);
         row.Outcome = outcome;
         row.Overpaid = outcome == SePayMatchRules.AutoConfirmed && transfer.Amount > payment!.Amount;
         row.PaymentId = payment?.PaymentId;

@@ -88,7 +88,8 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
             loadTransferQr();
         }
 
-        binding.btnRefreshOnsiteStatus.setOnClickListener(v -> schedulePoll(0));
+        binding.btnRefreshOnsiteStatus.setOnClickListener(v -> { waitStartedAt = android.os.SystemClock.elapsedRealtime(); schedulePoll(0); });
+        if (waitStartedAt == 0) waitStartedAt = android.os.SystemClock.elapsedRealtime();
         pollRunnable = this::refreshStatus;
 
         binding.btnCancelOnsiteRequest.setOnClickListener(v -> {
@@ -100,7 +101,11 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
                     (dialog, which) -> {
                         MobileRepository.getInstance().cancelPaymentRequest(new MobileRepository.Callback<DiningSession>() {
                             @Override public void onSuccess(DiningSession value) { showToast("Đã hủy yêu cầu thanh toán."); navigateBack(); }
-                            @Override public void onError(ApiException error) { showToast(apiError(error)); }
+                            @Override public void onError(ApiException error) {
+                                showToast(PaymentResume.isPaymentBlocked(error)
+                                        ? "Giao dịch đang chờ xác nhận nên không thể hủy. Nếu cần đổi cách thanh toán, vui lòng gọi thu ngân."
+                                        : apiError(error));
+                            }
                         });
                     },
                     "Không",
@@ -128,16 +133,28 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
                     if (splitBillId > 0) { showToast("Phần thanh toán chưa thành công. Bạn có thể thử lại."); navigateTo(SplitBillFragment.newInstance(invoice)); }
                     else navigateTo(PaymentFailedFragment.newInstance(invoice, value.getPaymentId()));
                 }
-                else schedulePoll(3000);
+                else scheduleNextPoll();
             }
             @Override public void onError(ApiException error) {
                 if (generation != viewGeneration) return;
                 requestInFlight = false;
                 if (binding == null || !isResumed()) return;
                 binding.tvOnsiteStatusDesc.setText(apiError(error) + " Đang tự thử lại...");
-                schedulePoll(5000);
+                scheduleNextPoll();
             }
         });
+    }
+
+    private long waitStartedAt;
+
+    /** Realtime announces the result; polling only backs it up, slower over time, stopping after 15 minutes. */
+    private void scheduleNextPoll() {
+        long delay = com.restaurant.viettable.util.PaymentPollPolicy.nextDelayMs(android.os.SystemClock.elapsedRealtime() - waitStartedAt);
+        if (delay < 0) {
+            if (binding != null) binding.tvOnsiteStatusDesc.setText("Đã tạm dừng tự kiểm tra. Bấm \"Kiểm tra lại\" để cập nhật trạng thái.");
+            return;
+        }
+        schedulePoll(delay);
     }
 
     private void schedulePoll(long delayMs) {
@@ -191,6 +208,9 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
                 binding.tvTransferState.setVisibility(View.GONE);
                 binding.tvTransferDetails.setText(TransferQrImages.details(qr));
                 binding.tvTransferDetails.setVisibility(View.VISIBLE);
+                binding.tvTransferHint.setText(qr.optBoolean("autoConfirm")
+                        ? "Hệ thống sẽ tự xác nhận khi nhận được tiền."
+                        : "Sau khi chuyển khoản, vui lòng chờ thu ngân kiểm tra và xác nhận.");
                 binding.btnSaveTransferQr.setEnabled(true);
                 binding.btnSaveTransferQr.setOnClickListener(v -> showToast(
                         TransferQrImages.saveToGallery(requireContext(), image, "VietTable-QR-" + payment.getPaymentId())

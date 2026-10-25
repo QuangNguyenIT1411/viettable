@@ -113,7 +113,11 @@ public class DineinCartFragment extends BaseFragment {
                         (dialog, which) -> {
                             MobileRepository.getInstance().cancelPaymentRequest(new MobileRepository.Callback<DiningSession>() {
                                 @Override public void onSuccess(DiningSession value) { submitOrder(); }
-                                @Override public void onError(ApiException error) { showToast(apiError(error)); }
+                                @Override public void onError(ApiException error) {
+                                    if (com.restaurant.viettable.ui.payment.PaymentResume.isPaymentBlocked(error))
+                                        com.restaurant.viettable.ui.payment.PaymentResume.open(DineinCartFragment.this, error);
+                                    else showToast(apiError(error));
+                                }
                             });
                         },
                         "Đóng",

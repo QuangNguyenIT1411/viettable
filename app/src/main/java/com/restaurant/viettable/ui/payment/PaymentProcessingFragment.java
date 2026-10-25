@@ -126,11 +126,16 @@ public class PaymentProcessingFragment extends BaseFragment implements com.resta
                     if (splitBillId > 0) { showToast("Phần thanh toán chưa thành công. Bạn có thể thử lại."); navigateTo(SplitBillFragment.newInstance(invoice)); }
                     else navigateTo(PaymentFailedFragment.newInstance(invoice, value.getPaymentId()));
                 }
-                else schedulePoll(3000);
+                else {
+                    long delay = com.restaurant.viettable.util.PaymentPollPolicy.nextDelayMs(android.os.SystemClock.elapsedRealtime() - waitStartedAt);
+                    if (delay > 0) schedulePoll(delay); // stops after 15 min; onResume checks again
+                }
             }
             @Override public void onError(ApiException error) { if (binding != null) { showToast(apiError(error)); schedulePoll(5000); } }
         });
     }
+
+    private final long waitStartedAt = android.os.SystemClock.elapsedRealtime();
 
     private void schedulePoll(long delayMs) {
         if (pollRunnable == null) return;

@@ -50,8 +50,18 @@ public sealed class CashierMobileSettlementService(BillingDbContext db, OrdersAp
             throw new PaymentDomainException("payment_not_collectible", "Phiên không thuộc chi nhánh hoặc khách hàng này.", 403);
         if (method == "CASH" && tendered < quote.TotalAmount)
             throw new PaymentDomainException("insufficient_cash", "Số tiền khách đưa không đủ để thanh toán hóa đơn.", 400);
+        // A payment waiting or done on ANOTHER quote of this session wins: never collect twice (incident 25/10).
+        var other = await db.Payments.AsNoTracking()
+            .Where(x => x.DiningSessionId == sessionId && x.CheckoutQuoteId != quote.CheckoutQuoteId
+                && (x.Status == "PENDING" || x.Status == "PROCESSING" || x.Status == "SUCCEEDED"))
+            .OrderByDescending(x => x.PaymentId).FirstOrDefaultAsync(ct);
+        if (other is not null)
+            throw other.Status == "SUCCEEDED"
+                ? new PaymentDomainException("session_already_paid", $"Phiên đã được thanh toán (giao dịch {other.PaymentCode}). Không thu thêm.")
+                : new PaymentDomainException("payment_in_progress", $"Phiên đang có giao dịch {other.PaymentCode} chờ xác nhận. Hãy xác nhận giao dịch đó ở mục Thanh toán ứng dụng tại chỗ.");
 
         int paymentId;
+        var createdAndConfirmed = false;
         await using (var tx = await db.Database.BeginTransactionAsync(ct))
         {
             await PaymentFinalizationService.LockQuoteAsync(db, quote.CheckoutQuoteId, ct);
@@ -67,18 +77,29 @@ public sealed class CashierMobileSettlementService(BillingDbContext db, OrdersAp
                     paymentId = payments.Single(x => x.Status is "PENDING" or "PROCESSING").PaymentId;
                     break;
                 default:
+                    // Create and confirm in ONE transaction: a failure (e.g. Orders no longer waits for this quote,
+                    // or the session already has an invoice) rolls the new payment back instead of leaving it PENDING.
+                    await finalization.EnsureSessionAwaitsQuoteAsync(sessionId, quote.CheckoutQuoteId, ct);
                     var key = $"cashier:{commandKey}:pay";
                     var payment = MobileCheckoutController.NewPayment(quote, "ONSITE", method, "CASHIER", key, Hash(key), 1, quote.TotalAmount);
                     db.Payments.Add(payment);
                     await db.SaveChangesAsync(ct);
+                    await finalization.ApplySuccessAsync(payment, quote, employeeId, null, null, ct);
                     paymentId = payment.PaymentId;
+                    createdAndConfirmed = true;
                     break;
             }
             await tx.CommitAsync(ct);
         }
 
         // Idempotent: an already SUCCEEDED payment only re-runs the durable reconciliation.
-        var confirmed = await finalization.ConfirmAsync(paymentId, employeeId, branchId, null, ct);
+        Payment confirmed;
+        if (createdAndConfirmed)
+        {
+            await finalization.ReconcileSafelyAsync(quote.CheckoutQuoteId, ct);
+            confirmed = await db.Payments.AsNoTracking().SingleAsync(x => x.PaymentId == paymentId, ct);
+        }
+        else confirmed = await finalization.ConfirmAsync(paymentId, employeeId, branchId, null, ct);
         var invoice = await db.Invoices.AsNoTracking().FirstOrDefaultAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct);
         var change = method == "CASH" ? Math.Max(0, tendered - quote.TotalAmount) : 0;
         return new MobileSettlementResult(confirmed.PaymentId, customerId, sessionId, invoice?.InvoiceCode ?? string.Empty,

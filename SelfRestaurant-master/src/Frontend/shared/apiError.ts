@@ -9,6 +9,14 @@ export function cleanText(value: unknown): string {
   return MEANINGLESS.has(text.toLowerCase()) ? "" : text;
 }
 
+/**
+ * A raw technical English sentence (e.g. "Response status code does not indicate success: 409") that must never
+ * reach staff or guests: plain ASCII with several English words. Our own messages are Vietnamese with diacritics.
+ */
+export function isTechnicalEnglish(text: string): boolean {
+  return /^[\x20-\x7E]+$/.test(text) && /[A-Za-z]{3,}\s+[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(text);
+}
+
 /** Vietnamese message for an HTTP failure whose body has no usable message. */
 export function httpStatusMessage(status: number): string {
   if (status === 401) return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
@@ -34,11 +42,11 @@ export function parseBody(text: string): unknown {
 export function apiFailureMessage(status: number, payload: unknown): string {
   if (payload && typeof payload === "object") {
     const message = cleanText((payload as { message?: unknown }).message);
-    if (message) return message;
+    if (message && !isTechnicalEnglish(message)) return message;
   } else if (typeof payload === "string") {
     const text = cleanText(payload);
     // A short plain-text body is a message; HTML error pages and long dumps are not.
-    if (text && text.length <= 300 && !/^\s*</.test(text)) return text;
+    if (text && text.length <= 300 && !/^\s*</.test(text) && !isTechnicalEnglish(text)) return text;
   }
   return httpStatusMessage(status);
 }
@@ -51,6 +59,7 @@ export function userMessage(error: unknown, fallback: string): string {
       return "Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.";
     }
     if (error.name === "SyntaxError" || /^Unexpected token|is not valid JSON/i.test(message)) return fallback;
+    if (isTechnicalEnglish(message)) return fallback;
     return message || fallback;
   }
   return cleanText(error) || fallback;

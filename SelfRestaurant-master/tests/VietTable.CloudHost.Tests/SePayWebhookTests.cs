@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using SelfRestaurant.Billing.Api.Controllers;
+using SelfRestaurant.Billing.Api.Infrastructure;
 using SelfRestaurant.Billing.Api.Infrastructure.Payments;
 using SelfRestaurant.Billing.Api.Persistence;
 using SelfRestaurant.Billing.Api.Persistence.Entities;
@@ -57,6 +59,9 @@ public sealed class SePayWebhookTests
     [InlineData("VT B1 TT128 VT B1 TT129")] // two different payments: ambiguous, cashier decides
     [InlineData("XVT B1 TT128")]
     [InlineData("VT B1 DON12")]           // counter order: not automatic in this round
+    [InlineData("VT BI TT28")]            // letter I is not the digit 1 (owner's question 25/10)
+    [InlineData("VT Bl TT28")]            // letter l is not the digit 1
+    [InlineData("an trua")]
     public void No_or_ambiguous_reference_is_never_matched(string? content) => Assert.Null(SePayContentParser.Parse(content));
 
     // ---- Matching rules ----
@@ -190,6 +195,45 @@ public sealed class SePayWebhookTests
         Assert.Single(db.BankTransferEvents);
     }
 
+    // Incident 25/10 (SePay 41419): confirming cleared the context's change tracker (reconciliation failed) and the
+    // row's outcome update was lost, leaving it RECEIVED although the payment was confirmed.
+    [Fact]
+    public async Task Outcome_is_saved_even_when_confirming_clears_the_change_tracker()
+    {
+        var (db, confirmer, service) = await Setup();
+        confirmer.ClearTrackerAfterConfirm = true;
+        var result = await Deliver(service, Body("9012", 100_000m, "VT B1 TT128"));
+        Assert.Equal(SePayMatchRules.AutoConfirmed, result.Outcome);
+        db.ChangeTracker.Clear();
+        var row = await db.BankTransferEvents.SingleAsync();
+        Assert.Equal(SePayMatchRules.AutoConfirmed, row.Outcome);
+        Assert.Equal(128, row.PaymentId);
+        Assert.NotNull(row.ProcessedAtUtc);
+    }
+
+    // Incident 25/10: the session was locked for another quote; money must not be confirmed, the cashier is warned.
+    [Fact]
+    public async Task Session_no_longer_waiting_for_this_quote_becomes_a_warning()
+    {
+        var (db, confirmer, service) = await Setup();
+        confirmer.ThrowCode = "session_not_payable";
+        var result = await Deliver(service, Body("9013", 100_000m, "VT B1 TT128"));
+        Assert.Equal(SePayMatchRules.SessionNotPayable, result.Outcome);
+        Assert.Equal(SePayMatchRules.SessionNotPayable, (await db.BankTransferEvents.SingleAsync()).Outcome);
+        Assert.Contains(SePayMatchRules.SessionNotPayable, CashierBankTransfersController.WarningOutcomes);
+    }
+
+    [Fact]
+    public void Money_is_confirmed_only_while_orders_waits_for_that_exact_quote()
+    {
+        static OrdersApiClient.SessionPaymentState State(string status, int? quote, bool ended = false) => new(34, status, quote, null, ended);
+        Assert.True(PaymentFinalizationService.SessionAwaitsQuote(State("PAYMENT_REQUESTED", 35), 35));
+        Assert.False(PaymentFinalizationService.SessionAwaitsQuote(State("PAYMENT_REQUESTED", 36), 35)); // the incident
+        Assert.False(PaymentFinalizationService.SessionAwaitsQuote(State("ACTIVE", null), 35));          // unlocked by Back
+        Assert.False(PaymentFinalizationService.SessionAwaitsQuote(State("PAYMENT_REQUESTED", 35, ended: true), 35));
+        Assert.False(PaymentFinalizationService.SessionAwaitsQuote(null, 35));
+    }
+
     [Fact]
     public async Task Enabled_without_a_secret_refuses_everything()
     {
@@ -234,6 +278,8 @@ public sealed class SePayWebhookTests
     {
         public int Calls { get; private set; }
         public bool Throw { get; set; }
+        public string? ThrowCode { get; set; }
+        public bool ClearTrackerAfterConfirm { get; set; }
         public string? LastProviderTransactionId { get; private set; }
 
         public async Task<Payment> ConfirmAsync(int paymentId, string providerTransactionId, CancellationToken ct)
@@ -241,9 +287,11 @@ public sealed class SePayWebhookTests
             Calls++;
             LastProviderTransactionId = providerTransactionId;
             if (Throw) throw new PaymentDomainException("payment_state_conflict", "already settled");
+            if (ThrowCode is not null) throw new PaymentDomainException(ThrowCode, "not payable");
             var payment = await db.Payments.SingleAsync(x => x.PaymentId == paymentId, ct);
             payment.Status = "SUCCEEDED"; payment.ProviderName = "SEPAY"; payment.ProviderTransactionId = providerTransactionId;
             await db.SaveChangesAsync(ct);
+            if (ClearTrackerAfterConfirm) db.ChangeTracker.Clear(); // what a failed reconciliation does
             return payment;
         }
     }

@@ -29,7 +29,8 @@ public sealed class CashierMobilePaymentsController(BillingDbContext db, Payment
 
     // Same VietQR as in the app, shown on the counter screen for a pending app payment by bank transfer.
     [HttpGet("{paymentId:int}/transfer-qr")]
-    public async Task<IActionResult> TransferQr(int paymentId, [FromServices] BankTransferQrService transfer, CancellationToken ct)
+    public async Task<IActionResult> TransferQr(int paymentId, [FromServices] BankTransferQrService transfer,
+        [FromServices] Microsoft.Extensions.Options.IOptions<SePayOptions> sepay, CancellationToken ct)
     {
         if (!int.TryParse(User.FindFirst("branchId")?.Value, out var branchId) || branchId <= 0) return Forbid();
         var row = await (from p in db.Payments.AsNoTracking()
@@ -39,7 +40,9 @@ public sealed class CashierMobilePaymentsController(BillingDbContext db, Payment
         if (row is null || row.BranchId != branchId) return NotFound(new { code = "payment_not_found", message = "Không tìm thấy giao dịch của chi nhánh." });
         if (!MobileCheckoutController.IsTransferPayment(row.Payment.Channel, row.Payment.Method))
             return Conflict(new { code = "not_bank_transfer", message = "Giao dịch này không thanh toán bằng chuyển khoản." });
-        return TransferQrResult(transfer, row.Payment.Amount, BankTransferQrService.PaymentContent(branchId, paymentId));
+        var result = TransferQrResult(transfer, row.Payment.Amount, BankTransferQrService.PaymentContent(branchId, paymentId));
+        // App payments are confirmed automatically by SePay when it is on; counter orders (DON) never are.
+        return result is OkObjectResult { Value: TransferQrResponse qr } ? Ok(qr with { AutoConfirm = sepay.Value.Enabled }) : result;
     }
 
     // VietQR for a cashier checkout of one order. The amount is the total after discounts shown on the counter screen.

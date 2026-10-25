@@ -44,6 +44,17 @@ public sealed class OrdersApiClient
     public Task<DiningSessionCheckoutContext?> GetDiningSessionCheckoutContextAsync(int sessionId, int customerId, CancellationToken ct) =>
         _http.GetFromJsonAsync<DiningSessionCheckoutContext>($"/api/internal/dining-sessions/{sessionId}/checkout-context?customerId={customerId}", ct);
 
+    /// <summary>Null when the session does not exist. Network/server failures throw (callers must not confirm then).</summary>
+    public async Task<SessionPaymentState?> GetPaymentStateAsync(int sessionId, CancellationToken ct)
+    {
+        using var response = await _http.GetAsync($"/api/internal/dining-sessions/{sessionId}/payment-state", ct);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<SessionPaymentState>(cancellationToken: ct);
+    }
+
+    public sealed record SessionPaymentState(int DiningSessionId, string Status, int? CheckoutQuoteId, int? PaymentId, bool Ended);
+
     public async Task RequestPaymentAsync(int sessionId, int customerId, int quoteId, CancellationToken ct)
     {
         using var response = await _http.PostAsJsonAsync($"/api/internal/dining-sessions/{sessionId}/payment-request", new { customerId, checkoutQuoteId = quoteId }, ct);
