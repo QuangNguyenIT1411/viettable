@@ -19,6 +19,16 @@ public class PaymentGuardsTest {
         assertEquals("Bạn đang có một giao dịch chờ xác nhận.", UserText.serverMessage("Bạn đang có một giao dịch chờ xác nhận.", 409));
     }
 
+    @Test public void finished_payment_never_requests_its_transfer_qr() {
+        assertTrue(PaymentPollPolicy.showsTransferQr("PENDING"));
+        assertTrue(PaymentPollPolicy.showsTransferQr("PROCESSING"));
+        assertTrue(PaymentPollPolicy.showsTransferQr(null));
+        assertFalse(PaymentPollPolicy.showsTransferQr("SUCCEEDED")); // TT33, 25/10: Back from success -> QR 409
+        assertFalse(PaymentPollPolicy.showsTransferQr("CANCELLED"));
+        assertFalse(PaymentPollPolicy.showsTransferQr("FAILED"));
+        assertFalse(PaymentPollPolicy.showsTransferQr("EXPIRED"));
+    }
+
     @Test public void payment_polling_slows_down_and_stops_after_15_minutes() {
         assertEquals(3_000, PaymentPollPolicy.nextDelayMs(0));
         assertEquals(3_000, PaymentPollPolicy.nextDelayMs(29_000));

@@ -83,7 +83,9 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
             binding.tvOnsiteTotal.setText(invoice.getFormattedFinalTotal());
         }
 
-        if (invoice != null && PaymentTypeFragment.TRANSFER_LABEL.equals(invoice.getPaymentMethod()) && payment != null) {
+        // A finished payment skips the QR; onResume's first status check moves straight to its result screen.
+        if (invoice != null && PaymentTypeFragment.TRANSFER_LABEL.equals(invoice.getPaymentMethod()) && payment != null
+                && com.restaurant.viettable.util.PaymentPollPolicy.showsTransferQr(payment.getStatus())) {
             binding.cardTransferQr.setVisibility(View.VISIBLE);
             loadTransferQr();
         }
@@ -218,7 +220,10 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
                                 : "Không lưu được ảnh. Bạn có thể chụp màn hình mã QR."));
             }
             @Override public void onError(ApiException error) {
-                if (binding != null) binding.tvTransferState.setText(apiError(error));
+                if (binding == null) return;
+                // 409: the payment is no longer waiting (paid or cancelled meanwhile); let the status check decide.
+                if (error.getStatusCode() == 409) { binding.cardTransferQr.setVisibility(View.GONE); schedulePoll(0); }
+                else binding.tvTransferState.setText(apiError(error));
             }
         });
     }

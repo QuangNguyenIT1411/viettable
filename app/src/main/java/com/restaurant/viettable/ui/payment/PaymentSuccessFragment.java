@@ -70,9 +70,13 @@ public class PaymentSuccessFragment extends BaseFragment {
             else showToast("Không tìm thấy hóa đơn hợp lệ để đánh giá.");
         });
 
-        binding.btnBackToHomeFromPayment.setOnClickListener(v -> {
-            switchTab(R.id.nav_home);
-        });
+        // switchTab clears the back stack. Back must do the same: the screens underneath are the paid payment's
+        // waiting/QR screens and must never open again (25/10: Back reopened TT33's QR after it was paid).
+        binding.btnBackToHomeFromPayment.setOnClickListener(v -> switchTab(R.id.nav_home));
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(),
+                new androidx.activity.OnBackPressedCallback(true) {
+                    @Override public void handleOnBackPressed() { switchTab(R.id.nav_home); }
+                });
     }
 
     @Override

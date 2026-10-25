@@ -19,4 +19,13 @@ public final class PaymentPollPolicy {
         if (elapsedMs < 5 * 60_000) return 10_000;
         return 30_000;
     }
+
+    /**
+     * The QR is only for a payment still waiting for money. A finished payment (e.g. the guest went Back from
+     * "Thanh toán thành công!") gets no QR request: the server answers 409 and the screen flashed an error (25/10).
+     */
+    public static boolean showsTransferQr(String status) {
+        return !("SUCCEEDED".equals(status) || "FAILED".equals(status)
+                || "CANCELLED".equals(status) || "EXPIRED".equals(status));
+    }
 }
