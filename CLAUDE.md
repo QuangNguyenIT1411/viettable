@@ -154,6 +154,22 @@ Secrets nằm trong `.env` / biến môi trường, **không bao giờ** commit,
 | Việc app đang làm (chủ dự án giao 26/10 tối) | **Giao diện:** Trang chủ mẫu "Phố đêm" ĐÃ DUYỆT (làm chuẩn cho các màn khác), nhưng **chưa làm lại màn khác cho tới khi chủ dự án duyệt ảnh Trang chủ thật trên Samsung**. Ảnh "đang ở bàn": chủ dự án tự quét QR rồi báo chụp, **không tự mở phiên**. Tên khách: lưu cục bộ (đã viết hoa) sau lần tải đầu, mở app hiện ngay, tải xong cập nhật; đăng xuất/đổi tài khoản thì xoá. **Việc 4 (commit riêng, tách giao diện), nguyên tắc: không hiện số giả/số cứng; không có dữ liệu thật thì ẩn hoặc hiện đang tải:** a) Thanh toán thành công: "+X điểm" = điểm thật cộng từ hoá đơn đó (API/payment response), không có thì ẩn; b) tiêu đề "Ngon miệng nhé, <tên>!" (cùng tên đã viết hoa); c) thanh tiến độ hạng (Tôi/thành viên) dùng điểm thật + ngưỡng hạng kế tiếp thật; API không có ngưỡng thì báo chủ dự án, tạm ẩn thanh; d) màn dùng điểm khi thanh toán: bỏ mặc định 2.000/15.000, hiện số dư thật; e) grep mọi điểm/hạng/số tiền/tên cứng khác, **gửi danh sách trước khi sửa** chỗ ngoài a–d. **Việc 5 (sau việc 4, mỗi việc commit riêng):** ẩn "Online VNPAY" sau cờ cấu hình mặc định tắt; màn VietQR nút sao chép số TK, số tiền, nội dung CK; màn Tiến độ món thẻ "x/y món đã xong" **Trạng thái cuối 26/10:** tên khách lưu cục bộ xong (`4f9f75d`); Việc 4 a–d xong (`da5faee`); Việc 4e: danh sách đã gửi, **chờ chủ dự án chọn**; Việc 5 xong: cờ VNPAY (`43a32cc`), sao chép VietQR (`f59a503`), thẻ x/y món (`2ea3752`). Code `4f9f75d`→`2ea3752` **chưa cài lên Samsung** (APK build cuối SHA `51162427cd80fd9e`). Chờ: chủ dự án quét QR để chụp ảnh "đang ở bàn" thật; duyệt ảnh Trang chủ thật trước khi làm màn khác |
 | Việc còn mở | `REMAINING_ISSUES.md` G15 (`/healthz` ~7 s), G16 (hủy bàn cho phiên từ đặt bàn: khách chưa hủy được phiên mở từ đặt bàn, E2E dùng dọn dẹp chung), G17 (thanh bên Admin trên điện thoại) — làm sau demo. Chưa rõ request nào trả lỗi rỗng gây "null" (log Vercel Hobby chỉ giữ ~1 giờ). Web nhân viên redesign xong 14/10/2026 (chỉ sửa lỗi giao diện); app khách làm lại giao diện là việc 1 ở trên. E2E: Identity giới hạn 30 lần đăng ký/phút, test dùng `registerGuest` (đợi rồi thử lại). Demo 01–10/11 |
 
+### 6b. Sửa sau (chủ dự án chốt 26/10/2026: chưa sửa web/backend lúc này)
+
+**Điểm thưởng: backend, app và màn thu ngân đang lệch nhau (đã đọc code 26/10, cần chủ dự án chốt quy tắc):**
+
+| Chỗ | Quy tắc hiện tại trong code |
+|---|---|
+| **Tích điểm** (`Identity` `POST /api/customers/{id}/loyalty/settle`, dùng cho thanh toán qua app và thu ngân) | `điểm cộng = floor(số tiền đã trả × 1%)` → **100đ = 1 điểm** (hoá đơn 245.000đ cộng 2.450 điểm). Lời mô tả hạng Vàng/Kim Cương trong API nói "tích điểm 5%": không khớp 1% |
+| **Dùng điểm trên app** (`MobileCheckoutController.ApplyLoyalty`) | **1 điểm = 1.000đ** giảm: `PointsDiscount = PointsApplied × 1000`, tối đa `floor((tạm tính − voucher)/1000)` điểm |
+| **Dùng điểm ở thu ngân** (`CashierController`) | **1 điểm = 1đ** giảm, bội số 1.000 điểm |
+| **Trừ điểm khi chốt** (`settle`) | chỉ trừ theo **bội số 1.000 điểm** (`pointsUsed/1000*1000`), còn app cho chọn bước 500 điểm và giảm theo từng điểm → dùng 500 điểm được giảm 500.000đ nhưng không bị trừ điểm |
+| **Hạng** | Bạc từ 1.000, Vàng từ 5.000, Kim Cương từ 20.000 điểm (`MobileProfileController.GetTier`) |
+
+Hệ quả: tích 1 điểm/100đ mà mỗi điểm đổi 1.000đ thì 1 hoá đơn đủ tiền cho hơn 10 lần giảm hết hoá đơn tiếp theo. Cần chốt tỉ giá một chỗ (backend là nguồn đúng), sửa thu ngân cho khớp, và cho API trả `pointValueVnd` (app đã sẵn sàng đọc trường này từ `GET /payment-options`; chưa có thì app **không hiện** số quy đổi). Backend chưa trả số điểm cộng trong hoá đơn mobile: app tạm đọc từ thông báo `loyalty.points-earned.v1`.
+
+**Lỗi/việc khác cần làm sau demo:** mục 4e chưa sửa vì chủ dự án để nguyên: dòng 6 (đặt cọc: làm chung việc đặt cọc), 48 chữ mẫu trong layout (code luôn ghi đè, dọn khi làm lại từng màn).
+
 ## 7. TUYỆT ĐỐI KHÔNG làm nếu chưa có phê duyệt rõ ràng của chủ dự án
 
 **Git & release**

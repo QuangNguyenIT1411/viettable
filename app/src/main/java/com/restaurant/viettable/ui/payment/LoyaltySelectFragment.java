@@ -24,6 +24,8 @@ public class LoyaltySelectFragment extends BaseFragment {
     private long selectedPoints = 0;
     private long maxPoints = 0;
     private boolean balanceKnown;
+    /** Dong per point from the server; 0 = not told, so no conversion is shown (the app never assumes a rate). */
+    private long pointValueVnd = 0;
 
     public static LoyaltySelectFragment newInstance(Voucher voucher) {
         LoyaltySelectFragment f = new LoyaltySelectFragment();
@@ -58,6 +60,14 @@ public class LoyaltySelectFragment extends BaseFragment {
         User user = appStateManager.getCurrentUser();
         if (user != null) setBalance(user.getLoyaltyPoints());
         else showBalanceLoading();
+        com.restaurant.viettable.data.MobileRepository.getInstance().loadPointValueVnd(
+                new com.restaurant.viettable.data.MobileRepository.Callback<Long>() {
+                    @Override public void onSuccess(Long value) {
+                        pointValueVnd = value == null ? 0 : value;
+                        if (binding != null) { showMoneyEquivalent(); updatePointsUI(); }
+                    }
+                    @Override public void onError(com.restaurant.viettable.network.ApiException error) { }
+                });
         com.restaurant.viettable.data.MobileRepository.getInstance().loadLoyalty(
                 new com.restaurant.viettable.data.MobileRepository.Callback<com.restaurant.viettable.model.LoyaltyInfo>() {
                     @Override public void onSuccess(com.restaurant.viettable.model.LoyaltyInfo info) {
@@ -104,7 +114,7 @@ public class LoyaltySelectFragment extends BaseFragment {
     private void showBalanceLoading() {
         balanceKnown = false;
         binding.tvAvailablePoints.setText("Đang tải…");
-        binding.tvAvailableMoneyEquivalent.setText("");
+        binding.tvAvailableMoneyEquivalent.setVisibility(View.GONE);
         updatePointsUI();
     }
 
@@ -113,13 +123,20 @@ public class LoyaltySelectFragment extends BaseFragment {
         maxPoints = Math.max(0, points);
         selectedPoints = Math.min(selectedPoints, maxPoints);
         binding.tvAvailablePoints.setText(String.format(Locale.GERMANY, "%,d điểm", maxPoints));
-        binding.tvAvailableMoneyEquivalent.setText(String.format(Locale.GERMANY, "~%,d đ", maxPoints * 10));
+        showMoneyEquivalent();
         updatePointsUI();
+    }
+
+    private void showMoneyEquivalent() {
+        boolean known = pointValueVnd > 0 && balanceKnown;
+        binding.tvAvailableMoneyEquivalent.setVisibility(known ? View.VISIBLE : View.GONE);
+        if (known) binding.tvAvailableMoneyEquivalent.setText(String.format(Locale.GERMANY, "~%,d đ", maxPoints * pointValueVnd));
     }
 
     private void updatePointsUI() {
         binding.tvSelectedPoints.setText(String.format(Locale.GERMANY, "%,d điểm", selectedPoints));
-        binding.tvCalculatedDiscount.setText(String.format(Locale.GERMANY, "Giảm tương ứng: -%,d đ", selectedPoints * 10));
+        binding.tvCalculatedDiscount.setVisibility(pointValueVnd > 0 ? View.VISIBLE : View.GONE);
+        if (pointValueVnd > 0) binding.tvCalculatedDiscount.setText(String.format(Locale.GERMANY, "Giảm tương ứng: -%,d đ", selectedPoints * pointValueVnd));
         // Nothing to confirm until the real balance is known and some points are picked.
         binding.btnConfirmPoints.setEnabled(balanceKnown && selectedPoints > 0);
         binding.btnPlusPoints.setEnabled(balanceKnown && selectedPoints + 500 <= maxPoints);

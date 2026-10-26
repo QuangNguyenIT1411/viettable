@@ -219,11 +219,7 @@ public class FoodDetailFragment extends BaseFragment {
 
     private void updatePriceButton() {
         if (foodItem == null) return;
-        long unit = foodItem.getPrice();
-        if ("Lớn".equalsIgnoreCase(selectedSize) || selectedSize.contains("15k")) unit += 15000;
-        if ("Đặc biệt".equalsIgnoreCase(selectedSize) || selectedSize.contains("25k") || selectedSize.contains("20k")) unit += 25000;
-        unit += (selectedToppings.size() * 15000L);
-        long total = unit * quantity;
+        long total = foodItem.getPrice() * quantity; // server price; no surcharge added in the app
         binding.btnSubmitAddToCart.setText("Thêm vào giỏ • " + String.format(java.util.Locale.GERMANY, "%,dđ", total));
     }
 

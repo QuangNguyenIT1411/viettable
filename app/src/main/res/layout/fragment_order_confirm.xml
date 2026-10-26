@@ -121,7 +121,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Thời gian chế biến dự kiến:"
+                            android:text="Món ăn của bạn:"
                             android:textColor="@color/colorTextSecondary"
                             android:textSize="14sp" />
 
@@ -129,7 +129,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
-                            android:text="~10 - 15 phút"
+                            android:text="Bếp sẽ báo khi món sẵn sàng"
                             android:textColor="@color/colorSecondary"
                             android:textSize="14sp" />
                     </LinearLayout>

@@ -104,7 +104,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="Quy đổi: 1 điểm tích lũy = 10 VNĐ. Điểm sẽ được khấu trừ ngay."
+                    android:text="Số tiền giảm do hệ thống tính và hiển thị trên hóa đơn sau khi bạn xác nhận."
                     android:textColor="@color/pd_yellow"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -193,7 +193,7 @@
                             android:layout_width="0dp"
                             android:layout_height="40dp"
                             android:layout_weight="1"
-                            android:text="1.000 đ"
+                            android:text="1.000 điểm"
                             android:textSize="11sp" />
 
                         <com.google.android.material.button.MaterialButton
@@ -203,7 +203,7 @@
                             android:layout_height="40dp"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
-                            android:text="2.000 đ"
+                            android:text="2.000 điểm"
                             android:textSize="11sp" />
 
                         <com.google.android.material.button.MaterialButton

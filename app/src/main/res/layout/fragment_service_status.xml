@@ -57,7 +57,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:text="Nhân viên tầng 1 đã nhận thông báo và đang đến bàn hỗ trợ."
+                    android:text="Nhân viên đã nhận thông báo và đang đến bàn hỗ trợ."
                     android:textColor="@color/colorInfo"
                     android:textSize="13sp" />
             </LinearLayout>

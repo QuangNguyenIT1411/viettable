@@ -65,6 +65,12 @@ public class ReservationMismatchFragment extends BaseFragment {
         String reservedLabel = upcoming == null ? "Chưa có thông tin bàn" : upcoming.getTableLabel();
         binding.tvScannedTable.setText(scannedLabel);
         binding.tvReservedTable.setText(reservedLabel);
+        // The linked booking from real data; the row stays hidden when there is none.
+        if (upcoming != null) {
+            binding.tvLinkedReservation.setText("Mã đặt bàn liên kết: #" + upcoming.getId() + " · " + upcoming.getTimeSlot()
+                    + " · " + com.restaurant.viettable.util.DisplayFormatters.date(upcoming.getDate()));
+            binding.tvLinkedReservation.setVisibility(View.VISIBLE);
+        }
 
         binding.btnRescan.setOnClickListener(v -> navigateBack());
 

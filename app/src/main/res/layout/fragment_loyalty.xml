@@ -109,7 +109,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_alignParentBottom="true"
-                        android:text="VT-8899-2026"
+                        android:text=""
                         android:textColor="@color/pd_muted"
                         android:textSize="12sp" />
                 </RelativeLayout>
@@ -181,17 +181,21 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Membership Privileges -->
+            <!-- Membership privileges: the tier's real benefit list from GET /me/loyalty; hidden until it loads. -->
             <TextView
+                android:id="@+id/tvBenefitsTitle"
+                android:visibility="gone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:fontFamily="@font/bricolage_medium"
-                android:text="Đặc quyền hạng Vàng"
+                android:text=""
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardBenefits"
+                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -202,76 +206,11 @@
                 app:strokeWidth="1dp">
 
                 <LinearLayout
+                    android:id="@+id/layoutBenefits"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_check"
-                            app:tint="@color/colorSuccess" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:text="Tích lũy 5% giá trị hóa đơn cho mỗi lần dùng bữa"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_check"
-                            app:tint="@color/colorSuccess" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:text="Tặng bánh kem sinh nhật và quà độc quyền trong tháng"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_check"
-                            app:tint="@color/colorSuccess" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:text="Ưu tiên xếp bàn view đẹp không cần đặt cọc trước"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-                </LinearLayout>
+                    android:padding="16dp" />
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>

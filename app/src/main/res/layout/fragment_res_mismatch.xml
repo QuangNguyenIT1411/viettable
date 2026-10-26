@@ -133,9 +133,11 @@
                         android:background="@color/colorDivider" />
 
                     <TextView
+                        android:id="@+id/tvLinkedReservation"
+                        android:visibility="gone"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Mã đặt bàn liên kết: #RES-8821 • 19:00 Hôm nay"
+                        android:text=""
                         android:textColor="@color/colorTextSecondary"
                         android:textSize="13sp" />
                 </LinearLayout>

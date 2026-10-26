@@ -414,6 +414,15 @@ public final class MobileRepository {
         });
     }
 
+    private static List<String> benefitList(JSONArray rows) {
+        List<String> values = new ArrayList<>();
+        if (rows != null) for (int i = 0; i < rows.length(); i++) {
+            String text = SafeText.clean(SafeText.json(rows, i));
+            if (!text.isEmpty()) values.add(text);
+        }
+        return values;
+    }
+
     /** Real points, tier and next-tier threshold (GET /me/loyalty); also refreshes the points kept on the user. */
     public void loadLoyalty(Callback<com.restaurant.viettable.model.LoyaltyInfo> callback) {
         api().get("/api/mobile/v1/me/loyalty", true, new ApiClient.Callback() {
@@ -422,7 +431,8 @@ public final class MobileRepository {
                 Integer nextAt = row.isNull("nextTierAtPoints") || !row.has("nextTierAtPoints") ? null : row.optInt("nextTierAtPoints");
                 com.restaurant.viettable.model.LoyaltyInfo info = new com.restaurant.viettable.model.LoyaltyInfo(
                         row.optInt("availablePoints"), SafeText.json(row, "tierCode"), SafeText.json(row, "tierName"),
-                        SafeText.json(row, "nextTierCode", null), nextAt, row.optInt("pointsToNextTier"), row.optInt("progressPercent"));
+                        SafeText.json(row, "nextTierCode", null), nextAt, row.optInt("pointsToNextTier"), row.optInt("progressPercent"),
+                        SafeText.json(row, "cardNumber", ""), benefitList(row.optJSONArray("benefits")));
                 User user = state.getCurrentUser();
                 if (user != null) user.setLoyaltyPoints(info.getAvailablePoints());
                 callback.onSuccess(info);
@@ -1152,6 +1162,21 @@ public final class MobileRepository {
             @Override public void onSuccess(Object body) {
                 if (body instanceof JSONObject) callback.onSuccess((JSONObject) body);
                 else callback.onError(new ApiException(0, "transfer_qr_invalid", "Không đọc được mã QR chuyển khoản.", null));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    /**
+     * How many dong one loyalty point is worth when paying, as the server says (GET /payment-options
+     * "pointValueVnd"); null when the server does not say, so the app shows no conversion instead of guessing.
+     */
+    public void loadPointValueVnd(Callback<Long> callback) {
+        api().get("/api/mobile/v1/payment-options", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject row = body instanceof JSONObject ? (JSONObject) body : null;
+                long value = row == null ? 0 : row.optLong("pointValueVnd", 0);
+                callback.onSuccess(value > 0 ? value : null);
             }
             @Override public void onError(ApiException error) { callback.onError(error); }
         });

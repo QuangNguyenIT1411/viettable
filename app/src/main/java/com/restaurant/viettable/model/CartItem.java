@@ -42,16 +42,8 @@ public class CartItem implements Serializable {
 
     public long calculateUnitPrice() {
         if (foodItem == null) return 0;
-        long unit = foodItem.getPrice();
-        if ("Lớn".equalsIgnoreCase(selectedSize)) {
-            unit += 15000;
-        } else if ("Đặc biệt".equalsIgnoreCase(selectedSize)) {
-            unit += 25000;
-        }
-        if (selectedToppings != null) {
-            unit += (selectedToppings.size() * 15000L);
-        }
-        return unit;
+        // The price is the server's dish price: the app adds no size or topping surcharge of its own (owner, 26/10).
+        return foodItem.getPrice();
     }
 
     public long calculateTotalPrice() {
