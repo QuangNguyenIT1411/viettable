@@ -38,6 +38,21 @@ final class TransferQrImages {
                 + "\nNội dung: " + SafeText.json(qr, "content");
     }
 
+    /** Amount as bank apps want it pasted: digits only ("245000", not "245.000 đ"). */
+    static String amountDigits(double amount) {
+        return String.valueOf(Math.max(0, Math.round(amount)));
+    }
+
+    /** Puts {@code text} on the clipboard; false when there is nothing to copy. */
+    static boolean copy(Context context, String label, String text) {
+        if (text == null || text.trim().isEmpty()) return false;
+        android.content.ClipboardManager clipboard = (android.content.ClipboardManager)
+                context.getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) return false;
+        clipboard.setPrimaryClip(android.content.ClipData.newPlainText(label, text.trim()));
+        return true;
+    }
+
     /** Saves into Pictures/VietTable (Android 10+, no permission needed). Older Android: returns false. */
     static boolean saveToGallery(Context context, Bitmap image, String name) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false;

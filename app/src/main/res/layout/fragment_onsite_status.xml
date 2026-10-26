@@ -196,6 +196,40 @@
                         android:textSize="14sp"
                         android:visibility="gone" />
 
+                    <!-- Copy what guests type into their bank app (owner, 26/10). Wraps to more lines at large font sizes. -->
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/groupTransferCopy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone"
+                        app:chipSpacingHorizontal="8dp">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/btnCopyAccount"
+                            style="@style/Widget.Material3.Chip.Assist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Sao chép số TK"
+                            app:chipIcon="@drawable/ic_copy" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/btnCopyAmount"
+                            style="@style/Widget.Material3.Chip.Assist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Sao chép số tiền"
+                            app:chipIcon="@drawable/ic_copy" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/btnCopyContent"
+                            style="@style/Widget.Material3.Chip.Assist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Sao chép nội dung"
+                            app:chipIcon="@drawable/ic_copy" />
+                    </com.google.android.material.chip.ChipGroup>
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSaveTransferQr"
                         style="@style/Widget.VietTable.Button.Outlined"

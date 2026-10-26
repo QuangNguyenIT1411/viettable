@@ -220,6 +220,12 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
         schedulePoll(5000);
     }
 
+    private void bindCopy(View button, String what, String value) {
+        button.setVisibility(SafeText.isBlank(value) ? View.GONE : View.VISIBLE);
+        button.setOnClickListener(v -> showToast(TransferQrImages.copy(requireContext(), what, value)
+                ? "Đã sao chép " + what.toLowerCase(java.util.Locale.forLanguageTag("vi")) : "Không sao chép được."));
+    }
+
     private void loadTransferQr() {
         MobileRepository.getInstance().loadTransferQr(payment.getPaymentId(), new MobileRepository.Callback<org.json.JSONObject>() {
             @Override public void onSuccess(org.json.JSONObject qr) {
@@ -230,6 +236,10 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
                 binding.tvTransferState.setVisibility(View.GONE);
                 binding.tvTransferDetails.setText(TransferQrImages.details(qr));
                 binding.tvTransferDetails.setVisibility(View.VISIBLE);
+                bindCopy(binding.btnCopyAccount, "Số tài khoản", SafeText.json(qr, "accountNumber"));
+                bindCopy(binding.btnCopyAmount, "Số tiền", TransferQrImages.amountDigits(qr.optDouble("amount")));
+                bindCopy(binding.btnCopyContent, "Nội dung chuyển khoản", SafeText.json(qr, "content"));
+                binding.groupTransferCopy.setVisibility(View.VISIBLE);
                 binding.tvTransferHint.setText(qr.optBoolean("autoConfirm")
                         ? "Hệ thống sẽ tự xác nhận khi nhận được tiền."
                         : "Sau khi chuyển khoản, vui lòng chờ thu ngân kiểm tra và xác nhận.");
