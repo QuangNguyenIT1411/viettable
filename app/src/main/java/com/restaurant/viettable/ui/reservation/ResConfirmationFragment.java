@@ -10,7 +10,9 @@ import androidx.annotation.Nullable;
 
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentResConfirmationBinding;
+import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.model.Reservation;
+import com.restaurant.viettable.reminder.ReservationReminders;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.util.SafeText;
@@ -29,11 +31,24 @@ public class ResConfirmationFragment extends BaseFragment {
         return f;
     }
 
+    // Android 13+: booking reminders need the notification permission; asked once, a refusal changes nothing else.
+    private final androidx.activity.result.ActivityResultLauncher<String> notificationPermission =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.RequestPermission(), granted -> {
+                if (granted) MobileRepository.getInstance().loadReservations(new MobileRepository.Callback<java.util.List<Reservation>>() {
+                    @Override public void onSuccess(java.util.List<Reservation> value) {}
+                    @Override public void onError(com.restaurant.viettable.network.ApiException error) {}
+                });
+            });
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             reservation = (Reservation) getArguments().getSerializable(ARG_RES);
+        }
+        if (savedInstanceState == null && ReservationReminders.shouldAskPermission(requireContext())) {
+            ReservationReminders.markPermissionAsked(requireContext());
+            notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS);
         }
     }
 

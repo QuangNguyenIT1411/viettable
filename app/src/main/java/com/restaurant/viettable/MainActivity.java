@@ -28,6 +28,10 @@ import com.restaurant.viettable.ui.lock.AppLock;
 import com.restaurant.viettable.ui.lock.LockExempt;
 import com.restaurant.viettable.util.AppLockPolicy;
 import com.restaurant.viettable.network.SignalRManager;
+import com.restaurant.viettable.model.Reservation;
+import com.restaurant.viettable.reminder.ReservationReminders;
+import com.restaurant.viettable.ui.auth.LoginFragment;
+import com.restaurant.viettable.ui.reservation.ResDetailFragment;
 import com.restaurant.viettable.databinding.ActivityMainBinding;
 import com.restaurant.viettable.navigation.NavigationCoordinator;
 import com.restaurant.viettable.ui.auth.SplashFragment;
@@ -57,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         insetsController.setAppearanceLightStatusBars(true);
 
         ApiClient.initialize(getApplicationContext());
+        ReservationReminders.initialize(getApplicationContext());
         com.restaurant.viettable.network.BiometricTokenStore.initialize(getApplicationContext());
         com.restaurant.viettable.util.ImageLoader.getInstance().initialize(getApplicationContext());
         ApiClient.getInstance().setSessionInvalidatedListener(this::showExpiredSession);
@@ -84,7 +89,65 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
             setBottomNavVisible(false);
             setFabVisible(false);
             navigateTo(SplashFragment.newInstance(), false);
+            takeReminderIntent(getIntent());
+        } else {
+            pendingReservationId = savedInstanceState.getString(STATE_PENDING_RESERVATION);
         }
+    }
+
+    // ---- Tapped booking reminder: open that reservation once signed in, past the splash and unlocked ----
+
+    private static final String STATE_PENDING_RESERVATION = "pendingReservationId";
+    private String pendingReservationId;
+    private boolean pendingReservationLookup;
+
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        takeReminderIntent(intent);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@androidx.annotation.NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(STATE_PENDING_RESERVATION, pendingReservationId);
+    }
+
+    private void takeReminderIntent(android.content.Intent intent) {
+        String id = intent == null ? null : intent.getStringExtra(ReservationReminders.EXTRA_RESERVATION_ID);
+        if (id == null) return;
+        intent.removeExtra(ReservationReminders.EXTRA_RESERVATION_ID); // a later recreate must not open it again
+        pendingReservationId = id;
+        pendingReservationLookup = false;
+        binding.getRoot().post(this::openPendingReservation);
+    }
+
+    private void openPendingReservation() {
+        if (pendingReservationId == null || isFinishing() || isLocked()) return;
+        FragmentManager fm = getSupportFragmentManager();
+        if (fm.isStateSaved() || !MobileRepository.getInstance().hasSession()) return;
+        Fragment top = fm.findFragmentById(R.id.fragment_container);
+        if (top == null || top instanceof SplashFragment || top instanceof WelcomeFragment || top instanceof LoginFragment) return;
+        for (Reservation r : appStateManager.getReservations()) {
+            if (pendingReservationId.equals(r.getId())) {
+                pendingReservationId = null;
+                navigateTo(ResDetailFragment.newInstance(r), true);
+                return;
+            }
+        }
+        if (pendingReservationLookup) return;
+        pendingReservationLookup = true; // not loaded yet (cold start): look once, give up if it is not this user's
+        String wanted = pendingReservationId;
+        MobileRepository.getInstance().loadReservations(new MobileRepository.Callback<java.util.List<Reservation>>() {
+            @Override public void onSuccess(java.util.List<Reservation> value) {
+                boolean mine = false;
+                for (Reservation r : value) if (wanted.equals(r.getId())) mine = true;
+                if (!mine && wanted.equals(pendingReservationId)) pendingReservationId = null; // another account's
+                else openPendingReservation(); // still waits for the unlock if the app is locked
+            }
+            @Override public void onError(com.restaurant.viettable.network.ApiException error) { pendingReservationLookup = false; }
+        });
     }
 
     @Override
@@ -143,7 +206,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     }
 
     @Override
-    public void onAppUnlocked() { hideAppLock(); }
+    public void onAppUnlocked() { hideAppLock(); openPendingReservation(); }
 
     @Override
     public void onLockLoggedOut() {
@@ -156,6 +219,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         super.onResumeFragments();
         if (pendingExpiredSession) showExpiredSession();
         else if (pendingReset != null) resetTo(pendingReset);
+        openPendingReservation();
     }
 
     private boolean pendingExpiredSession;
@@ -249,6 +313,8 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
             ft.addToBackStack(null);
         }
         ft.commit();
+        // Splash/login finished: a tapped reminder can now open its reservation.
+        if (pendingReservationId != null) binding.getRoot().post(this::openPendingReservation);
     }
 
     @Override

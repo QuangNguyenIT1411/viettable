@@ -58,6 +58,10 @@ android {
         // Test build only: gradlew ... -PVIETTABLE_APP_LOCK_SECONDS=30
         def appLockSeconds = providers.gradleProperty('VIETTABLE_APP_LOCK_SECONDS').orElse('0').get().trim().toLong()
         buildConfigField 'long', 'APP_LOCK_TIMEOUT_OVERRIDE_MS', "${appLockSeconds * 1000L}L"
+        // Booking reminders, minutes before the reserved time. Test build only: -PVIETTABLE_REMINDER_MINUTES=3,1
+        def reminderMinutes = providers.gradleProperty('VIETTABLE_REMINDER_MINUTES').orElse('60,15').get().trim()
+        if (!(reminderMinutes ==~ /\d{1,4}(,\d{1,4})*/)) throw new GradleException('VIETTABLE_REMINDER_MINUTES must look like 60,15')
+        buildConfigField 'String', 'REMINDER_MINUTES', groovy.json.JsonOutput.toJson(reminderMinutes)
     }
 
     buildTypes {
@@ -116,6 +120,7 @@ dependencies {
     implementation libs.credentials.play.services.auth
     implementation libs.google.id
     implementation libs.biometric
+    implementation libs.work.runtime
     testImplementation libs.junit
     // Real org.json on the JVM so unit tests see JSON null the way the app must handle it.
     testImplementation 'org.json:json:20240303'

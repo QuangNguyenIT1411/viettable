@@ -219,16 +219,21 @@ public class AppStateManager {
     }
 
     public void replaceReservations(List<Reservation> values) {
-        reservations.clear(); reservations.addAll(values); notifyStateChanged();
+        reservations.clear(); reservations.addAll(values);
+        com.restaurant.viettable.reminder.ReservationReminders.sync(reservations);
+        notifyStateChanged();
     }
 
     public void replaceVouchers(List<Voucher> values) { vouchers.clear(); vouchers.addAll(values); notifyStateChanged(); }
 
     public void upsertReservation(Reservation value) {
-        for (int i = 0; i < reservations.size(); i++) if (reservations.get(i).getId().equals(value.getId())) {
-            reservations.set(i, value); notifyStateChanged(); return;
+        boolean replaced = false;
+        for (int i = 0; i < reservations.size() && !replaced; i++) if (reservations.get(i).getId().equals(value.getId())) {
+            reservations.set(i, value); replaced = true;
         }
-        reservations.add(0, value); notifyStateChanged();
+        if (!replaced) reservations.add(0, value);
+        com.restaurant.viettable.reminder.ReservationReminders.sync(reservations); // booked, changed or cancelled
+        notifyStateChanged();
     }
 
     public void addServerOrder(Order order) {

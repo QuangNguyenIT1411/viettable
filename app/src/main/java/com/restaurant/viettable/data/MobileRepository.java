@@ -1349,6 +1349,7 @@ public final class MobileRepository {
     }
 
     public void clearLocalSession() {
+        com.restaurant.viettable.reminder.ReservationReminders.clearAll();
         BiometricTokenStore.getInstance().forgetSession();
         state.useBranchScope(null);
         SignalRManager.getInstance().stopAndClear();
