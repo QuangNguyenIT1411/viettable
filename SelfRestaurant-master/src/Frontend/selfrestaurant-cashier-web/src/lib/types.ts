@@ -53,6 +53,9 @@ export type CashierOrderCardDto = {
   customerId?: number | null;
   customerName: string;
   customerCreditPoints: number;
+  /** Đ per point and the redeem step, from the backend's shared loyalty rules (absent on old servers: no redeeming). */
+  pointValueVnd?: number;
+  pointsStep?: number;
   subtotal: number;
   itemCount: number;
   items: CashierOrderItemCardDto[];

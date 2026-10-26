@@ -205,16 +205,12 @@ public sealed class CashierController : ControllerBase
         var usedPoints = 0;
         if (customerSnapshot is not null && requestedPoints > 0)
         {
-            var maxByCustomerBalance = customerSnapshot.LoyaltyPoints;
-            var maxByPolicy = (int)Math.Floor(baseTotal * 0.10m);
-            var maxPointsAllowed = Math.Min(maxByCustomerBalance, maxByPolicy);
-            maxPointsAllowed = (maxPointsAllowed / 1000) * 1000;
-
-            usedPoints = Math.Min(requestedPoints, maxPointsAllowed);
-            usedPoints = (usedPoints / 1000) * 1000;
+            // Same rules as the app (SelfRestaurant.Loyalty.LoyaltyRules): 1 point = 10đ, whole 1.000-point steps,
+            // capped by the balance and by the bill.
+            usedPoints = SelfRestaurant.Loyalty.LoyaltyRules.RedeemablePoints(requestedPoints, customerSnapshot.LoyaltyPoints, baseTotal);
         }
 
-        var pointsDiscount = (decimal)usedPoints;
+        var pointsDiscount = SelfRestaurant.Loyalty.LoyaltyRules.Discount(usedPoints);
         var totalAmount = baseTotal - pointsDiscount;
         if (totalAmount < 0)
         {

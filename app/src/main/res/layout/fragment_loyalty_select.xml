@@ -147,7 +147,7 @@
                             android:layout_width="52dp"
                             android:layout_height="48dp"
                             android:padding="0dp"
-                            android:text="-500"
+                            android:text="−"
                             android:textSize="12sp" />
 
                         <TextView
@@ -166,7 +166,7 @@
                             android:layout_width="52dp"
                             android:layout_height="48dp"
                             android:padding="0dp"
-                            android:text="+500"
+                            android:text="+"
                             android:textSize="12sp" />
                     </LinearLayout>
 

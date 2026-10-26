@@ -285,15 +285,25 @@ export function DashboardPage({ onLogout }: Props) {
 
   const subtotal = activeOrder?.subtotal ?? 0;
   const pointsAvailable = activeOrder?.customerCreditPoints ?? 0;
+  // Points conversion comes from the backend (same rules as the app); without it nothing can be redeemed.
+  const pointValueVnd = activeOrder?.pointValueVnd ?? 0;
+  const pointsStep = activeOrder?.pointsStep ?? 0;
 
   const checkoutPreview = useMemo(() => {
     const rawDiscount = Number(discountAmount || "0");
     const safeDiscount = Number.isFinite(rawDiscount) ? clamp(rawDiscount, 0, subtotal) : 0;
     const baseTotal = Math.max(0, subtotal - safeDiscount);
-    const maxPointsAllowed = Math.floor(Math.min(pointsAvailable, Math.floor(baseTotal * 0.1)) / 1000) * 1000;
+    const canRedeem = pointValueVnd > 0 && pointsStep > 0;
+    // Capped by the balance and by the bill, in whole steps: mirrors LoyaltyRules.RedeemablePoints on the server.
+    const maxPointsAllowed = canRedeem
+      ? Math.floor(Math.min(pointsAvailable, Math.floor(baseTotal / pointValueVnd)) / pointsStep) * pointsStep
+      : 0;
     const rawPoints = Number(pointsUsedInput || "0");
-    const safePoints = Number.isFinite(rawPoints) ? Math.floor(clamp(rawPoints, 0, maxPointsAllowed) / 1000) * 1000 : 0;
-    const total = Math.max(0, subtotal - safeDiscount - safePoints);
+    const safePoints = canRedeem && Number.isFinite(rawPoints)
+      ? Math.floor(clamp(rawPoints, 0, maxPointsAllowed) / pointsStep) * pointsStep
+      : 0;
+    const pointsDiscount = safePoints * pointValueVnd;
+    const total = Math.max(0, subtotal - safeDiscount - pointsDiscount);
     const rawPayment = Number(paymentAmount || "0");
     const safePayment = Number.isFinite(rawPayment) ? Math.max(0, rawPayment) : 0;
     const effectivePayment = paymentMethod === "TRANSFER" ? total : safePayment;
@@ -303,11 +313,12 @@ export function DashboardPage({ onLogout }: Props) {
       discount: safeDiscount,
       maxPointsAllowed,
       pointsUsed: safePoints,
+      pointsDiscount,
       total,
       paymentAmount: effectivePayment,
       changeAmount,
     };
-  }, [discountAmount, paymentAmount, paymentMethod, pointsAvailable, pointsUsedInput, subtotal]);
+  }, [discountAmount, paymentAmount, paymentMethod, pointValueVnd, pointsAvailable, pointsStep, pointsUsedInput, subtotal]);
 
   useEffect(() => {
     if (!activeOrder) {
@@ -461,7 +472,7 @@ export function DashboardPage({ onLogout }: Props) {
         paidTime: new Date().toISOString(),
         subtotal: activeOrder.subtotal,
         discount: checkoutPreview.discount,
-        pointsDiscount: checkoutPreview.pointsUsed,
+        pointsDiscount: checkoutPreview.pointsDiscount,
         items: activeOrder.items.map((item) => ({ ...item })),
         paymentMethod,
         paymentAmount: checkoutPreview.paymentAmount,
@@ -738,7 +749,7 @@ export function DashboardPage({ onLogout }: Props) {
               {checkoutPreview.pointsUsed > 0 ? (
                 <div className="total-row">
                   <span>Giảm bằng điểm:</span>
-                  <strong>-{checkoutPreview.pointsUsed.toLocaleString("vi-VN")} đ</strong>
+                  <strong>-{checkoutPreview.pointsDiscount.toLocaleString("vi-VN")} đ</strong>
                 </div>
               ) : null}
               <div className="total-row grand-total">
@@ -754,12 +765,13 @@ export function DashboardPage({ onLogout }: Props) {
                   <span className="credit-amount">{pointsAvailable.toLocaleString("vi-VN")} điểm</span>
                 </div>
                 <label>
-                  Sử dụng điểm (1 điểm = 1 đ):
+                  Sử dụng điểm (1 điểm = {pointValueVnd.toLocaleString("vi-VN")} đ):
                   <input
                     className="points-input"
                     type="number"
                     min="0"
                     max={checkoutPreview.maxPointsAllowed}
+                    step={pointsStep || undefined}
                     value={pointsUsedInput}
                     onChange={(event) => setPointsUsedInput(event.target.value)}
                   />

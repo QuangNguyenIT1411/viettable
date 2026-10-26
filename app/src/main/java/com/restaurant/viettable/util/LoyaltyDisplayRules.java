@@ -34,6 +34,32 @@ public final class LoyaltyDisplayRules {
         return null;
     }
 
+    /** Server's points conversion: dong per point and the redeem step (1.000 points). */
+    public static final class Conversion {
+        public final long valueVnd;
+        public final long step;
+
+        private Conversion(long valueVnd, long step) {
+            this.valueVnd = valueVnd;
+            this.step = step;
+        }
+
+        /** Null unless the server sent both numbers. */
+        @Nullable
+        public static Conversion of(long valueVnd, long step) {
+            return valueVnd > 0 && step > 0 ? new Conversion(valueVnd, step) : null;
+        }
+
+        /** The most points this balance can redeem: whole steps only (1.500 points -> 1.000). */
+        public long usable(long balance) {
+            return balance <= 0 ? 0 : balance / step * step;
+        }
+
+        public long discount(long points) {
+            return Math.max(0, points) * valueVnd;
+        }
+    }
+
     public static String points(long value) {
         return String.format(Locale.GERMANY, "%,d", value);
     }

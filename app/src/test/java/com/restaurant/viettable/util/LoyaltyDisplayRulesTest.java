@@ -48,4 +48,15 @@ public class LoyaltyDisplayRulesTest {
         assertNull(LoyaltyDisplayRules.progressPoints(
                 new LoyaltyInfo(25000, "DIAMOND", "Kim Cương", null, null, 0, 100)));
     }
+
+    @Test
+    public void conversionComesOnlyFromTheServer() {
+        assertNull(LoyaltyDisplayRules.Conversion.of(0, 1000));
+        assertNull(LoyaltyDisplayRules.Conversion.of(10, 0));
+        LoyaltyDisplayRules.Conversion c = LoyaltyDisplayRules.Conversion.of(10, 1000);
+        assertEquals(10_000, c.discount(1000));
+        assertEquals(1000, c.usable(1500));   // whole steps only
+        assertEquals(0, c.usable(999));
+        assertEquals(0, c.discount(-5));
+    }
 }

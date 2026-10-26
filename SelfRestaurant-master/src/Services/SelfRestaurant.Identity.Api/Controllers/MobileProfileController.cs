@@ -162,13 +162,13 @@ public sealed partial class MobileProfileController : ControllerBase
     private static Tier GetTier(int points) => points switch
     {
         >= 20000 => new("DIAMOND", "Kim Cương", 20000, null, null,
-            ["Tích điểm 5% giá trị hóa đơn", "Quà sinh nhật", "Ưu tiên xếp bàn", "Ưu đãi thành viên cao nhất"]),
+            ["Tích 1 điểm cho mỗi 1.000đ thanh toán", "Quà sinh nhật", "Ưu tiên xếp bàn", "Ưu đãi thành viên cao nhất"]),
         >= 5000 => new("GOLD", "Vàng", 5000, "DIAMOND", 20000,
-            ["Tích điểm 5% giá trị hóa đơn", "Quà sinh nhật", "Ưu tiên xếp bàn"]),
+            ["Tích 1 điểm cho mỗi 1.000đ thanh toán", "Quà sinh nhật", "Ưu tiên xếp bàn"]),
         >= 1000 => new("SILVER", "Bạc", 1000, "GOLD", 5000,
-            ["Tích điểm theo hóa đơn", "Ưu đãi dành cho thành viên"]),
+            ["Tích 1 điểm cho mỗi 1.000đ thanh toán", "Ưu đãi dành cho thành viên"]),
         _ => new("MEMBER", "Thành viên", 0, "SILVER", 1000,
-            ["Tích điểm theo hóa đơn"]),
+            ["Tích 1 điểm cho mỗi 1.000đ thanh toán"]),
     };
 
     private static MobileSettingsResponse MapSettings(CustomerSettings settings) => new(

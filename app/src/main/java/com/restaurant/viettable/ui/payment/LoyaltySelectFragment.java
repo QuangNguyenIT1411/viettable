@@ -24,8 +24,8 @@ public class LoyaltySelectFragment extends BaseFragment {
     private long selectedPoints = 0;
     private long maxPoints = 0;
     private boolean balanceKnown;
-    /** Dong per point from the server; 0 = not told, so no conversion is shown (the app never assumes a rate). */
-    private long pointValueVnd = 0;
+    /** Dong per point and redeem step from the server; null = not told, so nothing can be picked (no assumed rate). */
+    @Nullable private com.restaurant.viettable.util.LoyaltyDisplayRules.Conversion conversion;
 
     public static LoyaltySelectFragment newInstance(Voucher voucher) {
         LoyaltySelectFragment f = new LoyaltySelectFragment();
@@ -60,11 +60,11 @@ public class LoyaltySelectFragment extends BaseFragment {
         User user = appStateManager.getCurrentUser();
         if (user != null) setBalance(user.getLoyaltyPoints());
         else showBalanceLoading();
-        com.restaurant.viettable.data.MobileRepository.getInstance().loadPointValueVnd(
-                new com.restaurant.viettable.data.MobileRepository.Callback<Long>() {
-                    @Override public void onSuccess(Long value) {
-                        pointValueVnd = value == null ? 0 : value;
-                        if (binding != null) { showMoneyEquivalent(); updatePointsUI(); }
+        com.restaurant.viettable.data.MobileRepository.getInstance().loadPointsConversion(
+                new com.restaurant.viettable.data.MobileRepository.Callback<com.restaurant.viettable.util.LoyaltyDisplayRules.Conversion>() {
+                    @Override public void onSuccess(com.restaurant.viettable.util.LoyaltyDisplayRules.Conversion value) {
+                        conversion = value;
+                        if (binding != null) { showQuickButtons(); showMoneyEquivalent(); updatePointsUI(); }
                     }
                     @Override public void onError(com.restaurant.viettable.network.ApiException error) { }
                 });
@@ -76,39 +76,56 @@ public class LoyaltySelectFragment extends BaseFragment {
                     @Override public void onError(com.restaurant.viettable.network.ApiException error) { }
                 });
 
+        // One step = the server's redeem step (1.000 points); no half steps.
         binding.btnMinusPoints.setOnClickListener(v -> {
-            if (selectedPoints >= 500) {
-                selectedPoints -= 500;
+            if (conversion != null && selectedPoints >= conversion.step) {
+                selectedPoints -= conversion.step;
                 updatePointsUI();
             }
         });
 
         binding.btnPlusPoints.setOnClickListener(v -> {
-            if (selectedPoints + 500 <= maxPoints) {
-                selectedPoints += 500;
+            if (conversion != null && selectedPoints + conversion.step <= usablePoints()) {
+                selectedPoints += conversion.step;
                 updatePointsUI();
             }
         });
 
-        binding.btnQuick1000.setOnClickListener(v -> {
-            selectedPoints = Math.min(1000, maxPoints);
-            updatePointsUI();
-        });
-
-        binding.btnQuick2000.setOnClickListener(v -> {
-            selectedPoints = Math.min(2000, maxPoints);
-            updatePointsUI();
-        });
-
+        binding.btnQuick1000.setOnClickListener(v -> pickSteps(1));
+        binding.btnQuick2000.setOnClickListener(v -> pickSteps(2));
         binding.btnQuickMax.setOnClickListener(v -> {
-            selectedPoints = maxPoints;
+            selectedPoints = usablePoints();
             updatePointsUI();
         });
+        showQuickButtons();
 
         binding.btnConfirmPoints.setOnClickListener(v -> {
             showToast("Đã chọn dùng " + selectedPoints + " điểm!");
             navigateTo(InvoiceFragment.newInstanceWithVoucher(selectedVoucher, selectedPoints));
         });
+    }
+
+    /** Whole steps the balance allows (0 until both the balance and the conversion are known). */
+    private long usablePoints() {
+        return conversion == null || !balanceKnown ? 0 : conversion.usable(maxPoints);
+    }
+
+    private void pickSteps(int steps) {
+        if (conversion == null) return;
+        selectedPoints = Math.min(steps * conversion.step, usablePoints());
+        updatePointsUI();
+    }
+
+    /** Quick buttons read "1.000 điểm" / "2.000 điểm" from the server's step; hidden until it is known. */
+    private void showQuickButtons() {
+        boolean known = conversion != null;
+        binding.btnQuick1000.setVisibility(known ? View.VISIBLE : View.GONE);
+        binding.btnQuick2000.setVisibility(known ? View.VISIBLE : View.GONE);
+        if (!known) return;
+        binding.btnQuick1000.setText(String.format(Locale.GERMANY, "%,d điểm", conversion.step));
+        binding.btnQuick2000.setText(String.format(Locale.GERMANY, "%,d điểm", 2 * conversion.step));
+        binding.btnMinusPoints.setText(String.format(Locale.GERMANY, "-%,d", conversion.step));
+        binding.btnPlusPoints.setText(String.format(Locale.GERMANY, "+%,d", conversion.step));
     }
 
     private void showBalanceLoading() {
@@ -121,26 +138,30 @@ public class LoyaltySelectFragment extends BaseFragment {
     private void setBalance(long points) {
         balanceKnown = true;
         maxPoints = Math.max(0, points);
-        selectedPoints = Math.min(selectedPoints, maxPoints);
+        selectedPoints = Math.min(selectedPoints, usablePoints());
         binding.tvAvailablePoints.setText(String.format(Locale.GERMANY, "%,d điểm", maxPoints));
         showMoneyEquivalent();
         updatePointsUI();
     }
 
     private void showMoneyEquivalent() {
-        boolean known = pointValueVnd > 0 && balanceKnown;
+        boolean known = conversion != null && balanceKnown;
         binding.tvAvailableMoneyEquivalent.setVisibility(known ? View.VISIBLE : View.GONE);
-        if (known) binding.tvAvailableMoneyEquivalent.setText(String.format(Locale.GERMANY, "~%,d đ", maxPoints * pointValueVnd));
+        if (known) binding.tvAvailableMoneyEquivalent.setText(String.format(Locale.GERMANY, "~%,d đ",
+                conversion.discount(usablePoints())));
     }
 
     private void updatePointsUI() {
         binding.tvSelectedPoints.setText(String.format(Locale.GERMANY, "%,d điểm", selectedPoints));
-        binding.tvCalculatedDiscount.setVisibility(pointValueVnd > 0 ? View.VISIBLE : View.GONE);
-        if (pointValueVnd > 0) binding.tvCalculatedDiscount.setText(String.format(Locale.GERMANY, "Giảm tương ứng: -%,d đ", selectedPoints * pointValueVnd));
-        // Nothing to confirm until the real balance is known and some points are picked.
-        binding.btnConfirmPoints.setEnabled(balanceKnown && selectedPoints > 0);
-        binding.btnPlusPoints.setEnabled(balanceKnown && selectedPoints + 500 <= maxPoints);
-        binding.btnMinusPoints.setEnabled(selectedPoints >= 500);
+        binding.tvCalculatedDiscount.setVisibility(conversion != null ? View.VISIBLE : View.GONE);
+        if (conversion != null) binding.tvCalculatedDiscount.setText(String.format(Locale.GERMANY,
+                "Giảm tương ứng: -%,d đ", conversion.discount(selectedPoints)));
+        // Nothing to confirm until the real balance and conversion are known and some points are picked.
+        long step = conversion == null ? 0 : conversion.step;
+        binding.btnConfirmPoints.setEnabled(conversion != null && balanceKnown && selectedPoints > 0);
+        binding.btnPlusPoints.setEnabled(step > 0 && selectedPoints + step <= usablePoints());
+        binding.btnMinusPoints.setEnabled(step > 0 && selectedPoints >= step);
+        binding.btnQuickMax.setEnabled(usablePoints() > 0);
     }
 
     @Override

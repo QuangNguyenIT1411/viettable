@@ -519,9 +519,8 @@ public sealed class IdentityController : ControllerBase
         }
 
         var pointsBefore = customer.LoyaltyPoints ?? 0;
-        var pointsUsed = request.PointsUsed < 0 ? 0 : request.PointsUsed;
-        pointsUsed = Math.Min(pointsUsed, pointsBefore);
-        pointsUsed = (pointsUsed / 1000) * 1000;
+        // Shared rules (SelfRestaurant.Loyalty.LoyaltyRules): whole 1.000-point steps, never above the balance.
+        var pointsUsed = SelfRestaurant.Loyalty.LoyaltyRules.SettledPoints(request.PointsUsed, pointsBefore);
 
         var updatedPoints = pointsBefore - pointsUsed;
         if (updatedPoints < 0)
@@ -530,7 +529,7 @@ public sealed class IdentityController : ControllerBase
         }
 
         var amountPaid = request.AmountPaid < 0 ? 0 : request.AmountPaid;
-        var pointsEarned = amountPaid > 0 ? (int)Math.Floor(amountPaid * 0.01m) : 0;
+        var pointsEarned = SelfRestaurant.Loyalty.LoyaltyRules.PointsEarned(amountPaid); // 1 point per 1.000đ paid
 
         customer.LoyaltyPoints = updatedPoints + pointsEarned;
         customer.UpdatedAt = DateTime.Now;

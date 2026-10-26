@@ -32,7 +32,10 @@ public sealed record CashierOrderCardDto(
     int CustomerCreditPoints,
     decimal Subtotal,
     int ItemCount,
-    IReadOnlyList<CashierOrderItemCardDto> Items);
+    IReadOnlyList<CashierOrderItemCardDto> Items,
+    // Points conversion for the cashier web, from the same shared rules the backend uses (1 point = 10đ, steps of 1.000).
+    int PointValueVnd = SelfRestaurant.Loyalty.LoyaltyRules.PointValueVnd,
+    int PointsStep = SelfRestaurant.Loyalty.LoyaltyRules.RedeemStep);
 
 public sealed record CashierBillHistoryItemDto(
     int BillId,
