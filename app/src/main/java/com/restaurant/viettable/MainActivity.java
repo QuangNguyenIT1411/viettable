@@ -401,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         int[] pos = new int[2];
         binding.bottomNav.getLocationInWindow(nav);
         icon.getLocationInWindow(pos);
-        float gap = 2 * getResources().getDisplayMetrics().density;
+        float gap = 5 * getResources().getDisplayMetrics().density;
         float x = pos[0] - nav[0] + (icon.getWidth() - binding.navDot.getWidth()) / 2f;
         float y = pos[1] - nav[1] + icon.getHeight() + gap;
         float alpha = itemId == R.id.nav_qr ? 0f : 1f; // the raised yellow button already marks the QR tab

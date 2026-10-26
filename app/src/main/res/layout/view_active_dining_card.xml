@@ -1,23 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Seated at a table (Trang chủ, Đơn hàng, Tôi): surface card with a mint edge, solid status pill,
+     yellow "Gọi thêm", ghost "Theo dõi", red "Thanh toán". -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardActiveDining"
-    style="@style/Widget.VietTable.Card.ActiveDining"
+    style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
+    android:layout_marginHorizontal="@dimen/pd_screen_margin"
+    android:layout_marginTop="20dp"
+    android:layout_marginBottom="4dp"
     android:clickable="true"
-    android:focusable="true">
+    android:focusable="true"
+    app:cardBackgroundColor="@color/pd_surface"
+    app:cardCornerRadius="@dimen/pd_radius_card"
+    app:strokeColor="@color/pd_mint"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <!-- Header: Table, Status Badge, Branch -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -28,41 +35,33 @@
                 android:id="@+id/tvDiningTable"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
-                android:fontFamily="@font/bricolage_bold"
-                android:text=""
-                android:textColor="@color/text_primary"
-                android:textSize="16sp" />
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                tools:text="Bàn 5 • Chi nhánh Quận 1" />
 
             <TextView
                 android:id="@+id/tvDiningBadge"
+                style="@style/Widget.VietTable.StatusPill.Solid"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_status_badge"
-                android:backgroundTint="@color/pd_mint_soft"
-                android:fontFamily="@font/bricolage_bold"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="4dp"
-                android:text="@string/active_dining_badge"
-                android:textColor="@color/primary"
-                android:textSize="11sp" />
+                android:backgroundTint="@color/pd_mint"
+                android:text="@string/active_dining_badge" />
         </LinearLayout>
 
-        <!-- Subtitle: Orders status -->
         <TextView
             android:id="@+id/tvDiningOrdersSummary"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text=""
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+            android:textColor="@color/pd_muted"
+            tools:text="1 đợt gọi món đang xử lý • Bắt đầu lúc 19:02" />
 
-        <!-- Action Buttons Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="16dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -74,44 +73,41 @@
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:padding="0dp"
+                android:maxLines="1"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:text="@string/active_dining_action_order"
-                android:textSize="12sp"
-                app:cornerRadius="10dp" />
-
-            <View
-                android:layout_width="8dp"
-                android:layout_height="1dp" />
+                android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDiningTrack"
-                style="@style/Widget.VietTable.Button.OutlinedLight"
+                style="@style/Widget.VietTable.Button.Ghost"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:padding="0dp"
+                android:maxLines="1"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:text="@string/active_dining_action_track"
-                android:textSize="12sp"
-                app:cornerRadius="10dp" />
-
-            <View
-                android:layout_width="8dp"
-                android:layout_height="1dp" />
+                android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDiningPay"
-                style="@style/Widget.VietTable.Button.Gold"
+                style="@style/Widget.VietTable.Button.Red"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:padding="0dp"
+                android:maxLines="1"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp"
                 android:text="@string/active_dining_action_pay"
-                android:textSize="12sp"
-                app:cornerRadius="10dp" />
+                android:textSize="14sp" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

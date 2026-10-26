@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft red/orange glow behind the screen title (DESIGN_PHO_DEM.md section 2: blurred circle, 15-30%). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="50%"
+        android:centerColor="#47FF5B3A"
+        android:startColor="#B3FF5B3A"
+        android:endColor="#00FF5B3A" />
+</shape>

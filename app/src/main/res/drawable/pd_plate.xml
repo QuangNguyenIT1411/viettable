@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cream plate rim around a dish photo (DESIGN_PHO_DEM.md section 5 "Đĩa món"). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/pd_cream" />
+</shape>

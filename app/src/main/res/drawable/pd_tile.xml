@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quick action tile: surface_2 square, 22dp corners. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/pd_ripple">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/pd_surface_2" />
+            <corners android:radius="@dimen/pd_radius_row" />
+        </shape>
+    </item>
+</ripple>

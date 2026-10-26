@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Phố đêm" dish card (DESIGN_PHO_DEM.md section 5 "Thẻ món"): round plate spilling over the top edge,
+     name, yellow price and a round yellow "+" button. Same view IDs as item_food_card so FoodAdapter binds both. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="14dp"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:paddingHorizontal="6dp">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardFood"
+        style="@style/Widget.VietTable.Card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/pd_food_plate_overflow"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/pd_surface"
+        app:cardCornerRadius="@dimen/pd_radius_card"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="82dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="14dp">
+
+            <TextView
+                android:id="@+id/tvFoodName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                android:textColor="@color/pd_cream"
+                tools:text="Bún chả Hà Nội" />
+
+            <LinearLayout
+                android:id="@+id/layoutFoodRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="13dp"
+                    android:layout_height="13dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_star"
+                    app:tint="@color/pd_yellow" />
+
+                <TextView
+                    android:id="@+id/tvFoodRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted"
+                    tools:text="4.8" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvFoodSoldOut"
+                style="@style/Widget.VietTable.StatusPill.Solid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:backgroundTint="@color/pd_red"
+                android:text="@string/pd_sold_out"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvFoodPrice"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.VietTable.Price"
+                    tools:text="65K" />
+
+                <ImageButton
+                    android:id="@+id/btnAddFood"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/pd_circle_yellow"
+                    android:contentDescription="@string/pd_add_to_cart"
+                    android:padding="11dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_add"
+                    app:tint="@color/pd_on_color" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Plate: cream rim + round photo, raised above the card and spilling over its top edge. -->
+    <FrameLayout
+        android:id="@+id/plateFood"
+        android:layout_width="@dimen/pd_food_plate"
+        android:layout_height="@dimen/pd_food_plate"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/pd_plate"
+        android:elevation="8dp"
+        android:outlineSpotShadowColor="@color/black"
+        android:padding="9dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivFoodImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/pd_plate_empty"
+            android:contentDescription="@null"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+    </FrameLayout>
+
+    <ImageView
+        android:id="@+id/btnFavorite"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/a11y_add_favorite"
+        android:elevation="1dp"
+        android:focusable="true"
+        android:padding="11dp"
+        android:src="@drawable/ic_favorite_border"
+        app:tint="@color/pd_red" />
+</FrameLayout>

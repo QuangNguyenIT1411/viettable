@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/pd_ripple">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/pd_surface" />
+            <corners android:radius="@dimen/pd_radius_input" />
+            <stroke android:width="1dp" android:color="@color/pd_line" />
+        </shape>
+    </item>
+</ripple>

@@ -1,8 +1,10 @@
 package com.restaurant.viettable.ui.home;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +13,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,12 +37,19 @@ import com.restaurant.viettable.ui.preorder.PreorderMenuFragment;
 import com.restaurant.viettable.ui.reservation.ResDetailFragment;
 import com.restaurant.viettable.ui.session.DineinMenuFragment;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.HomeDisplayRules;
+import com.restaurant.viettable.util.ImageLoader;
+import com.restaurant.viettable.util.PdMotion;
+import com.restaurant.viettable.util.SafeText;
 import com.restaurant.viettable.network.ApiException;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class HomeFragment extends BaseFragment implements AppStateManager.StateChangeListener {
+
+    /** Dishes in the "Thực đơn hôm nay" grid; the rest of the menu follows in a horizontal row. */
+    private static final int HOME_GRID_SIZE = 6;
 
     private FragmentHomeBinding binding;
     private boolean loadingBranches;
@@ -66,16 +77,28 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         setupViews();
         binding.btnRetryCatalog.setOnClickListener(v -> loadCatalog(true));
         loadCatalog(false);
+        PdMotion.enterBlocks(binding.layoutHomeContent, 8);
     }
 
     private void setupViews() {
         if (binding == null) return;
         long renderStarted = SystemClock.elapsedRealtime();
 
-        // 1. Header Branch
+        // 1. Top row: branch chip ("Bàn X · " and a mint dot while seated), search, bell; greeting
         Branch branch = appStateManager.getSelectedBranch();
         if (branch != null) branchError = null;
         binding.tvHeaderBranchName.setText(branch == null ? getString(R.string.catalog_select_branch) : branch.getName());
+        DiningSession seated = appStateManager.getActiveDiningSession();
+        String table = seated == null || seated.getStatus() == DiningSession.Status.CLOSED
+                || seated.getStatus() == DiningSession.Status.CANCELLED ? "" : SafeText.clean(seated.getTableLabel());
+        boolean atTable = !table.isEmpty();
+        binding.tvHeaderTable.setVisibility(atTable ? View.VISIBLE : View.GONE);
+        binding.tvHeaderTable.setText(atTable ? getString(R.string.pd_home_at_table, table) : "");
+        // "Bàn X · " already sits after the dot, so the branch name follows it without a gap.
+        ((LinearLayout.LayoutParams) binding.tvHeaderBranchName.getLayoutParams())
+                .setMarginStart(atTable ? 0 : (int) (10 * getResources().getDisplayMetrics().density));
+        binding.viewHeaderDot.setBackgroundTintList(ColorStateList.valueOf(
+                ContextCompat.getColor(requireContext(), atTable ? R.color.pd_mint : R.color.pd_dim)));
         binding.btnHeaderBranch.setOnClickListener(v -> navigateTo(new ChangeBranchFragment()));
         binding.btnHeaderSearch.setOnClickListener(v -> navigateTo(new SearchFragment()));
         binding.btnHeaderNotification.setOnClickListener(v -> navigateTo(new NotificationFragment()));
@@ -86,6 +109,10 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         binding.btnHeaderNotification.setContentDescription(badge == null ? getString(R.string.a11y_notifications)
                 : getString(R.string.a11y_notifications) + ", " + badge + " chưa đọc");
         binding.btnHomeSearchBox.setOnClickListener(v -> navigateTo(new SearchFragment()));
+        User user = appStateManager.getCurrentUser();
+        String name = HomeDisplayRules.greetingName(user == null ? null : user.getFullName());
+        binding.tvHomeGreeting.setText(name.isEmpty() ? getString(R.string.pd_home_greeting_guest)
+                : getString(R.string.pd_home_greeting, name));
 
         // 2. Active Dining Session Card (Screen 15)
         ActiveDiningCardBinder.bind(binding.layoutActiveDining, appStateManager.getActiveDiningSession(), new ActiveDiningCardBinder.OnActionListener() {
@@ -116,12 +143,16 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
 
         if (upcomingRes != null) {
             binding.cardUpcomingReservation.setVisibility(View.VISIBLE);
-            binding.tvResCode.setText("#" + upcomingRes.getId());
-            binding.tvResDateTime.setText(upcomingRes.getTimeSlot() + " • " + DisplayFormatters.date(upcomingRes.getDate())
-                    + " • " + upcomingRes.getGuestCount() + " khách • " + upcomingRes.getTableLabel());
-            binding.tvResBranchName.setText(upcomingRes.getBranchName());
+            binding.tvResCode.setText("Mã đặt bàn #" + upcomingRes.getId());
+            binding.tvResDateTime.setText(upcomingRes.getTimeSlot() + " · " + DisplayFormatters.date(upcomingRes.getDate()));
+            binding.tvResBranchName.setText(SafeText.join(" · ", upcomingRes.getGuestCount() + " khách",
+                    upcomingRes.getTableLabel(), upcomingRes.getBranchName()));
+            binding.tvResStatus.setText(upcomingRes.getStatusDisplayText());
+            binding.tvResStatus.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(),
+                    upcomingRes.getStatus() == Reservation.Status.CONFIRMED ? R.color.pd_mint : R.color.pd_yellow)));
 
             final Reservation resToOpen = upcomingRes;
+            binding.cardUpcomingReservation.setOnClickListener(v -> navigateTo(ResDetailFragment.newInstance(resToOpen)));
             binding.btnViewResDetail.setOnClickListener(v -> navigateTo(ResDetailFragment.newInstance(resToOpen)));
             binding.btnResPreOrder.setOnClickListener(v -> navigateTo(PreorderMenuFragment.newInstance(resToOpen)));
             // Ordering ahead opens once the restaurant has confirmed the booking.
@@ -208,33 +239,31 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
                 : error != null ? error : appStateManager.getSelectedBranch() == null
                 ? getString(R.string.catalog_select_branch) : getString(R.string.catalog_empty));
         binding.btnRetryCatalog.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        binding.layoutFeaturedHeader.setVisibility(empty ? View.GONE : View.VISIBLE);
     }
 
     private void setupCategories() {
         binding.layoutCategoryChips.removeAllViews();
-        List<Category> categories = appStateManager.getCategories();
-        int padH = (int) (16 * getResources().getDisplayMetrics().density);
-        int padV = (int) (8 * getResources().getDisplayMetrics().density);
         int marginEnd = (int) (10 * getResources().getDisplayMetrics().density);
-
-        for (Category cat : categories) {
-            TextView chip = new TextView(getContext());
-            chip.setText(cat.getName());
-            chip.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.text_primary));
-            chip.setTextSize(13);
-            chip.setTypeface(null, android.graphics.Typeface.BOLD);
-            chip.setBackgroundResource(R.drawable.bg_category_chip);
-            chip.setPadding(padH, padV, padH, padV);
-
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
-            );
-            lp.setMargins(0, 0, marginEnd, 0);
-            chip.setLayoutParams(lp);
-
-            chip.setOnClickListener(v -> navigateTo(CategoryFragment.newInstance(cat)));
-            binding.layoutCategoryChips.addView(chip);
+        // "Tất cả" opens the whole menu; each category opens its own list (same destinations as before).
+        addCategoryChip(getString(R.string.pd_home_all), true, marginEnd, v -> navigateTo(new MenuFragment()));
+        for (Category cat : appStateManager.getCategories()) {
+            addCategoryChip(cat.getName(), false, marginEnd, v -> navigateTo(CategoryFragment.newInstance(cat)));
         }
+    }
+
+    private void addCategoryChip(String label, boolean selected, int marginEnd, View.OnClickListener onClick) {
+        int style = selected ? R.style.Widget_VietTable_HomeChip_Selected : R.style.Widget_VietTable_HomeChip;
+        TextView chip = new TextView(new ContextThemeWrapper(requireContext(), style), null, 0, style);
+        chip.setText(label);
+        chip.setClickable(true);
+        chip.setFocusable(true);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.setMarginEnd(marginEnd);
+        chip.setLayoutParams(lp);
+        chip.setOnClickListener(onClick);
+        binding.layoutCategoryChips.addView(chip);
     }
 
     private void setupFoodRecyclers() {
@@ -258,19 +287,47 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
             }
         };
 
-        // Featured: foods with high rating
-        binding.rvFeaturedFoods.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        binding.rvFeaturedFoods.setAdapter(new FoodAdapter(allFoods, foodListener));
+        // Today's menu: 2-column plate grid, dishes on sale first (the whole menu is one tap away via "Xem hết").
+        List<FoodItem> menu = HomeDisplayRules.onSaleFirst(allFoods);
+        List<FoodItem> today = HomeDisplayRules.firstN(menu, HOME_GRID_SIZE);
+        binding.rvFeaturedFoods.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        PdMotion.staggerCards(binding.rvFeaturedFoods);
+        binding.rvFeaturedFoods.setAdapter(new FoodAdapter(today, foodListener, R.layout.item_food_plate));
 
-        // Best Sellers: reverse sublist
-        List<FoodItem> bestSellers = new ArrayList<>(allFoods);
-        java.util.Collections.reverse(bestSellers);
-        binding.rvBestSellers.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        binding.rvBestSellers.setAdapter(new FoodAdapter(bestSellers, foodListener));
+        // Most ordered: the menu API carries no sales counts yet, so the section stays hidden instead of guessing.
+        List<FoodItem> best = HomeDisplayRules.bestSellers(allFoods, 4);
+        binding.rvBestSellers.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        binding.rvBestSellers.setAdapter(new FoodAdapter(best, foodListener, R.layout.item_food_plate));
+        binding.layoutBestHeader.setVisibility(best.isEmpty() ? View.GONE : View.VISIBLE);
+        binding.rvBestSellers.setVisibility(best.isEmpty() ? View.GONE : View.VISIBLE);
 
-        // Recommendations
+        // The rest of the menu in a horizontal row.
+        List<FoodItem> more = new ArrayList<>(menu.subList(today.size(), menu.size()));
         binding.rvRecommendations.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        binding.rvRecommendations.setAdapter(new FoodAdapter(allFoods, foodListener));
+        binding.rvRecommendations.setAdapter(new FoodAdapter(more, foodListener, R.layout.item_food_plate));
+        binding.layoutRecommendHeader.setVisibility(more.isEmpty() ? View.GONE : View.VISIBLE);
+        binding.rvRecommendations.setVisibility(more.isEmpty() ? View.GONE : View.VISIBLE);
+
+        bindChefSpecial(allFoods);
+    }
+
+    /** Red "Món của bếp hôm nay" card: the dish Admin marked as today's special; hidden when there is none. */
+    private void bindChefSpecial(List<FoodItem> foods) {
+        FoodItem pick = HomeDisplayRules.chefPick(foods);
+        binding.layoutChefSpecial.setVisibility(pick == null ? View.GONE : View.VISIBLE);
+        if (pick == null) return;
+        binding.tvChefDishName.setText(pick.getName());
+        String meta = SafeText.clean(pick.getDescription());
+        binding.tvChefDishMeta.setText(meta);
+        binding.tvChefDishMeta.setVisibility(meta.isEmpty() ? View.GONE : View.VISIBLE);
+        binding.tvChefPrice.setText(HomeDisplayRules.shortPrice(pick.getPrice()));
+        binding.tvChefPrice.setContentDescription(pick.getFormattedPrice());
+        ImageLoader.getInstance().load(pick, binding.ivChefImage);
+        binding.ivChefImage.setBackgroundResource(R.drawable.pd_plate_empty); // round, not the loader's square backdrop
+        View.OnClickListener open = v -> navigateTo(FoodDetailFragment.newInstance(pick));
+        binding.cardChefSpecial.setOnClickListener(open);
+        binding.btnChefOrder.setOnClickListener(open);
+        binding.btnChefOrder.setContentDescription(getString(R.string.pd_home_chef_order) + " " + pick.getName());
     }
 
     private void refreshVisibleFavorites(RecyclerView list) {

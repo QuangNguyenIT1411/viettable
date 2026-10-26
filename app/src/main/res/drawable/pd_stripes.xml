@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Faint diagonal stripes (on_color 7%) for the red "Món của bếp" card. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="200dp"
+    android:viewportWidth="360"
+    android:viewportHeight="200">
+    <path android:fillColor="#121A120C"
+        android:pathData="M120,200 L180,0 L210,0 L150,200Z M180,200 L240,0 L270,0 L210,200Z M240,200 L300,0 L330,0 L270,200Z M300,200 L360,0 L360,40 L330,200Z" />
+</vector>

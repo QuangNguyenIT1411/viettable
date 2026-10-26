@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark "Gọi ngay" pill on the red chef card. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/pd_ripple">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/pd_on_color" />
+            <corners android:radius="999dp" />
+        </shape>
+    </item>
+</ripple>

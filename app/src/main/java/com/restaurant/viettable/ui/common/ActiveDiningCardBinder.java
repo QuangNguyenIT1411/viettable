@@ -28,20 +28,12 @@ public class ActiveDiningCardBinder {
 
         if (session.getStatus() == DiningSession.Status.PAYMENT_REQUESTED) {
             binding.tvDiningBadge.setText("Đang yêu cầu thanh toán");
-            binding.tvDiningBadge.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
-            binding.tvDiningBadge.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(0xFFFFF3E0)
-            );
-            binding.tvDiningBadge.setTextColor(0xFFD84315);
+            tintBadge(binding, com.restaurant.viettable.R.color.pd_yellow);
             binding.btnDiningOrderMore.setEnabled(true);
             binding.btnDiningOrderMore.setAlpha(0.8f);
         } else {
             binding.tvDiningBadge.setText("Đang dùng bữa");
-            binding.tvDiningBadge.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
-            binding.tvDiningBadge.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(0xFFE8F5E9)
-            );
-            binding.tvDiningBadge.setTextColor(0xFF2E7D5B);
+            tintBadge(binding, com.restaurant.viettable.R.color.pd_mint);
             binding.btnDiningOrderMore.setEnabled(true);
             binding.btnDiningOrderMore.setAlpha(1.0f);
         }
@@ -81,5 +73,14 @@ public class ActiveDiningCardBinder {
         binding.btnDiningPay.setOnClickListener(v -> {
             if (listener != null) listener.onPayClicked();
         });
+    }
+
+    /** Solid pill: yellow while waiting for payment, mint while dining (DESIGN_PHO_DEM.md section 5). */
+    private static void tintBadge(ViewActiveDiningCardBinding binding, int colorRes) {
+        android.content.Context context = binding.getRoot().getContext();
+        binding.tvDiningBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                androidx.core.content.ContextCompat.getColor(context, colorRes)));
+        binding.tvDiningBadge.setTextColor(androidx.core.content.ContextCompat.getColor(
+                context, com.restaurant.viettable.R.color.pd_on_color));
     }
 }

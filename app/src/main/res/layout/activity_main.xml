@@ -57,7 +57,7 @@
         android:contentDescription="@string/nav_qr"
         android:elevation="18dp"
         android:outlineSpotShadowColor="@color/black"
-        android:padding="16dp"
+        android:padding="22dp"
         android:scaleType="fitCenter"
         android:src="@drawable/ic_qr_scan"
         android:translationY="@dimen/pd_nav_qr_lift_negative"

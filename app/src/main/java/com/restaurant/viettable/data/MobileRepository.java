@@ -1413,11 +1413,13 @@ public final class MobileRepository {
         if (rows != null) for (int i = 0; i < rows.length(); i++)
             ingredients.add(SafeText.json(rows.optJSONObject(i), "name"));
         String image = api().absoluteUrl(SafeText.json(dish, "image"));
-        return new FoodItem(String.valueOf(dish.optInt("dishId")), categoryId, branchId,
+        FoodItem food = new FoodItem(String.valueOf(dish.optInt("dishId")), categoryId, branchId,
                 SafeText.json(dish, "name"), Math.round(dish.optDouble("price")), 0, 0,
                 SafeText.json(dish, "description"), String.join(", ", ingredients), "", "", 0,
                 dish.optBoolean("available", true), false, Collections.singletonList("Tiêu chuẩn"),
                 new ArrayList<>(), image, 0);
+        food.setDailySpecial(dish.optBoolean("isDailySpecial", false));
+        return food;
     }
 
     private User parseTokenUser(JSONObject row) {

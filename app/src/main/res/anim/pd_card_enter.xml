@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One dish card entering: slide up ~24dp (12% of a card) + fade, 320ms decelerate (DESIGN_PHO_DEM.md section 7). -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="320"
+    android:interpolator="@android:anim/decelerate_interpolator">
+    <translate android:fromYDelta="12%" android:toYDelta="0" />
+    <alpha android:fromAlpha="0" android:toAlpha="1" />
+</set>

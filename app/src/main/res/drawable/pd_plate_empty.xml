@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dish without a photo: surface_2 with a cream bowl icon. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/pd_surface_2" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/ic_cutlery" android:gravity="center"
+        android:width="28dp" android:height="28dp" />
+</layer-list>

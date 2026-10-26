@@ -124,7 +124,13 @@
         <item name="android:textAllCaps">false</item>
     </style>
 
+    <!-- Bricolage comes in through the default text appearance, not android:fontFamily/fontFamily on the view style:
+         a view-style font beats every textAppearance and layout font, which kept Unbounded off all titles and prices. -->
     <style name="Widget.VietTable.TextView" parent="Widget.MaterialComponents.TextView">
+        <item name="android:textAppearance">@style/TextAppearance.VietTable.Default</item>
+    </style>
+
+    <style name="TextAppearance.VietTable.Default" parent="TextAppearance.AppCompat.Small">
         <item name="android:fontFamily">@font/bricolage</item>
         <item name="fontFamily">@font/bricolage</item>
     </style>
@@ -371,10 +377,11 @@
         <item name="itemTextAppearanceActive">@style/TextAppearance.VietTable.BottomNav.Label.Active</item>
         <item name="itemTextAppearanceActiveBoldEnabled">false</item>
         <item name="itemRippleColor">@color/transparent</item>
-        <item name="itemPaddingTop">10dp</item>
-        <item name="itemPaddingBottom">8dp</item>
-        <item name="activeIndicatorLabelPadding">4dp</item>
-        <item name="labelVisibilityMode">labeled</item>
+        <!-- Icons only, as in the design (P02); tab titles stay as the spoken labels. -->
+        <item name="labelVisibilityMode">unlabeled</item>
+        <item name="itemIconSize">26dp</item>
+        <item name="itemPaddingTop">0dp</item>
+        <item name="itemPaddingBottom">0dp</item>
         <item name="elevation">16dp</item>
     </style>
 
@@ -603,5 +610,119 @@
         <item name="android:buttonBarPositiveButtonStyle">@style/Widget.VietTable.Dialog.Button.Positive</item>
         <item name="android:buttonBarNegativeButtonStyle">@style/Widget.VietTable.Dialog.Button.Negative</item>
         <item name="android:buttonBarNeutralButtonStyle">@style/Widget.VietTable.Dialog.Button.Neutral</item>
+    </style>
+
+    <!-- Round dish photos (the cream rim is the parent's background). -->
+    <style name="ShapeAppearance.VietTable.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Solid status pill as drawn in the design (P04): coloured fill, on_color text. -->
+    <style name="Widget.VietTable.StatusPill.Solid" parent="Widget.VietTable.StatusPill">
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">5dp</item>
+        <item name="android:paddingBottom">5dp</item>
+        <item name="android:fontFamily">@font/bricolage_semibold</item>
+        <item name="android:textColor">@color/pd_on_color</item>
+        <item name="android:backgroundTint">@color/pd_yellow</item>
+    </style>
+
+    <!-- Category chip on Trang chủ (section 5 "Chip lọc"). -->
+    <style name="Widget.VietTable.HomeChip" parent="">
+        <item name="android:background">@drawable/pd_chip_idle</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:fontFamily">@font/bricolage_semibold</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/pd_muted</item>
+    </style>
+
+    <style name="Widget.VietTable.HomeChip.Selected">
+        <item name="android:background">@drawable/pd_chip_selected</item>
+        <item name="android:textColor">@color/pd_on_color</item>
+    </style>
+
+    <!-- Trang chủ quick action: small surface_2 tile with a label underneath. -->
+    <style name="Widget.VietTable.HomeTile" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+    </style>
+
+    <style name="Widget.VietTable.HomeTile.Icon" parent="">
+        <item name="android:layout_width">60dp</item>
+        <item name="android:layout_height">60dp</item>
+        <item name="android:background">@drawable/pd_tile</item>
+        <item name="android:padding">17dp</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="tint">@color/pd_yellow</item>
+    </style>
+
+    <style name="Widget.VietTable.HomeTile.Label" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:textAppearance">@style/TextAppearance.VietTable.Caption</item>
+        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <!-- Trang chủ section heading: Display.M title + optional yellow "Xem hết". -->
+    <style name="Widget.VietTable.HomeSectionHeader" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/pd_screen_margin</item>
+        <item name="android:layout_marginEnd">@dimen/pd_screen_margin</item>
+        <item name="android:layout_marginTop">30dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="Widget.VietTable.HomeSectionHeader.Title" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:accessibilityHeading">true</item>
+        <item name="android:textAppearance">@style/TextAppearance.VietTable.Display.M</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="Widget.VietTable.HomeSectionHeader.Link" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:textAppearance">@style/TextAppearance.VietTable.Body</item>
+        <item name="android:fontFamily">@font/bricolage_semibold</item>
+        <item name="android:textColor">@color/pd_yellow</item>
+    </style>
+
+    <style name="Widget.VietTable.HomeGrid" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:paddingStart">18dp</item>
+        <item name="android:paddingEnd">18dp</item>
+        <item name="android:clipToPadding">false</item>
+        <item name="android:nestedScrollingEnabled">false</item>
+        <item name="android:overScrollMode">never</item>
     </style>
 </resources>

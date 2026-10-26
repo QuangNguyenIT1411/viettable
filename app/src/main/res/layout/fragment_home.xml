@@ -1,605 +1,683 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
+<!-- Trang chủ "Phố đêm" (DESIGN_PHO_DEM.md section 6, design P02). Written from scratch; view IDs used by
+     HomeFragment and the UI tests are kept (tvHeaderBranchName, layoutCategoryChips, rvFeaturedFoods, ...). -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream"
-    android:fillViewport="true">
+    android:background="@color/pd_bg">
 
-    <LinearLayout
+    <!-- Red glow, top right, behind the status bar too (section 2: at most 1-2 per screen). It stays put while the page scrolls. -->
+    <View
+        android:id="@+id/viewHomeGlow"
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-150dp"
+        android:layout_marginEnd="-190dp"
+        android:background="@drawable/pd_glow_red"
+        android:importantForAccessibility="no" />
+
+    <!-- safe_top on the scroll view: scrolled content stops under the status bar instead of running behind it. -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollHome"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="true"
+        android:fillViewport="true"
+        android:tag="safe_top">
+
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="40dp">
+        android:clipChildren="false">
 
-        <!-- Top Header Bar -->
         <LinearLayout
-            android:id="@+id/layoutTopHeader"
-            android:tag="safe_top"
+            android:id="@+id/layoutHomeContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="60dp"
-            android:background="@color/surface"
-            android:elevation="1dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp">
+            android:clipChildren="false"
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/pd_scroll_bottom_clearance">
 
-            <!-- Branch Selector Button -->
+            <!-- Top row: branch / table chip + search + bell -->
             <LinearLayout
-                android:id="@+id/btnHeaderBranch"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_vertical"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:layout_width="14dp"
-                        android:layout_height="14dp"
-                        android:src="@drawable/ic_location"
-                        app:tint="@color/accent_gold_dark" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:text="Chi nhánh phục vụ"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tvHeaderBranchName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=""
-                        android:textColor="@color/text_primary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginStart="4dp"
-                        android:src="@drawable/ic_arrow_down"
-                        app:tint="@color/text_primary" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Search Action Icon (also triggers search) -->
-                <ImageButton
-                    android:id="@+id/btnHeaderSearch"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="@string/a11y_search"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_search"
-                app:tint="@color/text_primary" />
-
-            <!-- Notification Action with Badge -->
-            <FrameLayout
-                android:id="@+id/btnHeaderNotification"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/a11y_notifications">
-
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_notification"
-                    app:tint="@color/text_primary" />
-
-                <!-- Unread count; hidden at 0 (it used to be a red dot that was always shown). -->
-                <TextView
-                    android:id="@+id/viewNotifBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="16dp"
-                    android:minWidth="16dp"
-                    android:layout_gravity="top|end"
-                    android:layout_marginTop="5dp"
-                    android:layout_marginEnd="5dp"
-                    android:paddingStart="4dp"
-                    android:paddingEnd="4dp"
-                    android:gravity="center"
-                    android:background="@drawable/bg_badge"
-                    android:backgroundTint="@color/semantic_error"
-                    android:textColor="@android:color/white"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:visibility="gone"
-                    android:importantForAccessibility="no" />
-            </FrameLayout>
-
-        </LinearLayout>
-
-        <!-- Modern Search Input Bar -->
-        <LinearLayout
-            android:id="@+id/btnHomeSearchBox"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_search_input"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="14dp">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_search"
-                app:tint="@color/text_secondary" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:text="Hôm nay bạn muốn ăn gì?"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <!-- Hero / Promotion Banner -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/bannerPromo"
-            style="@style/Widget.VietTable.Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="14dp"
-            android:visibility="gone"
-            app:cardBackgroundColor="@color/accent_gold_container"
-            app:cardElevation="1dp"
-            app:strokeColor="@color/accent_gold"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
+                android:id="@+id/layoutTopHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:paddingTop="12dp">
 
-                <LinearLayout
+                <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:layout_weight="1">
 
-                    <TextView
+                    <LinearLayout
+                        android:id="@+id/btnHeaderBranch"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text=""
-                        android:textColor="@color/accent_gold_dark"
+                        android:background="@drawable/pd_pill_surface2"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="14dp">
+
+                        <!-- Mint while seated at a table, dim otherwise. -->
+                        <View
+                            android:id="@+id/viewHeaderDot"
+                            android:layout_width="9dp"
+                            android:layout_height="9dp"
+                            android:background="@drawable/pd_dot"
+                            android:backgroundTint="@color/pd_dim"
+                            android:importantForAccessibility="no" />
+
+                        <TextView
+                            android:id="@+id/tvHeaderTable"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:fontFamily="@font/bricolage_semibold"
+                            android:maxLines="1"
+                            android:textColor="@color/pd_cream"
+                            android:textSize="15sp"
+                            android:visibility="gone"
+                            tools:text="Bàn B4 · "
+                            tools:visibility="visible" />
+
+                        <TextView
+                            android:id="@+id/tvHeaderBranchName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:ellipsize="end"
+                            android:fontFamily="@font/bricolage_semibold"
+                            android:maxLines="1"
+                            android:textColor="@color/pd_cream"
+                            android:textSize="15sp"
+                            tools:text="Chi nhánh Quận 1" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="6dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_arrow_down"
+                            app:tint="@color/pd_muted" />
+                    </LinearLayout>
+                </FrameLayout>
+
+                <ImageButton
+                    android:id="@+id/btnHeaderSearch"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/pd_circle_surface2"
+                    android:contentDescription="@string/a11y_search"
+                    android:padding="13dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/pd_cream" />
+
+                <FrameLayout
+                    android:id="@+id/btnHeaderNotification"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/pd_circle_surface2"
+                    android:clickable="true"
+                    android:contentDescription="@string/a11y_notifications"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_notification"
+                        app:tint="@color/pd_cream" />
+
+                    <!-- Unread count; hidden at 0. -->
+                    <TextView
+                        android:id="@+id/viewNotifBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="20dp"
+                        android:layout_gravity="top|end"
+                        android:background="@drawable/pd_badge_count"
+                        android:fontFamily="@font/bricolage_bold"
+                        android:gravity="center"
+                        android:importantForAccessibility="no"
+                        android:minWidth="20dp"
+                        android:paddingHorizontal="5dp"
+                        android:textColor="@color/pd_on_color"
                         android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text=""
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text=""
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCollectVoucher"
-                    style="@style/Widget.VietTable.Button.Primary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
-                    android:text="Lấy mã"
-                    android:textSize="12sp" />
+                        android:visibility="gone"
+                        tools:text="3"
+                        tools:visibility="visible" />
+                </FrameLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <!-- Active Dining Session Card (Screen 15) -->
-        <include
-            android:id="@+id/layoutActiveDining"
-            layout="@layout/view_active_dining_card" />
-
-        <!-- Upcoming Reservation Card (if exists) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardUpcomingReservation"
-            style="@style/Widget.VietTable.Card.Gold"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="8dp"
-            android:visibility="gone">
-
-            <LinearLayout
+            <!-- Greeting + big title -->
+            <TextView
+                android:id="@+id/tvHomeGreeting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted"
+                android:textSize="17sp"
+                tools:text="Chào Quang," />
+
+            <TextView
+                android:id="@+id/tvHomeTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="4dp"
+                android:accessibilityHeading="true"
+                android:text="@string/pd_home_title"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                android:textSize="36sp"
+                app:lineHeight="42sp" />
+
+            <!-- Search -->
+            <LinearLayout
+                android:id="@+id/btnHomeSearchBox"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/input_height"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="22dp"
+                android:background="@drawable/pd_search_box"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="20dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/pd_dim" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="@string/pd_home_search_hint"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_dim" />
+            </LinearLayout>
+
+            <!-- Promotion banner: hidden until a real promotions source exists (tab "Ưu đãi" comes later). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/bannerPromo"
+                style="@style/Widget.VietTable.Card.Plum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="16dp"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:padding="20dp">
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCollectVoucher"
+                        style="@style/Widget.VietTable.Button.Primary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:text="Lấy mã" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Active dining session -->
+            <include
+                android:id="@+id/layoutActiveDining"
+                layout="@layout/view_active_dining_card" />
+
+            <!-- Upcoming reservation: surface card, thin yellow edge, status pill -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardUpcomingReservation"
+                style="@style/Widget.VietTable.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="20dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/pd_surface"
+                app:cardCornerRadius="@dimen/pd_radius_card"
+                app:strokeColor="@color/pd_yellow"
+                app:strokeWidth="1dp"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/home_upcoming_res"
+                            android:textAppearance="@style/TextAppearance.VietTable.Label"
+                            android:textColor="@color/pd_yellow" />
+
+                        <TextView
+                            android:id="@+id/tvResStatus"
+                            style="@style/Widget.VietTable.StatusPill.Solid"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            tools:text="Đã xác nhận" />
+                    </LinearLayout>
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:id="@+id/tvResDateTime"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/home_upcoming_res"
-                        android:textColor="@color/accent_gold_dark"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:layout_marginTop="10dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                        tools:text="19:00 · 28/10/2026" />
+
+                    <TextView
+                        android:id="@+id/tvResBranchName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        tools:text="4 khách · Bàn 5 · Chi nhánh Quận 1" />
 
                     <TextView
                         android:id="@+id/tvResCode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="#RES-8899"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        tools:text="#21" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnViewResDetail"
+                            style="@style/Widget.VietTable.Button.Ghost"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:paddingHorizontal="8dp"
+                            android:text="Xem chi tiết" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnResPreOrder"
+                            style="@style/Widget.VietTable.Button.Primary"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:paddingHorizontal="8dp"
+                            android:text="Đặt món trước" />
+                    </LinearLayout>
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    android:id="@+id/tvResDateTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text=""
-                    android:textColor="@color/primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvResBranchName"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text=""
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnViewResDetail"
-                        style="@style/Widget.VietTable.Button.Outlined"
-                        android:layout_width="0dp"
-                        android:layout_height="36dp"
-                        android:layout_marginEnd="6dp"
-                        android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="Xem chi tiết"
-                        android:textSize="12sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnResPreOrder"
-                        style="@style/Widget.VietTable.Button.Gold"
-                        android:layout_width="0dp"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="6dp"
-                        android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:text="Đặt món trước"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Quick Actions Row (4 actions) -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/Widget.VietTable.Card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="14dp">
-
+            <!-- Quick actions: four small tiles, no surrounding box -->
             <LinearLayout
+                android:id="@+id/layoutQuickActions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingVertical="16dp">
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="22dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
 
-                <!-- Đặt bàn -->
                 <LinearLayout
                     android:id="@+id/btnQuickReservation"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    style="@style/Widget.VietTable.HomeTile"
+                    android:contentDescription="@string/home_quick_reservation">
 
                     <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_badge"
-                        android:backgroundTint="@color/primary_container"
-                        android:padding="11dp"
-                        android:src="@drawable/ic_reservation"
-                        app:tint="@color/primary" />
+                        style="@style/Widget.VietTable.HomeTile.Icon"
+                        android:src="@drawable/ic_reservation" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/home_quick_reservation"
-                        android:textColor="@color/text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        style="@style/Widget.VietTable.HomeTile.Label"
+                        android:text="@string/home_quick_reservation" />
                 </LinearLayout>
 
-                <!-- Scan QR -->
                 <LinearLayout
                     android:id="@+id/btnQuickQr"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    style="@style/Widget.VietTable.HomeTile"
+                    android:contentDescription="@string/home_quick_qr">
 
                     <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_badge"
-                        android:backgroundTint="@color/accent_gold_container"
-                        android:padding="11dp"
-                        android:src="@drawable/ic_qr_scan"
-                        app:tint="@color/accent_gold_dark" />
+                        style="@style/Widget.VietTable.HomeTile.Icon"
+                        android:src="@drawable/ic_qr_scan" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/home_quick_qr"
-                        android:textColor="@color/text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        style="@style/Widget.VietTable.HomeTile.Label"
+                        android:text="@string/home_quick_qr" />
                 </LinearLayout>
 
-                <!-- Menu -->
                 <LinearLayout
                     android:id="@+id/btnQuickMenu"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    style="@style/Widget.VietTable.HomeTile"
+                    android:contentDescription="@string/home_quick_menu">
 
                     <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_badge"
-                        android:backgroundTint="@color/primary_container"
-                        android:padding="11dp"
-                        android:src="@drawable/ic_cutlery"
-                        app:tint="@color/primary" />
+                        style="@style/Widget.VietTable.HomeTile.Icon"
+                        android:src="@drawable/ic_cutlery" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/home_quick_menu"
-                        android:textColor="@color/text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        style="@style/Widget.VietTable.HomeTile.Label"
+                        android:text="@string/home_quick_menu" />
                 </LinearLayout>
 
-                <!-- Đơn hiện tại -->
                 <LinearLayout
                     android:id="@+id/btnQuickOrders"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                    style="@style/Widget.VietTable.HomeTile"
+                    android:contentDescription="@string/home_quick_orders">
 
                     <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_badge"
-                        android:backgroundTint="@color/primary_container"
-                        android:padding="11dp"
-                        android:src="@drawable/ic_orders"
-                        app:tint="@color/primary" />
+                        style="@style/Widget.VietTable.HomeTile.Icon"
+                        android:src="@drawable/ic_orders" />
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/home_quick_orders"
-                        android:textColor="@color/text_primary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        style="@style/Widget.VietTable.HomeTile.Label"
+                        android:text="@string/home_quick_orders" />
                 </LinearLayout>
-
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <ProgressBar
-            android:id="@+id/progressCatalog"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="16dp"
-            android:visibility="gone" />
-        <TextView
-            android:id="@+id/tvCatalogState"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:gravity="center"
-            android:accessibilityLiveRegion="polite"
-            android:textColor="@color/text_primary"
-            android:visibility="gone" />
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRetryCatalog"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="@string/catalog_retry"
-            android:visibility="gone" />
-
-        <!-- Category Section -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
+            <!-- Category chips: "Tất cả" (full menu) then each category -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/home_category_title"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="22dp"
+                android:clipToPadding="false"
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/layoutCategoryChips"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <!-- Loading / error / empty -->
+            <ProgressBar
+                android:id="@+id/progressCatalog"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:indeterminateTint="@color/pd_yellow"
+                android:visibility="gone" />
 
             <TextView
-                android:id="@+id/btnSeeAllMenu"
+                android:id="@+id/tvCatalogState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityLiveRegion="polite"
+                android:gravity="center"
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:paddingTop="20dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetryCatalog"
+                style="@style/Widget.VietTable.Button.Ghost"
                 android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:text="@string/catalog_retry"
+                android:visibility="gone" />
+
+            <!-- "Món của bếp hôm nay": red striped card, big plate spilling out of the top-right corner, tilted price sticker -->
+            <FrameLayout
+                android:id="@+id/layoutChefSpecial"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="4dp"
-                android:text="Xem tất cả"
-                android:textColor="@color/primary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="8dp"
+                android:clipChildren="false"
+                android:visibility="gone"
+                tools:visibility="visible">
 
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:paddingHorizontal="16dp"
-            android:scrollbars="none">
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardChefSpecial"
+                    style="@style/Widget.VietTable.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="44dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/pd_red"
+                    app:cardCornerRadius="32dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
 
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <ImageView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="@null"
+                            android:scaleType="fitXY"
+                            android:src="@drawable/pd_stripes" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="22dp"
+                            android:paddingTop="22dp"
+                            android:paddingEnd="22dp"
+                            android:paddingBottom="22dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="112dp"
+                                android:text="@string/pd_home_chef_label"
+                                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                                android:textColor="@color/pd_on_color" />
+
+                            <TextView
+                                android:id="@+id/tvChefDishName"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:layout_marginEnd="112dp"
+                                android:fontFamily="@font/unbounded_bold"
+                                android:letterSpacing="-0.02"
+                                android:textColor="@color/pd_on_color"
+                                android:textSize="25sp"
+                                app:lineHeight="30sp"
+                                tools:text="Canh chua cá lóc" />
+
+                            <TextView
+                                android:id="@+id/tvChefDishMeta"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:layout_marginEnd="96dp"
+                                android:alpha="0.75"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                                android:textColor="@color/pd_on_color"
+                                tools:text="Nồi đất · 2–3 người" />
+
+                            <LinearLayout
+                                android:id="@+id/btnChefOrder"
+                                android:layout_width="wrap_content"
+                                android:layout_height="56dp"
+                                android:layout_marginTop="16dp"
+                                android:background="@drawable/pd_pill_dark"
+                                android:clickable="true"
+                                android:focusable="true"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingStart="22dp"
+                                android:paddingEnd="6dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/pd_home_chef_order"
+                                    android:textAppearance="@style/TextAppearance.VietTable.Button"
+                                    android:textColor="@color/pd_cream" />
+
+                                <ImageView
+                                    android:layout_width="44dp"
+                                    android:layout_height="44dp"
+                                    android:layout_marginStart="14dp"
+                                    android:background="@drawable/pd_circle_yellow"
+                                    android:contentDescription="@null"
+                                    android:padding="11dp"
+                                    android:src="@drawable/ic_add"
+                                    app:tint="@color/pd_on_color" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </FrameLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <FrameLayout
+                    android:id="@+id/plateChef"
+                    android:layout_width="@dimen/pd_chef_plate"
+                    android:layout_height="@dimen/pd_chef_plate"
+                    android:layout_gravity="top|end"
+                    android:layout_marginEnd="-6dp"
+                    android:background="@drawable/pd_plate"
+                    android:elevation="12dp"
+                    android:outlineSpotShadowColor="@color/black"
+                    android:padding="15dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivChefImage"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/pd_plate_empty"
+                        android:contentDescription="@null"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvChefPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="126dp"
+                    android:layout_marginEnd="-4dp"
+                    android:background="@drawable/pd_price_sticker"
+                    android:elevation="14dp"
+                    android:outlineSpotShadowColor="@color/black"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="8dp"
+                    android:rotation="-8"
+                    android:textAppearance="@style/TextAppearance.VietTable.Price"
+                    android:textColor="@color/pd_on_color"
+                    android:textSize="20sp"
+                    tools:text="149K" />
+            </FrameLayout>
+
+            <!-- Today's menu: 2-column plate grid -->
             <LinearLayout
-                android:id="@+id/layoutCategoryChips"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </HorizontalScrollView>
+                android:id="@+id/layoutFeaturedHeader"
+                style="@style/Widget.VietTable.HomeSectionHeader">
 
-        <!-- Recommendations: Dành cho bạn -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+                <TextView
+                    style="@style/Widget.VietTable.HomeSectionHeader.Title"
+                    android:text="@string/pd_home_featured" />
 
-            <TextView
-                android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/btnSeeAllMenu"
+                    style="@style/Widget.VietTable.HomeSectionHeader.Link"
+                    android:text="@string/pd_home_see_all" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvFeaturedFoods"
+                style="@style/Widget.VietTable.HomeGrid" />
+
+            <!-- Most ordered: only shown when the menu carries sales counts -->
+            <LinearLayout
+                android:id="@+id/layoutBestHeader"
+                style="@style/Widget.VietTable.HomeSectionHeader">
+
+                <TextView
+                    style="@style/Widget.VietTable.HomeSectionHeader.Title"
+                    android:text="@string/pd_home_best" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvBestSellers"
+                style="@style/Widget.VietTable.HomeGrid" />
+
+            <!-- More dishes: horizontal row of plate cards -->
+            <LinearLayout
+                android:id="@+id/layoutRecommendHeader"
+                style="@style/Widget.VietTable.HomeSectionHeader">
+
+                <TextView
+                    style="@style/Widget.VietTable.HomeSectionHeader.Title"
+                    android:text="@string/pd_home_for_you" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvRecommendations"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/home_recommendation_title"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="6dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:orientation="horizontal"
+                android:overScrollMode="never"
+                android:paddingHorizontal="18dp" />
         </LinearLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvRecommendations"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp" />
-
-        <!-- Best Sellers: Món bán chạy -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/home_best_seller_title"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvBestSellers"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp" />
-
-        <!-- Featured Dishes: Món đặc sắc -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/home_featured_title"
-                android:textColor="@color/text_primary"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvFeaturedFoods"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp" />
-
-    </LinearLayout>
+    </FrameLayout>
 </androidx.core.widget.NestedScrollView>
+</FrameLayout>

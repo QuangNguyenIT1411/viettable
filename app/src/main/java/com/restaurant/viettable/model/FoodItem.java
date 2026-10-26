@@ -22,6 +22,7 @@ public class FoodItem implements Serializable {
     private List<String> availableToppings;
     private String imageUrl;
     private int imageResId;
+    private boolean dailySpecial;
 
     public FoodItem() {}
 
@@ -80,6 +81,9 @@ public class FoodItem implements Serializable {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public int getImageResId() { return imageResId; }
     public void setImageResId(int imageResId) { this.imageResId = imageResId; }
+    /** Marked "món đặc biệt trong ngày" in Admin; Trang chủ shows it as "Món của bếp". */
+    public boolean isDailySpecial() { return dailySpecial; }
+    public void setDailySpecial(boolean dailySpecial) { this.dailySpecial = dailySpecial; }
 
     public String getFormattedPrice() {
         return String.format(java.util.Locale.GERMANY, "%,dđ", price);

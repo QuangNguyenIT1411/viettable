@@ -247,4 +247,20 @@
     <string name="catalog_loading">Đang tải danh mục và món ăn…</string>
     <string name="catalog_empty">Chi nhánh này chưa có món ăn.</string>
     <string name="catalog_retry">Thử lại</string>
+
+    <!-- Trang chủ "Phố đêm" (DESIGN_PHO_DEM.md, P02) -->
+    <string name="pd_home_title">Tối nay ăn gì đây?</string>
+    <string name="pd_home_greeting">Chào %1$s,</string>
+    <string name="pd_home_greeting_guest">Chào bạn,</string>
+    <string name="pd_home_search_hint">Bún, phở, chè, cà phê…</string>
+    <string name="pd_home_all">Tất cả</string>
+    <string name="pd_home_chef_label">Món của bếp hôm nay</string>
+    <string name="pd_home_chef_order">Gọi ngay</string>
+    <string name="pd_home_best">Gọi nhiều nhất</string>
+    <string name="pd_home_see_all">Xem hết</string>
+    <string name="pd_home_for_you">Còn nhiều món ngon</string>
+    <string name="pd_home_featured">Thực đơn hôm nay</string>
+    <string name="pd_home_at_table">"Bàn %1$s · "</string>
+    <string name="pd_sold_out">Hết món</string>
+    <string name="pd_add_to_cart">Thêm vào giỏ</string>
 </resources>
