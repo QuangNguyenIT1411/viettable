@@ -54,6 +54,22 @@ public final class DisplayFormatters {
         }
     }
 
+    /** "Bắt đầu 19:02" when the session started today, "Bắt đầu 19:02, 25/10/2026" otherwise. */
+    public static String startedAt(String value, ZoneId zone, LocalDate today) {
+        Instant started = instant(value);
+        if (started == null) return "Chưa rõ giờ bắt đầu";
+        ZonedDateTime local = started.atZone(zone);
+        String time = local.format(DateTimeFormatter.ofPattern("HH:mm", new Locale("vi", "VN")));
+        return local.toLocalDate().equals(today) ? "Bắt đầu " + time : "Bắt đầu " + time + ", " + local.format(DATE);
+    }
+
+    /** The table as a title: "B4" -> "Bàn B4"; labels that already say "Bàn ..." stay as they are. */
+    public static String tableTitle(String label) {
+        String clean = SafeText.clean(label);
+        if (clean.isEmpty()) return "Bàn của bạn";
+        return clean.toLowerCase(new Locale("vi", "VN")).startsWith("bàn") ? clean : "Bàn " + clean;
+    }
+
     /** The server timestamp as an instant (UTC when no offset is given); null when missing or unreadable. */
     public static Instant instant(String value) {
         if (value == null || value.trim().isEmpty()) return null;

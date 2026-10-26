@@ -24,7 +24,10 @@ public class ActiveDiningCardBinder {
         }
 
         binding.getRoot().setVisibility(View.VISIBLE);
-        binding.tvDiningTable.setText(SafeText.join(" • ", session.getTableLabel(), session.getBranchName()));
+        binding.tvDiningTable.setText(DisplayFormatters.tableTitle(session.getTableLabel()));
+        String branch = SafeText.clean(session.getBranchName());
+        binding.tvDiningBranch.setText(branch);
+        binding.tvDiningBranch.setVisibility(branch.isEmpty() ? View.GONE : View.VISIBLE);
 
         if (session.getStatus() == DiningSession.Status.PAYMENT_REQUESTED) {
             binding.tvDiningBadge.setText("Đang yêu cầu thanh toán");
@@ -40,7 +43,8 @@ public class ActiveDiningCardBinder {
 
         int activeOrders = session.getActiveOrdersCount();
         String summary = (activeOrders > 0 ? activeOrders + " đợt gọi món đang xử lý" : "Chưa có đợt gọi món mới")
-                + " • Bắt đầu lúc " + DisplayFormatters.dateTime(session.getStartTime());
+                + " · " + DisplayFormatters.startedAt(session.getStartTime(),
+                java.time.ZoneId.systemDefault(), java.time.LocalDate.now());
         binding.tvDiningOrdersSummary.setText(summary);
 
         binding.getRoot().setOnClickListener(v -> {

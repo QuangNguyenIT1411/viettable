@@ -93,7 +93,7 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
                 || seated.getStatus() == DiningSession.Status.CANCELLED ? "" : SafeText.clean(seated.getTableLabel());
         boolean atTable = !table.isEmpty();
         binding.tvHeaderTable.setVisibility(atTable ? View.VISIBLE : View.GONE);
-        binding.tvHeaderTable.setText(atTable ? getString(R.string.pd_home_at_table, table) : "");
+        binding.tvHeaderTable.setText(atTable ? getString(R.string.pd_home_at_table, DisplayFormatters.tableTitle(table)) : "");
         // "Bàn X · " already sits after the dot, so the branch name follows it without a gap.
         ((LinearLayout.LayoutParams) binding.tvHeaderBranchName.getLayoutParams())
                 .setMarginStart(atTable ? 0 : (int) (10 * getResources().getDisplayMetrics().density));
@@ -288,7 +288,10 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         };
 
         // Today's menu: 2-column plate grid, dishes on sale first (the whole menu is one tap away via "Xem hết").
+        // The chef's dish already has its own red card, so it is left out of the lists below.
+        FoodItem chefPick = HomeDisplayRules.chefPick(allFoods);
         List<FoodItem> menu = HomeDisplayRules.onSaleFirst(allFoods);
+        menu.remove(chefPick);
         List<FoodItem> today = HomeDisplayRules.firstN(menu, HOME_GRID_SIZE);
         binding.rvFeaturedFoods.setLayoutManager(new GridLayoutManager(getContext(), 2));
         PdMotion.staggerCards(binding.rvFeaturedFoods);
@@ -308,12 +311,11 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         binding.layoutRecommendHeader.setVisibility(more.isEmpty() ? View.GONE : View.VISIBLE);
         binding.rvRecommendations.setVisibility(more.isEmpty() ? View.GONE : View.VISIBLE);
 
-        bindChefSpecial(allFoods);
+        bindChefSpecial(chefPick);
     }
 
     /** Red "Món của bếp hôm nay" card: the dish Admin marked as today's special; hidden when there is none. */
-    private void bindChefSpecial(List<FoodItem> foods) {
-        FoodItem pick = HomeDisplayRules.chefPick(foods);
+    private void bindChefSpecial(@Nullable FoodItem pick) {
         binding.layoutChefSpecial.setVisibility(pick == null ? View.GONE : View.VISIBLE);
         if (pick == null) return;
         binding.tvChefDishName.setText(pick.getName());

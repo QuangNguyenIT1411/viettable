@@ -673,11 +673,16 @@
     </style>
 
     <style name="Widget.VietTable.HomeTile.Label" parent="">
-        <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginTop">8dp</item>
         <item name="android:gravity">center</item>
-        <item name="android:maxLines">2</item>
+        <!-- One line even at large font sizes: shrinks instead of wrapping ("Đơn hiện / tại"). -->
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:maxLines">1</item>
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMaxTextSize">13sp</item>
+        <item name="autoSizeMinTextSize">9sp</item>
+        <item name="autoSizeStepGranularity">0.5sp</item>
         <item name="android:textAppearance">@style/TextAppearance.VietTable.Caption</item>
         <item name="android:textColor">@color/pd_cream</item>
         <item name="android:importantForAccessibility">no</item>

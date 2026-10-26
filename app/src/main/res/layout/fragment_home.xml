@@ -519,8 +519,13 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginEnd="112dp"
+                                android:layout_marginEnd="136dp"
+                                android:maxLines="1"
                                 android:text="@string/pd_home_chef_label"
+                                app:autoSizeMaxTextSize="10sp"
+                                app:autoSizeMinTextSize="7sp"
+                                app:autoSizeStepGranularity="0.5sp"
+                                app:autoSizeTextType="uniform"
                                 android:textAppearance="@style/TextAppearance.VietTable.Label"
                                 android:textColor="@color/pd_on_color" />
 

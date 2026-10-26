@@ -37,8 +37,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
-                android:textAppearance="@style/TextAppearance.VietTable.Display.M"
-                tools:text="Bàn 5 • Chi nhánh Quận 1" />
+                android:textAppearance="@style/TextAppearance.VietTable.Display.L"
+                tools:text="Bàn B4" />
 
             <TextView
                 android:id="@+id/tvDiningBadge"
@@ -50,13 +50,22 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/tvDiningBranch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="@style/TextAppearance.VietTable.Body"
+            android:textColor="@color/pd_muted"
+            tools:text="Chi nhánh Quận 1" />
+
+        <TextView
             android:id="@+id/tvDiningOrdersSummary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="8dp"
             android:textAppearance="@style/TextAppearance.VietTable.Caption"
             android:textColor="@color/pd_muted"
-            tools:text="1 đợt gọi món đang xử lý • Bắt đầu lúc 19:02" />
+            tools:text="1 đợt gọi món đang xử lý · Bắt đầu 19:02" />
 
         <LinearLayout
             android:layout_width="match_parent"
