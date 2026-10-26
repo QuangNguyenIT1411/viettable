@@ -62,6 +62,11 @@ android {
         def reminderMinutes = providers.gradleProperty('VIETTABLE_REMINDER_MINUTES').orElse('60,15').get().trim()
         if (!(reminderMinutes ==~ /\d{1,4}(,\d{1,4})*/)) throw new GradleException('VIETTABLE_REMINDER_MINUTES must look like 60,15')
         buildConfigField 'String', 'REMINDER_MINUTES', groovy.json.JsonOutput.toJson(reminderMinutes)
+        // "Thanh toán Online" (VNPAY) choice: off unless built with -PVIETTABLE_ONLINE_PAYMENT=true, and even then
+        // shown only when the server reports a configured online gateway (owner, 26/10).
+        def onlinePayment = providers.gradleProperty('VIETTABLE_ONLINE_PAYMENT').orElse('false').get().trim()
+        if (!(onlinePayment in ['true', 'false'])) throw new GradleException('VIETTABLE_ONLINE_PAYMENT must be true or false')
+        buildConfigField 'boolean', 'ONLINE_PAYMENT_ENABLED', onlinePayment
     }
 
     buildTypes {

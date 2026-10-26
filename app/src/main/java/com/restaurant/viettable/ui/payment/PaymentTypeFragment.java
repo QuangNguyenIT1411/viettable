@@ -80,8 +80,17 @@ public class PaymentTypeFragment extends BaseFragment {
                     : OnlinePaymentMethodFragment.newInstanceForSplit(invoice, splitBill, splitPart));
         });
 
-        // Guests pay cash or by bank transfer (VietQR). Online gateways stay hidden; their screens are kept for later.
+        // Guests pay cash or by bank transfer (VietQR). The online gateway choice sits behind a build flag (off by
+        // default) and, when on, still needs a gateway the server reports as configured.
         binding.cardPayOnline.setVisibility(View.GONE);
+        if (com.restaurant.viettable.BuildConfig.ONLINE_PAYMENT_ENABLED) {
+            MobileRepository.getInstance().loadOnlinePaymentMethods(new MobileRepository.Callback<java.util.List<String>>() {
+                @Override public void onSuccess(java.util.List<String> methods) {
+                    if (binding != null) binding.cardPayOnline.setVisibility(methods.isEmpty() ? View.GONE : View.VISIBLE);
+                }
+                @Override public void onError(ApiException error) { }
+            });
+        }
         MobileRepository.getInstance().loadTransferAvailable(new MobileRepository.Callback<Boolean>() {
             @Override public void onSuccess(Boolean available) {
                 if (binding != null) binding.cardPayTransfer.setVisibility(Boolean.TRUE.equals(available) ? View.VISIBLE : View.GONE);
