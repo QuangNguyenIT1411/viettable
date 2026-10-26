@@ -111,6 +111,9 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         binding.btnHomeSearchBox.setOnClickListener(v -> navigateTo(new SearchFragment()));
         User user = appStateManager.getCurrentUser();
         String name = HomeDisplayRules.greetingName(user == null ? null : user.getFullName());
+        // Until the profile loads, greet with the name saved on this phone for the account that owns the session.
+        if (name.isEmpty() && appStateManager.isLoggedIn()) name = com.restaurant.viettable.data.GreetingNameStore.getInstance()
+                .nameFor(com.restaurant.viettable.network.BiometricTokenStore.getInstance().sessionAccount());
         binding.tvHomeGreeting.setText(name.isEmpty() ? getString(R.string.pd_home_greeting_guest)
                 : getString(R.string.pd_home_greeting, name));
 

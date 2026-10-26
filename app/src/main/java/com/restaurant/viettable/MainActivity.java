@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         ReservationReminders.initialize(getApplicationContext());
         com.restaurant.viettable.network.BiometricTokenStore.initialize(getApplicationContext());
         com.restaurant.viettable.util.ImageLoader.getInstance().initialize(getApplicationContext());
+        com.restaurant.viettable.data.GreetingNameStore.getInstance().initialize(getApplicationContext());
         ApiClient.getInstance().setSessionInvalidatedListener(this::showExpiredSession);
         SignalRManager.getInstance().initialize();
         appStateManager = AppStateManager.getInstance();

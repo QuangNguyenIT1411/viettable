@@ -1318,6 +1318,7 @@ public final class MobileRepository {
 
     /** Sets the in-memory user and remembers on this phone which account owns the session. */
     private void setSessionUser(User user) {
+        if (user != null) GreetingNameStore.getInstance().remember(user.getId(), user.getFullName());
         state.setCurrentUser(user);
         if (user != null && BiometricLoginPolicy.isKnownAccount(user.getId())) state.useBranchScope(user.getId());
         if (user != null) {
@@ -1394,6 +1395,7 @@ public final class MobileRepository {
     public void clearLocalSession() {
         com.restaurant.viettable.reminder.ReservationReminders.clearAll();
         BiometricTokenStore.getInstance().forgetSession();
+        GreetingNameStore.getInstance().clear();
         state.useBranchScope(null);
         SignalRManager.getInstance().stopAndClear();
         api().clearSession();
