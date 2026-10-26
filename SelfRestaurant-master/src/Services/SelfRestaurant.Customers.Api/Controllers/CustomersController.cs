@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SelfRestaurant.Customers.Api.Infrastructure;
 using SelfRestaurant.Customers.Api.Persistence;
 using SelfRestaurant.Customers.Api.Persistence.Entities;
+using Microsoft.EntityFrameworkCore.Storage;
 using System.Data;
 using System.Text.RegularExpressions;
 
@@ -16,8 +17,11 @@ public sealed class CustomersController : ControllerBase
         "Cancelled",
         "NoShow",
         "CheckedIn",
-        "Completed"
+        "Completed",
+        "Rejected"
     };
+    /// <summary>Written on a booking the system confirmed because the guest checked in while it was still pending.</summary>
+    public const string AutoConfirmedAtCheckIn = "Tự xác nhận khi check-in";
     private static readonly Regex ReservationPhoneNumberRegex = new(@"^\d{10}$", RegexOptions.Compiled);
 
     private readonly CustomersDbContext _db;
@@ -306,6 +310,8 @@ public sealed class CustomersController : ControllerBase
     {
         if (request is null) return BadRequest(new { code = "validation_failed", message = "Dữ liệu thay đổi không hợp lệ." });
         await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        if (_db.Database.IsRelational())
+            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, ReservationLock(reservationId), cancellationToken);
         var reservation = await _db.Reservations.Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
             .FirstOrDefaultAsync(x => x.ReservationId == reservationId, cancellationToken);
         if (reservation is null) return NotFound(new { code = "reservation_not_found", message = "Không tìm thấy đặt bàn." });
@@ -448,6 +454,7 @@ public sealed class CustomersController : ControllerBase
     [HttpPost("api/customers/reservations/{reservationId:int}/cancel")]
     public async Task<ActionResult<object>> CancelReservation(int reservationId, CancellationToken cancellationToken)
     {
+        await using var transaction = await BeginReservationLockAsync(reservationId, cancellationToken);
         var reservation = await _db.Reservations
             .Include(x => x.PreOrderItems)
                 .Include(x => x.ReservationTables)
@@ -485,14 +492,17 @@ public sealed class CustomersController : ControllerBase
         await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationCancelled, reservation, cancellationToken);
 
         await _db.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return Ok(MapReservation(reservation));
     }
 
     [HttpPost("api/customers/reservations/{reservationId:int}/begin-check-in")]
     public async Task<ActionResult<object>> BeginReservationCheckIn(
         int reservationId,
+        [FromQuery] int? employeeId,
         CancellationToken cancellationToken)
     {
+        await using var transaction = await BeginReservationLockAsync(reservationId, cancellationToken);
         var reservation = await LoadReservationForStateChangeAsync(reservationId, cancellationToken);
         if (reservation.Result is not null) return reservation.Result;
         var entity = reservation.Value!;
@@ -510,12 +520,14 @@ public sealed class CustomersController : ControllerBase
         }
 
         var now = DateTime.UtcNow;
+        AutoConfirmIfPending(entity, employeeId, now);
         entity.Status = "CheckingIn";
         entity.CheckInStartedAtUtc = now;
         entity.CheckInIdempotencyKey = BuildCheckInIdempotencyKey(entity.ReservationId);
         entity.UpdatedAtUtc = now;
 
         await _db.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return Ok(MapReservation(entity));
     }
 
@@ -577,6 +589,7 @@ public sealed class CustomersController : ControllerBase
         [FromBody] CheckInReservationRequest? request,
         CancellationToken cancellationToken)
     {
+        await using var transaction = await BeginReservationLockAsync(reservationId, cancellationToken);
         var reservation = await LoadReservationForStateChangeAsync(reservationId, cancellationToken);
         if (reservation.Result is not null) return reservation.Result;
         var entity = reservation.Value!;
@@ -588,11 +601,13 @@ public sealed class CustomersController : ControllerBase
 
         if (string.Equals(entity.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
             || string.Equals(entity.Status, "NoShow", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(entity.Status, "Rejected", StringComparison.OrdinalIgnoreCase)
             || string.Equals(entity.Status, "Completed", StringComparison.OrdinalIgnoreCase))
         {
-            return Conflict(new { message = "Không thể check-in đặt bàn đã hủy, không đến hoặc đã hoàn tất." });
+            return Conflict(new { message = "Không thể check-in đặt bàn đã hủy, bị từ chối, không đến hoặc đã hoàn tất." });
         }
 
+        AutoConfirmIfPending(entity, request?.CheckedInByEmployeeId, DateTime.UtcNow);
         entity.Status = "CheckingIn";
         entity.CheckInStartedAtUtc ??= DateTime.UtcNow;
         entity.CheckInIdempotencyKey ??= BuildCheckInIdempotencyKey(entity.ReservationId);
@@ -600,7 +615,112 @@ public sealed class CustomersController : ControllerBase
         SyncReservationTables(entity, request);
         await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationCheckedIn, entity, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return Ok(MapReservation(entity));
+    }
+
+    /// <summary>Pending bookings of one branch from now on (all days), soonest first, for the cashier to decide.</summary>
+    [HttpGet("api/internal/reservations/pending")]
+    public async Task<ActionResult<IReadOnlyList<object>>> GetPendingReservations([FromQuery] int branchId, CancellationToken cancellationToken)
+    {
+        if (branchId <= 0) return BadRequest(new { code = "validation_failed", message = "Chi nhánh không hợp lệ." });
+        await MarkNoShowsAsync(null, branchId, null, cancellationToken);
+        var reservations = await _db.Reservations.AsNoTracking()
+            .Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
+            .Where(x => x.BranchId == branchId && x.Status == "Pending")
+            .OrderBy(x => x.ReservedAt).ThenBy(x => x.ReservationId)
+            .Take(200)
+            .ToListAsync(cancellationToken);
+        return Ok(reservations.Select(MapReservation).ToArray());
+    }
+
+    [HttpPost("api/internal/reservations/{reservationId:int}/confirm")]
+    public Task<ActionResult<object>> ConfirmReservation(int reservationId, [FromBody] ReservationDecisionRequest? request,
+        CancellationToken cancellationToken) =>
+        DecideAsync(reservationId, "Confirmed", request?.EmployeeId, null, cancellationToken);
+
+    [HttpPost("api/internal/reservations/{reservationId:int}/reject")]
+    public Task<ActionResult<object>> RejectReservation(int reservationId, [FromBody] ReservationDecisionRequest? request,
+        CancellationToken cancellationToken) =>
+        DecideAsync(reservationId, "Rejected", request?.EmployeeId, NormalizeOptional(request?.Reason, 300), cancellationToken);
+
+    /// <summary>"Khách không đến": the cashier closes a booking whose time has come, before the automatic 30 minutes.</summary>
+    [HttpPost("api/internal/reservations/{reservationId:int}/no-show")]
+    public Task<ActionResult<object>> MarkReservationNoShow(int reservationId, [FromBody] ReservationDecisionRequest? request,
+        CancellationToken cancellationToken) =>
+        DecideAsync(reservationId, "NoShow", request?.EmployeeId, null, cancellationToken);
+
+    /// <summary>
+    /// The restaurant's decision on a booking. Under the reservation lock, so it cannot cross a check-in, a guest
+    /// cancel/change or a second cashier; repeating the same decision returns the booking unchanged.
+    /// </summary>
+    private async Task<ActionResult<object>> DecideAsync(int reservationId, string target, int? employeeId, string? reason,
+        CancellationToken ct)
+    {
+        if (target == "Rejected" && reason is null)
+            return BadRequest(new { code = "reason_required", message = "Vui lòng chọn lý do từ chối." });
+        await using var transaction = await BeginReservationLockAsync(reservationId, ct);
+        var loaded = await LoadReservationForStateChangeAsync(reservationId, ct);
+        if (loaded.Result is not null) return loaded.Result;
+        var entity = loaded.Value!;
+        if (string.Equals(entity.Status, target, StringComparison.OrdinalIgnoreCase)) return Ok(MapReservation(entity));
+
+        var now = DateTime.UtcNow;
+        var pending = string.Equals(entity.Status, "Pending", StringComparison.OrdinalIgnoreCase);
+        var confirmed = string.Equals(entity.Status, "Confirmed", StringComparison.OrdinalIgnoreCase);
+        switch (target)
+        {
+            case "Confirmed" or "Rejected" when !pending:
+                return Conflict(new { code = "reservation_state_conflict", message = "Đặt bàn không còn chờ xác nhận. Vui lòng tải lại danh sách." });
+            case "Confirmed" when IsOverdue(entity, now):
+                return Conflict(new { code = "reservation_expired", message = "Đặt bàn đã quá giờ hẹn nên không thể xác nhận." });
+            case "NoShow" when !pending && !confirmed:
+                return Conflict(new { code = "reservation_state_conflict", message = "Chỉ đánh dấu khách không đến cho đặt bàn đang chờ hoặc đã xác nhận." });
+            case "NoShow" when entity.ReservedAt > now:
+                return Conflict(new { code = "reservation_not_due", message = "Chưa tới giờ hẹn nên chưa thể đánh dấu khách không đến." });
+        }
+
+        entity.Status = target;
+        entity.StatusChangedAtUtc = now;
+        entity.StatusChangedByEmployeeId = employeeId is > 0 ? employeeId : null;
+        entity.StatusReason = reason;
+        entity.UpdatedAtUtc = now;
+        if (target != "Confirmed")
+            foreach (var item in entity.PreOrderItems.Where(x => string.Equals(x.Status, "Pending", StringComparison.OrdinalIgnoreCase)))
+            {
+                item.Status = "Cancelled";
+                item.UpdatedAtUtc = now;
+            }
+        await CustomerInbox.AddReservationAsync(_db, target switch
+        {
+            "Confirmed" => CustomerInbox.ReservationConfirmed,
+            "Rejected" => CustomerInbox.ReservationRejected,
+            _ => CustomerInbox.ReservationNoShow,
+        }, entity, ct);
+        await _db.SaveChangesAsync(ct);
+        if (transaction is not null) await transaction.CommitAsync(ct);
+        return Ok(MapReservation(entity));
+    }
+
+    /// <summary>A guest may check in before the cashier confirmed: the check-in confirms the booking (owner, 26/10).</summary>
+    private static void AutoConfirmIfPending(Reservation entity, int? employeeId, DateTime now)
+    {
+        if (!string.Equals(entity.Status, "Pending", StringComparison.OrdinalIgnoreCase)) return;
+        entity.Status = "Confirmed";
+        entity.StatusChangedAtUtc = now;
+        entity.StatusChangedByEmployeeId = employeeId is > 0 ? employeeId : null;
+        entity.StatusReason = AutoConfirmedAtCheckIn;
+    }
+
+    private static string ReservationLock(int reservationId) => "reservation:" + reservationId;
+
+    /// <summary>One state change of a reservation at a time (null on the in-memory test provider).</summary>
+    private async Task<IDbContextTransaction?> BeginReservationLockAsync(int reservationId, CancellationToken ct)
+    {
+        if (!_db.Database.IsRelational()) return null;
+        var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, ReservationLock(reservationId), ct);
+        return transaction;
     }
 
     [HttpGet("api/customers/{customerId:int}/orders")]
@@ -1020,6 +1140,9 @@ public sealed class CustomersController : ControllerBase
             createdAtUtc = reservation.CreatedAtUtc,
             updatedAtUtc = reservation.UpdatedAtUtc,
             preOrderSubmittedAtUtc = reservation.PreOrderSubmittedAtUtc,
+            statusChangedAtUtc = reservation.StatusChangedAtUtc,
+            statusChangedByEmployeeId = reservation.StatusChangedByEmployeeId,
+            statusReason = reservation.StatusReason,
             assignedTables,
             preOrderItems = items
         };
@@ -1040,6 +1163,8 @@ public sealed class CustomersController : ControllerBase
 
     public sealed record UpdateReservationRequest(int? TableId, int PartySize, DateTime ReservedAt,
         string? Note, string? MutationKey, string? MutationHash);
+
+    public sealed record ReservationDecisionRequest(int? EmployeeId, string? Reason = null);
 
     public sealed record SubmitPreOrderRequest(string MutationKey, string MutationHash);
 

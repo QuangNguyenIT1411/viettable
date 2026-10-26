@@ -213,7 +213,8 @@ public class AppStateManager {
     }
 
     public Reservation getUpcomingReservation() {
-        for (Reservation reservation : reservations) if (reservation.getStatus() == Reservation.Status.CONFIRMED) return reservation;
+        for (Reservation reservation : reservations)
+            if (com.restaurant.viettable.util.ReservationSchedule.awaitingGuest(reservation.getStatus())) return reservation;
         return null;
     }
 

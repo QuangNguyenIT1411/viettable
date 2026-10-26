@@ -84,6 +84,8 @@ public class ResHistoryAdapter extends RecyclerView.Adapter<ResHistoryAdapter.Re
                     binding.tvHistStatusBadge.setTextColor(0xFF616161);
                     break;
                 case CANCELLED:
+                case NO_SHOW:
+                case REJECTED:
                     binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
                     binding.tvHistStatusBadge.setTextColor(0xFFB71C1C);
                     break;

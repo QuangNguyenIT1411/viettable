@@ -2,6 +2,7 @@ import { expect, request, test, type APIRequestContext } from "@playwright/test"
 import { randomUUID } from "node:crypto";
 import { newGuestChecksIn, openTableWithOrder } from "../support/customer";
 import { settleAfterTest } from "../support/cleanup";
+import { accounts, password } from "../support/staff";
 
 // Reservation review 25/10, item 1 (A1–A10) against the LOCAL stack. Every reservation made here is cancelled after
 // the test: a reservation within the hour now blocks walk-ins on tables 11-20 for the other tests.
@@ -144,6 +145,12 @@ test("A4: đổi sang nhiều khách hơn bàn cũ thì tự chuyển bàn phù 
 test("A10: hủy đặt bàn thì món đặt trước cũng bị hủy, không vào bếp", async ({ baseURL }) => {
   const guest = await customer(baseURL!);
   const reservation = await reserveOk(guest, { partySize: 2, reservedAt: vnTime(1, 18) });
+  // Ordering ahead needs the restaurant's confirmation (item 2, 26/10).
+  const cashier = await request.newContext({ baseURL, extraHTTPHeaders: { Origin: baseURL! } });
+  expect((await cashier.post("/api/gateway/staff/auth/login", { data: { username: accounts.cashier.username, password } })).ok()).toBeTruthy();
+  const confirmed = await cashier.post(`/api/cashier/reservations/${reservation.reservationId}/confirm`, { data: {} });
+  expect(confirmed.ok(), await confirmed.text()).toBeTruthy();
+  await cashier.dispose();
   const menu = await (await guest.api.get("/api/mobile/v1/branches/1/menu")).json();
   // A dish listed as available can be refused (local stock after many runs): try the next one.
   const dishes = menu.categories.flatMap((c: { dishes: Array<{ dishId: number; available: boolean }> }) => c.dishes)

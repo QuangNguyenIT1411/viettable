@@ -68,7 +68,7 @@ public class ReservationScheduleTest {
         assertTrue(ReservationSchedule.canPreOrder(confirmed, at, before));
 
         for (Reservation.Status closed : new Reservation.Status[] { Reservation.Status.CANCELLED, Reservation.Status.NO_SHOW,
-                Reservation.Status.CHECKED_IN, Reservation.Status.COMPLETED }) {
+                Reservation.Status.CHECKED_IN, Reservation.Status.COMPLETED, Reservation.Status.REJECTED }) {
             assertFalse(closed.name(), ReservationSchedule.canChange(closed, at, before));
             assertFalse(closed.name(), ReservationSchedule.canCancel(closed, at, before));
             assertFalse(closed.name(), ReservationSchedule.canCheckIn(closed, at, late));
@@ -77,5 +77,37 @@ public class ReservationScheduleTest {
         assertFalse(ReservationSchedule.canCancel(Reservation.Status.CHECKING_IN, at, late));
         assertTrue(ReservationSchedule.canCheckIn(Reservation.Status.CHECKING_IN, at, late));
         assertFalse(ReservationSchedule.canChange(confirmed, null, before));
+    }
+
+    // Reservation item 2 (26/10): a booking waits for the restaurant; the guest may still check in, not order ahead.
+    @Test public void pending_booking_can_check_in_change_and_cancel_but_not_order_ahead() {
+        Instant at = Instant.parse("2026-10-25T12:00:00Z");
+        Instant before = at.minusSeconds(3600);
+        Instant late = at.plusSeconds(20 * 60);
+        Reservation.Status pending = Reservation.Status.PENDING;
+
+        assertTrue(ReservationSchedule.awaitingGuest(pending));
+        assertTrue(ReservationSchedule.awaitingGuest(Reservation.Status.CONFIRMED));
+        assertFalse(ReservationSchedule.awaitingGuest(Reservation.Status.REJECTED));
+        assertTrue(ReservationSchedule.canCheckIn(pending, at, late));
+        assertFalse(ReservationSchedule.canCheckIn(pending, at, before));
+        assertTrue(ReservationSchedule.canChange(pending, at, before));
+        assertTrue(ReservationSchedule.canCancel(pending, at, before));
+        assertFalse(ReservationSchedule.canPreOrder(pending, at, before));
+    }
+
+    @Test public void status_line_explains_waiting_and_shows_the_rejection_reason() {
+        assertTrue(ReservationSchedule.statusInfo(Reservation.Status.PENDING, null).startsWith("Nhà hàng sẽ xác nhận sớm."));
+        assertEquals("Lý do từ chối: Hết bàn. Bạn có thể đặt giờ khác.",
+                ReservationSchedule.statusInfo(Reservation.Status.REJECTED, " Hết bàn "));
+        assertEquals("Lý do từ chối: Bếp bảo trì. Bạn có thể đặt giờ khác.",
+                ReservationSchedule.statusInfo(Reservation.Status.REJECTED, "Bếp bảo trì."));
+        assertTrue(ReservationSchedule.statusInfo(Reservation.Status.REJECTED, "  ").contains("không thể nhận"));
+        assertNull(ReservationSchedule.statusInfo(Reservation.Status.CONFIRMED, "Tự xác nhận khi check-in"));
+        Reservation reservation = new Reservation();
+        reservation.setStatus(Reservation.Status.PENDING);
+        assertEquals("Chờ nhà hàng xác nhận", reservation.getStatusDisplayText());
+        reservation.setStatus(Reservation.Status.REJECTED);
+        assertEquals("Bị từ chối", reservation.getStatusDisplayText());
     }
 }

@@ -198,6 +198,11 @@ export type ReservationDto = {
   updatedAtUtc?: string | null;
   assignedTables?: ReservationAssignedTableDto[] | null;
   preOrderItems: ReservationPreOrderItemDto[];
+  /** When the restaurant confirmed/rejected it or marked the guest absent. */
+  statusChangedAtUtc?: string | null;
+  statusChangedByEmployeeId?: number | null;
+  /** Rejection reason, or "Tự xác nhận khi check-in". */
+  statusReason?: string | null;
 };
 
 export type ReservationAssignedTableDto = {

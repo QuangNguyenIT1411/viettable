@@ -41,6 +41,7 @@ public sealed class StaffBranchEvents(
     public const string Orders = "orders";
     public const string OnsitePayments = "onsitePayments";
     public const string ServiceRequests = "serviceRequests";
+    public const string Reservations = "reservations";
 
     public async Task PublishAsync(HttpContext http, StaffEventSource source, IReadOnlyList<string> topics)
     {

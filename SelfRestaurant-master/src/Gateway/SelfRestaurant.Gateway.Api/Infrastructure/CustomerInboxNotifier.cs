@@ -35,6 +35,22 @@ public sealed class CustomerInboxNotifier(CustomersClient customers, IHubContext
         catch (Exception ex) { logger.LogWarning("Inbox realtime nudge skipped ({ErrorType}).", ex.GetType().Name); }
     }
 
+    /// <summary>
+    /// The restaurant changed a booking (confirmed, rejected, no-show): the app reloads it, and the inbox row
+    /// Customers wrote in the same step.
+    /// </summary>
+    public async Task ReservationChangedAsync(int? customerId, int reservationId, string status, CancellationToken ct)
+    {
+        if (customerId is not > 0) return;
+        try
+        {
+            await mobileHub.Clients.Group(MobileNotificationsHub.CustomerGroup(customerId.Value))
+                .SendAsync("reservationChanged", new { reservationId, status }, ct);
+        }
+        catch (Exception ex) { logger.LogWarning("Reservation realtime nudge skipped ({ErrorType}).", ex.GetType().Name); }
+        await PushAsync(customerId, ct);
+    }
+
     /// <summary>"giục bếp" for KITCHEN_RUSH etc.; same words as the app's request list.</summary>
     public static string RequestLabel(string? requestType) => requestType?.Trim().ToUpperInvariant() switch
     {

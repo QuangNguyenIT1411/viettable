@@ -17,6 +17,8 @@ public static class CustomerInbox
     public const string ReservationCancelled = "reservation.cancelled.v1";
     public const string ReservationCheckedIn = "reservation.checked-in.v1";
     public const string ReservationNoShow = "reservation.no-show.v1";
+    public const string ReservationConfirmed = "reservation.confirmed.v1";
+    public const string ReservationRejected = "reservation.rejected.v1";
     public const string KitchenStarted = "order.kitchen-started.v1";
     public const string OrderReady = "order.status-ready.v1";
     public const string OrderCancelled = "order.cancelled.v1";
@@ -35,6 +37,8 @@ public static class CustomerInbox
         [ReservationCancelled] = "Đặt bàn đã hủy",
         [ReservationCheckedIn] = "Đã nhận bàn",
         [ReservationNoShow] = "Đặt bàn đã quá giờ",
+        [ReservationConfirmed] = "Đặt bàn đã được xác nhận",
+        [ReservationRejected] = "Đặt bàn bị từ chối",
         [KitchenStarted] = "Bếp đã nhận đơn",
         [OrderReady] = "Món ăn đã sẵn sàng",
         [OrderCancelled] = "Đơn hàng bị hủy",
@@ -95,7 +99,9 @@ public static class CustomerInbox
 
     public static string ReservationMessage(string eventName, Reservation r) => eventName switch
     {
-        ReservationCreated => $"Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} cho {r.PartySize} khách đã được ghi nhận.",
+        ReservationCreated => $"Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} cho {r.PartySize} khách đã được ghi nhận. Nhà hàng sẽ xác nhận sớm.",
+        ReservationConfirmed => $"Nhà hàng đã xác nhận đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} cho {r.PartySize} khách. Hẹn gặp quý khách!",
+        ReservationRejected => $"Đặt bàn bị từ chối: {(r.StatusReason ?? "Nhà hàng không thể nhận đặt bàn này").TrimEnd('.', ' ')}. Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} đã được hủy, bạn có thể đặt giờ khác.",
         ReservationUpdated => $"Đặt bàn {r.ReservationCode} đã đổi sang {When(r.ReservedAt)}, {r.PartySize} khách.",
         ReservationCancelled => $"Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} đã được hủy.",
         ReservationCheckedIn => $"Bạn đã nhận bàn theo đặt bàn {r.ReservationCode}. Chúc quý khách ngon miệng!",

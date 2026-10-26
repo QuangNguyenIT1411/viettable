@@ -22,12 +22,15 @@ public sealed class MobileReservationsGatewayController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly ILogger<MobileReservationsGatewayController> _logger;
     private readonly SelfRestaurant.Gateway.Api.Infrastructure.CustomerInboxNotifier _inbox;
+    private readonly SelfRestaurant.Gateway.Api.Infrastructure.StaffBranchEvents _staffEvents;
 
     public MobileReservationsGatewayController(CustomersClient customers, CatalogClient catalog, IdentityClient identity, OrdersClient orders,
         IConfiguration configuration, ILogger<MobileReservationsGatewayController> logger,
-        SelfRestaurant.Gateway.Api.Infrastructure.CustomerInboxNotifier inbox)
+        SelfRestaurant.Gateway.Api.Infrastructure.CustomerInboxNotifier inbox,
+        SelfRestaurant.Gateway.Api.Infrastructure.StaffBranchEvents staffEvents)
     {
         _inbox = inbox;
+        _staffEvents = staffEvents;
         _customers = customers;
         _catalog = catalog;
         _identity = identity;
@@ -86,11 +89,13 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var hash = Hash(new { request.BranchId, TableId = table.TableId, request.PartySize, ReservedAt = request.ReservedAt.UtcDateTime, Note = request.Note?.Trim() });
         try
         {
+            // Pending until the cashier confirms (or the guest checks in); the table is held meanwhile.
             var created = await _customers.CreateReservationAsync(new CreateReservationApiRequest(
                 contactName, phone, actorId, request.BranchId, table.TableId, request.PartySize,
-                request.ReservedAt.UtcDateTime, request.Note, scopedKey, hash, "Confirmed"), ct);
+                request.ReservedAt.UtcDateTime, request.Note, scopedKey, hash), ct);
             if (created is null) return MobileError("create_reservation_failed", "Không thể tạo đặt bàn.", 502);
             await _inbox.PushAsync(actorId, ct); // Customers wrote "Đặt bàn thành công"
+            await NudgeCashierAsync(created.BranchId);
             return Ok(created);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "create_reservation_failed"); }
@@ -152,6 +157,7 @@ public sealed class MobileReservationsGatewayController : ControllerBase
                     request.Note, $"c{CurrentCustomerId()}:update:{key.Value}", hash), ct);
             if (updated is null) return MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
             await _inbox.PushAsync(CurrentCustomerId(), ct);
+            await NudgeCashierAsync(updated.BranchId);
             return Ok(updated);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "update_reservation_failed"); }
@@ -171,6 +177,7 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             try { await _orders.CancelReservationPreOrderAsync(reservationId, ct); }
             catch (Exception ex) { _logger.LogWarning("Pre-order cancel skipped for reservation {ReservationId} ({ErrorType}).", reservationId, ex.GetType().Name); }
             await _inbox.PushAsync(CurrentCustomerId(), ct);
+            await NudgeCashierAsync(result.BranchId);
             return Ok(result);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "cancel_reservation_failed"); }
@@ -270,6 +277,17 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         return reservation.CustomerId == CurrentCustomerId()
             ? (reservation, null)
             : (null, MobileError("forbidden", "Bạn không có quyền truy cập đặt bàn này.", 403));
+    }
+
+    /// <summary>The cashier's reservation panels reload at once (best effort; they also reload on their own).</summary>
+    private async Task NudgeCashierAsync(int branchId)
+    {
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await _staffEvents.PublishAsync(branchId, new[] { SelfRestaurant.Gateway.Api.Infrastructure.StaffBranchEvents.Reservations }, timeout.Token);
+        }
+        catch (Exception ex) { _logger.LogWarning("Reservation staff nudge skipped ({ErrorType}).", ex.GetType().Name); }
     }
 
     private static bool IsOpenReservation(ReservationDto x) =>

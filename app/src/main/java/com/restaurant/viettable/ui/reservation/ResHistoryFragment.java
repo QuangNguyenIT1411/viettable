@@ -20,7 +20,7 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ResHistoryFragment extends BaseFragment {
+public class ResHistoryFragment extends BaseFragment implements com.restaurant.viettable.data.AppStateManager.StateChangeListener {
 
     public static ResHistoryFragment newInstance() {
         return new ResHistoryFragment();
@@ -58,6 +58,7 @@ public class ResHistoryFragment extends BaseFragment {
         binding.btnRetryReservations.setOnClickListener(v -> loadReservations());
 
         filterByTab(0);
+        appStateManager.addListener(this);
         loadReservations();
 
         binding.tabLayoutResHistory.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -100,7 +101,8 @@ public class ResHistoryFragment extends BaseFragment {
                 filteredList.add(r);
             } else if (tabIndex == 2 && r.getStatus() == Reservation.Status.COMPLETED) {
                 filteredList.add(r);
-            } else if (tabIndex == 3 && (r.getStatus() == Reservation.Status.CANCELLED || r.getStatus() == Reservation.Status.NO_SHOW)) {
+            } else if (tabIndex == 3 && (r.getStatus() == Reservation.Status.CANCELLED || r.getStatus() == Reservation.Status.NO_SHOW
+                    || r.getStatus() == Reservation.Status.REJECTED)) {
                 filteredList.add(r);
             }
         }
@@ -121,8 +123,15 @@ public class ResHistoryFragment extends BaseFragment {
         }
     }
 
+    /** The restaurant confirmed/rejected a booking (realtime) or another screen reloaded the list. */
+    @Override
+    public void onStateChanged() {
+        if (binding != null) filterByTab(binding.tabLayoutResHistory.getSelectedTabPosition());
+    }
+
     @Override
     public void onDestroyView() {
+        appStateManager.removeListener(this);
         super.onDestroyView();
         binding = null;
     }

@@ -290,6 +290,15 @@ public static class CustomersDbBootstrapper
                            IF COL_LENGTH('dbo.Reservations', 'PreOrderSubmittedAtUtc') IS NULL
                                ALTER TABLE dbo.Reservations ADD PreOrderSubmittedAtUtc DATETIME2 NULL;
 
+                           IF COL_LENGTH('dbo.Reservations', 'StatusChangedAtUtc') IS NULL
+                               ALTER TABLE dbo.Reservations ADD StatusChangedAtUtc DATETIME2 NULL;
+
+                           IF COL_LENGTH('dbo.Reservations', 'StatusChangedByEmployeeId') IS NULL
+                               ALTER TABLE dbo.Reservations ADD StatusChangedByEmployeeId INT NULL;
+
+                           IF COL_LENGTH('dbo.Reservations', 'StatusReason') IS NULL
+                               ALTER TABLE dbo.Reservations ADD StatusReason NVARCHAR(300) NULL;
+
                            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.Reservations') AND name = N'IX_Reservations_Branch_ReservedAt_Status')
                            BEGIN
                                CREATE INDEX IX_Reservations_Branch_ReservedAt_Status ON dbo.Reservations(BranchId, ReservedAt, Status);

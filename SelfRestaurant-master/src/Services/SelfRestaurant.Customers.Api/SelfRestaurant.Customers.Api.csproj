@@ -24,6 +24,7 @@
     <Compile Include="../../Shared/CloudCompatibility/PostgresModel.cs" Link="Infrastructure/Cloud/PostgresModel.cs" />
     <Compile Include="../../Shared/CloudCompatibility/PostgresBootstrap.cs" Link="Infrastructure/Cloud/PostgresBootstrap.cs" />
     <Compile Include="../../Shared/CloudCompatibility/PostgresConcurrencyFilter.cs" Link="Infrastructure/Cloud/PostgresConcurrencyFilter.cs" />
+    <Compile Include="../../Shared/CloudCompatibility/TransactionLocks.cs" Link="Infrastructure/Cloud/TransactionLocks.cs" />
     <Content Remove="Persistence/bin/**;Persistence/obj/**" />
     <EmbeddedResource Remove="Persistence/bin/**;Persistence/obj/**" />
     <None Remove="Persistence/bin/**;Persistence/obj/**" />

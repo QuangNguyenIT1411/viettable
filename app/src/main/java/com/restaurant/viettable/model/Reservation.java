@@ -13,7 +13,8 @@ public class Reservation implements Serializable {
         CHECKED_IN,
         COMPLETED,
         CANCELLED,
-        NO_SHOW
+        NO_SHOW,
+        REJECTED
     }
 
     private String id;
@@ -33,6 +34,7 @@ public class Reservation implements Serializable {
     private String contactName;
     private String contactPhone;
     private String reservedAt; // server instant (ISO); date/timeSlot are its display texts
+    private String statusReason; // rejection reason, or "Tự xác nhận khi check-in"
 
     public Reservation() {
         this.specialTags = new ArrayList<>();
@@ -92,12 +94,14 @@ public class Reservation implements Serializable {
     public void setReservedAt(String reservedAt) { this.reservedAt = reservedAt; }
     public boolean hasPreOrder() { return hasPreOrder; }
     public void setHasPreOrder(boolean hasPreOrder) { this.hasPreOrder = hasPreOrder; }
+    public String getStatusReason() { return statusReason; }
+    public void setStatusReason(String statusReason) { this.statusReason = statusReason; }
     public String getContactName() { return contactName; }
     public String getContactPhone() { return contactPhone; }
 
     public String getStatusDisplayText() {
         switch (status) {
-            case PENDING: return "Chờ xử lý";
+            case PENDING: return "Chờ nhà hàng xác nhận";
             case PENDING_DEPOSIT: return "Chờ đặt cọc";
             case CONFIRMED: return "Đã xác nhận";
             case CHECKING_IN: return "Đang check-in";
@@ -105,6 +109,7 @@ public class Reservation implements Serializable {
             case COMPLETED: return "Hoàn thành";
             case CANCELLED: return "Đã hủy";
             case NO_SHOW: return "Vắng mặt";
+            case REJECTED: return "Bị từ chối";
             default: return status.name();
         }
     }

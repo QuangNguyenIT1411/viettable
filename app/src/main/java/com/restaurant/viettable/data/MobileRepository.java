@@ -1408,6 +1408,7 @@ public final class MobileRepository {
                 SafeText.json(row, "customerName"), SafeText.json(row, "phoneNumber"));
         reservation.setTableLabel(tableLabel(branchId, reservation.getTableId()));
         reservation.setReservedAt(reserved);
+        reservation.setStatusReason(row.isNull("statusReason") ? null : SafeText.json(row, "statusReason", null));
         return reservation;
     }
 

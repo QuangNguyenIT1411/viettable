@@ -59,7 +59,7 @@ public class CheckinConfirmFragment extends BaseFragment {
 
         Reservation res = null;
         for (Reservation r : appStateManager.getReservations()) {
-            if (r.getStatus() == Reservation.Status.CONFIRMED) {
+            if (com.restaurant.viettable.util.ReservationSchedule.awaitingGuest(r.getStatus())) {
                 res = r;
                 break;
             }

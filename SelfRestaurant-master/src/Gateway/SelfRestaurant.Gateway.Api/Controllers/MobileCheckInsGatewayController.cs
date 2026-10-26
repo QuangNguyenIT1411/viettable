@@ -72,6 +72,7 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
             table.Table.DisplayTableNumber, reservation.ReservationId, reservation.TableId, false, "Sẵn sàng check-in."));
     }
 
+    [StaffBranchEvent(StaffEventSource.Mobile, StaffBranchEvents.Reservations)]
     [HttpPost("check-ins/reservation")]
     public async Task<ActionResult<MobileDiningSessionResponse>> CheckInReservation(MobileReservationCheckInRequest request,
         [FromServices] CustomerInboxNotifier inbox, CancellationToken ct)
@@ -229,8 +230,10 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
         return table is null ? (null, Error("qr_not_found", "Không tìm thấy bàn từ mã QR.", 404)) : (table, null);
     }
 
+    // Pending too: the check-in confirms the booking ("Tự xác nhận khi check-in", owner 26/10).
     private static bool IsCheckInState(ReservationDto x) =>
-        string.Equals(x.Status, "Confirmed", StringComparison.OrdinalIgnoreCase)
+        string.Equals(x.Status, "Pending", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(x.Status, "Confirmed", StringComparison.OrdinalIgnoreCase)
         || string.Equals(x.Status, "CheckingIn", StringComparison.OrdinalIgnoreCase);
     private static bool WithinArrivalWindow(ReservationDto x) =>
         Math.Abs((x.ReservedAt - DateTime.UtcNow).TotalMinutes) <= Math.Max(1, x.ArrivalWindowMinutes);

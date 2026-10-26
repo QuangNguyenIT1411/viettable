@@ -360,6 +360,16 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                         .HasColumnType("character varying(30)")
                         .HasDefaultValue("Pending");
 
+                    b.Property<DateTime?>("StatusChangedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("StatusChangedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StatusReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<int?>("TableId")
                         .HasColumnType("integer");
 

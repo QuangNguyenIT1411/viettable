@@ -95,7 +95,7 @@
     <string name="res_wizard_step3">3. Số lượng khách</string>
     <string name="res_wizard_step4">4. Chọn bàn</string>
     <string name="res_wizard_step5">5. Ghi chú</string>
-    <string name="res_confirm_title">Xác nhận đặt bàn thành công</string>
+    <string name="res_confirm_title">Đã gửi yêu cầu đặt bàn</string>
     <string name="res_code">Mã đặt bàn</string>
     <string name="res_detail_title">Chi tiết đặt bàn</string>
     <string name="res_preorder_cta">Đặt món trước (Pre-order)</string>

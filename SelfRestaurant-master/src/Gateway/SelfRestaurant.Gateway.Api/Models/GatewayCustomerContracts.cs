@@ -98,7 +98,10 @@ public sealed record ReservationDto(
     DateTime? UpdatedAtUtc,
     DateTime? PreOrderSubmittedAtUtc,
     IReadOnlyList<ReservationAssignedTableDto>? AssignedTables,
-    IReadOnlyList<ReservationPreOrderItemDto> PreOrderItems);
+    IReadOnlyList<ReservationPreOrderItemDto> PreOrderItems,
+    DateTime? StatusChangedAtUtc = null,
+    int? StatusChangedByEmployeeId = null,
+    string? StatusReason = null);
 
 public sealed record ReservationAssignedTableDto(int TableId, bool IsPrimary);
 

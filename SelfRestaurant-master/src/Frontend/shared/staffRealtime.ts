@@ -3,7 +3,7 @@
 // Kept free of the @microsoft/signalr import so every staff web can share it.
 
 /** Everything a staff screen can be told to reload. "dashboard" is the cashier's older event. */
-export const ALL_STAFF_TOPICS = ["dashboard", "orders", "onsitePayments", "serviceRequests"] as const;
+export const ALL_STAFF_TOPICS = ["dashboard", "orders", "onsitePayments", "serviceRequests", "reservations"] as const;
 
 export interface StaffHubConnection {
   readonly state: string;

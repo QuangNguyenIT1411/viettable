@@ -16,6 +16,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
 {
     private static readonly string[] CashierRoles = ["CASHIER", "MANAGER", "ADMIN"];
     public sealed record CashierReservationCheckInRequest(int? TableId, IReadOnlyList<int>? TableIds);
+    public sealed record CashierReservationRejectRequest(string? Reason);
 
     private readonly BillingClient _billingClient;
     private readonly IdentityClient _identityClient;
@@ -224,10 +225,12 @@ public sealed class StaffCashierGatewayController : ControllerBase
         var staff = RequireCashier();
         if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
 
-        var targetBranchId = branchId is > 0 ? branchId : staff.BranchId;
+        // The cashier's own branch only (a branchId of another branch used to be honoured).
+        if (branchId is > 0 && branchId != staff.BranchId)
+            return Error("branch_mismatch", "Chỉ xem được đặt bàn của chi nhánh đang làm việc.", 403);
         try
         {
-            var reservations = await _customersClient.GetTodayReservationsAsync(targetBranchId, status, date, cancellationToken);
+            var reservations = await _customersClient.GetTodayReservationsAsync(staff.BranchId, status, date, cancellationToken);
             return Ok(reservations);
         }
         catch (ApiClientException ex)
@@ -236,6 +239,60 @@ public sealed class StaffCashierGatewayController : ControllerBase
         }
     }
 
+    /// <summary>"Đặt bàn chờ xác nhận": every pending booking of the branch, today and the coming days.</summary>
+    [HttpGet("/api/cashier/reservations/pending")]
+    public async Task<ActionResult<IReadOnlyList<ReservationDto>>> GetPendingReservations(CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await _customersClient.GetPendingReservationsAsync(staff.BranchId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "get_reservations_failed", ex.Message, ex.StatusCode); }
+    }
+
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Reservations)]
+    [HttpPost("/api/cashier/reservations/{reservationId:int}/confirm")]
+    public Task<ActionResult<ReservationDto>> ConfirmReservation(int reservationId, [FromServices] CustomerInboxNotifier inbox,
+        CancellationToken ct) => DecideReservation(reservationId, "confirm", null, inbox, ct);
+
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Reservations)]
+    [HttpPost("/api/cashier/reservations/{reservationId:int}/reject")]
+    public Task<ActionResult<ReservationDto>> RejectReservation(int reservationId, [FromBody] CashierReservationRejectRequest? request,
+        [FromServices] CustomerInboxNotifier inbox, CancellationToken ct) =>
+        DecideReservation(reservationId, "reject", request?.Reason, inbox, ct);
+
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Reservations)]
+    [HttpPost("/api/cashier/reservations/{reservationId:int}/no-show")]
+    public Task<ActionResult<ReservationDto>> MarkReservationNoShow(int reservationId, [FromServices] CustomerInboxNotifier inbox,
+        CancellationToken ct) => DecideReservation(reservationId, "no-show", null, inbox, ct);
+
+    private async Task<ActionResult<ReservationDto>> DecideReservation(int reservationId, string decision, string? reason,
+        CustomerInboxNotifier inbox, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        if (reservationId <= 0) return Error("invalid_reservation", "Đặt bàn không hợp lệ.", 400);
+        if (decision == "reject" && string.IsNullOrWhiteSpace(reason))
+            return Error("reason_required", "Vui lòng chọn lý do từ chối.", 400);
+        try
+        {
+            var current = await _customersClient.GetReservationByIdAsync(reservationId, ct);
+            if (current is null) return Error("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
+            if (current.BranchId != staff.BranchId)
+                return Error("branch_mismatch", "Đặt bàn không thuộc chi nhánh của thu ngân hiện tại.", 403);
+            var updated = await _customersClient.DecideReservationAsync(reservationId, decision, staff.EmployeeId, reason?.Trim(), ct);
+            if (updated is null) return Error("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
+            // Dishes ordered ahead must never reach the kitchen once the booking is closed (best effort, like a guest cancel).
+            if (decision == "no-show")
+                try { await _ordersClient.CancelReservationPreOrderAsync(reservationId, ct); }
+                catch (Exception ex) { _logger.LogWarning("Pre-order cancel skipped for reservation {ReservationId} ({ErrorType}).", reservationId, ex.GetType().Name); }
+            if (!string.Equals(current.Status, updated.Status, StringComparison.OrdinalIgnoreCase))
+                await inbox.ReservationChangedAsync(updated.CustomerId, updated.ReservationId, updated.Status, ct);
+            return Ok(updated);
+        }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "reservation_update_failed", ex.Message, ex.StatusCode); }
+    }
+
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Reservations)]
     [HttpPost("/api/cashier/reservations/{reservationId:int}/check-in")]
     public async Task<ActionResult<CashierReservationCheckInResultDto>> CheckInReservation(
         int reservationId,
@@ -304,7 +361,7 @@ public sealed class StaffCashierGatewayController : ControllerBase
                 }
             }
 
-            var reservation = await _customersClient.BeginReservationCheckInAsync(reservationId, cancellationToken);
+            var reservation = await _customersClient.BeginReservationCheckInAsync(reservationId, cancellationToken, staff.EmployeeId);
             if (reservation is null)
             {
                 return Error("reservation_not_found", "Không tìm thấy đặt bàn.", 404);

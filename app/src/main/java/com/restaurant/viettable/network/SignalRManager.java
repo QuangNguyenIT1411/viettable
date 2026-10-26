@@ -50,6 +50,12 @@ public final class SignalRManager {
     /** "notificationCreated" carries no data; the inbox is re-read. */
     public static final class NotificationCreatedEvent { }
 
+    /** The restaurant confirmed, rejected or closed one of the user's bookings. */
+    public static final class ReservationChangedEvent {
+        public Integer reservationId;
+        public String status;
+    }
+
     public static final class PaymentUpdatedEvent {
         public Integer diningSessionId;
         public Integer sessionId;
@@ -146,6 +152,16 @@ public final class SignalRManager {
         // A new inbox row (reservations, kitchen, service requests, cashier): refresh the bell and the list.
         current.on("notificationCreated", event -> main.post(() -> { if (acceptsEvents(current)) scheduleInboxRefresh(0); }),
                 NotificationCreatedEvent.class);
+        // The list refresh updates the history and detail screens (they listen to the app state).
+        current.on("reservationChanged", event -> main.post(() -> {
+            if (!acceptsEvents(current) || event == null) return;
+            if (!deduplicator.shouldProcess("reservation:" + event.reservationId + ":" + event.status, System.currentTimeMillis())) return;
+            Log.i(TAG, "reservationChanged reservationId=" + event.reservationId);
+            MobileRepository.getInstance().loadReservations(new MobileRepository.Callback<java.util.List<com.restaurant.viettable.model.Reservation>>() {
+                @Override public void onSuccess(java.util.List<com.restaurant.viettable.model.Reservation> value) {}
+                @Override public void onError(ApiException error) {}
+            });
+        }), ReservationChangedEvent.class);
         current.onClosed(error -> main.post(() -> handleClosed(current, error)));
     }
 

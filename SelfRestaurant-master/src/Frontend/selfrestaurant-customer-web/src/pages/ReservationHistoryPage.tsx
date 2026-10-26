@@ -14,6 +14,7 @@ const statusLabels: Record<string, string> = {
   Cancelled: "Đã hủy",
   NoShow: "Không đến",
   Completed: "Hoàn tất",
+  Rejected: "Bị từ chối",
 };
 
 const preOrderStatuses = new Set(["Pending", "Confirmed"]);

@@ -86,10 +86,32 @@ public final class ReservationSchedule {
         return open(status) && reservedAt != null && !now.isAfter(reservedAt.plus(Duration.ofMinutes(ARRIVAL_WINDOW_MINUTES)));
     }
 
-    /** Scan the table QR: confirmed (or a check-in in progress) and within 30 minutes of the reserved time. */
+    /** Booked and not yet seated: waiting for the restaurant's confirmation, or confirmed. */
+    public static boolean awaitingGuest(Reservation.Status status) {
+        return status == Reservation.Status.PENDING || status == Reservation.Status.CONFIRMED;
+    }
+
+    /**
+     * Scan the table QR within 30 minutes of the reserved time: confirmed, a check-in in progress, or still waiting
+     * for the restaurant (the check-in confirms it, owner 26/10).
+     */
     public static boolean canCheckIn(Reservation.Status status, Instant reservedAt, Instant now) {
-        return (status == Reservation.Status.CONFIRMED || status == Reservation.Status.CHECKING_IN) && reservedAt != null
+        return (awaitingGuest(status) || status == Reservation.Status.CHECKING_IN) && reservedAt != null
                 && Math.abs(Duration.between(reservedAt, now).toMinutes()) <= ARRIVAL_WINDOW_MINUTES;
+    }
+
+    /** The line under the status on the detail screen, or null. */
+    public static String statusInfo(Reservation.Status status, String reason) {
+        boolean hasReason = reason != null && !reason.trim().isEmpty();
+        switch (status) {
+            case PENDING: return "Nhà hàng sẽ xác nhận sớm. Bàn đã được giữ cho bạn; bạn sẽ nhận thông báo khi có kết quả.";
+            case REJECTED: {
+                String text = hasReason ? reason.trim() : "Nhà hàng không thể nhận đặt bàn này";
+                if (!text.endsWith(".") && !text.endsWith("!") && !text.endsWith("?")) text += ".";
+                return "Lý do từ chối: " + text + " Bạn có thể đặt giờ khác.";
+            }
+            default: return null;
+        }
     }
 
     /** Order dishes ahead: confirmed and before the reserved time. */

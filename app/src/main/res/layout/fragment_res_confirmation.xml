@@ -41,7 +41,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Bàn của bạn đã được giữ thành công trên hệ thống."
+            android:gravity="center"
+            android:text="Bàn đã được giữ cho bạn. Nhà hàng sẽ xác nhận sớm, bạn sẽ nhận thông báo khi có kết quả."
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 

@@ -28,6 +28,9 @@ function recordSession(email: string, sessionId: number, token: string) {
   openedThisTest.push({ email, token });
 }
 
+/** A session a spec opened itself (e.g. a reservation check-in): released after the test like the others. */
+export const recordTestSession = recordSession;
+
 export function hasSessionsFromThisTest() {
   return openedThisTest.length > 0;
 }

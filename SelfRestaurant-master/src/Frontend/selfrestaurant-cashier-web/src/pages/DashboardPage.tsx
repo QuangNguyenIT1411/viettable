@@ -7,6 +7,7 @@ import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { BankTransferAlertsPanel } from "../components/BankTransferAlertsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
+import { PendingReservationsPanel, ReservationActions } from "../components/PendingReservationsPanel";
 import { cashierApi } from "../lib/api";
 import { useControlledRead } from "../lib/useControlledRead";
 import { useStaffRealtime } from "../lib/useStaffRealtime";
@@ -46,6 +47,7 @@ const reservationStatusLabels: Record<string, string> = {
   Cancelled: "Đã hủy",
   NoShow: "Không đến",
   Completed: "Hoàn tất",
+  Rejected: "Bị từ chối",
 };
 
 const reservationStatuses = [
@@ -56,8 +58,14 @@ const reservationStatuses = [
   { value: "CheckedIn", label: "Đã check-in" },
   { value: "Cancelled", label: "Đã hủy" },
   { value: "NoShow", label: "Không đến" },
+  { value: "Rejected", label: "Bị từ chối" },
   { value: "Completed", label: "Hoàn tất" },
 ];
+
+/** Today in restaurant time (UTC+7) as yyyy-MM-dd, for the date picker. */
+function restaurantToday() {
+  return new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -87,7 +95,7 @@ function reservationStatusBadgeClass(status?: string | null) {
   const normalized = (status ?? "").toUpperCase();
   if (normalized === "CONFIRMED") return "soft-badge success";
   if (normalized === "CHECKEDIN" || normalized === "COMPLETED") return "soft-badge info";
-  if (normalized === "CANCELLED" || normalized === "NOSHOW") return "soft-badge danger";
+  if (normalized === "CANCELLED" || normalized === "NOSHOW" || normalized === "REJECTED") return "soft-badge danger";
   return "soft-badge warning";
 }
 
@@ -106,6 +114,12 @@ function summarizePreOrderItems(reservation: ReservationDto) {
     .join(", ") + (items.length > 3 ? ` +${items.length - 3} món` : "");
 }
 
+function reservationTableText(reservation: ReservationDto, tables: { tableId: number; number: string }[]) {
+  const ids = getReservationTableIds(reservation);
+  if (ids.length === 0) return "Chưa gán bàn";
+  return ids.map((tableId) => tables.find((table) => table.tableId === tableId)?.number ?? `Bàn #${tableId}`).join(", ");
+}
+
 function getReservationTableIds(reservation: ReservationDto) {
   const assignedIds = reservation.assignedTables?.map((table) => table.tableId).filter((tableId) => tableId > 0) ?? [];
   if (assignedIds.length > 0) return Array.from(new Set(assignedIds));
@@ -120,6 +134,7 @@ export function DashboardPage({ onLogout }: Props) {
   const [reservationsError, setReservationsError] = useState<string | null>(null);
   const [reservationSearch, setReservationSearch] = useState("");
   const [reservationStatus, setReservationStatus] = useState("ALL");
+  const [reservationDate, setReservationDate] = useState(restaurantToday);
   const [checkInTarget, setCheckInTarget] = useState<ReservationDto | null>(null);
   const [selectedCheckInTableIds, setSelectedCheckInTableIds] = useState<number[]>([]);
   const [checkInResult, setCheckInResult] = useState<CashierReservationCheckInResultDto | null>(null);
@@ -184,13 +199,13 @@ export function DashboardPage({ onLogout }: Props) {
   });
   async function loadDashboard(_silent = false) { await refreshDashboard(); }
 
-  async function loadReservations(branchId: number, status = reservationStatus) {
+  async function loadReservations(branchId: number, status = reservationStatus, date = reservationDate) {
     setReservationsLoading(true);
     setReservationsError(null);
     try {
-      setReservations(await cashierApi.getTodayReservations(branchId, status));
+      setReservations(await cashierApi.getTodayReservations(branchId, status, date));
     } catch (err) {
-      setReservationsError(userMessage(err, "Không thể tải danh sách đặt bàn hôm nay."));
+      setReservationsError(userMessage(err, "Không thể tải danh sách đặt bàn."));
     } finally {
       setReservationsLoading(false);
     }
@@ -199,8 +214,8 @@ export function DashboardPage({ onLogout }: Props) {
   useEffect(() => {
     const branchId = dashboard?.staff.branchId;
     if (!branchId) return;
-    void loadReservations(branchId, reservationStatus);
-  }, [dashboard?.staff.branchId, reservationStatus]);
+    void loadReservations(branchId, reservationStatus, reservationDate);
+  }, [dashboard?.staff.branchId, reservationStatus, reservationDate]);
 
   // One realtime connection for the whole screen; the panels below listen on the topic bus.
   const staffEvents = useMemo(() => createTopicBus(), []);
@@ -213,6 +228,13 @@ export function DashboardPage({ onLogout }: Props) {
     live: setRealtimeLive,
     error: err => setError(userMessage(err, "Không thể kết nối cập nhật realtime thu ngân.")),
   });
+
+  // A booking was made, changed, decided or checked in (this screen, another cashier or the app).
+  useEffect(() => {
+    const branchId = dashboard?.staff.branchId;
+    if (!branchId) return;
+    return staffEvents.on("reservations", () => void loadReservations(branchId));
+  }, [staffEvents, dashboard?.staff.branchId, reservationStatus, reservationDate]);
 
   useEffect(() => {
     if (!dashboard) return;
@@ -831,6 +853,10 @@ export function DashboardPage({ onLogout }: Props) {
         <BankTransferAlertsPanel events={staffEvents} live={realtimeLive} />
         <OnsitePaymentsPanel onPendingCountChange={setPendingOnsiteCount} events={staffEvents} live={realtimeLive} />
         <ServiceRequestsPanel tables={dashboard.tables} events={staffEvents} live={realtimeLive} />
+        <PendingReservationsPanel events={staffEvents} live={realtimeLive}
+          tableLabel={(reservation) => reservationTableText(reservation, dashboard.tables)}
+          onChanged={() => void loadReservations(dashboard.staff.branchId)}
+          onCheckIn={(reservation) => setCheckInTarget(reservation)} />
       </section>
 
       <section className="panel cashier-panel-card cashier-reservation-panel">
@@ -838,9 +864,9 @@ export function DashboardPage({ onLogout }: Props) {
           <div>
             <h2>
               <i className="bi bi-calendar-check me-2" />
-              Đặt bàn hôm nay
+              {reservationDate === restaurantToday() ? "Đặt bàn hôm nay" : "Đặt bàn theo ngày"}
             </h2>
-            <p className="muted">Theo dõi khách đã đặt bàn và món đặt trước trong ngày.</p>
+            <p className="muted">Theo dõi khách đã đặt bàn và món đặt trước trong ngày đã chọn.</p>
           </div>
           <button
             type="button"
@@ -864,6 +890,8 @@ export function DashboardPage({ onLogout }: Props) {
                 placeholder="Tìm mã đặt bàn, tên khách hoặc số điện thoại..."
               />
             </div>
+            <input type="date" aria-label="Ngày đặt bàn" value={reservationDate}
+              onChange={(event) => setReservationDate(event.target.value || restaurantToday())} />
             <select value={reservationStatus} onChange={(event) => setReservationStatus(event.target.value)}>
               {reservationStatuses.map((status) => (
                 <option key={status.value} value={status.value}>{status.label}</option>
@@ -874,7 +902,7 @@ export function DashboardPage({ onLogout }: Props) {
           {reservationsLoading ? (
             <div className="cashier-empty-state reservation-empty-state">
               <i className="bi bi-hourglass-split" />
-              <p>Đang tải đặt bàn hôm nay...</p>
+              <p>Đang tải đặt bàn...</p>
             </div>
           ) : null}
 
@@ -883,7 +911,7 @@ export function DashboardPage({ onLogout }: Props) {
           {!reservationsLoading && !reservationsError && visibleReservations.length === 0 ? (
             <div className="cashier-empty-state reservation-empty-state">
               <i className="bi bi-calendar2-x" />
-              <p>Chưa có đặt bàn nào hôm nay.</p>
+              <p>Chưa có đặt bàn nào trong ngày này.</p>
             </div>
           ) : null}
 
@@ -935,6 +963,8 @@ export function DashboardPage({ onLogout }: Props) {
                       {reservation.partySize > 4 ? <span className="soft-badge warning"><i className="bi bi-people me-1" />Cần sắp xếp/ghép bàn</span> : null}
                     </div>
                     {reservation.note ? <p className="reservation-note">Ghi chú: {reservation.note}</p> : null}
+                    {reservation.statusReason ? <p className="reservation-note" data-status-reason>
+                      {reservation.status === "Rejected" ? "Lý do từ chối: " : ""}{reservation.statusReason}</p> : null}
                     <div className="reservation-preorder-summary">
                       <span className="soft-badge info">{itemCount} món đặt trước</span>
                       <p>{summarizePreOrderItems(reservation)}</p>
@@ -949,7 +979,11 @@ export function DashboardPage({ onLogout }: Props) {
                       <i className="bi bi-person-check me-1" />
                       Nhận khách
                     </button>
-                    <small className="muted">Check-in sẽ tạo đơn bếp từ món đặt trước nếu có.</small>
+                    <small className="muted">{reservation.status === "Pending"
+                      ? "Nhận khách khi còn chờ sẽ tự xác nhận đặt bàn."
+                      : "Check-in sẽ tạo đơn bếp từ món đặt trước nếu có."}</small>
+                    <ReservationActions reservation={reservation}
+                      onChanged={() => staffEvents.emit(["reservations"])} />
                   </article>
                 );
               })}

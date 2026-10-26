@@ -120,10 +120,23 @@ public sealed class CustomersClient : ApiClientBase
             new { },
             cancellationToken);
 
-    public Task<ReservationDto?> BeginReservationCheckInAsync(int reservationId, CancellationToken cancellationToken) =>
+    /// <summary>A pending booking is confirmed by its check-in; employeeId is the cashier, null for a QR check-in.</summary>
+    public Task<ReservationDto?> BeginReservationCheckInAsync(int reservationId, CancellationToken cancellationToken, int? employeeId = null) =>
         PostForAsync<object, ReservationDto>(
-            $"/api/customers/reservations/{reservationId}/begin-check-in",
+            $"/api/customers/reservations/{reservationId}/begin-check-in" + (employeeId is > 0 ? $"?employeeId={employeeId.Value}" : ""),
             new { },
+            cancellationToken);
+
+    public async Task<IReadOnlyList<ReservationDto>> GetPendingReservationsAsync(int branchId, CancellationToken cancellationToken) =>
+        await GetAsync<IReadOnlyList<ReservationDto>>($"/api/internal/reservations/pending?branchId={branchId}", cancellationToken)
+            ?? Array.Empty<ReservationDto>();
+
+    /// <summary>decision: confirm, reject (reason required) or no-show.</summary>
+    public Task<ReservationDto?> DecideReservationAsync(int reservationId, string decision, int employeeId, string? reason,
+        CancellationToken cancellationToken) =>
+        PostForAsync<object, ReservationDto>(
+            $"/api/internal/reservations/{reservationId}/{decision}",
+            new { employeeId, reason },
             cancellationToken);
 
     public Task<ReservationDto?> CompleteReservationCheckInAsync(

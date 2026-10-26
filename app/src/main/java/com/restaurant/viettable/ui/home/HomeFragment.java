@@ -114,7 +114,7 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         List<Reservation> resList = appStateManager.getReservations();
         Reservation upcomingRes = null;
         for (Reservation r : resList) {
-            if (r.getStatus() == Reservation.Status.CONFIRMED) {
+            if (com.restaurant.viettable.util.ReservationSchedule.awaitingGuest(r.getStatus())) {
                 upcomingRes = r;
                 break;
             }
@@ -129,6 +129,8 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
             final Reservation resToOpen = upcomingRes;
             binding.btnViewResDetail.setOnClickListener(v -> navigateTo(ResDetailFragment.newInstance(resToOpen)));
             binding.btnResPreOrder.setOnClickListener(v -> navigateTo(PreorderMenuFragment.newInstance(resToOpen)));
+            // Ordering ahead opens once the restaurant has confirmed the booking.
+            binding.btnResPreOrder.setVisibility(upcomingRes.getStatus() == Reservation.Status.CONFIRMED ? View.VISIBLE : View.GONE);
         } else {
             binding.cardUpcomingReservation.setVisibility(View.GONE);
         }

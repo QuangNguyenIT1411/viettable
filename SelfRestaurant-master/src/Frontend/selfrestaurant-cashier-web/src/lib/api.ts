@@ -84,13 +84,22 @@ export const cashierApi = {
   completeServiceRequest: (id: number) => request<StaffServiceRequestDto>(`/api/gateway/staff/cashier/service-requests/${id}/complete`, { method: "POST", body: "{}" }),
   getHistory: () => request<CashierHistoryDto>("/api/gateway/staff/cashier/history"),
   getReport: (date?: string) => request<CashierReportScreenDto>(`/api/gateway/staff/cashier/report${date ? `?date=${date}` : ""}`),
-  getTodayReservations: (branchId?: number | null, status?: string) => {
+  /** date: yyyy-MM-dd in restaurant time; omitted = today. */
+  getTodayReservations: (branchId?: number | null, status?: string, date?: string) => {
     const params = new URLSearchParams();
     if (branchId && branchId > 0) params.set("branchId", String(branchId));
     if (status && status !== "ALL") params.set("status", status);
+    if (date) params.set("date", date);
     const suffix = params.size > 0 ? `?${params.toString()}` : "";
     return request<ReservationDto[]>(`/api/cashier/reservations/today${suffix}`);
   },
+  getPendingReservations: (signal?: AbortSignal) => request<ReservationDto[]>("/api/cashier/reservations/pending", { signal }),
+  confirmReservation: (reservationId: number) =>
+    request<ReservationDto>(`/api/cashier/reservations/${reservationId}/confirm`, { method: "POST", body: "{}" }),
+  rejectReservation: (reservationId: number, reason: string) =>
+    request<ReservationDto>(`/api/cashier/reservations/${reservationId}/reject`, { method: "POST", body: JSON.stringify({ reason }) }),
+  markReservationNoShow: (reservationId: number) =>
+    request<ReservationDto>(`/api/cashier/reservations/${reservationId}/no-show`, { method: "POST", body: "{}" }),
   checkInReservation: (reservationId: number, payload: { tableId?: number | null; tableIds?: number[] }) =>
     request<CashierReservationCheckInResultDto>(`/api/cashier/reservations/${reservationId}/check-in`, { method: "POST", body: JSON.stringify({ tableId: payload.tableId ?? null, tableIds: payload.tableIds ?? [] }) }),
   closeDiningSession: (sessionId: number) =>
