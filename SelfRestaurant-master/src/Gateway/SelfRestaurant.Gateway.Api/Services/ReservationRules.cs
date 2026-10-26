@@ -25,6 +25,21 @@ public static class ReservationRules
         !string.Equals(table.StatusCode, "INACTIVE", StringComparison.OrdinalIgnoreCase)
         && (table.IsAvailable || at - now >= LiveStatusHorizon);
 
+    /// <summary>
+    /// The table's state on the booking map, with the same rules as booking itself: inactive, too few seats, held by
+    /// another booking within two hours of that time, or guests seated now when the booking starts within
+    /// <see cref="LiveStatusHorizon"/>. Order matters: the most useful reason for the guest wins.
+    /// </summary>
+    public static (string Status, string Label) TableMapStatus(BranchTableDto table, int partySize, bool bookedInSlot,
+        DateTimeOffset at, DateTimeOffset now)
+    {
+        if (string.Equals(table.StatusCode, "INACTIVE", StringComparison.OrdinalIgnoreCase)) return ("INACTIVE", "Tạm ngưng");
+        if (table.NumberOfSeats < partySize) return ("TOO_SMALL", "Không đủ ghế");
+        if (bookedInSlot) return ("BOOKED", "Đã được đặt");
+        if (!TableBookableAt(table, at, now)) return ("IN_USE", "Đang có khách");
+        return ("AVAILABLE", "Trống");
+    }
+
     /// <summary>Restaurant time of day of the booking is within [openFrom, lastSlot].</summary>
     public static bool WithinBookingHours(DateTimeOffset at, TimeOnly openFrom, TimeOnly lastSlot)
     {

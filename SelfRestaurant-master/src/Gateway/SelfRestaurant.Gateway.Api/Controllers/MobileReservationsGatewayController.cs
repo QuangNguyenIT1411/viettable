@@ -74,6 +74,8 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var table = request.TableId is > 0
             ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value)
             : available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
+        // The guest picked this table on the map but someone else got it first (or it just became unusable).
+        if (table is null && request.TableId is > 0) return TableTaken(available.Layout, request.TableId.Value);
         if (table is null)
             return MobileError("reservation_slot_unavailable", "Khung giờ đã hết bàn phù hợp.", 409,
                 new { suggestions = await BuildSuggestions(request.BranchId, request.ReservedAt, request.PartySize, null, ct) });
@@ -97,6 +99,11 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             await _inbox.PushAsync(actorId, ct); // Customers wrote "Đặt bàn thành công"
             await NudgeCashierAsync(created.BranchId);
             return Ok(created);
+        }
+        catch (ApiClientException ex) when (ex.StatusCode == 409 && ex.Code is "reservation_slot_unavailable" or "command_in_progress")
+        {
+            // Two guests confirmed the same table at the same moment; Customers let only the first one in.
+            return TableTaken(available.Layout, table.TableId);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "create_reservation_failed"); }
     }
@@ -143,7 +150,12 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         if (validation is not null) return validation;
         var available = await FindAvailableTables(owned.Reservation!.BranchId, request.ReservedAt, request.PartySize, reservationId, ct);
         // Keep the guest's table when it still fits the new time and party; otherwise move them to the best free one
-        // (more guests used to fail with "hết bàn" although other tables were free).
+        // (more guests used to fail with "hết bàn" although other tables were free). A table with enough seats that
+        // is no longer free was taken by someone else after the guest chose it on the map: say so.
+        var requested = request.TableId is > 0 ? available.Layout?.Tables.FirstOrDefault(x => x.TableId == request.TableId.Value) : null;
+        if (requested is not null && requested.NumberOfSeats >= request.PartySize
+            && available.Available.All(x => x.TableId != requested.TableId))
+            return TableTaken(available.Layout, requested.TableId);
         var table = (request.TableId is > 0 ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value) : null)
             ?? available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
         if (table is null)
@@ -159,6 +171,10 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             await _inbox.PushAsync(CurrentCustomerId(), ct);
             await NudgeCashierAsync(updated.BranchId);
             return Ok(updated);
+        }
+        catch (ApiClientException ex) when (ex.StatusCode == 409 && ex.Code is "reservation_slot_unavailable" or "command_in_progress")
+        {
+            return TableTaken(available.Layout, table.TableId);
         }
         catch (ApiClientException ex) { return DownstreamError(ex, "update_reservation_failed"); }
     }
@@ -277,6 +293,15 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         return reservation.CustomerId == CurrentCustomerId()
             ? (reservation, null)
             : (null, MobileError("forbidden", "Bạn không có quyền truy cập đặt bàn này.", 403));
+    }
+
+    /// <summary>409 table_taken: the app shows the message and reloads the map.</summary>
+    private ObjectResult TableTaken(BranchTablesResponse? layout, int tableId)
+    {
+        var number = layout?.Tables.FirstOrDefault(x => x.TableId == tableId)?.DisplayTableNumber;
+        var label = number is > 0 ? $"Bàn {number}" : "Bàn bạn chọn";
+        return MobileError("table_taken", $"{label} vừa được người khác đặt hoặc không còn trống trong khung giờ này. Vui lòng chọn bàn khác trên sơ đồ.",
+            409, new { tableId });
     }
 
     /// <summary>The cashier's reservation panels reload at once (best effort; they also reload on their own).</summary>

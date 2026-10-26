@@ -1,6 +1,6 @@
 import { expect, request as playwrightRequest, test, type APIRequestContext } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { openTableWithOrder, requestOnsitePayment, sendKitchenRequest, type DiningFixture } from "../support/customer";
+import { openTableWithOrder, requestOnsitePayment, sendKitchenRequest, type DiningFixture, registerGuest } from "../support/customer";
 import { settleAfterTest } from "../support/cleanup";
 import { accounts, password } from "../support/staff";
 
@@ -27,8 +27,7 @@ async function newCustomer(baseURL: string) {
   const api = await playwrightRequest.newContext({ baseURL });
   const id = randomUUID().slice(0, 8);
   const email = `e2e.notif.${id}@viettable.local`;
-  const response = await api.post("/api/mobile/v1/auth/register", {
-    data: { name: `E2E ${id}`, username: email, email, password: "E2e-pass-123", phoneNumber: `09${Date.now().toString().slice(-8)}` } });
+  const response = await registerGuest(api, { name: `E2E ${id}`, username: email, email, password: "E2e-pass-123", phoneNumber: `09${Date.now().toString().slice(-8)}` });
   expect(response.ok()).toBeTruthy();
   return { api, token: (await response.json()).accessToken as string };
 }

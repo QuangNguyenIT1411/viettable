@@ -10,7 +10,13 @@ public sealed record MobileTableResponse(int TableId, int TableNumber, int Numbe
     string AreaCode, bool PhysicallyAvailable, bool ReservationAvailable);
 public sealed record MobileAvailabilityResponse(int BranchId, DateTimeOffset ReservedAt, int PartySize,
     int DurationMinutes, IReadOnlyList<MobileTableResponse> AvailableTables,
-    IReadOnlyList<MobileAvailabilitySuggestion> Suggestions);
+    IReadOnlyList<MobileAvailabilitySuggestion> Suggestions,
+    IReadOnlyList<MobileTableMapItem>? Tables = null);
+/// <summary>
+/// One table of the branch on the booking map (reservation item 5): Status AVAILABLE, BOOKED, TOO_SMALL, IN_USE or
+/// INACTIVE with its Vietnamese label. Never says who booked it.
+/// </summary>
+public sealed record MobileTableMapItem(int TableId, int TableNumber, int NumberOfSeats, string Status, string StatusLabel);
 public sealed record MobileAvailabilitySuggestion(DateTimeOffset ReservedAt, int AvailableTableCount);
 public sealed record MobileQrContextResponse(int TableId, int BranchId, int TableNumber);
 

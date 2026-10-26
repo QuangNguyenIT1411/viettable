@@ -122,8 +122,17 @@ public sealed class MobileCatalogGatewayController : ControllerBase
                 if (count > 0) suggestions.Add(new MobileAvailabilitySuggestion(candidate, count));
             }
         }
+        // The whole floor for the map; "availableTables" stays for app versions that only list free tables.
+        var map = layout.Tables
+            .OrderBy(x => x.DisplayTableNumber > 0 ? x.DisplayTableNumber : x.TableId).ThenBy(x => x.TableId)
+            .Select(x =>
+            {
+                var state = ReservationRules.TableMapStatus(x, partySize, occupied.Contains(x.TableId), at, now);
+                return new MobileTableMapItem(x.TableId, x.DisplayTableNumber, x.NumberOfSeats, state.Status, state.Label);
+            })
+            .ToArray();
         return new MobileAvailabilityResponse(branchId, at, partySize, duration,
-            suitable.Select(x => MapTable(x, true)).ToArray(), suggestions);
+            suitable.Select(x => MapTable(x, true)).ToArray(), suggestions, map);
     }
 
     private static MobileTableResponse MapTable(BranchTableDto table, bool reservationAvailable) =>

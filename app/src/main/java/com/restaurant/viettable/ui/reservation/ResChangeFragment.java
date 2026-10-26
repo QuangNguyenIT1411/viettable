@@ -123,21 +123,8 @@ public class ResChangeFragment extends BaseFragment {
             binding.btnSubmitChange.setOnClickListener(v -> {
                 if (selectedTime == null) { showToast("Ngày này đã hết giờ nhận đặt bàn. Vui lòng chọn ngày khác."); return; }
                 String note = binding.etChangeNote.getText() != null ? binding.etChangeNote.getText().toString().trim() : "";
-                binding.btnSubmitChange.setEnabled(false);
-                MobileRepository.getInstance().updateReservation(reservation, selectedDate, selectedTime, guests, note,
-                        new MobileRepository.Callback<Reservation>() {
-                            @Override public void onSuccess(Reservation value) {
-                                if (binding == null) return;
-                                binding.btnSubmitChange.setEnabled(true);
-                                showToast("Đã cập nhật thay đổi đặt bàn thành công!");
-                                navigateBack();
-                            }
-                            @Override public void onError(ApiException error) {
-                                if (binding == null) return;
-                                binding.btnSubmitChange.setEnabled(true);
-                                showToast(apiError(error));
-                            }
-                        });
+                // The table is confirmed on the map (item 5); the current one stays selected while it is free.
+                navigateTo(ResTableLayoutFragment.forChange(reservation, selectedDate, selectedTime, guests, note));
             });
         }
     }

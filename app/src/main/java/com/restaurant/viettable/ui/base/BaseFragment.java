@@ -135,6 +135,13 @@ public abstract class BaseFragment extends Fragment {
         }
     }
 
+    /** For a sentence the guest must read in full (e.g. why the chosen table is gone). */
+    protected void showLongToast(String message) {
+        if (getContext() != null) {
+            Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+        }
+    }
+
     protected void showCartAdded(String what) {
         showToast(com.restaurant.viettable.util.CartMessages.added(what, appStateManager.hasActiveDiningSession()));
     }

@@ -76,6 +76,10 @@ public sealed class CustomersController : ControllerBase
         }
 
         await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        // Two guests confirming the same table at once (map, item 5): the second waits here, then sees the first
+        // booking and gets 409. Without it SQL Server picked a deadlock victim and the guest saw a 500.
+        if (request.TableId is > 0 && _db.Database.IsRelational())
+            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, TableLock(request.BranchId, request.TableId.Value), cancellationToken);
 
         if (idempotencyKey is not null)
         {
@@ -312,6 +316,12 @@ public sealed class CustomersController : ControllerBase
         await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         if (_db.Database.IsRelational())
             await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, ReservationLock(reservationId), cancellationToken);
+        // Then the target table (always reservation → table, so a change and a new booking cannot deadlock).
+        if (request.TableId is > 0 && _db.Database.IsRelational())
+        {
+            var branchId = await _db.Reservations.Where(x => x.ReservationId == reservationId).Select(x => x.BranchId).FirstOrDefaultAsync(cancellationToken);
+            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, TableLock(branchId, request.TableId.Value), cancellationToken);
+        }
         var reservation = await _db.Reservations.Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
             .FirstOrDefaultAsync(x => x.ReservationId == reservationId, cancellationToken);
         if (reservation is null) return NotFound(new { code = "reservation_not_found", message = "Không tìm thấy đặt bàn." });
@@ -713,6 +723,7 @@ public sealed class CustomersController : ControllerBase
     }
 
     private static string ReservationLock(int reservationId) => "reservation:" + reservationId;
+    private static string TableLock(int branchId, int tableId) => $"reservation-table:{branchId}:{tableId}";
 
     /// <summary>One state change of a reservation at a time (null on the in-memory test provider).</summary>
     private async Task<IDbContextTransaction?> BeginReservationLockAsync(int reservationId, CancellationToken ct)

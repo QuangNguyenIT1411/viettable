@@ -1,7 +1,7 @@
 import { expect, request, test, type APIRequestContext } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { settleAfterTest } from "../support/cleanup";
-import { recordTestSession } from "../support/customer";
+import { recordTestSession, registerGuest } from "../support/customer";
 import { accounts, login, password } from "../support/staff";
 
 // Reservation item 2 (26/10) against the LOCAL stack: a booking from the app waits for the cashier ("Đặt bàn chờ
@@ -21,8 +21,7 @@ async function customer(baseURL: string): Promise<Customer> {
   const api = await request.newContext({ baseURL });
   const id = randomUUID().slice(0, 8);
   const email = `e2e.dec.${id}@viettable.local`;
-  const response = await api.post("/api/mobile/v1/auth/register", {
-    data: { name: `E2E ${id}`, username: email, email, password: "E2e-pass-123", phoneNumber: `09${Date.now().toString().slice(-8)}` } });
+  const response = await registerGuest(api, { name: `E2E ${id}`, username: email, email, password: "E2e-pass-123", phoneNumber: `09${Date.now().toString().slice(-8)}` });
   expect(response.ok(), await response.text()).toBeTruthy();
   return { api, token: (await response.json()).accessToken, email };
 }

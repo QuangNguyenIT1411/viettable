@@ -555,6 +555,43 @@ public final class MobileRepository {
         }
     }
 
+    /**
+     * Every table of the branch for that time and party, each with its state (reservation item 5). The server
+     * releases the reservation being changed (excludeReservationId) so its own table shows as free.
+     */
+    public void loadTableMap(ReservationDraft draft, String excludeReservationId, Callback<List<com.restaurant.viettable.model.TableMapItem>> callback) {
+        try {
+            if (draft.getBranch() == null) throw new IllegalArgumentException("missing branch");
+            String instant = URLEncoder.encode(reservationInstant(draft), StandardCharsets.UTF_8.name());
+            String path = "/api/mobile/v1/branches/" + draft.getBranch().getId() + "/availability?reservedAt="
+                    + instant + "&partySize=" + draft.getGuestCount()
+                    + (excludeReservationId == null ? "" : "&excludeReservationId=" + excludeReservationId);
+            String branchId = draft.getBranch().getId();
+            api().get(path, true, new ApiClient.Callback() {
+                @Override public void onSuccess(Object body) {
+                    JSONObject response = (JSONObject) body;
+                    List<com.restaurant.viettable.model.TableMapItem> values = new ArrayList<>();
+                    JSONArray rows = response.optJSONArray("tables");
+                    boolean fullMap = rows != null;
+                    if (!fullMap) rows = response.optJSONArray("availableTables"); // older server: free tables only
+                    if (rows != null) for (int i = 0; i < rows.length(); i++) {
+                        JSONObject row = rows.optJSONObject(i);
+                        if (row == null) continue;
+                        tableNumbers.put(branchId, String.valueOf(row.optInt("tableId")), row.optInt("tableNumber"));
+                        values.add(new com.restaurant.viettable.model.TableMapItem(String.valueOf(row.optInt("tableId")),
+                                row.optInt("tableNumber"), row.optInt("numberOfSeats"),
+                                fullMap ? SafeText.json(row, "status", "INACTIVE") : com.restaurant.viettable.model.TableMapItem.AVAILABLE,
+                                fullMap ? SafeText.json(row, "statusLabel", "") : "Trống"));
+                    }
+                    callback.onSuccess(values);
+                }
+                @Override public void onError(ApiException error) { callback.onError(error); }
+            });
+        } catch (Exception e) {
+            callback.onError(new ApiException(0, "invalid_reservation_time", "Không thể kiểm tra bàn cho ngày giờ đã chọn.", null));
+        }
+    }
+
     public void cancelReservation(Reservation reservation, Callback<Reservation> callback) {
         api().post("/api/mobile/v1/reservations/" + reservation.getId() + "/cancel", new JSONObject(), true, null,
                 tableAware(new ApiClient.Callback() {
@@ -567,10 +604,16 @@ public final class MobileRepository {
 
     public void updateReservation(Reservation reservation, String date, String time, int partySize,
                                   String note, Callback<Reservation> callback) {
+        updateReservation(reservation, date, time, partySize, note, reservation.getTableId(), callback);
+    }
+
+    /** tableId: the table chosen on the map (the current one when it is still free). */
+    public void updateReservation(Reservation reservation, String date, String time, int partySize,
+                                  String note, String chosenTableId, Callback<Reservation> callback) {
         try {
             JSONObject body = new JSONObject().put("partySize", partySize)
                     .put("reservedAt", reservationInstant(date, time)).put("note", note);
-            int tableId = Integer.parseInt(reservation.getTableId());
+            int tableId = chosenTableId == null || chosenTableId.isEmpty() ? 0 : Integer.parseInt(chosenTableId);
             body.put("tableId", tableId > 0 ? tableId : JSONObject.NULL);
             api().put("/api/mobile/v1/reservations/" + reservation.getId(), body, true,
                     key("reservation-update"), tableAware(new ApiClient.Callback() {

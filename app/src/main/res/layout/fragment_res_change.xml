@@ -159,7 +159,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                android:text="Xác nhận thay đổi" />
+                android:text="Tiếp tục: chọn bàn" />
 
         </LinearLayout>
     </LinearLayout>

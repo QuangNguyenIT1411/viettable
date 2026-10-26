@@ -31,6 +31,18 @@ function recordSession(email: string, sessionId: number, token: string) {
 /** A session a spec opened itself (e.g. a reservation check-in): released after the test like the others. */
 export const recordTestSession = recordSession;
 
+/**
+ * POST /auth/register, waiting out Identity's limit (30 registrations a minute per path) instead of failing:
+ * the full suite registers many guests and the reservation specs run back to back.
+ */
+export async function registerGuest(api: APIRequestContext, data: Record<string, unknown>) {
+  for (let attempt = 0; ; attempt++) {
+    const response = await api.post("/api/mobile/v1/auth/register", { data });
+    if (response.status() !== 429 || attempt >= 12) return response;
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+  }
+}
+
 export function hasSessionsFromThisTest() {
   return openedThisTest.length > 0;
 }
@@ -45,9 +57,7 @@ export async function openTableWithOrder(baseURL: string): Promise<DiningFixture
   const api = await request.newContext({ baseURL });
   const id = randomUUID().slice(0, 8);
   const email = `e2e.${id}@viettable.local`;
-  const auth = await json(await api.post("/api/mobile/v1/auth/register", {
-    data: { name: `E2E ${id}`, username: email, email, password: PASSWORD, phoneNumber: `09${Date.now().toString().slice(-8)}` },
-  }), "register");
+  const auth = await json(await registerGuest(api, { name: `E2E ${id}`, username: email, email, password: PASSWORD, phoneNumber: `09${Date.now().toString().slice(-8)}` }), "register");
   const token: string = auth.accessToken;
   const headers = (extra: Record<string, string> = {}) => ({ Authorization: `Bearer ${token}`, ...extra });
 
@@ -200,9 +210,7 @@ export async function newGuestChecksIn(baseURL: string, tableNumber: number): Pr
   const api = await request.newContext({ baseURL });
   const id = randomUUID().slice(0, 8);
   const email = `e2e.${id}@viettable.local`;
-  const auth = await json(await api.post("/api/mobile/v1/auth/register", {
-    data: { name: `E2E ${id}`, username: email, email, password: PASSWORD, phoneNumber: `09${Date.now().toString().slice(-8)}` },
-  }), "register");
+  const auth = await json(await registerGuest(api, { name: `E2E ${id}`, username: email, email, password: PASSWORD, phoneNumber: `09${Date.now().toString().slice(-8)}` }), "register");
   const response = await api.post("/api/mobile/v1/check-ins/walk-in", {
     headers: { Authorization: `Bearer ${auth.accessToken}`, "Idempotency-Key": key() },
     data: { qrCode: `QR-Q1-B${String(tableNumber).padStart(2, "0")}` },
