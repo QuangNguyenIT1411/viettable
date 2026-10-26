@@ -17,7 +17,9 @@ public final class HomeDisplayRules {
         String clean = SafeText.clean(fullName).trim();
         if (clean.isEmpty()) return "";
         String[] parts = clean.split("\\s+");
-        return parts[parts.length - 1];
+        String given = parts[parts.length - 1];
+        // Accounts typed in lower case still greet properly: "quang vinh" -> "Vinh".
+        return given.substring(0, 1).toUpperCase(new Locale("vi", "VN")) + given.substring(1);
     }
 
     /** Price as on the design's stickers: 65000 -> "65K", 135500 -> "135,5K", 900 -> "900đ". */

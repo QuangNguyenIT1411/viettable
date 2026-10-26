@@ -705,7 +705,12 @@
         <item name="android:layout_weight">1</item>
         <item name="android:accessibilityHeading">true</item>
         <item name="android:textAppearance">@style/TextAppearance.VietTable.Display.M</item>
-        <item name="android:textSize">20sp</item>
+        <!-- One line at large font sizes too ("Thực đơn hôm / nay" left a word alone). -->
+        <item name="android:maxLines">1</item>
+        <item name="autoSizeTextType">uniform</item>
+        <item name="autoSizeMaxTextSize">20sp</item>
+        <item name="autoSizeMinTextSize">13sp</item>
+        <item name="autoSizeStepGranularity">0.5sp</item>
     </style>
 
     <style name="Widget.VietTable.HomeSectionHeader.Link" parent="">

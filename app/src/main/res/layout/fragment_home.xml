@@ -90,9 +90,11 @@
                             tools:text="Bàn B4 · "
                             tools:visibility="visible" />
 
+                        <!-- 0dp + weight: a long name (or large font) shortens with "…" instead of pushing the arrow out. -->
                         <TextView
                             android:id="@+id/tvHeaderBranchName"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
                             android:ellipsize="end"

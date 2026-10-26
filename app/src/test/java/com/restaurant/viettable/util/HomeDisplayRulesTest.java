@@ -25,6 +25,8 @@ public class HomeDisplayRulesTest {
     public void greetsByGivenName() {
         assertEquals("Quang", HomeDisplayRules.greetingName("Nguyễn Vinh Quang"));
         assertEquals("Lan", HomeDisplayRules.greetingName("  Lan "));
+        assertEquals("Vinh", HomeDisplayRules.greetingName("quang vinh"));
+        assertEquals("Đức", HomeDisplayRules.greetingName("đức"));
         assertEquals("", HomeDisplayRules.greetingName(null));
         assertEquals("", HomeDisplayRules.greetingName("   "));
     }
