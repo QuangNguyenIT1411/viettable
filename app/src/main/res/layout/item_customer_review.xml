@@ -19,7 +19,7 @@
             android:id="@+id/tvReviewInvoice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/bricolage_medium"
             android:textColor="@color/colorTextPrimary"
             android:textSize="15sp" />
 

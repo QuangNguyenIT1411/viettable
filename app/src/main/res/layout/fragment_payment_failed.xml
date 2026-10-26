@@ -23,7 +23,7 @@
                 android:layout_height="80dp"
                 android:layout_marginTop="32dp"
                 android:background="@drawable/bg_badge"
-                android:backgroundTint="#FFEBEE"
+                android:backgroundTint="@color/pd_red_soft"
                 android:padding="16dp"
                 android:src="@drawable/ic_close"
                 app:tint="@color/colorError" />
@@ -32,7 +32,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Thanh toán chưa hoàn tất"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="22sp" />
@@ -80,7 +80,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Bàn ăn vẫn được duy trì"
                             android:textColor="@color/colorInfo"
                             android:textSize="14sp" />

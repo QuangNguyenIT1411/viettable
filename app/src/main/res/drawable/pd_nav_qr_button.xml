@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Centre "Quét QR" button: yellow circle inside a 4dp ring of the page colour that separates it from the bar. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#33FBF0E2">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/pd_yellow" />
+            <stroke android:width="4dp" android:color="@color/pd_bg" />
+        </shape>
+    </item>
+</ripple>

@@ -19,7 +19,7 @@
             android:id="@+id/tvQrTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/bricolage_medium"
             android:text="Quét mã QR tại bàn"
             android:textColor="#FFFFFF"
             android:textSize="20sp" />
@@ -118,7 +118,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Mã bàn"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="15sp" />
@@ -133,7 +133,7 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilTableCode"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.VietTable.TextInputLayout"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"

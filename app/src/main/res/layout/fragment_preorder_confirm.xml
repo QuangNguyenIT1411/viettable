@@ -25,7 +25,7 @@
                 android:layout_height="80dp"
                 android:layout_marginTop="32dp"
                 android:background="@drawable/bg_badge"
-                android:backgroundTint="#E8F5E9"
+                android:backgroundTint="@color/pd_mint_soft"
                 android:padding="16dp"
                 android:src="@drawable/ic_check"
                 app:tint="@color/colorSuccess" />
@@ -35,7 +35,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Đặt trước món thành công!"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="22sp" />
@@ -72,7 +72,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Chi tiết đơn đặt trước"
                         android:textColor="@color/colorPrimary"
                         android:textSize="16sp" />
@@ -100,7 +100,7 @@
                             android:id="@+id/tvResCode"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="#RES-8821"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -124,7 +124,7 @@
                             android:id="@+id/tvItemCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="3 món"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -148,7 +148,7 @@
                             android:id="@+id/tvEstimatedTotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="340.000 đ"
                             android:textColor="@color/colorSecondary"
                             android:textSize="16sp" />
@@ -160,7 +160,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:background="@drawable/bg_badge"
-                        android:backgroundTint="#FFF8E1"
+                        android:backgroundTint="@color/pd_yellow_soft"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:padding="12dp">
@@ -177,7 +177,7 @@
                             android:layout_marginStart="8dp"
                             android:lineSpacingExtra="2dp"
                             android:text="Món ăn chưa thanh toán. Hóa đơn sẽ được tính cùng bàn ăn khi quý khách hoàn tất bữa ăn."
-                            android:textColor="#5D4037"
+                            android:textColor="@color/pd_yellow"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>

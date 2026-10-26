@@ -45,7 +45,7 @@
                     android:layout_width="88dp"
                     android:layout_height="88dp"
                     android:background="@drawable/bg_badge"
-                    android:backgroundTint="#F0F4F2"
+                    android:backgroundTint="@color/pd_surface_2"
                     android:padding="16dp"
                     android:src="@drawable/ic_profile"
                     app:tint="@color/colorPrimary" />
@@ -55,7 +55,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text="Đổi ảnh đại diện"
                     android:textColor="@color/colorPrimary"
                     android:textSize="13sp" />
@@ -64,7 +64,7 @@
             <!-- Name Input -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEditName"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
@@ -86,7 +86,7 @@
             <!-- Phone Input -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEditPhone"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -108,7 +108,7 @@
             <!-- Email Input -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEditEmail"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -130,7 +130,7 @@
             <!-- Birthday Input -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEditBirthday"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -152,7 +152,7 @@
             <!-- Dietary Preferences -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEditDietary"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"

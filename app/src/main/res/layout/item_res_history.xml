@@ -38,7 +38,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_status_badge"
-                android:backgroundTint="#E8F5E9"
+                android:backgroundTint="@color/pd_mint_soft"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="3dp"
                 android:text="Đã xác nhận"

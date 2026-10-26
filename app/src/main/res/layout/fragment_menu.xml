@@ -153,7 +153,7 @@
                 android:backgroundTint="@color/accent_gold"
                 android:gravity="center"
                 android:text="2"
-                android:textColor="@color/white"
+                android:textColor="@color/pd_on_color"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
@@ -164,7 +164,7 @@
                 android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:text="178.000đ"
-                android:textColor="@color/white"
+                android:textColor="@color/pd_on_color"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 

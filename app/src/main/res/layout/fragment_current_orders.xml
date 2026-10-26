@@ -50,7 +50,7 @@
                         android:id="@+id/tvCurrentOrdersTable"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-bold"
+                        android:fontFamily="@font/bricolage_bold"
                         android:textColor="@color/text_primary"
                         android:textSize="16sp" />
 
@@ -78,7 +78,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:fontFamily="sans-serif-bold"
+                                android:fontFamily="@font/bricolage_bold"
                                 android:textColor="@color/text_primary"
                                 android:textSize="18sp" />
                         </LinearLayout>
@@ -101,7 +101,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:fontFamily="sans-serif-black"
+                                android:fontFamily="@font/unbounded_bold"
                                 android:textColor="@color/primary"
                                 android:textSize="18sp" />
                         </LinearLayout>
@@ -113,7 +113,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Chi tiết từng đợt gọi"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />

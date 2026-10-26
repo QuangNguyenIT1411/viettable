@@ -39,7 +39,7 @@
                 android:id="@+id/tvReviewBranchTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Đánh giá trải nghiệm"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="18sp" />
@@ -75,7 +75,7 @@
                         android:id="@+id/tvRatingPrompt"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Tuyệt vời! (5/5)"
                         android:textColor="@color/colorSecondary"
                         android:textSize="18sp" />
@@ -152,14 +152,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Cảm nhận chi tiết của bạn"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="15sp" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilReviewComment"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"

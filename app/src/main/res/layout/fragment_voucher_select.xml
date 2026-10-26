@@ -42,7 +42,7 @@
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilVoucherCode"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.VietTable.TextInputLayout"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -73,7 +73,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Ưu đãi dành cho bạn"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />

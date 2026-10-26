@@ -62,7 +62,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="--"
                         android:textColor="@color/colorPrimary"
                         android:textSize="24sp" />
@@ -145,7 +145,7 @@
                             android:id="@+id/tvSplitPersonCount"
                             android:layout_width="60dp"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:gravity="center"
                             android:text="3"
                             android:textColor="@color/colorTextPrimary"
@@ -179,7 +179,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="203.400 đ / người"
                         android:textColor="@color/colorSecondary"
                         android:textSize="22sp" />
@@ -190,7 +190,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="20dp"
                         android:background="@drawable/bg_badge"
-                        android:backgroundTint="#F5F5F5"
+                        android:backgroundTint="@color/pd_surface_2"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:padding="16dp">

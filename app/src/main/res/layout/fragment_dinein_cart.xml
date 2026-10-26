@@ -38,7 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_badge"
-                android:backgroundTint="#E8F5E9"
+                android:backgroundTint="@color/pd_mint_soft"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="12dp">
@@ -55,7 +55,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text=""
                     android:textColor="@color/colorPrimary"
                     android:textSize="14sp" />
@@ -64,7 +64,7 @@
                     android:id="@+id/btnClearDineinCart"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text="Xóa giỏ"
                     android:textColor="@color/colorError"
                     android:textSize="13sp" />
@@ -74,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Danh sách món gọi thêm"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />
@@ -89,7 +89,7 @@
             <!-- Note for kitchen -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilKitchenNote"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -142,7 +142,7 @@
                             android:id="@+id/tvDineinCartTotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="130.000 đ"
                             android:textColor="@color/colorPrimary"
                             android:textSize="16sp" />

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Legend swatch for a free table: white with the card border. -->
+<!-- Legend swatch for a free table: surface with the card border. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="@color/white" />
+    <solid android:color="@color/pd_surface" />
     <stroke android:width="1dp" android:color="@color/divider" />
 </shape>

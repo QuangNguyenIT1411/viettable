@@ -36,7 +36,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Chọn cách thanh toán"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />
@@ -76,7 +76,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Tiền mặt"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="15sp" />
@@ -134,7 +134,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Quẹt thẻ ngân hàng (POS)"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="15sp" />
@@ -190,7 +190,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Quét mã QR tại bàn / quầy"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="15sp" />

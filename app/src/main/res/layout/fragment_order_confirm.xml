@@ -23,7 +23,7 @@
                 android:layout_height="80dp"
                 android:layout_marginTop="32dp"
                 android:background="@drawable/bg_badge"
-                android:backgroundTint="#E8F5E9"
+                android:backgroundTint="@color/pd_mint_soft"
                 android:padding="16dp"
                 android:src="@drawable/ic_check"
                 app:tint="@color/colorSuccess" />
@@ -32,7 +32,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Đã gửi đơn gọi món!"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="22sp" />
@@ -81,7 +81,7 @@
                             android:id="@+id/tvOrderConfirmId"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="#VT-004"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -105,7 +105,7 @@
                             android:id="@+id/tvOrderConfirmItemCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="2 món"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -128,7 +128,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="~10 - 15 phút"
                             android:textColor="@color/colorSecondary"
                             android:textSize="14sp" />

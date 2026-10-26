@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pressed button shrinks to 0.97 in 100ms (DESIGN_PHO_DEM.md section 5). Follows the system animation scale. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true" android:state_enabled="true">
+        <set>
+            <objectAnimator android:duration="100" android:propertyName="scaleX" android:valueTo="0.97" android:valueType="floatType"
+                android:interpolator="@android:interpolator/decelerate_quad" />
+            <objectAnimator android:duration="100" android:propertyName="scaleY" android:valueTo="0.97" android:valueType="floatType"
+                android:interpolator="@android:interpolator/decelerate_quad" />
+        </set>
+    </item>
+    <item>
+        <set>
+            <objectAnimator android:duration="120" android:propertyName="scaleX" android:valueTo="1" android:valueType="floatType"
+                android:interpolator="@android:interpolator/overshoot" />
+            <objectAnimator android:duration="120" android:propertyName="scaleY" android:valueTo="1" android:valueType="floatType"
+                android:interpolator="@android:interpolator/overshoot" />
+        </set>
+    </item>
+</selector>

@@ -37,7 +37,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                app:cardBackgroundColor="@color/colorPrimary"
+                app:cardBackgroundColor="@color/pd_plum"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="6dp">
 
@@ -49,10 +49,10 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:letterSpacing="0.1"
                         android:text="VIETTABLE CLUB"
-                        android:textColor="#FFFFFF"
+                        android:textColor="@color/pd_cream"
                         android:textSize="14sp" />
 
                     <TextView
@@ -61,12 +61,12 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:background="@drawable/bg_status_badge"
-                        android:backgroundTint="#FFF3E0"
-                        android:fontFamily="sans-serif-bold"
+                        android:backgroundTint="@color/pd_yellow_soft"
+                        android:fontFamily="@font/bricolage_bold"
                         android:paddingHorizontal="10dp"
                         android:paddingVertical="4dp"
                         android:text="VÀNG"
-                        android:textColor="#7D5200"
+                        android:textColor="@color/pd_yellow"
                         android:textSize="11sp" />
 
                     <LinearLayout
@@ -79,7 +79,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Điểm khả dụng"
-                            android:textColor="#D0E8D7"
+                            android:textColor="@color/pd_muted"
                             android:textSize="12sp" />
 
                         <TextView
@@ -87,9 +87,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="15.000 pts"
-                            android:textColor="#FFFFFF"
+                            android:textColor="@color/pd_cream"
                             android:textSize="26sp" />
                     </LinearLayout>
 
@@ -98,9 +98,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentBottom="true"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="NGUYEN VAN A"
-                        android:textColor="#FFFFFF"
+                        android:textColor="@color/pd_cream"
                         android:textSize="15sp" />
 
                     <TextView
@@ -110,7 +110,7 @@
                         android:layout_alignParentEnd="true"
                         android:layout_alignParentBottom="true"
                         android:text="VT-8899-2026"
-                        android:textColor="#D0E8D7"
+                        android:textColor="@color/pd_muted"
                         android:textSize="12sp" />
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -142,7 +142,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Tiến độ nâng hạng Kim Cương"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -150,7 +150,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="15.000 / 20.000"
                             android:textColor="@color/colorPrimary"
                             android:textSize="13sp" />
@@ -180,7 +180,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Đặc quyền hạng Vàng"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />

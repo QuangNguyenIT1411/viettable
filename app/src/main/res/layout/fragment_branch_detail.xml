@@ -55,7 +55,7 @@
                 android:layout_gravity="bottom|end"
                 android:layout_margin="16dp"
                 android:background="@drawable/bg_status_badge"
-                android:backgroundTint="#E8F5E9"
+                android:backgroundTint="@color/pd_mint_soft"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
                 tools:text="Đang mở cửa"

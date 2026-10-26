@@ -90,7 +90,7 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginBottom="12dp"
         android:background="@drawable/bg_status_badge"
-        android:backgroundTint="#FFF3E0"
+        android:backgroundTint="@color/pd_yellow_soft"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="12dp"
@@ -100,14 +100,14 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_warning"
-            app:tint="#D84315" />
+            app:tint="@color/pd_red" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="@string/branch_change_cart_warning"
-            android:textColor="#BF360C"
+            android:textColor="@color/pd_red"
             android:textSize="12sp" />
     </LinearLayout>
 

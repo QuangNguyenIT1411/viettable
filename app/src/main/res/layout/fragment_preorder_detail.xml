@@ -38,7 +38,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_badge"
-                android:backgroundTint="#E3F2FD"
+                android:backgroundTint="@color/pd_surface_2"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="12dp">
@@ -59,7 +59,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Trạng thái: Chờ Check-in"
                         android:textColor="@color/colorInfo"
                         android:textSize="14sp" />
@@ -94,7 +94,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Thông tin đặt bàn liên kết"
                         android:textColor="@color/colorTextPrimary"
                         android:textSize="15sp" />
@@ -115,7 +115,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Danh sách món ăn"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />
@@ -161,7 +161,7 @@
                             android:id="@+id/tvTotalPrice"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="340.000 đ"
                             android:textColor="@color/colorSecondary"
                             android:textSize="17sp" />

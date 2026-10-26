@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.OvershootInterpolator;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -57,8 +59,9 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         setContentView(binding.getRoot());
 
         insetsController = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
-        insetsController.setAppearanceLightNavigationBars(true);
-        insetsController.setAppearanceLightStatusBars(true);
+        // "Phố đêm" is always dark: light system bar icons on every screen.
+        insetsController.setAppearanceLightNavigationBars(false);
+        insetsController.setAppearanceLightStatusBars(false);
 
         ApiClient.initialize(getApplicationContext());
         ReservationReminders.initialize(getApplicationContext());
@@ -195,6 +198,8 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
                 ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
         binding.bottomNav.setImportantForAccessibility(locked
                 ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
+        binding.btnNavQr.setImportantForAccessibility(locked
+                ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
         if (lockBackCallback != null) {
             lockBackCallback.setEnabled(locked);
             if (locked) {
@@ -263,7 +268,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
             ViewGroup.MarginLayoutParams navLp = (ViewGroup.MarginLayoutParams) binding.bottomNav.getLayoutParams();
             if (navLp != null) {
                 navLp.height = navBarHeight;
-                int baseBottomMargin = (int) (12 * getResources().getDisplayMetrics().density);
+                int baseBottomMargin = getResources().getDimensionPixelSize(R.dimen.pd_nav_margin_bottom);
                 navLp.bottomMargin = navigationBars.bottom + baseBottomMargin;
                 binding.bottomNav.setLayoutParams(navLp);
             }
@@ -273,12 +278,20 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     }
 
     private void setupBottomNavigation() {
+        // The raised centre button stands in for the nav_qr tab under it: same tap, same destination.
+        binding.btnNavQr.setOnClickListener(v -> {
+            View qrTab = binding.bottomNav.findViewById(R.id.nav_qr);
+            if (qrTab != null) qrTab.performClick();
+        });
+        binding.bottomNav.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) ->
+                moveNavDot(binding.bottomNav.getSelectedItemId(), false));
         binding.bottomNav.setOnItemSelectedListener(item -> {
             getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
             setFabVisible(true);
             setStatusBarLightIcons(false); // Default root screens have light header/background
 
             int itemId = item.getItemId();
+            binding.bottomNav.post(() -> moveNavDot(itemId, true));
             if (itemId == R.id.nav_home) {
                 navigateTo(HomeFragment.newInstance(), false);
                 return true;
@@ -372,7 +385,46 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
 
     @Override
     public void setBottomNavVisible(boolean visible) {
-        binding.bottomNav.setVisibility(visible ? View.VISIBLE : View.GONE);
+        int visibility = visible ? View.VISIBLE : View.GONE;
+        binding.bottomNav.setVisibility(visibility);
+        binding.btnNavQr.setVisibility(visibility);
+        binding.navDot.setVisibility(visibility);
+        if (visible) binding.bottomNav.post(() -> moveNavDot(binding.bottomNav.getSelectedItemId(), false));
+    }
+
+    /** Puts the yellow dot under the selected tab's icon; it slides when the tab changes (instant if animations are off). */
+    private void moveNavDot(int itemId, boolean animate) {
+        View tab = binding.bottomNav.findViewById(itemId);
+        ImageView icon = tab == null ? null : findIcon(tab);
+        if (icon == null || icon.getWidth() == 0) return;
+        int[] nav = new int[2];
+        int[] pos = new int[2];
+        binding.bottomNav.getLocationInWindow(nav);
+        icon.getLocationInWindow(pos);
+        float gap = 4 * getResources().getDisplayMetrics().density;
+        float x = pos[0] - nav[0] + (icon.getWidth() - binding.navDot.getWidth()) / 2f;
+        float y = pos[1] - nav[1] + icon.getHeight() + gap;
+        float alpha = itemId == R.id.nav_qr ? 0f : 1f; // the raised yellow button already marks the QR tab
+        binding.navDot.setTranslationY(y);
+        if (animate) {
+            binding.navDot.animate().translationX(x).alpha(alpha).setDuration(250)
+                    .setInterpolator(new OvershootInterpolator(1.2f)).start();
+        } else {
+            binding.navDot.animate().cancel();
+            binding.navDot.setTranslationX(x);
+            binding.navDot.setAlpha(alpha);
+        }
+    }
+
+    private static ImageView findIcon(View view) {
+        if (view instanceof ImageView) return (ImageView) view;
+        if (!(view instanceof ViewGroup)) return null;
+        ViewGroup group = (ViewGroup) view;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            ImageView icon = findIcon(group.getChildAt(i));
+            if (icon != null) return icon;
+        }
+        return null;
     }
 
     @Override
@@ -383,9 +435,8 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     @Override
     public void setStatusBarLightIcons(boolean isLightIcons) {
         if (insetsController != null) {
-            // isLightIcons == true -> white icons (for dark green headers)
-            // isLightIcons == false -> dark icons (for white/cream headers)
-            insetsController.setAppearanceLightStatusBars(!isLightIcons);
+            // Every screen sits on the dark "Phố đêm" page now, so the status bar icons stay light whatever the screen asks.
+            insetsController.setAppearanceLightStatusBars(false);
         }
     }
 

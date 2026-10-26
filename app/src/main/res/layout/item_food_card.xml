@@ -75,7 +75,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="3dp"
-                    android:fontFamily="sans-serif-bold"
+                    android:fontFamily="@font/bricolage_bold"
                     android:textColor="@color/white"
                     android:textSize="11sp"
                     tools:text="4.9" />
@@ -94,7 +94,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="38dp"
                 android:ellipsize="end"
-                android:fontFamily="sans-serif-bold"
+                android:fontFamily="@font/bricolage_bold"
                 android:maxLines="2"
                 android:textColor="@color/text_primary"
                 android:textSize="13sp"
@@ -105,7 +105,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:fontFamily="sans-serif-black"
+                android:fontFamily="@font/unbounded_bold"
                 android:textColor="@color/primary"
                 android:textSize="15sp"
                 tools:text="89.000đ" />

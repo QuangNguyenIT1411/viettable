@@ -76,7 +76,7 @@
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:background="@drawable/bg_badge"
-                    android:backgroundTint="#F5F5F5"
+                    android:backgroundTint="@color/pd_surface_2"
                     android:padding="16dp"
                     android:src="@drawable/ic_cutlery"
                     app:tint="@color/colorTextSecondary" />
@@ -85,7 +85,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text="Không có bàn ăn nào đang hoạt động"
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="16sp" />
@@ -137,7 +137,7 @@
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:background="@drawable/bg_badge"
-                    android:backgroundTint="#F5F5F5"
+                    android:backgroundTint="@color/pd_surface_2"
                     android:padding="16dp"
                     android:src="@drawable/ic_card"
                     app:tint="@color/colorTextSecondary" />
@@ -147,7 +147,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text="Chưa có lịch sử phiên dùng bữa"
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="16sp" />

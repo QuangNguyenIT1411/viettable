@@ -100,7 +100,7 @@
                                 android:backgroundTint="@color/semantic_success"
                                 android:padding="7dp"
                                 android:src="@drawable/ic_check"
-                                app:tint="@color/white" />
+                                app:tint="@color/pd_on_color" />
 
                             <TextView
                                 android:id="@+id/tvStep1"
@@ -137,7 +137,7 @@
                                 android:backgroundTint="@color/semantic_success"
                                 android:padding="7dp"
                                 android:src="@drawable/ic_check"
-                                app:tint="@color/white" />
+                                app:tint="@color/pd_on_color" />
 
                             <TextView
                                 android:id="@+id/tvStep2"
@@ -174,7 +174,7 @@
                                 android:backgroundTint="@color/accent_gold"
                                 android:padding="7dp"
                                 android:src="@drawable/ic_clock"
-                                app:tint="@color/white" />
+                                app:tint="@color/pd_on_color" />
 
                             <TextView
                                 android:id="@+id/tvStep3"

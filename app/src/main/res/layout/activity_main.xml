@@ -12,36 +12,60 @@
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="12dp"
         app:layout_goneMarginBottom="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottom_nav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Bottom Navigation View (5 tabs) -->
+    <!-- Floating navigation bar (5 tabs, DESIGN_PHO_DEM.md section 5). Its bottom margin follows the system bar (MainActivity). -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_nav"
         style="@style/Widget.VietTable.BottomNavigationView"
         android:layout_width="0dp"
         android:layout_height="@dimen/bottom_nav_height"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="12dp"
-        android:background="@drawable/bg_bottom_nav_floating"
+        android:layout_marginStart="@dimen/pd_nav_margin_side"
+        android:layout_marginEnd="@dimen/pd_nav_margin_side"
+        android:layout_marginBottom="@dimen/pd_nav_margin_bottom"
+        android:outlineSpotShadowColor="@color/black"
+        android:outlineAmbientShadowColor="@color/black"
         android:visibility="gone"
-        app:elevation="8dp"
-        app:labelVisibilityMode="labeled"
-        app:itemIconTint="@color/selector_bottom_nav"
-        app:itemTextColor="@color/selector_bottom_nav"
-        app:itemRippleColor="@color/transparent"
-        app:itemActiveIndicatorStyle="@style/Widget.VietTable.BottomNav.ActiveIndicator"
-        app:itemTextAppearanceInactive="@style/TextAppearance.VietTable.BottomNav.Label"
-        app:itemTextAppearanceActive="@style/TextAppearance.VietTable.BottomNav.Label.Active"
         app:menu="@menu/bottom_nav_menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Yellow dot under the selected tab's icon; MainActivity slides it to the selected tab. -->
+    <View
+        android:id="@+id/navDot"
+        android:layout_width="@dimen/pd_nav_dot"
+        android:layout_height="@dimen/pd_nav_dot"
+        android:background="@drawable/pd_nav_dot"
+        android:elevation="17dp"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/bottom_nav"
+        app:layout_constraintTop_toTopOf="@id/bottom_nav" />
+
+    <!-- Centre "Quét QR" button raised above the bar; tapping it taps the nav_qr tab underneath. -->
+    <ImageButton
+        android:id="@+id/btnNavQr"
+        android:layout_width="@dimen/pd_nav_qr_size"
+        android:layout_height="@dimen/pd_nav_qr_size"
+        android:background="@drawable/pd_nav_qr_button"
+        android:contentDescription="@string/nav_qr"
+        android:elevation="18dp"
+        android:outlineSpotShadowColor="@color/black"
+        android:padding="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_qr_scan"
+        android:translationY="@dimen/pd_nav_qr_lift_negative"
+        android:visibility="gone"
+        app:tint="@color/pd_on_color"
+        app:layout_constraintStart_toStartOf="@id/bottom_nav"
+        app:layout_constraintEnd_toEndOf="@id/bottom_nav"
+        app:layout_constraintTop_toTopOf="@id/bottom_nav" />
 
     <!-- App lock (fingerprint): covers every screen and the bottom bar; filled by AppLockFragment. -->
     <FrameLayout

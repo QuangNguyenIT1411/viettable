@@ -54,7 +54,7 @@
                         android:layout_width="80dp"
                         android:layout_height="80dp"
                         android:background="@drawable/bg_badge"
-                        android:backgroundTint="#F0F4F2"
+                        android:backgroundTint="@color/pd_surface_2"
                         android:padding="16dp"
                         android:src="@drawable/ic_cutlery"
                         app:tint="@color/colorPrimary" />
@@ -64,7 +64,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Chả cá Lã Vọng"
                         android:textColor="@color/colorTextPrimary"
                         android:textSize="20sp" />
@@ -74,7 +74,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="129.000 đ"
                         android:textColor="@color/colorSecondary"
                         android:textSize="17sp" />
@@ -85,8 +85,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:background="@drawable/bg_badge"
-                        android:backgroundTint="#E8F5E9"
-                        android:fontFamily="sans-serif-medium"
+                        android:backgroundTint="@color/pd_mint_soft"
+                        android:fontFamily="@font/bricolage_medium"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="5dp"
                         android:text="TRẠNG THÁI: SẴN SÀNG LÊN MÓN"
@@ -115,7 +115,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Tùy chọn &amp; Định lượng"
                         android:textColor="@color/colorTextPrimary"
                         android:textSize="15sp" />
@@ -138,7 +138,7 @@
                             android:id="@+id/tvItemDetailQuantity"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="1 phần"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="13sp" />

@@ -3,9 +3,9 @@
     <string name="app_tagline">Tinh hoa ẩm thực Việt</string>
 
     <!-- Bottom Navigation (5 tabs) -->
-    <string name="nav_home">Home</string>
+    <string name="nav_home">Trang chủ</string>
     <string name="nav_reservation">Đặt bàn</string>
-    <string name="nav_qr">Scan QR</string>
+    <string name="nav_qr">Quét QR</string>
     <string name="nav_orders">Đơn hàng</string>
     <string name="nav_profile">Tôi</string>
 
@@ -57,7 +57,7 @@
     <!-- Home -->
     <string name="home_search_hint">Tìm món ăn, đồ uống, combo...</string>
     <string name="home_quick_reservation">Đặt bàn</string>
-    <string name="home_quick_qr">Scan QR</string>
+    <string name="home_quick_qr">Quét QR</string>
     <string name="home_quick_menu">Thực đơn</string>
     <string name="home_quick_orders">Đơn hiện tại</string>
     <string name="home_category_title">Danh mục món</string>

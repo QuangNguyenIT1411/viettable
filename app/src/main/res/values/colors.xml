@@ -1,107 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Brand Primary: Fresh Botanical Emerald Green (Light & Airy) -->
-    <color name="primary">#2E7D5B</color>
-    <color name="primary_dark">#24654A</color>
-    <color name="primary_light">#5FA885</color>
-    <color name="primary_container">#EEF7F2</color>
-    <color name="on_primary">#FFFFFF</color>
-    <color name="on_primary_container">#1B4E38</color>
+    <!-- "Phố đêm" tokens (SelfRestaurant-master/docs/DESIGN_PHO_DEM.md section 2). New code uses these. -->
+    <color name="pd_bg">#15100D</color>
+    <color name="pd_surface">#211915</color>
+    <color name="pd_surface_2">#2E241F</color>
+    <color name="pd_line">#3D322B</color>
+    <color name="pd_cream">#FBF0E2</color>
+    <color name="pd_muted">#B9AA9A</color>
+    <color name="pd_dim">#7F7166</color>
+    <color name="pd_yellow">#FFC53D</color>
+    <color name="pd_red">#FF5B3A</color>
+    <color name="pd_mint">#7FD3AA</color>
+    <color name="pd_plum">#3B2331</color>
+    <color name="pd_on_color">#1A120C</color>
+    <!-- Pressed states and soft backgrounds behind a status colour (rejection reason, deposit card, icon circles). -->
+    <color name="pd_yellow_pressed">#E6AC2A</color>
+    <color name="pd_red_pressed">#E04A2C</color>
+    <color name="pd_yellow_soft">#3A2C14</color>
+    <color name="pd_red_soft">#3D1F17</color>
+    <color name="pd_mint_soft">#1A3328</color>
+    <color name="pd_ripple">#1FFBF0E2</color>
 
-    <!-- Brand Accent: Luminous Champagne Gold -->
-    <color name="accent_gold">#CCA862</color>
-    <color name="accent_gold_light">#EBD9A8</color>
-    <color name="accent_gold_dark">#9E7D33</color>
-    <color name="accent_gold_container">#FAF5EB</color>
-    <color name="on_accent_gold">#FFFFFF</color>
+    <!-- Older names, still used by layouts and Java: each points at a Phố đêm token. -->
+    <color name="primary">@color/pd_yellow</color>
+    <color name="primary_dark">@color/pd_yellow_pressed</color>
+    <color name="primary_light">@color/pd_yellow</color>
+    <color name="primary_container">@color/pd_surface_2</color>
+    <color name="on_primary">@color/pd_on_color</color>
+    <color name="on_primary_container">@color/pd_yellow</color>
 
-    <!-- Background: Clean & Luminous Ivory Off-White -->
-    <color name="bg_cream">#FAFCFA</color>
-    <color name="bg_white">#FFFFFF</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="surface_variant">#F3F7F5</color>
-    <color name="surface_secondary">#F5F8F6</color>
-    <color name="surface_container_highest">#EAEFEA</color>
-    <color name="surface_card">#FFFFFF</color>
-    <color name="divider">#E9EFEB</color>
+    <color name="accent_gold">@color/pd_yellow</color>
+    <color name="accent_gold_light">@color/pd_yellow</color>
+    <color name="accent_gold_dark">@color/pd_yellow</color>
+    <color name="accent_gold_container">@color/pd_yellow_soft</color>
+    <color name="on_accent_gold">@color/pd_on_color</color>
 
-    <!-- Typography & Neutrals -->
-    <color name="text_primary">#222D27</color>
-    <color name="text_secondary">#68766E</color>
-    <color name="text_tertiary">#929F98</color>
-    <color name="text_hint">#AAB5AE</color>
-    <color name="text_white">#FFFFFF</color>
+    <color name="bg_cream">@color/pd_bg</color>
+    <color name="bg_white">@color/pd_surface</color>
+    <color name="surface">@color/pd_surface</color>
+    <color name="surface_variant">@color/pd_surface_2</color>
+    <color name="surface_secondary">@color/pd_surface_2</color>
+    <color name="surface_container_highest">@color/pd_surface_2</color>
+    <color name="surface_card">@color/pd_surface</color>
+    <color name="divider">@color/pd_line</color>
 
-    <!-- Semantic Status Colors -->
-    <color name="semantic_success">#2E7D32</color>
-    <color name="semantic_success_bg">#E8F5E9</color>
-    <color name="semantic_warning">#ED6C02</color>
-    <color name="semantic_warning_bg">#FFF3E0</color>
-    <color name="semantic_error">#D32F2F</color>
-    <color name="semantic_error_bg">#FFEBEE</color>
-    <color name="semantic_info">#0288D1</color>
-    <color name="semantic_info_bg">#E1F5FE</color>
+    <color name="text_primary">@color/pd_cream</color>
+    <color name="text_secondary">@color/pd_muted</color>
+    <color name="text_tertiary">@color/pd_muted</color>
+    <color name="text_hint">@color/pd_dim</color>
+    <color name="text_white">@color/pd_cream</color>
 
-    <!-- Status Specific -->
-    <color name="status_placed">#0288D1</color>
-    <color name="status_placed_bg">#E1F5FE</color>
-    <color name="status_confirmed">#7B1FA2</color>
-    <color name="status_confirmed_bg">#F3E5F5</color>
-    <color name="status_in_progress">#ED6C02</color>
-    <color name="status_in_progress_bg">#FFF3E0</color>
-    <color name="status_completed">#2E7D32</color>
-    <color name="status_completed_bg">#E8F5E9</color>
-    <color name="status_cancelled">#D32F2F</color>
-    <color name="status_cancelled_bg">#FFEBEE</color>
+    <color name="semantic_success">@color/pd_mint</color>
+    <color name="semantic_success_bg">@color/pd_mint_soft</color>
+    <color name="semantic_warning">@color/pd_yellow</color>
+    <color name="semantic_warning_bg">@color/pd_yellow_soft</color>
+    <color name="semantic_error">@color/pd_red</color>
+    <color name="semantic_error_bg">@color/pd_red_soft</color>
+    <color name="semantic_info">@color/pd_mint</color>
+    <color name="semantic_info_bg">@color/pd_mint_soft</color>
 
-    <!-- Item Status Specific -->
-    <color name="item_pending">#757575</color>
-    <color name="item_pending_bg">#EEEEEE</color>
-    <color name="item_preparing">#ED6C02</color>
-    <color name="item_preparing_bg">#FFF3E0</color>
-    <color name="item_ready">#0288D1</color>
-    <color name="item_ready_bg">#E1F5FE</color>
-    <color name="item_served">#2E7D32</color>
-    <color name="item_served_bg">#E8F5E9</color>
+    <!-- Status pills: mint = done/confirmed, yellow = waiting/cooking, red = cancelled, surface_2 = sent/draft. -->
+    <color name="status_placed">@color/pd_muted</color>
+    <color name="status_placed_bg">@color/pd_surface_2</color>
+    <color name="status_confirmed">@color/pd_mint</color>
+    <color name="status_confirmed_bg">@color/pd_mint_soft</color>
+    <color name="status_in_progress">@color/pd_yellow</color>
+    <color name="status_in_progress_bg">@color/pd_yellow_soft</color>
+    <color name="status_completed">@color/pd_mint</color>
+    <color name="status_completed_bg">@color/pd_mint_soft</color>
+    <color name="status_cancelled">@color/pd_red</color>
+    <color name="status_cancelled_bg">@color/pd_red_soft</color>
+
+    <color name="item_pending">@color/pd_muted</color>
+    <color name="item_pending_bg">@color/pd_surface_2</color>
+    <color name="item_preparing">@color/pd_yellow</color>
+    <color name="item_preparing_bg">@color/pd_yellow_soft</color>
+    <color name="item_ready">@color/pd_mint</color>
+    <color name="item_ready_bg">@color/pd_mint_soft</color>
+    <color name="item_served">@color/pd_mint</color>
+    <color name="item_served_bg">@color/pd_mint_soft</color>
 
     <!-- Basic -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00000000</color>
-    <color name="overlay_dim">#66000000</color>
+    <color name="overlay_dim">#99000000</color>
 
     <!-- Material Theme & Alias Colors -->
-    <color name="colorPrimary">#2E7D5B</color>
-    <color name="colorOnPrimary">#FFFFFF</color>
-    <color name="colorSecondary">#CCA862</color>
-    <color name="colorOnSecondary">#FFFFFF</color>
-    <color name="colorBackground">#FAFCFA</color>
-    <color name="colorSurface">#FFFFFF</color>
-    <color name="colorSurfaceVariant">#F3F7F5</color>
-    <color name="colorTextPrimary">#222D27</color>
-    <color name="colorTextSecondary">#68766E</color>
-    <color name="colorDivider">#E9EFEB</color>
-    <color name="colorSuccess">#2E7D32</color>
-    <color name="colorError">#D32F2F</color>
-    <color name="colorWarning">#ED6C02</color>
-    <color name="colorInfo">#0288D1</color>
+    <color name="colorPrimary">@color/pd_yellow</color>
+    <color name="colorOnPrimary">@color/pd_on_color</color>
+    <color name="colorSecondary">@color/pd_yellow</color>
+    <color name="colorOnSecondary">@color/pd_on_color</color>
+    <color name="colorBackground">@color/pd_bg</color>
+    <color name="colorSurface">@color/pd_surface</color>
+    <color name="colorSurfaceVariant">@color/pd_surface_2</color>
+    <color name="colorTextPrimary">@color/pd_cream</color>
+    <color name="colorTextSecondary">@color/pd_muted</color>
+    <color name="colorDivider">@color/pd_line</color>
+    <color name="colorSuccess">@color/pd_mint</color>
+    <color name="colorError">@color/pd_red</color>
+    <color name="colorWarning">@color/pd_yellow</color>
+    <color name="colorInfo">@color/pd_mint</color>
 
     <!-- Semantic Standard Colors -->
-    <color name="color_primary">#2E7D5B</color>
-    <color name="color_on_primary">#FFFFFF</color>
-    <color name="color_secondary">#CCA862</color>
-    <color name="color_on_secondary">#FFFFFF</color>
-    <color name="color_background">#FAFCFA</color>
-    <color name="color_on_background">#222D27</color>
-    <color name="color_surface">#FFFFFF</color>
-    <color name="color_on_surface">#222D27</color>
-    <color name="color_success">#2E7D32</color>
-    <color name="color_warning">#ED6C02</color>
-    <color name="color_error">#D32F2F</color>
-    <color name="color_text_primary">#222D27</color>
-    <color name="color_text_secondary">#68766E</color>
-    <color name="color_disabled">#9E9E9E</color>
-    <color name="btn_disabled_bg">#E0E0E0</color>
-    <color name="btn_disabled_text">#757575</color>
-    <color name="gold_btn_text">#3C2E12</color>
+    <color name="color_primary">@color/pd_yellow</color>
+    <color name="color_on_primary">@color/pd_on_color</color>
+    <color name="color_secondary">@color/pd_yellow</color>
+    <color name="color_on_secondary">@color/pd_on_color</color>
+    <color name="color_background">@color/pd_bg</color>
+    <color name="color_on_background">@color/pd_cream</color>
+    <color name="color_surface">@color/pd_surface</color>
+    <color name="color_on_surface">@color/pd_cream</color>
+    <color name="color_success">@color/pd_mint</color>
+    <color name="color_warning">@color/pd_yellow</color>
+    <color name="color_error">@color/pd_red</color>
+    <color name="color_text_primary">@color/pd_cream</color>
+    <color name="color_text_secondary">@color/pd_muted</color>
+    <color name="color_disabled">@color/pd_dim</color>
+    <color name="btn_disabled_bg">@color/pd_surface_2</color>
+    <color name="btn_disabled_text">@color/pd_dim</color>
+    <color name="gold_btn_text">@color/pd_on_color</color>
 </resources>

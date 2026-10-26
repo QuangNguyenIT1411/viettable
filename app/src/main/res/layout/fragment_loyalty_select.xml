@@ -37,7 +37,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/colorPrimary"
+                app:cardBackgroundColor="@color/pd_plum"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp">
 
@@ -51,7 +51,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Số dư điểm hiện có"
-                        android:textColor="#D0E8D7"
+                        android:textColor="@color/pd_muted"
                         android:textSize="13sp" />
 
                     <LinearLayout
@@ -66,16 +66,16 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="15.000 điểm"
-                            android:textColor="#FFFFFF"
+                            android:textColor="@color/pd_cream"
                             android:textSize="26sp" />
 
                         <TextView
                             android:id="@+id/tvAvailableMoneyEquivalent"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="~150.000 đ"
                             android:textColor="@color/colorSecondary"
                             android:textSize="16sp" />
@@ -89,7 +89,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:background="@drawable/bg_badge"
-                android:backgroundTint="#FFF8E1"
+                android:backgroundTint="@color/pd_yellow_soft"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:padding="12dp">
@@ -105,7 +105,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:text="Quy đổi: 1 điểm tích lũy = 10 VNĐ. Điểm sẽ được khấu trừ ngay."
-                    android:textColor="#5D4037"
+                    android:textColor="@color/pd_yellow"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -154,7 +154,7 @@
                             android:id="@+id/tvSelectedPoints"
                             android:layout_width="140dp"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:gravity="center"
                             android:text="2.000 điểm"
                             android:textColor="@color/colorPrimary"
@@ -175,7 +175,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Giảm tương ứng: -20.000 đ"
                         android:textColor="@color/colorSuccess"
                         android:textSize="14sp" />

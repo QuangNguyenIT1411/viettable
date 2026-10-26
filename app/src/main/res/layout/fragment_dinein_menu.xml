@@ -26,7 +26,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text="Thực đơn tại bàn"
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="18sp" />
@@ -101,7 +101,7 @@
                     android:id="@+id/tvCartItemCount"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text="2 món mới đã chọn"
                     android:textColor="@color/colorOnPrimary"
                     android:textSize="14sp" />
@@ -111,7 +111,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="130.000 đ"
-                    android:textColor="#D0E8D7"
+                    android:textColor="@color/pd_on_color"
                     android:textSize="13sp" />
             </LinearLayout>
 

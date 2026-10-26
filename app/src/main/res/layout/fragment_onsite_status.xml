@@ -32,7 +32,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Đang chờ phục vụ thanh toán"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="20sp" />
@@ -82,7 +82,7 @@
                             android:id="@+id/tvOnsiteLocation"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text=""
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -106,7 +106,7 @@
                             android:id="@+id/tvOnsiteMethod"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Tiền mặt"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -130,7 +130,7 @@
                             android:id="@+id/tvOnsiteTotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="610.200 đ"
                             android:textColor="@color/colorSecondary"
                             android:textSize="16sp" />
@@ -161,7 +161,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="Quét mã để chuyển khoản"
                         android:textColor="@color/colorTextPrimary"
                         android:textSize="16sp" />

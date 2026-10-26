@@ -36,7 +36,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Thông báo &amp; Bảo mật"
                 android:visibility="gone"
                 android:textColor="@color/colorTextPrimary"
@@ -114,7 +114,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Hệ thống &amp; Pháp lý"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="15sp" />

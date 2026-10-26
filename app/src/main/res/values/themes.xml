@@ -1,33 +1,72 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.VietTable" parent="Theme.Material3.Light.NoActionBar">
-        <!-- Brand Colors -->
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary_dark</item>
-        <item name="colorOnPrimary">@color/on_primary</item>
-        <item name="colorPrimaryContainer">@color/primary_container</item>
-        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+    <!-- "Phố đêm": always dark, whatever the system light/dark setting (DESIGN_PHO_DEM.md section 8). -->
+    <style name="Base.Theme.VietTable" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/pd_yellow</item>
+        <item name="colorPrimaryDark">@color/pd_bg</item>
+        <item name="colorOnPrimary">@color/pd_on_color</item>
+        <item name="colorPrimaryContainer">@color/pd_surface_2</item>
+        <item name="colorOnPrimaryContainer">@color/pd_yellow</item>
+        <item name="colorPrimaryInverse">@color/pd_yellow</item>
 
-        <item name="colorSecondary">@color/accent_gold</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSecondaryContainer">@color/accent_gold_container</item>
-        <item name="colorOnSecondaryContainer">@color/accent_gold_dark</item>
+        <item name="colorSecondary">@color/pd_yellow</item>
+        <item name="colorOnSecondary">@color/pd_on_color</item>
+        <item name="colorSecondaryContainer">@color/pd_surface_2</item>
+        <item name="colorOnSecondaryContainer">@color/pd_cream</item>
 
-        <item name="android:colorBackground">@color/bg_cream</item>
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnSurface">@color/text_primary</item>
-        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorTertiary">@color/pd_mint</item>
+        <item name="colorOnTertiary">@color/pd_on_color</item>
 
-        <item name="colorError">@color/semantic_error</item>
-        <item name="colorOnError">@color/white</item>
+        <item name="android:colorBackground">@color/pd_bg</item>
+        <item name="colorOnBackground">@color/pd_cream</item>
+        <item name="colorSurface">@color/pd_surface</item>
+        <item name="colorOnSurface">@color/pd_cream</item>
+        <item name="colorSurfaceVariant">@color/pd_surface_2</item>
+        <item name="colorOnSurfaceVariant">@color/pd_muted</item>
+        <item name="colorSurfaceInverse">@color/pd_cream</item>
+        <item name="colorOnSurfaceInverse">@color/pd_on_color</item>
+        <item name="colorSurfaceContainerLowest">@color/pd_bg</item>
+        <item name="colorSurfaceContainerLow">@color/pd_surface</item>
+        <item name="colorSurfaceContainer">@color/pd_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/pd_surface_2</item>
+        <item name="colorSurfaceContainerHighest">@color/pd_surface_2</item>
+        <item name="colorOutline">@color/pd_line</item>
+        <item name="colorOutlineVariant">@color/pd_line</item>
 
-        <!-- Status Bar & Navigation Bar -->
+        <item name="colorError">@color/pd_red</item>
+        <item name="colorOnError">@color/pd_on_color</item>
+
+        <item name="android:textColorPrimary">@color/pd_cream</item>
+        <item name="android:textColorSecondary">@color/pd_muted</item>
+        <item name="android:textColorHint">@color/pd_dim</item>
+        <item name="android:textColorLink">@color/pd_yellow</item>
+        <item name="android:textColorHighlight">#66FFC53D</item>
+        <item name="colorControlNormal">@color/pd_muted</item>
+        <item name="colorControlActivated">@color/pd_yellow</item>
+        <item name="colorControlHighlight">@color/pd_ripple</item>
+        <item name="colorAccent">@color/pd_yellow</item>
+
+        <!-- Text: Bricolage for plain text views (a theme-level fontFamily would override every widget's textAppearance). -->
+        <item name="android:textViewStyle">@style/Widget.VietTable.TextView</item>
+        <item name="editTextStyle">@style/Widget.VietTable.EditText</item>
+        <item name="android:editTextStyle">@style/Widget.VietTable.EditText</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.VietTable.M3.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.VietTable.M3.Body</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.VietTable.M3.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.VietTable.M3.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.VietTable.M3.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.VietTable.M3.LabelSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.VietTable.M3.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.VietTable.M3.Title</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.VietTable.M3.LabelLarge</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.VietTable.M3.Headline</item>
+
+        <!-- System bars: page colour behind them, light icons. -->
+        <item name="android:windowBackground">@color/pd_bg</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
 
         <!-- Material Components default style overrides -->
-        <item name="colorAccent">@color/primary</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.VietTable.Dialog.Alert</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.VietTable.MaterialAlertDialog</item>
         <item name="buttonBarPositiveButtonStyle">@style/Widget.VietTable.Dialog.Button.Positive</item>
@@ -40,6 +79,12 @@
         <item name="textInputStyle">@style/Widget.VietTable.TextInputLayout</item>
         <item name="toolbarStyle">@style/Widget.VietTable.Toolbar</item>
         <item name="bottomNavigationStyle">@style/Widget.VietTable.BottomNavigationView</item>
+        <item name="chipStyle">@style/Widget.VietTable.Chip.Filter</item>
+        <item name="tabStyle">@style/Widget.VietTable.TabLayout</item>
+        <item name="switchStyle">@style/Widget.VietTable.Switch</item>
+        <item name="snackbarStyle">@style/Widget.VietTable.Snackbar</item>
+        <item name="snackbarTextViewStyle">@style/Widget.VietTable.Snackbar.Text</item>
+        <item name="snackbarButtonStyle">@style/Widget.VietTable.Snackbar.Button</item>
     </style>
 
     <style name="Theme.VietTable" parent="Base.Theme.VietTable" />

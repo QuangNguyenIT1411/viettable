@@ -28,7 +28,7 @@
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:background="@drawable/bg_badge"
-                    android:backgroundTint="#E8F5E9"
+                    android:backgroundTint="@color/pd_mint_soft"
                     android:padding="16dp"
                     android:src="@drawable/ic_check"
                     app:tint="@color/colorSuccess" />
@@ -37,7 +37,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text="Khớp thông tin đặt bàn!"
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="20sp" />
@@ -92,7 +92,7 @@
                                 android:id="@+id/tvTableTitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-medium"
+                                android:fontFamily="@font/bricolage_medium"
                                 android:text=""
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="18sp" />
@@ -110,8 +110,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@drawable/bg_badge"
-                            android:backgroundTint="#E8F5E9"
-                            android:fontFamily="sans-serif-medium"
+                            android:backgroundTint="@color/pd_mint_soft"
+                            android:fontFamily="@font/bricolage_medium"
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="4dp"
                             android:text="Sẵn sàng"
@@ -143,7 +143,7 @@
                             android:id="@+id/tvCheckinResCode"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="#RES-8821"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
@@ -203,10 +203,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="#FFF8E1"
+                app:cardBackgroundColor="@color/pd_yellow_soft"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#FFE082"
+                app:strokeColor="@color/pd_yellow"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -231,9 +231,9 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Có món đã đặt trước!"
-                            android:textColor="#5D4037"
+                            android:textColor="@color/pd_yellow"
                             android:textSize="14sp" />
 
                         <TextView
@@ -243,7 +243,7 @@
                             android:layout_marginTop="4dp"
                             android:lineSpacingExtra="2dp"
                             android:text="3 món ăn đặt trước sẽ tự động được gửi tới bộ phận Bếp sau khi quý khách xác nhận vào bàn."
-                            android:textColor="#795548"
+                            android:textColor="@color/pd_yellow"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>

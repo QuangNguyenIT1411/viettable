@@ -27,7 +27,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Thêm nước lọc / Trà đá"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="15sp" />
@@ -37,8 +37,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_status_badge"
-                android:backgroundTint="#E8F5E9"
-                android:fontFamily="sans-serif-medium"
+                android:backgroundTint="@color/pd_mint_soft"
+                android:fontFamily="@font/bricolage_medium"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="3dp"
                 android:text="ĐÃ HOÀN THÀNH"
@@ -66,7 +66,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCancelRequest"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.VietTable.Button.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="end"

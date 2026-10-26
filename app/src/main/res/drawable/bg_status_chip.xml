@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Status pill; the screen tints it with the status colour. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="16dp" />
-    <solid android:color="#FFFFFF" />
+    <corners android:radius="999dp" />
+    <solid android:color="@color/pd_surface_2" />
 </shape>

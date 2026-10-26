@@ -36,7 +36,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Chọn kênh thanh toán trực tuyến"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />
@@ -82,7 +82,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-medium"
+                                android:fontFamily="@font/bricolage_medium"
                                 android:text="VNPAY Sandbox (Khuyên dùng)"
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="15sp" />
@@ -140,7 +140,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-medium"
+                                android:fontFamily="@font/bricolage_medium"
                                 android:text="Ví MoMo"
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="15sp" />
@@ -197,7 +197,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-medium"
+                                android:fontFamily="@font/bricolage_medium"
                                 android:text="Ví ZaloPay"
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="15sp" />
@@ -253,7 +253,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:fontFamily="sans-serif-medium"
+                                android:fontFamily="@font/bricolage_medium"
                                 android:text="Thẻ Quốc tế / ATM"
                                 android:textColor="@color/colorTextPrimary"
                                 android:textSize="15sp" />

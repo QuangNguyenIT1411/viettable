@@ -60,7 +60,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:fontFamily="sans-serif-medium"
+                            android:fontFamily="@font/bricolage_medium"
                             android:text="Mã đơn: #VT-002"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="17sp" />
@@ -70,8 +70,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:background="@drawable/bg_badge"
-                            android:backgroundTint="#E8F5E9"
-                            android:fontFamily="sans-serif-medium"
+                            android:backgroundTint="@color/pd_mint_soft"
+                            android:fontFamily="@font/bricolage_medium"
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="4dp"
                             android:text="ĐANG CHẾ BIẾN"
@@ -94,7 +94,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text="Các món trong đợt gọi này"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="16sp" />
@@ -135,7 +135,7 @@
                         android:id="@+id/tvOrderSubtotalPrice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
+                        android:fontFamily="@font/bricolage_medium"
                         android:text="194.000 đ"
                         android:textColor="@color/colorPrimary"
                         android:textSize="17sp" />

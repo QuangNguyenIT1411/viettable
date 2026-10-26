@@ -26,7 +26,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="@drawable/bg_badge"
-                android:backgroundTint="#FFF8E1"
+                android:backgroundTint="@color/pd_yellow_soft"
                 android:padding="8dp"
                 android:src="@drawable/ic_voucher"
                 app:tint="@color/colorSecondary" />
@@ -42,7 +42,7 @@
                     android:id="@+id/tvCardVoucherTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
+                    android:fontFamily="@font/bricolage_medium"
                     android:text=""
                     android:textColor="@color/colorTextPrimary"
                     android:textSize="15sp" />
@@ -84,7 +84,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:fontFamily="sans-serif-medium"
+                android:fontFamily="@font/bricolage_medium"
                 android:text=""
                 android:textColor="@color/colorPrimary"
                 android:textSize="12sp" />
