@@ -96,6 +96,29 @@ public class ReservationScheduleTest {
         assertFalse(ReservationSchedule.canPreOrder(pending, at, before));
     }
 
+    // Owner 26/10: the home card showed #18 (14:30, newest) instead of #15 (14:00).
+    @Test public void upcoming_card_shows_the_soonest_open_booking_not_the_newest() {
+        Instant now = Instant.parse("2026-10-26T06:00:00Z"); // 13:00 restaurant time
+        Reservation r15 = booking("15", Reservation.Status.CONFIRMED, "2026-10-26T07:00:00Z");   // 14:00
+        Reservation r18 = booking("18", Reservation.Status.PENDING, "2026-10-26T07:30:00Z");     // 14:30
+        Reservation cancelled = booking("17", Reservation.Status.CANCELLED, "2026-10-26T06:30:00Z");
+        Reservation past = booking("12", Reservation.Status.CONFIRMED, "2026-10-26T05:00:00Z"); // 12:00, window over
+        List<Reservation> newestFirst = java.util.Arrays.asList(r18, cancelled, r15, past);
+        assertEquals("15", ReservationSchedule.nextUpcoming(newestFirst, now).getId());
+        // Still shown while the guest may arrive (within 30 minutes after the time), then the next one.
+        assertEquals("15", ReservationSchedule.nextUpcoming(newestFirst, Instant.parse("2026-10-26T07:25:00Z")).getId());
+        assertEquals("18", ReservationSchedule.nextUpcoming(newestFirst, Instant.parse("2026-10-26T07:31:00Z")).getId());
+        assertNull(ReservationSchedule.nextUpcoming(java.util.Arrays.asList(cancelled, past), now));
+    }
+
+    private static Reservation booking(String id, Reservation.Status status, String reservedAt) {
+        Reservation r = new Reservation();
+        r.setId(id);
+        r.setStatus(status);
+        r.setReservedAt(reservedAt);
+        return r;
+    }
+
     @Test public void status_line_explains_waiting_and_shows_the_rejection_reason() {
         assertTrue(ReservationSchedule.statusInfo(Reservation.Status.PENDING, null).startsWith("Nhà hàng sẽ xác nhận sớm."));
         assertEquals("Lý do từ chối: Hết bàn. Bạn có thể đặt giờ khác.",

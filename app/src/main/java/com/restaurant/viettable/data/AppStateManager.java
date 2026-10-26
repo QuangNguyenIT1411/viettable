@@ -213,9 +213,8 @@ public class AppStateManager {
     }
 
     public Reservation getUpcomingReservation() {
-        for (Reservation reservation : reservations)
-            if (com.restaurant.viettable.util.ReservationSchedule.awaitingGuest(reservation.getStatus())) return reservation;
-        return null;
+        // Soonest still usable open booking: the home card and the QR check-in must point at the same one.
+        return com.restaurant.viettable.util.ReservationSchedule.nextUpcoming(reservations, java.time.Instant.now());
     }
 
     public void replaceReservations(List<Reservation> values) {

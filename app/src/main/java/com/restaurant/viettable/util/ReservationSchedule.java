@@ -86,6 +86,24 @@ public final class ReservationSchedule {
         return open(status) && reservedAt != null && !now.isAfter(reservedAt.plus(Duration.ofMinutes(ARRIVAL_WINDOW_MINUTES)));
     }
 
+    /**
+     * "Đặt bàn sắp tới": the open booking (pending or confirmed) with the SOONEST reserved time that can still be
+     * used (until the end of its arrival window). Before, the newest booking was shown even when an earlier one
+     * came first. Null when there is none.
+     */
+    public static Reservation nextUpcoming(List<Reservation> reservations, Instant now) {
+        Reservation best = null;
+        Instant bestAt = null;
+        if (reservations == null) return null;
+        for (Reservation r : reservations) {
+            if (r == null || !awaitingGuest(r.getStatus())) continue;
+            Instant at = DisplayFormatters.instant(r.getReservedAt());
+            if (at == null || now.isAfter(at.plus(Duration.ofMinutes(ARRIVAL_WINDOW_MINUTES)))) continue;
+            if (bestAt == null || at.isBefore(bestAt)) { best = r; bestAt = at; }
+        }
+        return best;
+    }
+
     /** Booked and not yet seated: waiting for the restaurant's confirmation, or confirmed. */
     public static boolean awaitingGuest(Reservation.Status status) {
         return status == Reservation.Status.PENDING || status == Reservation.Status.CONFIRMED;

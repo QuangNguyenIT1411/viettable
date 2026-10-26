@@ -111,19 +111,14 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         });
 
         // 3. Upcoming Reservation Card
-        List<Reservation> resList = appStateManager.getReservations();
-        Reservation upcomingRes = null;
-        for (Reservation r : resList) {
-            if (com.restaurant.viettable.util.ReservationSchedule.awaitingGuest(r.getStatus())) {
-                upcomingRes = r;
-                break;
-            }
-        }
+        // The soonest open booking, not the newest one (#18 at 14:30 was shown before #15 at 14:00).
+        Reservation upcomingRes = appStateManager.getUpcomingReservation();
 
         if (upcomingRes != null) {
             binding.cardUpcomingReservation.setVisibility(View.VISIBLE);
             binding.tvResCode.setText("#" + upcomingRes.getId());
-            binding.tvResDateTime.setText(DisplayFormatters.date(upcomingRes.getDate()) + " • " + upcomingRes.getGuestCount() + " khách • " + upcomingRes.getTableLabel());
+            binding.tvResDateTime.setText(upcomingRes.getTimeSlot() + " • " + DisplayFormatters.date(upcomingRes.getDate())
+                    + " • " + upcomingRes.getGuestCount() + " khách • " + upcomingRes.getTableLabel());
             binding.tvResBranchName.setText(upcomingRes.getBranchName());
 
             final Reservation resToOpen = upcomingRes;

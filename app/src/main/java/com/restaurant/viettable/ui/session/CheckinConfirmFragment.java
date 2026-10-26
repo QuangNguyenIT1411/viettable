@@ -57,13 +57,7 @@ public class CheckinConfirmFragment extends BaseFragment {
             return;
         }
 
-        Reservation res = null;
-        for (Reservation r : appStateManager.getReservations()) {
-            if (com.restaurant.viettable.util.ReservationSchedule.awaitingGuest(r.getStatus())) {
-                res = r;
-                break;
-            }
-        }
+        Reservation res = appStateManager.getUpcomingReservation(); // soonest open booking, same as the home card
 
         if (res != null) {
             binding.tvTableTitle.setText(res.getTableLabel());
