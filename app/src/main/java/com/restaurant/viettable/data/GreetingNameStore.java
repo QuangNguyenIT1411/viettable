@@ -44,6 +44,15 @@ public final class GreetingNameStore {
         return pick(preferences.getString(KEY_ACCOUNT, null), preferences.getString(KEY_NAME, null), sessionAccount);
     }
 
+    /** The name to greet with now: the loaded profile's, else the one saved for the session's account, else "". */
+    public String currentName(AppStateManager state) {
+        com.restaurant.viettable.model.User user = state.getCurrentUser();
+        String name = HomeDisplayRules.greetingName(user == null ? null : user.getFullName());
+        if (name.isEmpty() && state.isLoggedIn())
+            name = nameFor(com.restaurant.viettable.network.BiometricTokenStore.getInstance().sessionAccount());
+        return name;
+    }
+
     public void clear() {
         if (preferences != null) preferences.edit().clear().apply();
     }

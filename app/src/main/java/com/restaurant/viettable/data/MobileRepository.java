@@ -414,6 +414,23 @@ public final class MobileRepository {
         });
     }
 
+    /** Real points, tier and next-tier threshold (GET /me/loyalty); also refreshes the points kept on the user. */
+    public void loadLoyalty(Callback<com.restaurant.viettable.model.LoyaltyInfo> callback) {
+        api().get("/api/mobile/v1/me/loyalty", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject row = (JSONObject) body;
+                Integer nextAt = row.isNull("nextTierAtPoints") || !row.has("nextTierAtPoints") ? null : row.optInt("nextTierAtPoints");
+                com.restaurant.viettable.model.LoyaltyInfo info = new com.restaurant.viettable.model.LoyaltyInfo(
+                        row.optInt("availablePoints"), SafeText.json(row, "tierCode"), SafeText.json(row, "tierName"),
+                        SafeText.json(row, "nextTierCode", null), nextAt, row.optInt("pointsToNextTier"), row.optInt("progressPercent"));
+                User user = state.getCurrentUser();
+                if (user != null) user.setLoyaltyPoints(info.getAvailablePoints());
+                callback.onSuccess(info);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void updateProfile(String name, String phone, String email, Callback<User> callback) {
         try {
             JSONObject body = new JSONObject().put("name", name).put("phoneNumber", phone).put("email", email);
@@ -1548,6 +1565,7 @@ public final class MobileRepository {
                 Math.round(value.optDouble("discount")), 0, Math.round(value.optDouble("totalAmount")),
                 "Đã thanh toán", "", SafeText.json(value, "issuedAtUtc"));
         invoice.setBackendInvoiceId(value.optInt("invoiceId"));
+        invoice.setBackendPaymentId(value.optInt("paymentId"));
         invoice.setTableLabel(session == null ? tableLabel(String.valueOf(value.optInt("branchId")), String.valueOf(value.optInt("tableId"))) : session.getTableLabel());
         return invoice;
     }

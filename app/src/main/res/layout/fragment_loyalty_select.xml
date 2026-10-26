@@ -67,7 +67,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="@font/bricolage_medium"
-                            android:text="15.000 điểm"
+                            android:text=""
                             android:textColor="@color/pd_cream"
                             android:textSize="26sp" />
 
@@ -76,7 +76,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
-                            android:text="~150.000 đ"
+                            android:text=""
                             android:textColor="@color/colorSecondary"
                             android:textSize="16sp" />
                     </LinearLayout>
@@ -156,7 +156,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
                             android:gravity="center"
-                            android:text="2.000 điểm"
+                            android:text=""
                             android:textColor="@color/colorPrimary"
                             android:textSize="20sp" />
 
@@ -176,7 +176,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:fontFamily="@font/bricolage_medium"
-                        android:text="Giảm tương ứng: -20.000 đ"
+                        android:text=""
                         android:textColor="@color/colorSuccess"
                         android:textSize="14sp" />
 

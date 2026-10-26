@@ -115,8 +115,10 @@
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Tier Progress Card -->
+            <!-- Tier Progress Card: filled from GET /me/loyalty; hidden until it loads or at the top tier. -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardTierProgress"
+                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -139,37 +141,41 @@
                         android:orientation="horizontal">
 
                         <TextView
+                            android:id="@+id/tvTierProgressTitle"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:fontFamily="@font/bricolage_medium"
-                            android:text="Tiến độ nâng hạng Kim Cương"
+                            android:text=""
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:id="@+id/tvTierProgressPoints"
                             android:fontFamily="@font/bricolage_medium"
-                            android:text="15.000 / 20.000"
+                            android:text=""
                             android:textColor="@color/colorPrimary"
                             android:textSize="13sp" />
                     </LinearLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/progressTier"
                         android:layout_width="match_parent"
                         android:layout_height="8dp"
                         android:layout_marginTop="10dp"
-                        android:progress="75"
+                        android:max="100"
                         app:indicatorColor="@color/colorSecondary"
                         app:trackColor="@color/colorDivider"
                         app:trackCornerRadius="4dp" />
 
                     <TextView
+                        android:id="@+id/tvTierProgressHint"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Tích lũy thêm 5.000 điểm để nhận ưu đãi giảm 10% trọn đời."
+                        android:text=""
                         android:textColor="@color/colorTextSecondary"
                         android:textSize="12sp" />
                 </LinearLayout>

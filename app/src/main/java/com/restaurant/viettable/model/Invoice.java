@@ -17,6 +17,7 @@ public class Invoice implements Serializable {
     private String paymentLocation;
     private String timestamp;
     private int backendInvoiceId;
+    private int backendPaymentId;
 
     public Invoice() {}
 
@@ -57,6 +58,9 @@ public class Invoice implements Serializable {
     public String getTimestamp() { return timestamp; }
     public int getBackendInvoiceId() { return backendInvoiceId; }
     public void setBackendInvoiceId(int backendInvoiceId) { this.backendInvoiceId = backendInvoiceId; }
+    /** The payment that paid this invoice (0 when unknown); its inbox message carries the points earned. */
+    public int getBackendPaymentId() { return backendPaymentId; }
+    public void setBackendPaymentId(int backendPaymentId) { this.backendPaymentId = backendPaymentId; }
 
     public String getFormattedFinalTotal() {
         return String.format(java.util.Locale.GERMANY, "%,dđ", finalTotal);

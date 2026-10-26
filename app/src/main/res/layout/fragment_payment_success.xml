@@ -29,11 +29,13 @@
                 app:tint="@color/colorSuccess" />
 
             <TextView
+                android:id="@+id/tvSuccessTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
+                android:gravity="center"
                 android:fontFamily="@font/bricolage_medium"
-                android:text="Thanh toán thành công!"
+                android:text="Ngon miệng nhé!"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="22sp" />
 
@@ -150,8 +152,10 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Loyalty Points Rewarded Badge -->
+            <!-- Points earned by this payment: shown only once the server's real number arrives (owner, 26/10). -->
             <LinearLayout
+                android:id="@+id/layoutPointsEarned"
+                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -175,10 +179,11 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tvPointsEarned"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/bricolage_medium"
-                        android:text="+61 điểm tích lũy mới!"
+                        android:text=""
                         android:textColor="@color/colorSecondary"
                         android:textSize="14sp" />
 
@@ -186,7 +191,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Đã cộng vào ví thành viên của bạn (Tích lũy 1% giá trị)"
+                        android:text="Đã cộng vào ví thành viên của bạn"
                         android:textColor="@color/pd_yellow"
                         android:textSize="12sp" />
                 </LinearLayout>
