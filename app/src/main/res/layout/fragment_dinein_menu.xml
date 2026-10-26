@@ -47,10 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:background="@color/colorSurface"
-            app:tabIndicatorColor="@color/colorPrimary"
-            app:tabMode="scrollable"
-            app:tabSelectedTextColor="@color/colorPrimary"
-            app:tabTextColor="@color/colorTextSecondary" />
+            app:tabMode="scrollable" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

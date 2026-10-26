@@ -76,8 +76,8 @@ public class ResTimeFragment extends BaseFragment {
             chip.setCheckable(bookable);
             chip.setEnabled(bookable);
             if (!bookable) {
-                chip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#EAE7E1")));
-                chip.setTextColor(android.graphics.Color.parseColor("#7A7E7C"));
+                chip.setChipBackgroundColor(android.content.res.ColorStateList.valueOf(getResources().getColor(R.color.pd_surface_2)));
+                chip.setTextColor(getResources().getColor(R.color.pd_dim));
             } else {
                 if (slot.equals(selectedSlot)) chip.setChecked(true);
                 chip.setOnCheckedChangeListener((btn, isChecked) -> {

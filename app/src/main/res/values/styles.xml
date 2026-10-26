@@ -371,9 +371,9 @@
         <item name="itemTextAppearanceActive">@style/TextAppearance.VietTable.BottomNav.Label.Active</item>
         <item name="itemTextAppearanceActiveBoldEnabled">false</item>
         <item name="itemRippleColor">@color/transparent</item>
-        <item name="itemPaddingTop">12dp</item>
-        <item name="itemPaddingBottom">10dp</item>
-        <item name="activeIndicatorLabelPadding">10dp</item>
+        <item name="itemPaddingTop">10dp</item>
+        <item name="itemPaddingBottom">8dp</item>
+        <item name="activeIndicatorLabelPadding">4dp</item>
         <item name="labelVisibilityMode">labeled</item>
         <item name="elevation">16dp</item>
     </style>
@@ -433,7 +433,6 @@
         <item name="tabIndicatorColor">@color/pd_cream</item>
         <item name="tabIndicatorGravity">stretch</item>
         <item name="tabIndicatorFullWidth">true</item>
-        <item name="tabIndicatorHeight">40dp</item>
         <item name="tabIndicatorAnimationMode">elastic</item>
         <item name="tabTextColor">@color/pd_tab_text</item>
         <item name="tabSelectedTextColor">@color/pd_on_color</item>

@@ -62,10 +62,7 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:background="@color/surface"
-        app:tabIndicatorColor="@color/primary"
         app:tabMode="scrollable"
-        app:tabSelectedTextColor="@color/primary"
-        app:tabTextColor="@color/text_secondary"
         app:layout_constraintTop_toBottomOf="@id/topBarPreorder"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

@@ -89,7 +89,7 @@ public class ResDateFragment extends BaseFragment {
             card.setCardElevation(index == selectedIndex ? 6 : 2);
             card.setStrokeWidth(index == selectedIndex ? 4 : 1);
             card.setStrokeColor(index == selectedIndex ? getResources().getColor(R.color.primary) : getResources().getColor(R.color.divider));
-            card.setCardBackgroundColor(index == selectedIndex ? getResources().getColor(R.color.primary_container) : Color.WHITE);
+            card.setCardBackgroundColor(index == selectedIndex ? getResources().getColor(R.color.primary_container) : getResources().getColor(R.color.pd_surface));
 
             LinearLayout content = new LinearLayout(requireContext());
             content.setOrientation(LinearLayout.VERTICAL);

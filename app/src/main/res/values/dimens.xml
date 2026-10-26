@@ -49,7 +49,7 @@
     <dimen name="screen_padding_horizontal">24dp</dimen>
     <dimen name="food_card_width">168dp</dimen>
     <dimen name="food_card_img_height">118dp</dimen>
-    <dimen name="bottom_nav_height">72dp</dimen>
+    <dimen name="bottom_nav_height">80dp</dimen>
 
     <!-- Phố đêm (DESIGN_PHO_DEM.md section 4-5) -->
     <dimen name="pd_radius_card">28dp</dimen>

@@ -248,14 +248,14 @@ public class ResTableLayoutFragment extends BaseFragment {
             card.setCardBackgroundColor(primary);
             card.setStrokeColor(primary);
         } else if (free) {
-            card.setCardBackgroundColor(Color.WHITE);
+            card.setCardBackgroundColor(getResources().getColor(R.color.pd_surface));
             card.setStrokeColor(getResources().getColor(R.color.divider));
         } else if (booked) {
-            card.setCardBackgroundColor(Color.parseColor("#D1D5DB"));
-            card.setStrokeColor(Color.parseColor("#C2C7CE"));
+            card.setCardBackgroundColor(getResources().getColor(R.color.pd_surface_2));
+            card.setStrokeColor(getResources().getColor(R.color.pd_line));
         } else {
-            card.setCardBackgroundColor(Color.parseColor("#E3DFD6"));
-            card.setStrokeColor(Color.parseColor("#DDD9D0"));
+            card.setCardBackgroundColor(getResources().getColor(R.color.pd_surface_2));
+            card.setStrokeColor(getResources().getColor(R.color.pd_line));
         }
         card.setAlpha(free ? 1f : booked ? 0.75f : 0.45f); // anything that cannot be chosen is faded
 
@@ -267,7 +267,7 @@ public class ResTableLayoutFragment extends BaseFragment {
         name.setText("Bàn " + table.tableNumber);
         name.setTextSize(16);
         name.setTypeface(null, Typeface.BOLD);
-        name.setTextColor(isSelected ? Color.WHITE : free ? getResources().getColor(R.color.text_primary) : Color.parseColor("#5A625D"));
+        name.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : free ? R.color.text_primary : R.color.pd_muted));
         content.addView(name);
 
         TextView detail = new TextView(requireContext());
@@ -275,7 +275,7 @@ public class ResTableLayoutFragment extends BaseFragment {
         detail.setText(free ? table.seats + " người" : table.seats + " người • " + state);
         detail.setGravity(Gravity.CENTER);
         detail.setTextSize(11);
-        detail.setTextColor(isSelected ? Color.parseColor("#F5F2EC") : getResources().getColor(R.color.text_secondary));
+        detail.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : R.color.text_secondary));
         content.addView(detail);
         card.addView(content);
 
