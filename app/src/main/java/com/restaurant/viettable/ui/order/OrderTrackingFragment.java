@@ -90,6 +90,7 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
             }, this::confirmReceived);
             binding.rvTrackedItems.setLayoutManager(new LinearLayoutManager(requireContext()));
             binding.rvTrackedItems.setAdapter(adapter);
+            bindDishesDone(allTrackedItems);
         }
         renderState(false, null);
     }
@@ -209,5 +210,14 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
         SignalRManager.getInstance().removeListener(this);
         appStateManager.removeListener(this);
         binding = null;
+    }
+
+    /** "x/y món đã xong", bar animates to the new value (hidden when there is no dish). */
+    private void bindDishesDone(List<OrderItem> items) {
+        com.restaurant.viettable.util.DishProgress progress = com.restaurant.viettable.util.DishProgress.of(items);
+        binding.cardDishesDone.setVisibility(progress.total == 0 ? View.GONE : View.VISIBLE);
+        binding.tvDishesDoneCount.setText(progress.label());
+        binding.cardDishesDone.setContentDescription(progress.done + " trên " + progress.total + " món đã xong");
+        binding.progressDishesDone.setProgressCompat(progress.percent(), com.restaurant.viettable.util.PdMotion.enabled(requireContext()));
     }
 }

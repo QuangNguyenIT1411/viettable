@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg_cream">
@@ -223,6 +224,60 @@
                                 android:textSize="11sp" />
                         </LinearLayout>
                     </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- "x/y món đã xong" (owner, 26/10): ready or served dishes out of all dishes not cancelled. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardDishesDone"
+                style="@style/Widget.VietTable.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/pd_surface"
+                app:cardCornerRadius="@dimen/pd_radius_card">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvDishesDoneCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                            android:textColor="@color/pd_yellow"
+                            tools:text="3/5" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:text="món đã xong"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body"
+                            android:textColor="@color/pd_muted" />
+                    </LinearLayout>
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/progressDishesDone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:max="100"
+                        app:indicatorColor="@color/pd_yellow"
+                        app:trackColor="@color/pd_surface_2"
+                        app:trackCornerRadius="6dp"
+                        app:trackThickness="10dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
