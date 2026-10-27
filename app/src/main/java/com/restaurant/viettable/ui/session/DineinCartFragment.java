@@ -42,7 +42,7 @@ public class DineinCartFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {

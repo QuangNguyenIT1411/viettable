@@ -1,112 +1,144 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Cart row "Phố đêm" (DESIGN_PHO_DEM.md section 6 "Giỏ hàng"): small plate, name, options, total, stepper.
+     View IDs used by CartAdapter are kept; ivCartFoodImage is new. -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardCartItem"
     style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
     android:layout_marginVertical="6dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp">
+    app:cardCornerRadius="@dimen/pd_radius_row">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="14dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/tvCartFoodName"
+            <FrameLayout
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/pd_plate"
+                android:padding="4dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivCartFoodImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/pd_plate_empty"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+            </FrameLayout>
+
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
                 android:layout_weight="1"
-                android:text="Phở bò tái lăn"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvCartItemTotal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="178.000đ"
-                android:textColor="@color/primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/tvCartFoodName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                    tools:text="Phở bò tái lăn" />
+
+                <TextView
+                    android:id="@+id/tvCartItemOptions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted"
+                    tools:text="Size: Tiêu chuẩn | Topping: Thêm quẩy giòn" />
+
+                <TextView
+                    android:id="@+id/tvCartItemTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Price"
+                    android:textColor="@color/pd_yellow"
+                    android:textSize="16sp"
+                    tools:text="178.000đ" />
+            </LinearLayout>
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvCartItemOptions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Size: Tiêu chuẩn | Topping: Thêm quẩy giòn | Cay: 1/3"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-
-        <!-- Quantity row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/btnRemoveItem"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:paddingEnd="12dp"
                 android:text="Xóa món"
-                android:textColor="@color/semantic_error"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_red" />
 
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Stepper: surface_2 pill, "-" on surface, "+" on cream (section 5). -->
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:background="@drawable/bg_search_input"
+                android:layout_height="52dp"
+                android:background="@drawable/pd_stepper_bg"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="6dp">
+                android:paddingHorizontal="4dp">
 
-            <ImageButton
-                android:id="@+id/btnMinusCart"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/a11y_decrease"
-                    android:background="?attr/selectableItemBackgroundBorderless"
+                <ImageButton
+                    android:id="@+id/btnMinusCart"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/pd_circle_surface"
+                    android:contentDescription="@string/a11y_decrease"
+                    android:padding="11dp"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/ic_remove"
-                    app:tint="@color/primary" />
+                    app:tint="@color/pd_cream" />
 
                 <TextView
                     android:id="@+id/tvCartQuantity"
-                    android:layout_width="32dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="2"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:minWidth="36dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Price"
+                    android:textSize="16sp"
+                    tools:text="2" />
 
-            <ImageButton
-                android:id="@+id/btnPlusCart"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:contentDescription="@string/a11y_increase"
-                    android:background="?attr/selectableItemBackgroundBorderless"
+                <ImageButton
+                    android:id="@+id/btnPlusCart"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/pd_circle_cream"
+                    android:contentDescription="@string/a11y_increase"
+                    android:padding="11dp"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/ic_add"
-                    app:tint="@color/primary" />
+                    app:tint="@color/pd_on_color" />
             </LinearLayout>
         </LinearLayout>
-
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

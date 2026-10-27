@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fades the page colour in under a bottom action button so scrolled content does not show through hard. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="90" android:startColor="@color/pd_bg" android:centerColor="#E615100D" android:endColor="#0015100D" />
+</shape>

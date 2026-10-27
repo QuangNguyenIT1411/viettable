@@ -6,8 +6,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemCartEntryBinding;
 import com.restaurant.viettable.model.CartItem;
+import com.restaurant.viettable.util.ImageLoader;
 
 import java.util.List;
 
@@ -54,6 +56,9 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         }
 
         public void bind(CartItem item, OnCartItemActionListener listener) {
+            ImageLoader.getInstance().load(item.getFoodItem(), binding.ivCartFoodImage);
+            // The loader puts a square backdrop behind the photo; the small plate needs a round one.
+            binding.ivCartFoodImage.setBackgroundResource(R.drawable.pd_plate_empty);
             binding.tvCartFoodName.setText(item.getFoodItem().getName());
             binding.tvCartItemOptions.setText(item.getOptionsSummary());
             binding.tvCartQuantity.setText(String.valueOf(item.getQuantity()));
