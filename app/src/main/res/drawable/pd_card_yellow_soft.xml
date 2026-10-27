@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft yellow note card (deposit / policy notes, DESIGN_PHO_DEM.md section 6 "Đặt cọc: thẻ vàng nhạt"). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/pd_yellow_soft" />
+    <corners android:radius="@dimen/pd_radius_row" />
+</shape>
