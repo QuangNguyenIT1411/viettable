@@ -76,7 +76,7 @@ public class InvoiceFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         DiningSession session = appStateManager.getActiveDiningSession();
         Invoice serverQuote = MobileRepository.getInstance().currentCheckoutInvoice();
@@ -99,18 +99,20 @@ public class InvoiceFragment extends BaseFragment {
             for (OrderItem oi : o.getItems()) {
                     LinearLayout row = new LinearLayout(requireContext());
                     row.setOrientation(LinearLayout.HORIZONTAL);
-                    row.setPadding(0, 4, 0, 4);
+                    int rowPadding = Math.round(6 * getResources().getDisplayMetrics().density);
+                    row.setPadding(0, rowPadding, 0, rowPadding);
 
                     TextView tvName = new TextView(requireContext());
                     tvName.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
                     tvName.setText(oi.getQuantity() + "x " + oi.getFoodName());
-                    tvName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorTextPrimary));
-                    tvName.setTextSize(13);
+                    androidx.core.widget.TextViewCompat.setTextAppearance(tvName, R.style.TextAppearance_VietTable_Body);
+                    tvName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.pd_cream));
 
                     TextView tvPrice = new TextView(requireContext());
                     tvPrice.setText(oi.getFormattedTotalPrice());
-                    tvPrice.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.colorTextSecondary));
-                    tvPrice.setTextSize(13);
+                    androidx.core.widget.TextViewCompat.setTextAppearance(tvPrice, R.style.TextAppearance_VietTable_Body);
+                    tvPrice.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.pd_muted));
+                    tvPrice.setPaddingRelative(rowPadding * 2, 0, 0, 0);
 
                     row.addView(tvName);
                     row.addView(tvPrice);

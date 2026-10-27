@@ -1,284 +1,288 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<!-- Hóa đơn "Phố đêm" (DESIGN_PHO_DEM.md section 6 "Hóa đơn"): surface card, amounts right-aligned, yellow total.
+     Written from scratch; view IDs used by InvoiceFragment are kept (the toolbar is now a round back button). -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/surface"
-        app:elevation="1dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="@color/text_primary"
-            app:title="Hóa đơn thanh toán"
-            app:titleTextColor="@color/text_primary" />
-    </com.google.android.material.appbar.AppBarLayout>
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="100dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
+            android:id="@+id/layoutInvoiceContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:paddingBottom="210dp">
 
-            <!-- Invoice Content Card -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
+
+            <TextView
+                android:id="@+id/tvInvoiceBranch"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                tools:text="Chi nhánh Quận 1" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Hóa đơn thanh toán"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <TextView
+                android:id="@+id/tvInvoiceSessionInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="--"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="B4 • Phiên #20 • 26/10 19:02" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:padding="22dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="CHI TIẾT MÓN ĐÃ DÙNG"
+                    android:textAppearance="@style/TextAppearance.VietTable.Label"
+                    android:textColor="@color/pd_muted" />
+
+                <LinearLayout
+                    android:id="@+id/layoutInvoiceItems"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="vertical" />
+
+                <com.restaurant.viettable.ui.common.PdDashLine
+                    android:layout_width="match_parent"
+                    android:layout_height="2dp"
+                    android:layout_marginVertical="16dp"
+                    android:importantForAccessibility="no" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/tvInvoiceBranch"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text=""
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:layout_weight="1"
+                        android:text="Tổng tiền món"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
 
                     <TextView
-                        android:id="@+id/tvInvoiceSessionInfo"
+                        android:id="@+id/tvInvoiceSubtotal"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="--"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginVertical="16dp"
-                        android:background="@color/divider" />
-
-                    <!-- Orders items summary container -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Chi tiết món đã dùng"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:id="@+id/layoutInvoiceItems"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="vertical" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginVertical="16dp"
-                        android:background="@color/divider" />
-
-                    <!-- Calculations breakdown -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Tổng tiền món:"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvInvoiceSubtotal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=""
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Phí phục vụ:"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvInvoiceServiceFee"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="27.000 đ"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Thuế VAT:"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvInvoiceVat"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="43.200 đ"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <!-- Voucher discount row -->
-                    <LinearLayout
-                        android:id="@+id/layoutVoucherDiscount"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/tvVoucherLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Giảm giá Voucher:"
-                            android:textColor="@color/semantic_success"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvVoucherDiscountAmount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="-50.000 đ"
-                            android:textColor="@color/semantic_success"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- Loyalty discount row -->
-                    <LinearLayout
-                        android:id="@+id/layoutLoyaltyDiscount"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/tvLoyaltyLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Giảm từ điểm tích lũy:"
-                            android:textColor="@color/semantic_success"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvLoyaltyDiscountAmount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="-20.000 đ"
-                            android:textColor="@color/semantic_success"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1.5dp"
-                        android:layout_marginVertical="16dp"
-                        android:background="@color/divider" />
-
-                    <!-- Final Total - Primary Visual Focus -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="TỔNG THANH TOÁN"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvInvoiceGrandTotal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="610.200 đ"
-                            android:textColor="@color/primary"
-                            android:textSize="26sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        tools:text="540.000đ" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Voucher & Loyalty Selection Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Phí phục vụ"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvInvoiceServiceFee"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        tools:text="27.000đ" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Thuế VAT"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvInvoiceVat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        tools:text="43.200đ" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutVoucherDiscount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tvVoucherLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Giảm giá Voucher"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_mint" />
+
+                    <TextView
+                        android:id="@+id/tvVoucherDiscountAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_mint"
+                        tools:text="-50.000đ" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutLoyaltyDiscount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tvLoyaltyLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Giảm từ điểm tích lũy"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_mint" />
+
+                    <TextView
+                        android:id="@+id/tvLoyaltyDiscountAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_mint"
+                        tools:text="-20.000đ" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="18dp"
+                    android:background="@color/pd_line" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="TỔNG THANH TOÁN"
+                        android:textAppearance="@style/TextAppearance.VietTable.Label" />
+
+                    <TextView
+                        android:id="@+id/tvInvoiceGrandTotal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.L"
+                        android:textColor="@color/pd_yellow"
+                        tools:text="610.200đ" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Voucher and points: two plum tiles (offers / points, section 2). -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal">
+                android:layout_marginTop="14dp"
+                android:orientation="vertical">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSelectVoucher"
-                    style="@style/Widget.VietTable.Button.Secondary"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="1"
+                    style="@style/Widget.VietTable.Button.Ghost"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:backgroundTint="@color/pd_plum"
+                    android:paddingHorizontal="12dp"
                     android:text="Chọn Voucher"
+                    app:backgroundTint="@color/pd_plum"
                     app:icon="@drawable/ic_voucher"
-                    app:iconTint="@color/primary" />
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/pd_yellow"
+                    app:strokeWidth="0dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSelectLoyalty"
-                    style="@style/Widget.VietTable.Button.Secondary"
-                    android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="10dp"
-                    android:layout_weight="1"
+                    style="@style/Widget.VietTable.Button.Ghost"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="10dp"
+                    android:backgroundTint="@color/pd_plum"
+                    android:paddingHorizontal="12dp"
                     android:text="Dùng Điểm"
+                    app:backgroundTint="@color/pd_plum"
                     app:icon="@drawable/ic_loyalty"
-                    app:iconTint="@color/primary" />
+                    app:iconGravity="textStart"
+                    app:iconTint="@color/pd_yellow"
+                    app:strokeWidth="0dp" />
             </LinearLayout>
 
             <!-- Shown once the payment was requested: voucher and points can no longer change. -->
@@ -287,38 +291,38 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:background="@drawable/pd_note_box"
+                android:padding="14dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Caption"
                 android:textColor="@color/pd_yellow"
                 android:visibility="gone" />
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Actions -->
     <LinearLayout
-        android:tag="safe_bottom"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/surface"
-        android:elevation="8dp"
+        android:background="@drawable/pd_fade_bottom"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="28dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnProceedToPaymentType"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/btn_height_primary"
+            android:layout_height="60dp"
             android:text="Chọn phương thức thanh toán" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSplitBill"
-            style="@style/Widget.VietTable.Button.Secondary"
+            style="@style/Widget.VietTable.Button.Ghost"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/btn_height_primary"
-            android:layout_marginTop="8dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="10dp"
             android:text="Chia hóa đơn" />
     </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>
