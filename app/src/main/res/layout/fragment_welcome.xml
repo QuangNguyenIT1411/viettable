@@ -1,157 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<!-- Chào mừng "Phố đêm" (design P01). Written from scratch; IDs used by WelcomeFragment are kept.
+     The decorative plates are the app's bundled dish photos; no price sticker (it would be a made-up number). -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/pd_bg">
 
-    <!-- Photographic Background (Matching Splash screen) -->
-    <ImageView
-        android:id="@+id/ivWelcomeBg"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"
-        android:src="@drawable/splash_bg"
-        android:contentDescription="@null" />
-
-    <!-- Dark Scrim Overlay for Contrast and Luxury Ambience -->
     <View
-        android:id="@+id/vWelcomeScrim"
+        android:layout_width="520dp"
+        android:layout_height="520dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
+
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_welcome_scrim" />
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:tag="safe_all">
 
-    <!-- Center Content: Brand Emblem, Title, Tagline and Subtitle -->
-    <LinearLayout
-        android:id="@+id/layoutCenterBrand"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingHorizontal="32dp"
-        app:layout_constraintBottom_toTopOf="@+id/layoutBottomActions"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.40">
-
-        <!-- 3D Lotus Flower Brand Emblem (Matching Splash screen) -->
-        <FrameLayout
-            android:layout_width="108dp"
-            android:layout_height="108dp"
-            android:background="@drawable/bg_splash_emblem_container">
-
-            <ImageView
-                android:id="@+id/ivWelcomeLogo"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_gravity="center"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_splash_lotus_3d"
-                android:contentDescription="@string/app_name" />
-        </FrameLayout>
-
-        <!-- Main Title -->
-        <TextView
-            android:id="@+id/tvWelcomeTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:letterSpacing="0.08"
-            android:shadowColor="#1A000000"
-            android:shadowDx="0"
-            android:shadowDy="2"
-            android:shadowRadius="4"
-            android:text="@string/app_name"
-            android:textColor="@color/primary"
-            android:textSize="36sp"
-            android:textStyle="bold" />
-
-        <!-- Gold Accent Divider -->
-        <View
-            android:layout_width="36dp"
-            android:layout_height="3dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_splash_gold_bar" />
-
-        <!-- Tagline -->
-        <TextView
-            android:id="@+id/tvWelcomeTagline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:letterSpacing="0.05"
-            android:text="@string/app_tagline"
-            android:textColor="@color/accent_gold_dark"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <!-- Welcome Description -->
-        <TextView
-            android:id="@+id/tvWelcomeSub"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:lineSpacingExtra="4dp"
-            android:paddingHorizontal="16dp"
-            android:text="@string/auth_welcome_sub"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
-
-    </LinearLayout>
-
-    <!-- Bottom Actions Section -->
-    <LinearLayout
-        android:id="@+id/layoutBottomActions"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingHorizontal="28dp"
-        android:paddingBottom="40dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <!-- Primary Login Button in Fresh Botanical Green -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnLogin"
-            style="@style/Widget.VietTable.Button.Primary"
+        <LinearLayout
+            android:id="@+id/layoutCenterBrand"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="52dp"
-            android:text="@string/auth_login"
-            android:textSize="16sp"
-            app:cornerRadius="14dp"
-            app:elevation="2dp" />
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingBottom="24dp">
 
-        <!-- Secondary Register Button with Clean White Card & Green Border -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRegister"
-            style="@style/Widget.VietTable.Button.OutlinedLight"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:minHeight="52dp"
-            android:text="@string/auth_register"
-            android:textSize="16sp"
-            app:cornerRadius="14dp"
-            app:elevation="1dp" />
+            <!-- Plates: one big, two small ones overlapping it. -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_marginTop="24dp"
+                android:clipChildren="false">
 
-        <!-- Guest Exploration Text Link -->
-        <TextView
-            android:id="@+id/btnSkipAuth"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="16dp"
-            android:letterSpacing="0.03"
-            android:padding="8dp"
-            android:text="Khám phá ngay không cần đăng nhập"
-            android:textColor="@color/primary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+                <FrameLayout
+                    android:id="@+id/plateWelcomeMain"
+                    android:layout_width="230dp"
+                    android:layout_height="230dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/pd_plate"
+                    android:elevation="14dp"
+                    android:outlineSpotShadowColor="@color/black"
+                    android:padding="22dp">
 
-    </LinearLayout>
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/ivWelcomeLogo"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/app_name"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/food_bun_cha"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+                </FrameLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+                <FrameLayout
+                    android:id="@+id/plateWelcomeA"
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:layout_gravity="top|start"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_plate"
+                    android:elevation="18dp"
+                    android:outlineSpotShadowColor="@color/black"
+                    android:padding="8dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:importantForAccessibility="no"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/food_che_khuc_bach"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+                </FrameLayout>
+
+                <FrameLayout
+                    android:id="@+id/plateWelcomeB"
+                    android:layout_width="96dp"
+                    android:layout_height="96dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/pd_plate"
+                    android:elevation="18dp"
+                    android:outlineSpotShadowColor="@color/black"
+                    android:padding="9dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:importantForAccessibility="no"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/food_goi_cuon"
+                        app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+                </FrameLayout>
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvWelcomeTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:accessibilityHeading="true"
+                android:text="@string/pd_welcome_title"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                android:textSize="48sp"
+                app:lineHeight="52sp" />
+
+            <TextView
+                android:id="@+id/tvWelcomeSub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/pd_welcome_sub"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:minHeight="24dp" />
+
+            <LinearLayout
+                android:id="@+id/layoutBottomActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLogin"
+                    style="@style/Widget.VietTable.Button.Primary.Arrow"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:text="@string/auth_login" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRegister"
+                    style="@style/Widget.VietTable.Button.Ghost.Arrow"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/auth_register" />
+
+                <TextView
+                    android:id="@+id/btnSkipAuth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:paddingHorizontal="12dp"
+                    android:text="@string/pd_welcome_skip"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                    android:textColor="@color/pd_yellow" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

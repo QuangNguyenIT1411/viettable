@@ -8,10 +8,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentWelcomeBinding;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.branch.BranchListFragment;
+import com.restaurant.viettable.util.PdMotion;
 
 public class WelcomeFragment extends BaseFragment {
 
@@ -32,10 +32,8 @@ public class WelcomeFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        setStatusBarLightIcons(false); // Dark icons on light photographic background
-
-        binding.ivWelcomeBg.setImageResource(R.drawable.splash_bg);
-        binding.ivWelcomeLogo.setImageResource(R.drawable.ic_splash_lotus_3d);
+        PdMotion.dishEnter(binding.plateWelcomeMain, binding.plateWelcomeA);
+        PdMotion.enterBlocks(binding.layoutCenterBrand, 5);
 
         binding.btnLogin.setOnClickListener(v -> navigateTo(new LoginFragment()));
         binding.btnRegister.setOnClickListener(v -> navigateTo(new RegisterFragment()));

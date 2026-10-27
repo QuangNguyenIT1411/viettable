@@ -261,6 +261,10 @@
     <string name="pd_home_for_you">Còn nhiều món ngon</string>
     <string name="pd_home_featured">Thực đơn hôm nay</string>
     <string name="pd_home_at_table_desc">%1$s, %2$s. Đổi chi nhánh</string>
+    <string name="pd_welcome_title">VIET
+TABLE</string>
+    <string name="pd_welcome_sub">Ăn như ở phố. Gọi món như ở nhà. Quét QR tại bàn, bếp nhận đơn liền tay.</string>
+    <string name="pd_welcome_skip">Khám phá ngay không cần đăng nhập</string>
     <string name="pd_sold_out">Hết món</string>
     <string name="pd_onsite_heading_wait">Đang chờ thanh toán</string>
     <string name="pd_onsite_heading_transfer">Quét để thanh toán</string>
