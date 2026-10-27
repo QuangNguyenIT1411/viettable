@@ -33,7 +33,12 @@ import com.restaurant.viettable.ui.food.MenuFragment;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.model.TableMapItem;
+import com.restaurant.viettable.model.NotificationItem;
+import com.restaurant.viettable.ui.home.NotificationFragment;
+import com.restaurant.viettable.ui.order.OrderHistoryFragment;
 import com.restaurant.viettable.ui.payment.InvoiceFragment;
+import com.restaurant.viettable.ui.profile.LoyaltyFragment;
+import com.restaurant.viettable.ui.profile.ProfileFragment;
 import com.restaurant.viettable.ui.reservation.ResConfirmationFragment;
 import com.restaurant.viettable.ui.reservation.ResDateFragment;
 import com.restaurant.viettable.ui.reservation.ResDetailFragment;
@@ -79,7 +84,7 @@ public class Group4DesignPreviewTest {
                 Branch branch = new Branch("1", "Chi nhánh Quận 1", "", "", "", 0, true, "",
                         new ArrayList<>(), 0, 0, 0, 0);
                 state.setSelectedBranch(branch);
-                state.setCurrentUser(new User("1", "Nguyễn Vinh Quang", "", "", "MEMBER", 0, "1"));
+                state.setCurrentUser(new User("1", "Nguyễn Vinh Quang", "", "0901234567", "GOLD", 3250, "1"));
                 List<FoodItem> foods = foods();
                 state.replaceBranchCatalog("1", categories(), foods);
                 DiningSession session = new DiningSession("20", "1", "Chi nhánh Quận 1", "37",
@@ -134,6 +139,26 @@ public class Group4DesignPreviewTest {
                         reservation("8870", Reservation.Status.CONFIRMED),
                         reservation("8812", Reservation.Status.REJECTED))));
                 return ResHistoryFragment.newInstance();
+            case "orders":
+                state.getActiveDiningSession().getOrders().add(order(state.getActiveDiningSession()));
+                return new OrderHistoryFragment();
+            case "notifications": {
+                NotificationItem a = new NotificationItem("1", NotificationItem.Type.RESERVATION, "Đặt bàn đã được xác nhận",
+                        "Bàn B4 lúc 19:00 ngày 29/10 đã sẵn sàng cho 4 khách.", "2026-10-27T09:12:00Z", false);
+                NotificationItem b = new NotificationItem("2", NotificationItem.Type.ORDER, "Bếp đang nấu món của bạn",
+                        "Bún chả Hà Nội, Phở bò tái đang được chế biến.", "2026-10-26T12:20:00Z", false);
+                NotificationItem c = new NotificationItem("3", NotificationItem.Type.PAYMENT, "Thanh toán thành công",
+                        "Hóa đơn #412: 272.500đ. Bạn được cộng 272 điểm.", "2026-10-26T14:52:00Z", true);
+                NotificationItem d = new NotificationItem("4", NotificationItem.Type.PROMOTION, "Ưu đãi cuối tuần",
+                        "Giảm 50.000đ cho hóa đơn từ 400.000đ.", "2026-10-25T08:00:00Z", true);
+                state.replaceNotifications(new ArrayList<>(Arrays.asList(a, b, c, d)));
+                return new NotificationFragment();
+            }
+            case "profile":
+                state.setLoggedIn(true);
+                return new ProfileFragment();
+            case "loyalty-card":
+                return new LoyaltyFragment();
             case "resdetail": {
                 Reservation rejected = reservation("8812", Reservation.Status.REJECTED);
                 rejected.setStatusReason("Nhà hàng đã kín chỗ khung giờ này");
@@ -204,6 +229,30 @@ public class Group4DesignPreviewTest {
             case "restable":
                 fillTables(a);
                 break;
+            case "loyalty-card": {
+                show(a, R.id.cardTierProgress);
+                text(a, R.id.tvCardNumber, "VT 0001 2345");
+                text(a, R.id.tvTierProgressTitle, "Tiến độ lên hạng Kim cương");
+                text(a, R.id.tvTierProgressPoints, "3.250 / 5.000");
+                text(a, R.id.tvTierProgressHint, "Tích lũy thêm 1.750 điểm để lên hạng Kim cương.");
+                View bar = a.findViewById(R.id.progressTier);
+                if (bar instanceof com.restaurant.viettable.ui.common.PdProgressBar)
+                    ((com.restaurant.viettable.ui.common.PdProgressBar) bar).setProgressCompat(65, false);
+                show(a, R.id.tvBenefitsTitle);
+                text(a, R.id.tvBenefitsTitle, "Đặc quyền hạng Vàng");
+                show(a, R.id.cardBenefits);
+                LinearLayout benefits = a.findViewById(R.id.layoutBenefits);
+                if (benefits != null && benefits.getChildCount() == 0) {
+                    for (String line : new String[]{"Tích 1 điểm cho mỗi 1.000đ thanh toán", "Ưu tiên giữ bàn giờ cao điểm"}) {
+                        TextView t = new TextView(a);
+                        TextViewCompat.setTextAppearance(t, R.style.TextAppearance_VietTable_Body);
+                        t.setText("✓  " + line);
+                        t.setPadding(0, 8, 0, 8);
+                        benefits.addView(t);
+                    }
+                }
+                break;
+            }
             default:
                 break;
         }
