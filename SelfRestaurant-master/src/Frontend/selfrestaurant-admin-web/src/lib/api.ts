@@ -1,6 +1,8 @@
 import { apiFailureMessage, parseBody } from "../../../shared/apiError";
 import type { AdminCategoriesScreenDto, AdminCustomerDto, AdminCustomersScreenDto, AdminDishesScreenDto, AdminEmployeeDto, AdminEmployeeHistoryResponse, AdminEmployeesScreenDto, AdminIngredientBatchDto, AdminIngredientDto, AdminIngredientsScreenDto, AdminRelatedIngredientDishDto, AdminReportsScreenDto, AdminSettingsDto, AdminTablesScreenDto, ApiError, StaffSessionDto, AdminDishIngredientsDto, AdminDishIngredientLineDto, AdminDashboardDto, AdminUnitsScreenDto, AdminUnitDto, CreateIngredientBatchRequest, IngredientStockMovementDto, InventoryBatchDto, InventoryMovementDto, InventoryStockInRequest, InventoryStockOutRequest, InventorySummaryDto, Paged, UpdateIngredientBatchRequest, AdminCustomerOrderHistoryItemDto } from "./types";
 
+import type { DepositDto, DepositListItem } from "../../../shared/depositStatus";
+
 const jsonHeaders = { "Content-Type": "application/json" };
 
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
@@ -45,6 +47,11 @@ function toDishFormData(payload: Record<string, unknown>, imageFile?: File | nul
 }
 
 export const adminApi = {
+  /** Reservation deposits (all branches the admin sees, or one) with their bookings. */
+  getDeposits: (branchId?: number | null) =>
+    request<DepositListItem[]>(`/api/admin/deposits${branchId ? `?branchId=${branchId}` : ""}`),
+  markDepositRefunded: (depositId: number) =>
+    request<DepositDto>(`/api/admin/deposits/${depositId}/refunded`, { method: "POST", body: "{}" }),
   getSession: () => request<StaffSessionDto>("/api/gateway/admin/session"),
   login: (username: string, password: string) => request<{ success: boolean; nextPath?: string; session: StaffSessionDto }>("/api/gateway/staff/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),
   logout: () => request<{ success: boolean; nextPath?: string }>("/api/gateway/admin/auth/logout", { method: "POST", body: JSON.stringify({}) }),

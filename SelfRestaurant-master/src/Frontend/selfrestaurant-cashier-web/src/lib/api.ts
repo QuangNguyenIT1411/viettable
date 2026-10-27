@@ -36,6 +36,8 @@ export type OnsitePayment = {
 };
 
 /** A received transfer (SePay) that was not confirmed automatically and needs the cashier. */
+import type { DepositDto, DepositListItem } from "../../../shared/depositStatus";
+
 export type BankTransferAlert = {
   eventId: number; amount: number; content: string; outcome: string; paymentId: number | null;
   referenceCode: string | null; receivedAtUtc: string; transactionDate: string | null;
@@ -67,6 +69,9 @@ export const cashierApi = {
     `/api/gateway/staff/cashier/onsite-payments/${id}/confirm`, { method: "POST", body: "{}" }),
   cancelOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
     `/api/gateway/staff/cashier/onsite-payments/${id}/cancel`, { method: "POST", body: "{}" }),
+  getDeposits: (signal?: AbortSignal) => request<DepositListItem[]>("/api/cashier/deposits", { signal }),
+  markDepositRefunded: (depositId: number) =>
+    request<DepositDto>(`/api/cashier/deposits/${depositId}/refunded`, { method: "POST", body: "{}" }),
   getBankTransferAlerts: (signal?: AbortSignal) =>
     request<BankTransferAlert[]>("/api/gateway/staff/cashier/bank-transfers/alerts", { signal }),
   resolveBankTransferAlert: (eventId: number) =>

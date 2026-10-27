@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AdminLayout } from "../components/AdminLayout";
 import { AdminPagination } from "../components/AdminPagination";
+import { AdminDepositsPanel } from "../components/AdminDepositsPanel";
 import { useAppDialog } from "../components/AppDialog";
 import { adminApi } from "../lib/api";
 import { useAutoDismissMessage } from "../lib/useAutoDismissMessage";
@@ -809,6 +810,7 @@ export function AdminConsolePage({ onLogout }: Props) {
       message={message}
       error={error}
     >
+      {section === "overview" ? <AdminDepositsPanel branchId={dashboard.staff.branchId} /> : null}
       {section === "overview" ? (
         <section className="panel-grid">
           <article className="panel">

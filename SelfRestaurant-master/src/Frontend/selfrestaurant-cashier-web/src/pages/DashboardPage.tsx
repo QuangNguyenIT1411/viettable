@@ -6,6 +6,7 @@ import { CashierTopbar } from "../components/CashierTopbar";
 import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { BankTransferAlertsPanel } from "../components/BankTransferAlertsPanel";
+import { DepositsPanel } from "../components/DepositsPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { PendingReservationsPanel, ReservationActions } from "../components/PendingReservationsPanel";
 import { cashierApi } from "../lib/api";
@@ -866,6 +867,7 @@ export function DashboardPage({ onLogout }: Props) {
 
       <section className="cashier-secondary-grid">
         <BankTransferAlertsPanel events={staffEvents} live={realtimeLive} />
+        <DepositsPanel events={staffEvents} live={realtimeLive} />
         <OnsitePaymentsPanel onPendingCountChange={setPendingOnsiteCount} events={staffEvents} live={realtimeLive} />
         <ServiceRequestsPanel tables={dashboard.tables} events={staffEvents} live={realtimeLive} />
         <PendingReservationsPanel events={staffEvents} live={realtimeLive}
