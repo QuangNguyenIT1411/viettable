@@ -1,149 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<!-- Đặt bàn bước 4 "Phố đêm": table map grouped by seats with the design's legend (DESIGN_PHO_DEM.md section 6
+     "Chọn bàn"). Written from scratch; view IDs used by ResTableLayoutFragment are kept. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream"
-    android:orientation="vertical">
+    android:background="@color/pd_bg">
 
-    <!-- Top Bar -->
-    <LinearLayout
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_mint"
+        android:importantForAccessibility="no" />
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="56dp"
-        android:tag="safe_top"
-        android:background="@color/surface"
-        android:elevation="2dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/a11y_back"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back"
-            app:tint="@color/primary" />
-
-        <TextView
-            android:id="@+id/tvTableMapTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="Sơ đồ &amp; Chọn bàn"
-            android:textColor="@color/primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnNoTableSuggestion"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="6dp"
-            android:text="Hết bàn?"
-            android:textColor="@color/semantic_error"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <include
-        android:id="@+id/wizardProgress"
-        layout="@layout/view_wizard_progress" />
-
-    <!-- Legend: same colours as the table cards (TableMapRenderer) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/surface_variant"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
-        android:paddingVertical="8dp">
-
-        <View
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:background="@drawable/bg_legend_free" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="Trống"
-            android:textSize="11sp" />
-
-        <View
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_marginStart="12dp"
-            android:background="@color/primary" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="Đang chọn"
-            android:textSize="11sp" />
-
-        <View
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_marginStart="12dp"
-            android:background="@color/pd_surface_2" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="Đã được đặt"
-            android:textSize="11sp" />
-
-        <View
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_marginStart="12dp"
-            android:alpha="0.45"
-            android:background="@color/pd_surface_2" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="Không chọn được"
-            android:textSize="11sp" />
-    </LinearLayout>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingTop="12dp"
+            android:paddingBottom="140dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/pd_screen_margin">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/pd_circle_surface2"
+                    android:contentDescription="@string/a11y_back"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/pd_cream" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/btnNoTableSuggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/pd_chip_idle"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:paddingHorizontal="18dp"
+                    android:text="Hết bàn?"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                    android:textColor="@color/pd_yellow" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvTableMapContext"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                tools:text="19:00 • 27/10/2026 • 4 khách" />
+
+            <TextView
+                android:id="@+id/tvTableMapTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Sơ đồ &amp; Chọn bàn"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <include
+                android:id="@+id/wizardProgress"
+                layout="@layout/view_wizard_progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp" />
+
+            <!-- Legend: free (mint dot), selected (yellow), booked (lock), not enough seats (dashed), paused (faded). -->
+            <com.google.android.material.chip.ChipGroup
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="16dp"
+                app:chipSpacingHorizontal="14dp"
+                app:chipSpacingVertical="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/pd_legend_free"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="Trống"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/pd_legend_selected"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="Đang chọn"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/pd_legend_booked"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="Đã được đặt"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/pd_legend_short"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="Không đủ ghế"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.6"
+                    android:drawableStart="@drawable/pd_legend_booked"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="Không chọn được"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted" />
+            </com.google.android.material.chip.ChipGroup>
 
             <TextView
                 android:id="@+id/tvSelectedTableBanner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_status_badge"
-                android:backgroundTint="@color/pd_mint_soft"
-                android:padding="12dp"
-                android:text=""
-                android:textColor="@color/primary"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/pd_card_mint_soft"
+                android:padding="16dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                android:textColor="@color/pd_mint"
+                tools:text="Đã chọn Bàn 4 (4 người)" />
 
             <ProgressBar
                 android:id="@+id/progressTableMap"
@@ -151,38 +173,37 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="24dp"
+                android:indeterminateTint="@color/pd_yellow"
                 android:visibility="gone" />
 
-            <!-- One header + grid per seat group ("Bàn 2 người", "Bàn 4 người", "Bàn 6+ người") -->
+            <!-- One header + grid per seat group ("Bàn 2 người", "Bàn 4 người", "Bàn 6+ người"). -->
             <LinearLayout
                 android:id="@+id/containerTableGroups"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:orientation="vertical" />
-
+                android:orientation="vertical"
+                android:paddingHorizontal="18dp" />
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="72dp"
-        android:tag="safe_bottom"
-        android:background="@color/surface"
-        android:elevation="8dp"
-        android:gravity="center"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp">
+        android:layout_gravity="bottom"
+        android:background="@drawable/pd_fade_bottom"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="28dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnContinue"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
             android:enabled="false"
             android:text="@string/btn_continue" />
     </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>

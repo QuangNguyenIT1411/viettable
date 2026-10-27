@@ -1,7 +1,6 @@
 package com.restaurant.viettable.ui.reservation;
 
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -14,7 +13,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.android.material.card.MaterialCardView;
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.databinding.FragmentResTableLayoutBinding;
@@ -212,15 +210,13 @@ public class ResTableLayoutFragment extends BaseFragment {
         container.removeAllViews();
         int columns = 3;
         int margin = dp(6);
-        int width = getResources().getDisplayMetrics().widthPixels - dp(32);
+        int width = getResources().getDisplayMetrics().widthPixels - dp(36);
         int cardSize = width / columns - 2 * margin;
         for (Map.Entry<String, List<TableMapItem>> group : TableMapRules.grouped(tables).entrySet()) {
             TextView header = new TextView(requireContext());
             header.setText(group.getKey());
-            header.setTextSize(15);
-            header.setTypeface(null, Typeface.BOLD);
-            header.setTextColor(getResources().getColor(R.color.text_primary));
-            header.setPadding(0, dp(12), 0, dp(4));
+            androidx.core.widget.TextViewCompat.setTextAppearance(header, R.style.TextAppearance_VietTable_Display_M);
+            header.setPadding(dp(6), dp(18), dp(6), dp(4));
             container.addView(header);
 
             GridLayout grid = new GridLayout(requireContext());
@@ -235,49 +231,44 @@ public class ResTableLayoutFragment extends BaseFragment {
         boolean booked = TableMapItem.BOOKED.equals(table.status);
         boolean free = table.selectable();
 
-        MaterialCardView card = new MaterialCardView(requireContext());
+        // Cell per DESIGN_PHO_DEM.md section 6 "Chọn bàn": free = surface + mint dot, selected = yellow,
+        // booked / in use = surface_2 + lock, not enough seats = dashed border, paused = 40%.
+        boolean tooSmall = TableMapItem.TOO_SMALL.equals(table.status);
+        boolean inUse = TableMapItem.IN_USE.equals(table.status);
+        android.widget.FrameLayout card = new android.widget.FrameLayout(requireContext());
         GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
         lp.width = size;
         lp.height = size;
         lp.setMargins(margin, margin, margin, margin);
         card.setLayoutParams(lp);
-        card.setRadius(dp(10));
-        card.setStrokeWidth(isSelected ? dp(2) : 1);
-        int primary = getResources().getColor(R.color.primary);
-        if (isSelected) {
-            card.setCardBackgroundColor(primary);
-            card.setStrokeColor(primary);
-        } else if (free) {
-            card.setCardBackgroundColor(getResources().getColor(R.color.pd_surface));
-            card.setStrokeColor(getResources().getColor(R.color.divider));
-        } else if (booked) {
-            card.setCardBackgroundColor(getResources().getColor(R.color.pd_surface_2));
-            card.setStrokeColor(getResources().getColor(R.color.pd_line));
-        } else {
-            card.setCardBackgroundColor(getResources().getColor(R.color.pd_surface_2));
-            card.setStrokeColor(getResources().getColor(R.color.pd_line));
-        }
-        card.setAlpha(free ? 1f : booked ? 0.75f : 0.45f); // anything that cannot be chosen is faded
+        card.setBackgroundResource(isSelected ? R.drawable.pd_table_selected : free ? R.drawable.pd_table_free
+                : tooSmall ? R.drawable.pd_table_short : R.drawable.pd_table_booked);
+        card.setAlpha(free || booked || inUse || tooSmall ? 1f : 0.4f);
 
         LinearLayout content = new LinearLayout(requireContext());
         content.setOrientation(LinearLayout.VERTICAL);
         content.setGravity(Gravity.CENTER);
+        content.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         TextView name = new TextView(requireContext());
         name.setText("Bàn " + table.tableNumber);
-        name.setTextSize(16);
-        name.setTypeface(null, Typeface.BOLD);
-        name.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : free ? R.color.text_primary : R.color.pd_muted));
+        name.setGravity(Gravity.CENTER);
+        androidx.core.widget.TextViewCompat.setTextAppearance(name, R.style.TextAppearance_VietTable_Body_Strong);
+        name.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : free ? R.color.pd_cream : R.color.pd_dim));
         content.addView(name);
 
         TextView detail = new TextView(requireContext());
         String state = table.label == null || table.label.isEmpty() ? "" : table.label;
         detail.setText(free ? table.seats + " người" : table.seats + " người • " + state);
         detail.setGravity(Gravity.CENTER);
-        detail.setTextSize(11);
-        detail.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : R.color.text_secondary));
+        androidx.core.widget.TextViewCompat.setTextAppearance(detail, R.style.TextAppearance_VietTable_Caption);
+        detail.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : free ? R.color.pd_muted : R.color.pd_dim));
         content.addView(detail);
         card.addView(content);
+
+        if (free && !isSelected) card.addView(corner(R.drawable.pd_circle_mint, 8, 0));
+        else if (booked || inUse) card.addView(corner(R.drawable.ic_lock, 14, R.color.pd_dim));
 
         card.setContentDescription("Bàn " + table.tableNumber + ", " + table.seats + " người, " + (isSelected ? "đang chọn" : state));
         // Unavailable tables cannot be chosen; a tap only says why.
@@ -289,6 +280,19 @@ public class ResTableLayoutFragment extends BaseFragment {
             render();
         });
         return card;
+    }
+
+    /** Small mark in the top-right corner of a table cell (mint dot or lock). */
+    private View corner(int drawable, int sizeDp, int tint) {
+        android.widget.ImageView mark = new android.widget.ImageView(requireContext());
+        android.widget.FrameLayout.LayoutParams lp = new android.widget.FrameLayout.LayoutParams(dp(sizeDp), dp(sizeDp),
+                Gravity.TOP | Gravity.END);
+        lp.setMargins(0, dp(10), dp(10), 0);
+        mark.setLayoutParams(lp);
+        mark.setImageResource(drawable);
+        if (tint != 0) mark.setColorFilter(getResources().getColor(tint));
+        mark.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        return mark;
     }
 
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
