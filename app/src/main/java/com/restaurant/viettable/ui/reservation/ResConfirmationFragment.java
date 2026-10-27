@@ -73,6 +73,11 @@ public class ResConfirmationFragment extends BaseFragment {
 
         if (reservation != null) {
             binding.tvConfirmCode.setText("#" + reservation.getId());
+            if (reservation.getStatus() != null) {
+                binding.tvConfirmStatus.setVisibility(android.view.View.VISIBLE);
+                com.restaurant.viettable.ui.common.PdStatusPill.apply(binding.tvConfirmStatus, reservation.getStatusDisplayText(),
+                        com.restaurant.viettable.ui.common.PdStatusPill.toneFor(reservation.getStatus()));
+            }
             binding.tvConfirmBranch.setText(SafeText.isBlank(reservation.getBranchAddress()) ? SafeText.clean(reservation.getBranchName())
                     : SafeText.join(" ", SafeText.clean(reservation.getBranchName()), "(" + SafeText.clean(reservation.getBranchAddress()) + ")"));
             binding.tvConfirmTimeDate.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));

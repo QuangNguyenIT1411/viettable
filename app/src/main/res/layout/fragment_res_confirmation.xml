@@ -1,65 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<!-- Đặt bàn thành công "Phố đêm" (DESIGN_PHO_DEM.md section 6): mint badge, booking code card, "Chờ xác nhận" pill,
+     yellow / ghost buttons. Written from scratch; view IDs used by ResConfirmationFragment are kept. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream"
-    android:fillViewport="true">
+    android:background="@color/pd_bg">
 
-    <LinearLayout
+    <View
+        android:layout_width="520dp"
+        android:layout_height="520dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="-160dp"
+        android:background="@drawable/pd_glow_mint"
+        android:importantForAccessibility="no" />
+
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:tag="safe_all">
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="24dp" />
-
-        <ImageView
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:background="@drawable/bg_badge"
-            android:backgroundTint="@color/primary"
-            android:padding="16dp"
-            android:src="@drawable/ic_check"
-            app:tint="@color/pd_on_color" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/res_confirm_title"
-            android:textColor="@color/primary"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:gravity="center"
-            android:text="Bàn đã được giữ cho bạn. Nhà hàng sẽ xác nhận sớm, bạn sẽ nhận thông báo khi có kết quả."
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
-
-        <!-- Detail Card -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/Widget.VietTable.Card"
+        <LinearLayout
+            android:id="@+id/layoutResConfirmContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="4dp">
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="48dp"
+            android:paddingBottom="24dp"
+            android:tag="safe_all">
+
+            <FrameLayout
+                android:layout_width="128dp"
+                android:layout_height="128dp">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/pd_ring_dash_mint"
+                    android:importantForAccessibility="no" />
+
+                <ImageView
+                    android:layout_width="92dp"
+                    android:layout_height="92dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/pd_circle_mint"
+                    android:importantForAccessibility="no"
+                    android:padding="24dp"
+                    android:src="@drawable/ic_check"
+                    app:tint="@color/pd_on_color" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:accessibilityHeading="true"
+                android:gravity="center"
+                android:text="@string/res_confirm_title"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="Bàn đã được giữ cho bạn. Nhà hàng sẽ xác nhận sớm, bạn sẽ nhận thông báo khi có kết quả."
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:background="@drawable/pd_card_surface"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="22dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -67,90 +87,114 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
-                    <TextView
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="@string/res_code"
-                        android:textColor="@color/text_tertiary"
-                        android:textSize="13sp" />
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/res_code"
+                            android:textAllCaps="true"
+                            android:textAppearance="@style/TextAppearance.VietTable.Label"
+                            android:textColor="@color/pd_muted" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmCode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.L"
+                            android:textColor="@color/pd_yellow"
+                            tools:text="#8899" />
+                    </LinearLayout>
 
                     <TextView
-                        android:id="@+id/tvConfirmCode"
+                        android:id="@+id/tvConfirmStatus"
+                        style="@style/Widget.VietTable.StatusPill"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="#RES-8899"
-                        android:textColor="@color/primary"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:layout_marginStart="8dp"
+                        android:visibility="gone"
+                        tools:text="Chờ xác nhận"
+                        tools:visibility="visible" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="12dp"
-                    android:background="@color/divider" />
+                    android:layout_marginVertical="16dp"
+                    android:background="@color/pd_line" />
 
                 <TextView
                     android:id="@+id/tvConfirmBranch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                    tools:text="Chi nhánh Quận 1" />
 
                 <TextView
                     android:id="@+id/tvConfirmTimeDate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="19:00 • Hôm nay, 20/09"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:drawableStart="@drawable/ic_clock"
+                    android:drawablePadding="8dp"
+                    android:drawableTint="@color/pd_muted"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted"
+                    tools:text="19:00 • 27/10/2026" />
 
                 <TextView
                     android:id="@+id/tvConfirmTableArea"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text=""
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp" />
+                    android:drawableStart="@drawable/ic_table"
+                    android:drawablePadding="8dp"
+                    android:drawableTint="@color/pd_muted"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted"
+                    tools:text="Bàn B4 • 4 khách" />
 
                 <TextView
                     android:id="@+id/tvConfirmDeposit"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Tiền cọc: Không yêu cầu"
-                    android:textColor="@color/accent_gold_dark"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:drawableStart="@drawable/ic_cash"
+                    android:drawablePadding="8dp"
+                    android:drawableTint="@color/pd_muted"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted"
+                    tools:text="Tiền cọc: Không yêu cầu" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:minHeight="28dp" />
 
-        <!-- Actions -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnViewReservationDetail"
-            style="@style/Widget.VietTable.Button.Primary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Xem chi tiết đặt bàn" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewReservationDetail"
+                style="@style/Widget.VietTable.Button.Primary.Arrow"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Xem chi tiết đặt bàn" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnGoHome"
-            style="@style/Widget.VietTable.Button.Outlined"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Về trang chủ" />
-
-    </LinearLayout>
-</ScrollView>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGoHome"
+                style="@style/Widget.VietTable.Button.Ghost"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="10dp"
+                android:text="Về trang chủ" />
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>
