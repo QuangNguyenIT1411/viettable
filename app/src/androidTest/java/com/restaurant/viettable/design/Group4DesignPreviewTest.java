@@ -154,6 +154,19 @@ public class Group4DesignPreviewTest {
                 state.replaceNotifications(new ArrayList<>(Arrays.asList(a, b, c, d)));
                 return new NotificationFragment();
             }
+            case "qr":
+            case "qr-manual":
+                return com.restaurant.viettable.ui.session.QrScanFragment.newInstance();
+            case "session":
+                state.getActiveDiningSession().getOrders().add(order(state.getActiveDiningSession()));
+                state.getActiveDiningSession().getOrders().add(secondOrder(state.getActiveDiningSession()));
+                return com.restaurant.viettable.ui.session.DiningSessionFragment.newInstance();
+            case "currentorders":
+                state.getActiveDiningSession().getOrders().add(order(state.getActiveDiningSession()));
+                state.getActiveDiningSession().getOrders().add(secondOrder(state.getActiveDiningSession()));
+                return com.restaurant.viettable.ui.order.CurrentOrdersFragment.newInstance();
+            case "orderdetail":
+                return com.restaurant.viettable.ui.order.OrderDetailFragment.newInstance(order(state.getActiveDiningSession()));
             case "profile":
                 state.setLoggedIn(true);
                 return new ProfileFragment();
@@ -229,6 +242,11 @@ public class Group4DesignPreviewTest {
             case "restable":
                 fillTables(a);
                 break;
+            case "qr-manual": {
+                View toggle = a.findViewById(R.id.btnToggleManualEntry);
+                if (toggle != null) toggle.performClick();
+                break;
+            }
             case "loyalty-card": {
                 show(a, R.id.cardTierProgress);
                 text(a, R.id.tvCardNumber, "VT 0001 2345");
@@ -346,6 +364,15 @@ public class Group4DesignPreviewTest {
                 new OrderItem("3", "Gỏi cuốn tôm thịt", 45_000, 1, "", OrderItem.Status.READY, "2026-10-26T14:30:00Z")));
         Order order = new Order("38", session.getId(), "Chi nhánh Quận 1", "37", Order.Type.DINE_IN,
                 Order.Status.IN_PROGRESS, "2026-10-26T14:30:00Z", items, 250_000, "");
+        order.setTableLabel("B4");
+        return order;
+    }
+
+    private static Order secondOrder(DiningSession session) {
+        List<OrderItem> items = new ArrayList<>(Arrays.asList(
+                new OrderItem("4", "Chè khúc bạch", 35_000, 2, "", OrderItem.Status.PREPARING, "2026-10-26T14:48:00Z")));
+        Order order = new Order("41", session.getId(), "Chi nhánh Quận 1", "37", Order.Type.DINE_IN,
+                Order.Status.CONFIRMED, "2026-10-26T14:48:00Z", items, 70_000, "");
         order.setTableLabel("B4");
         return order;
     }

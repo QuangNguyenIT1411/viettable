@@ -13,6 +13,7 @@ import com.restaurant.viettable.adapter.TrackedItemAdapter;
 import com.restaurant.viettable.databinding.FragmentOrderDetailBinding;
 import com.restaurant.viettable.model.Order;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.ui.common.PdStatusPill;
 import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.ui.profile.ReviewHistoryFragment;
 
@@ -50,11 +51,11 @@ public class OrderDetailFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         if (order != null) {
-            binding.tvOrderDetailId.setText("Mã đơn: #" + order.getId());
-            binding.tvOrderDetailStatus.setText(order.getStatusDisplayText().toUpperCase());
+            binding.tvOrderDetailId.setText("Đơn #" + order.getId());
+            PdStatusPill.applyOrder(binding.tvOrderDetailStatus, order.getStatus());
             binding.tvOrderDetailMeta.setText(order.getTableNumber() + " • Gọi lúc: " + DisplayFormatters.dateTime(order.getCreatedAt()) + " • " + order.getBranchName());
             binding.tvOrderSubtotalPrice.setText(order.getFormattedTotalAmount());
 

@@ -1,166 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Chi tiết đơn "Phố đêm" (DESIGN_PHO_DEM.md sections 5–6): label, "Đơn #…" Display.XL, status pill, meta line,
+     dish rows (item_tracked_food, same as Tiến độ món), total card in yellow, bottom yellow button over a fade.
+     Written from scratch; view IDs used by OrderDetailFragment are kept (the toolbar is now a round back button). -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorSurface"
-        app:elevation="0dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="@color/colorTextPrimary"
-            app:title="Chi tiết đơn gọi món"
-            app:titleTextColor="@color/colorTextPrimary" />
-    </com.google.android.material.appbar.AppBarLayout>
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="96dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:paddingBottom="128dp">
 
-            <!-- Order info card -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/colorSurface"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1dp"
-                app:strokeColor="@color/colorDivider"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tvOrderDetailId"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Mã đơn: #VT-002"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="17sp" />
-
-                        <TextView
-                            android:id="@+id/tvOrderDetailStatus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_badge"
-                            android:backgroundTint="@color/pd_mint_soft"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
-                            android:text="ĐANG CHẾ BIẾN"
-                            android:textColor="@color/colorSecondary"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tvOrderDetailMeta"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text=""
-                        android:textColor="@color/colorTextSecondary"
-                        android:textSize="13sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
 
             <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="CHI TIẾT ĐỢT GỌI MÓN"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow" />
+
+            <TextView
+                android:id="@+id/tvOrderDetailId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                tools:text="Đơn #38" />
+
+            <TextView
+                android:id="@+id/tvOrderDetailStatus"
+                style="@style/Widget.VietTable.StatusPill"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/bricolage_medium"
-                android:text="Các món trong đợt gọi này"
-                android:textColor="@color/colorTextPrimary"
-                android:textSize="16sp" />
+                android:layout_marginTop="12dp"
+                tools:text="ĐANG XỬ LÝ" />
+
+            <TextView
+                android:id="@+id/tvOrderDetailMeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted"
+                tools:text="Bàn B4 • Gọi lúc: 18:50, 27/10/2026 • Chi nhánh Quận 1" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="Các món trong đợt này"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvOrderItemsDetail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:nestedScrollingEnabled="false" />
 
-            <!-- Subtotal Card -->
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/colorSurface"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp"
-                app:strokeColor="@color/colorDivider"
-                app:strokeWidth="1dp">
+                android:background="@drawable/pd_card_surface"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="22dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    android:layout_weight="1"
+                    android:text="Tổng đợt gọi này"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Tổng tiền đợt gọi này:"
-                        android:textColor="@color/colorTextPrimary"
-                        android:textSize="15sp" />
-
-                    <TextView
-                        android:id="@+id/tvOrderSubtotalPrice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/bricolage_medium"
-                        android:text="194.000 đ"
-                        android:textColor="@color/colorPrimary"
-                        android:textSize="17sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
+                <TextView
+                    android:id="@+id/tvOrderSubtotalPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Price"
+                    android:textColor="@color/pd_yellow"
+                    tools:text="194.000đ" />
+            </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Actions -->
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:tag="safe_bottom"
-        android:background="@color/colorSurface"
-        android:elevation="8dp"
-        android:padding="16dp">
+        android:background="@drawable/pd_fade_bottom"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="28dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnViewProgressFromDetail"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
             android:text="Theo dõi tiến độ món" />
-    </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </FrameLayout>
+</FrameLayout>
