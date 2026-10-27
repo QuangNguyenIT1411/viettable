@@ -54,7 +54,7 @@ public class CurrentOrdersFragment extends BaseFragment implements AppStateManag
         appStateManager.addListener(this);
         SignalRManager.getInstance().addListener(this);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         binding.btnOrderMoreDishes.setOnClickListener(v -> {
             DiningSession session = appStateManager.getActiveDiningSession();
