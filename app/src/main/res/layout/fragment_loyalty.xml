@@ -1,219 +1,252 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Thẻ thành viên "Phố đêm" (DESIGN_PHO_DEM.md section 6): plum member card with tier, points, holder and card
+     number, tier progress (red→yellow bar, only from the server's real numbers), tier benefits. Written from scratch;
+     view IDs used by LoyaltyFragment are kept (the toolbar is now a round back button). -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorSurface"
-        app:elevation="0dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="@color/colorTextPrimary"
-            app:title="Hạng thẻ &amp; Điểm thưởng"
-            app:titleTextColor="@color/colorTextPrimary" />
-    </com.google.android.material.appbar.AppBarLayout>
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="60dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:overScrollMode="never">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:paddingBottom="32dp"
+            android:tag="safe_all">
 
-            <!-- Virtual Member Card -->
-            <com.google.android.material.card.MaterialCardView
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
+
+            <TextView
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                app:cardBackgroundColor="@color/pd_plum"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="6dp">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="VIETTABLE CLUB"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow" />
 
-                <RelativeLayout
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Hạng thẻ &amp; Điểm thưởng"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <!-- Member card -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.VietTable.Card.Plum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:minHeight="200dp">
+
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:padding="20dp">
+                    android:layout_height="wrap_content">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/bricolage_medium"
-                        android:letterSpacing="0.1"
-                        android:text="VIETTABLE CLUB"
-                        android:textColor="@color/pd_cream"
-                        android:textSize="14sp" />
+                    <View
+                        android:layout_width="260dp"
+                        android:layout_height="260dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="-110dp"
+                        android:layout_marginEnd="-90dp"
+                        android:background="@drawable/pd_glow_yellow"
+                        android:importantForAccessibility="no" />
 
-                    <TextView
-                        android:id="@+id/tvCardTier"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:background="@drawable/bg_status_badge"
-                        android:backgroundTint="@color/pd_yellow_soft"
-                        android:fontFamily="@font/bricolage_bold"
-                        android:paddingHorizontal="10dp"
-                        android:paddingVertical="4dp"
-                        android:text="VÀNG"
-                        android:textColor="@color/pd_yellow"
-                        android:textSize="11sp" />
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:alpha="0.6"
+                        android:background="@drawable/pd_stripes"
+                        android:importantForAccessibility="no" />
 
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:padding="24dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="THẺ THÀNH VIÊN"
+                                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                                android:textColor="@color/pd_muted" />
+
+                            <TextView
+                                android:id="@+id/tvCardTier"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_status_chip"
+                                android:backgroundTint="@color/pd_yellow"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="5dp"
+                                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                                android:textColor="@color/pd_on_color"
+                                tools:text="VÀNG" />
+                        </LinearLayout>
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="28dp"
                             android:text="Điểm khả dụng"
-                            android:textColor="@color/pd_muted"
-                            android:textSize="12sp" />
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_muted" />
 
                         <TextView
                             android:id="@+id/tvCardPoints"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="15.000 pts"
-                            android:textColor="@color/pd_cream"
-                            android:textSize="26sp" />
+                            android:layout_marginTop="4dp"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                            android:textColor="@color/pd_yellow"
+                            tools:text="3.250 pts" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="24dp"
+                            android:gravity="bottom"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvCardHolder"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                                tools:text="NGUYỄN VINH QUANG" />
+
+                            <TextView
+                                android:id="@+id/tvCardNumber"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                                android:textColor="@color/pd_muted"
+                                tools:text="VT 0001 2345" />
+                        </LinearLayout>
                     </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tvCardHolder"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentBottom="true"
-                        android:fontFamily="@font/bricolage_medium"
-                        android:text="NGUYEN VAN A"
-                        android:textColor="@color/pd_cream"
-                        android:textSize="15sp" />
-
-                    <TextView
-                        android:id="@+id/tvCardNumber"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_alignParentBottom="true"
-                        android:text=""
-                        android:textColor="@color/pd_muted"
-                        android:textSize="12sp" />
-                </RelativeLayout>
+                </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Tier Progress Card: filled from GET /me/loyalty; hidden until it loads or at the top tier. -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Tier progress: filled from GET /me/loyalty; hidden until it loads or at the top tier. -->
+            <LinearLayout
                 android:id="@+id/cardTierProgress"
-                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/colorSurface"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1dp"
-                app:strokeColor="@color/colorDivider"
-                app:strokeWidth="1dp">
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:padding="22dp"
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tvTierProgressTitle"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text=""
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:id="@+id/tvTierProgressPoints"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text=""
-                            android:textColor="@color/colorPrimary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/progressTier"
-                        android:layout_width="match_parent"
-                        android:layout_height="8dp"
-                        android:layout_marginTop="10dp"
-                        android:max="100"
-                        app:indicatorColor="@color/colorSecondary"
-                        app:trackColor="@color/colorDivider"
-                        app:trackCornerRadius="4dp" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
                     <TextView
-                        android:id="@+id/tvTierProgressHint"
+                        android:id="@+id/tvTierProgressTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                        tools:text="Tiến độ lên hạng Kim cương" />
+
+                    <TextView
+                        android:id="@+id/tvTierProgressPoints"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text=""
-                        android:textColor="@color/colorTextSecondary"
-                        android:textSize="12sp" />
+                        android:layout_marginStart="10dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_yellow"
+                        tools:text="3.250 / 5.000" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Membership privileges: the tier's real benefit list from GET /me/loyalty; hidden until it loads. -->
+                <com.restaurant.viettable.ui.common.PdProgressBar
+                    android:id="@+id/progressTier"
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:layout_marginTop="16dp"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/tvTierProgressHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted"
+                    tools:text="Tích lũy thêm 1.750 điểm để lên hạng Kim cương." />
+            </LinearLayout>
+
+            <!-- Tier benefits: the real list from GET /me/loyalty; hidden until it loads. -->
             <TextView
                 android:id="@+id/tvBenefitsTitle"
-                android:visibility="gone"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:fontFamily="@font/bricolage_medium"
-                android:text=""
-                android:textColor="@color/colorTextPrimary"
-                android:textSize="16sp" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardBenefits"
+                android:layout_marginTop="28dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M"
                 android:visibility="gone"
+                tools:text="Đặc quyền hạng Vàng"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/cardBenefits"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                app:cardBackgroundColor="@color/colorSurface"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1dp"
-                app:strokeColor="@color/colorDivider"
-                app:strokeWidth="1dp">
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <LinearLayout
                     android:id="@+id/layoutBenefits"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp" />
-            </com.google.android.material.card.MaterialCardView>
-
+                    android:padding="22dp" />
+            </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

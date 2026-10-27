@@ -35,7 +35,7 @@ public class LoyaltyFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         User user = appStateManager.getCurrentUser();
         if (user != null) {
@@ -67,14 +67,12 @@ public class LoyaltyFragment extends BaseFragment {
             android.widget.ImageView tick = new android.widget.ImageView(requireContext());
             tick.setImageResource(com.restaurant.viettable.R.drawable.ic_check);
             tick.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(),
-                    com.restaurant.viettable.R.color.colorSuccess));
+                    com.restaurant.viettable.R.color.pd_mint));
             tick.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             row.addView(tick, new android.widget.LinearLayout.LayoutParams((int) (24 * density), (int) (24 * density)));
             TextView text = new TextView(requireContext());
             text.setText(info.getBenefits().get(i));
-            text.setTextSize(13);
-            text.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(),
-                    com.restaurant.viettable.R.color.colorTextPrimary));
+            androidx.core.widget.TextViewCompat.setTextAppearance(text, com.restaurant.viettable.R.style.TextAppearance_VietTable_Body);
             android.widget.LinearLayout.LayoutParams textLp = new android.widget.LinearLayout.LayoutParams(0,
                     android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             textLp.setMarginStart((int) (10 * density));
@@ -97,7 +95,7 @@ public class LoyaltyFragment extends BaseFragment {
         String next = com.restaurant.viettable.util.StatusLabels.memberTier(info.getNextTierCode());
         binding.tvTierProgressTitle.setText("Tiến độ lên hạng " + next);
         binding.tvTierProgressPoints.setText(progress);
-        binding.progressTier.setProgress(info.getProgressPercent());
+        binding.progressTier.setProgressCompat(info.getProgressPercent(), true);
         binding.tvTierProgressHint.setText("Tích lũy thêm " + com.restaurant.viettable.util.LoyaltyDisplayRules.points(
                 info.getPointsToNextTier()) + " điểm để lên hạng " + next + ".");
     }
