@@ -281,6 +281,16 @@
                     app:iconTint="@color/primary" />
             </LinearLayout>
 
+            <!-- Shown once the payment was requested: voucher and points can no longer change. -->
+            <TextView
+                android:id="@+id/tvAdjustLocked"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_yellow"
+                android:visibility="gone" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

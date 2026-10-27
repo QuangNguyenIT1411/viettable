@@ -24,6 +24,7 @@ public class LoyaltySelectFragment extends BaseFragment {
     private long selectedPoints = 0;
     private long maxPoints = 0;
     private boolean balanceKnown;
+    private boolean applying;
     /** Dong per point and redeem step from the server; null = not told, so nothing can be picked (no assumed rate). */
     @Nullable private com.restaurant.viettable.util.LoyaltyDisplayRules.Conversion conversion;
 
@@ -99,10 +100,43 @@ public class LoyaltySelectFragment extends BaseFragment {
         });
         showQuickButtons();
 
-        binding.btnConfirmPoints.setOnClickListener(v -> {
-            showToast("Đã chọn dùng " + selectedPoints + " điểm!");
-            navigateTo(InvoiceFragment.newInstanceWithVoucher(selectedVoucher, selectedPoints));
-        });
+        binding.btnConfirmPoints.setOnClickListener(v -> confirmPoints());
+    }
+
+    /**
+     * Asks the server to take the points off the quote and waits for its answer (owner, 28/10). Only a discount above
+     * zero counts as success; any refusal or empty answer is explained in a dialog and the guest stays here.
+     * The server's answer already replaced the current quote, so the invoice just shows it.
+     */
+    private void confirmPoints() {
+        if (applying || selectedPoints <= 0) return;
+        applying = true;
+        binding.btnConfirmPoints.setEnabled(false);
+        com.restaurant.viettable.data.MobileRepository.getInstance().applyLoyalty((int) selectedPoints,
+                new com.restaurant.viettable.data.MobileRepository.Callback<com.restaurant.viettable.model.Invoice>() {
+                    @Override public void onSuccess(com.restaurant.viettable.model.Invoice quote) {
+                        applying = false;
+                        if (binding == null) return;
+                        com.restaurant.viettable.util.LoyaltyApplyRules.Outcome outcome =
+                                com.restaurant.viettable.util.LoyaltyApplyRules.ofServerQuote(quote.getLoyaltyDiscount());
+                        if (outcome.applied()) {
+                            showToast(outcome.message);
+                            navigateTo(InvoiceFragment.newInstance());
+                        } else {
+                            showProblem(outcome);
+                        }
+                    }
+                    @Override public void onError(com.restaurant.viettable.network.ApiException error) {
+                        applying = false;
+                        if (binding == null) return;
+                        showProblem(com.restaurant.viettable.util.LoyaltyApplyRules.ofError(error));
+                    }
+                });
+    }
+
+    private void showProblem(com.restaurant.viettable.util.LoyaltyApplyRules.Outcome outcome) {
+        updatePointsUI();
+        com.restaurant.viettable.ui.common.DialogHelper.showInfoDialog(requireContext(), outcome.title, outcome.message, "Đã hiểu", null);
     }
 
     /**

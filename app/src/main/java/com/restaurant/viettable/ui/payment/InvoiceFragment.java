@@ -120,6 +120,7 @@ public class InvoiceFragment extends BaseFragment {
 
         recalculateInvoice();
         applyServerSelections();
+        refreshQuoteFromServer();
 
         binding.btnSelectVoucher.setOnClickListener(v -> {
             navigateTo(VoucherSelectFragment.newInstance(redeemedPoints));
@@ -180,6 +181,31 @@ public class InvoiceFragment extends BaseFragment {
 
     private void finishAdjustments() { applyingAdjustments = false; setCheckoutActionsEnabled(true); }
 
+    /**
+     * Coming back here (Back from the payment or VietQR screen) must not trust what this screen drew earlier: ask the
+     * server for the session's waiting payment, which carries its quote with the real status and total (owner, 28/10).
+     * With no waiting payment the quote kept from the last server answer stays.
+     */
+    private void refreshQuoteFromServer() {
+        MobileRepository.getInstance().loadActivePayment(new MobileRepository.Callback<com.restaurant.viettable.model.PaymentInfo>() {
+            @Override public void onSuccess(com.restaurant.viettable.model.PaymentInfo payment) {
+                if (binding == null) return;
+                recalculateInvoice();
+            }
+            @Override public void onError(ApiException error) { }
+        });
+    }
+
+    /** Voucher and points are frozen once the payment was requested: grey out the two buttons and say why. */
+    private void applyLockState() {
+        boolean locked = com.restaurant.viettable.util.LoyaltyApplyRules.isQuoteLocked(
+                MobileRepository.getInstance().currentCheckoutQuoteStatus());
+        binding.btnSelectVoucher.setEnabled(!locked);
+        binding.btnSelectLoyalty.setEnabled(!locked);
+        binding.tvAdjustLocked.setVisibility(locked ? View.VISIBLE : View.GONE);
+        if (locked) binding.tvAdjustLocked.setText(com.restaurant.viettable.util.LoyaltyApplyRules.LOCKED_EXPLANATION);
+    }
+
     private void setCheckoutActionsEnabled(boolean enabled) {
         if (binding == null) return;
         binding.btnProceedToPaymentType.setEnabled(enabled);
@@ -189,7 +215,9 @@ public class InvoiceFragment extends BaseFragment {
     private void recalculateInvoice() {
         Invoice quote = MobileRepository.getInstance().currentCheckoutInvoice();
         if (quote != null) {
+            subtotal = quote.getSubtotal();
             voucherDiscount = quote.getVoucherDiscount(); loyaltyDiscount = quote.getLoyaltyDiscount();
+            applyLockState();
             finalTotal = quote.getFinalTotal();
             binding.layoutVoucherDiscount.setVisibility(voucherDiscount > 0 ? View.VISIBLE : View.GONE);
             binding.layoutLoyaltyDiscount.setVisibility(loyaltyDiscount > 0 ? View.VISIBLE : View.GONE);

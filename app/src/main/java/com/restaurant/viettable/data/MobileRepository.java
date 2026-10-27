@@ -960,6 +960,8 @@ public final class MobileRepository {
 
     public Invoice currentCheckoutInvoice() { return currentQuote == null ? null : invoiceFromQuote(currentQuote); }
     public int currentCheckoutQuoteId() { return currentQuote == null ? 0 : currentQuote.optInt("checkoutQuoteId"); }
+    /** The quote's status as the server last reported it (OPEN, PAYMENT_REQUESTED, ...); empty when there is no quote. */
+    public String currentCheckoutQuoteStatus() { return currentQuote == null ? "" : currentQuote.optString("status", ""); }
     public SplitBill currentSplitBill() { return currentSplitBill; }
 
     public void loadSessionSplitBill(Callback<SplitBill> callback) {
