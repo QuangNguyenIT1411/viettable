@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -147,8 +148,10 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
         boolean loading = appStateManager.isCatalogLoading();
         String error = appStateManager.getCatalogError();
         boolean empty = appStateManager.getFoodItems().isEmpty();
-        binding.layoutMenuState.setVisibility(loading || error != null || empty ? View.VISIBLE : View.GONE);
-        binding.progressMenuCatalog.setVisibility(loading ? View.VISIBLE : View.GONE);
+        // A failed load replaces the dish grid; a reload keeps the dishes already shown.
+        ListState.Mode mode = ListState.of(!empty, loading, error);
+        binding.layoutMenuState.setVisibility(mode == ListState.Mode.CONTENT ? View.GONE : View.VISIBLE);
+        binding.progressMenuCatalog.setVisibility(mode == ListState.Mode.LOADING ? View.VISIBLE : View.GONE);
         binding.tvMenuCatalogState.setText(loading ? getString(R.string.catalog_loading) : error != null ? error
                 : appStateManager.getSelectedBranch() == null ? getString(R.string.catalog_select_branch)
                 : getString(R.string.catalog_empty));
@@ -156,7 +159,7 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
                 ? View.VISIBLE : View.GONE);
         binding.btnRetryMenuCatalog.setText(appStateManager.getSelectedBranch() == null
                 ? R.string.catalog_select_branch : R.string.catalog_retry);
-        binding.rvMenuFoods.setVisibility(empty ? View.GONE : View.VISIBLE);
+        binding.rvMenuFoods.setVisibility(mode == ListState.Mode.CONTENT ? View.VISIBLE : View.GONE);
     }
 
     private void filterByCategory(int position) {

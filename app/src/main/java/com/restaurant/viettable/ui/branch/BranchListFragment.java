@@ -6,6 +6,7 @@ import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -151,14 +152,8 @@ public class BranchListFragment extends BaseFragment {
 
     private void renderBranchState(boolean empty, boolean loading, @Nullable String error) {
         if (binding == null) return;
-        boolean hasContent = !displayedBranches.isEmpty();
-        binding.rvBranches.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        binding.progressBranches.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.tvBranchState.setVisibility(!loading && empty ? View.VISIBLE : View.GONE);
-        binding.btnRetryBranches.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
-        if (!loading && empty) {
-            binding.tvBranchState.setText(error != null ? error : getString(R.string.state_no_branches));
-        }
+        ListState.render(binding.rvBranches, binding.progressBranches, binding.tvBranchState, binding.btnRetryBranches,
+                !empty, loading, error, getString(R.string.state_no_branches));
     }
 
     @Override

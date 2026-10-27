@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -157,14 +158,10 @@ public class NotificationFragment extends BaseFragment {
     private void renderState(boolean loading, @Nullable String error) {
         if (binding == null) return;
         boolean hasContent = !filteredList.isEmpty();
-        binding.rvNotifications.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        binding.progressNotifications.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.tvNotificationState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.btnRetryNotifications.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
-        binding.btnMarkAllRead.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        if (!loading && !hasContent) {
-            binding.tvNotificationState.setText(error != null ? error : getString(R.string.state_no_notifications));
-        }
+        ListState.Mode mode = ListState.render(binding.rvNotifications, binding.progressNotifications,
+                binding.tvNotificationState, binding.btnRetryNotifications, hasContent, loading, error,
+                getString(R.string.state_no_notifications));
+        binding.btnMarkAllRead.setVisibility(mode == ListState.Mode.CONTENT ? View.VISIBLE : View.GONE);
     }
 
     @Override

@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -176,13 +177,10 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
     private void renderState(boolean loading, @Nullable String error) {
         if (binding == null) return;
         boolean hasContent = !allTrackedItems.isEmpty();
-        binding.contentOrderTracking.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        binding.layoutOrderTrackingState.setVisibility(hasContent ? View.GONE : View.VISIBLE);
-        binding.progressOrderTracking.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.tvOrderTrackingState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.btnRetryOrderTracking.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
-        if (!loading && !hasContent) binding.tvOrderTrackingState.setText(error != null ? error
-                : "Chưa có món ăn nào để theo dõi trong phiên này.");
+        ListState.Mode mode = ListState.render(binding.contentOrderTracking, binding.progressOrderTracking,
+                binding.tvOrderTrackingState, binding.btnRetryOrderTracking, hasContent, loading, error,
+                "Chưa có món ăn nào để theo dõi trong phiên này.");
+        binding.layoutOrderTrackingState.setVisibility(mode == ListState.Mode.CONTENT ? View.GONE : View.VISIBLE);
     }
 
     private void scheduleFallbackPolling() {

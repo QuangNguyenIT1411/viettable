@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -88,13 +89,9 @@ public class FavoritesFragment extends BaseFragment {
     private void renderState(boolean loading, @Nullable String error) {
         if (binding == null) return;
         boolean hasContent = !favFoods.isEmpty();
-        binding.rvFavorites.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        binding.progressFavorites.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.tvFavoriteState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.btnRetryFavorites.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
-        if (!loading && !hasContent) {
-            binding.tvFavoriteState.setText(error != null ? error : getString(com.restaurant.viettable.R.string.state_no_favorites));
-        }
+        ListState.render(binding.rvFavorites, binding.progressFavorites, binding.tvFavoriteState,
+                binding.btnRetryFavorites, hasContent, loading, error,
+                getString(com.restaurant.viettable.R.string.state_no_favorites));
     }
 
     @Override

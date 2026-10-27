@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -122,16 +123,11 @@ public class ServiceStatusFragment extends BaseFragment implements AppStateManag
         if (binding == null) return;
         DiningSession session = appStateManager.getActiveDiningSession();
         boolean hasContent = session != null && !session.getServiceRequests().isEmpty();
-        binding.rvServiceRequests.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        binding.progressServiceRequests.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.tvServiceRequestState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.btnRetryServiceRequests.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
+        ListState.render(binding.rvServiceRequests, binding.progressServiceRequests, binding.tvServiceRequestState,
+                binding.btnRetryServiceRequests, hasContent, loading, error, session == null
+                        ? getString(com.restaurant.viettable.R.string.state_no_active_session)
+                        : "Bạn chưa gửi yêu cầu hỗ trợ nào trong bữa ăn này.");
         binding.btnNewServiceRequest.setEnabled(session != null);
-        if (!loading && !hasContent) {
-            binding.tvServiceRequestState.setText(error != null ? error : session == null
-                    ? getString(com.restaurant.viettable.R.string.state_no_active_session)
-                    : "Bạn chưa gửi yêu cầu hỗ trợ nào trong bữa ăn này.");
-        }
     }
 
     @Override

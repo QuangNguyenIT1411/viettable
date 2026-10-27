@@ -239,7 +239,10 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
                 : error != null ? error : appStateManager.getSelectedBranch() == null
                 ? getString(R.string.catalog_select_branch) : getString(R.string.catalog_empty));
         binding.btnRetryCatalog.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
-        binding.layoutFeaturedHeader.setVisibility(empty ? View.GONE : View.VISIBLE);
+        // A failed load replaces the dish grid (the retry used to sit above dishes still shown).
+        boolean failed = !loading && error != null;
+        binding.layoutFeaturedHeader.setVisibility(empty || failed ? View.GONE : View.VISIBLE);
+        binding.rvFeaturedFoods.setVisibility(failed ? View.GONE : View.VISIBLE);
     }
 
     private void setupCategories() {

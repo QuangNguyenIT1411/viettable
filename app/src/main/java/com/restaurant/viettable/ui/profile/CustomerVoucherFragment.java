@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -92,12 +93,8 @@ public class CustomerVoucherFragment extends BaseFragment {
     private void renderState(boolean loading, @Nullable String error) {
         if (binding == null) return;
         boolean hasContent = !displayedVouchers.isEmpty();
-        binding.rvCustomerVouchers.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        binding.progressVouchers.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.tvVoucherState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.btnRetryVouchers.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
-        if (!loading && !hasContent) binding.tvVoucherState.setText(error != null
-                ? error : "Bạn chưa có ưu đãi nào trong mục này.");
+        ListState.render(binding.rvCustomerVouchers, binding.progressVouchers, binding.tvVoucherState,
+                binding.btnRetryVouchers, hasContent, loading, error, "Bạn chưa có ưu đãi nào trong mục này.");
     }
 
     @Override

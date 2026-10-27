@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.restaurant.viettable.ui.common.ListState;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -114,13 +115,9 @@ public class ResHistoryFragment extends BaseFragment implements com.restaurant.v
     private void renderState(boolean loading, @Nullable String error) {
         if (binding == null) return;
         boolean hasContent = !filteredList.isEmpty();
-        binding.rvResHistory.setVisibility(hasContent ? View.VISIBLE : View.GONE);
-        binding.progressReservations.setVisibility(loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.tvReservationState.setVisibility(!loading && !hasContent ? View.VISIBLE : View.GONE);
-        binding.btnRetryReservations.setVisibility(!loading && error != null ? View.VISIBLE : View.GONE);
-        if (!loading && !hasContent) {
-            binding.tvReservationState.setText(error != null ? error : getString(com.restaurant.viettable.R.string.state_no_reservations));
-        }
+        ListState.render(binding.rvResHistory, binding.progressReservations, binding.tvReservationState,
+                binding.btnRetryReservations, hasContent, loading, error,
+                getString(com.restaurant.viettable.R.string.state_no_reservations));
     }
 
     /** The restaurant confirmed/rejected a booking (realtime) or another screen reloaded the list. */
