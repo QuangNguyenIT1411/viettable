@@ -10,7 +10,9 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 
 import com.google.android.material.tabs.TabLayout;
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.adapter.FoodAdapter;
+import com.restaurant.viettable.util.PdMotion;
 import com.restaurant.viettable.data.AppStateManager;
 import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.databinding.FragmentPreorderMenuBinding;
@@ -91,10 +93,11 @@ public class PreorderMenuFragment extends BaseFragment implements AppStateManage
             public void onToggleFavorite(FoodItem food) {
                 persistFavorite(food);
             }
-        });
+        }, R.layout.item_food_plate);
 
         binding.rvPreorderFoods.setLayoutManager(new GridLayoutManager(getContext(), 2));
         binding.rvPreorderFoods.setAdapter(adapter);
+        PdMotion.staggerCards(binding.rvPreorderFoods);
 
         binding.tabLayoutPreorderCat.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override

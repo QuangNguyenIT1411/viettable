@@ -9,7 +9,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.adapter.FoodAdapter;
+import com.restaurant.viettable.util.PdMotion;
 import com.restaurant.viettable.databinding.FragmentSearchResultBinding;
 import com.restaurant.viettable.model.FoodItem;
 import com.restaurant.viettable.ui.base.BaseFragment;
@@ -82,10 +84,11 @@ public class SearchResultFragment extends BaseFragment {
             public void onToggleFavorite(FoodItem food) {
                 persistFavorite(food);
             }
-        });
+        }, R.layout.item_food_plate);
 
         binding.rvSearchResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
         binding.rvSearchResults.setAdapter(adapter);
+        PdMotion.staggerCards(binding.rvSearchResults);
 
         binding.btnSortPrice.setOnClickListener(v -> {
             Collections.sort(searchResults, Comparator.comparingLong(FoodItem::getPrice));

@@ -9,7 +9,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.adapter.FoodAdapter;
+import com.restaurant.viettable.util.PdMotion;
 import com.restaurant.viettable.databinding.FragmentCategoryBinding;
 import com.restaurant.viettable.model.Category;
 import com.restaurant.viettable.model.FoodItem;
@@ -82,10 +84,11 @@ public class CategoryFragment extends BaseFragment {
             public void onToggleFavorite(FoodItem food) {
                 persistFavorite(food);
             }
-        });
+        }, R.layout.item_food_plate);
 
         binding.rvCategoryFoods.setLayoutManager(new GridLayoutManager(getContext(), 2));
         binding.rvCategoryFoods.setAdapter(adapter);
+        PdMotion.staggerCards(binding.rvCategoryFoods);
     }
 
     @Override

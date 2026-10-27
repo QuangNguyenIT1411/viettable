@@ -10,7 +10,9 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 
 import com.google.android.material.tabs.TabLayout;
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.adapter.FoodAdapter;
+import com.restaurant.viettable.util.PdMotion;
 import com.restaurant.viettable.data.AppStateManager;
 import com.restaurant.viettable.databinding.FragmentDineinMenuBinding;
 import com.restaurant.viettable.model.Category;
@@ -46,7 +48,7 @@ public class DineinMenuFragment extends BaseFragment implements AppStateManager.
         super.onViewCreated(view, savedInstanceState);
         appStateManager.addListener(this);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         DiningSession session = appStateManager.getActiveDiningSession();
         if (session != null) {
@@ -80,10 +82,11 @@ public class DineinMenuFragment extends BaseFragment implements AppStateManager.
             public void onToggleFavorite(FoodItem food) {
                 persistFavorite(food);
             }
-        });
+        }, R.layout.item_food_plate);
 
         binding.rvDineinFoods.setLayoutManager(new GridLayoutManager(requireContext(), 2));
         binding.rvDineinFoods.setAdapter(adapter);
+        PdMotion.staggerCards(binding.rvDineinFoods);
 
         binding.tabLayoutCategories.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override

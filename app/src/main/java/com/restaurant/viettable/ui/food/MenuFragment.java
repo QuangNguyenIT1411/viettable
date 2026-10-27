@@ -22,6 +22,7 @@ import com.restaurant.viettable.ui.session.DineinCartFragment;
 import com.restaurant.viettable.ui.home.SearchFragment;
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.ui.branch.ChangeBranchFragment;
+import com.restaurant.viettable.util.PdMotion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,8 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentMenuBinding.inflate(inflater, container, false);
+        // The floating cart bar takes the place of the floating navigation bar here (the screen has its own back button).
+        setBottomNavVisible(false);
         return binding.getRoot();
     }
 
@@ -82,9 +85,10 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
             public void onToggleFavorite(FoodItem food) {
                 persistFavorite(food);
             }
-        });
+        }, R.layout.item_food_plate);
 
         binding.rvMenuFoods.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        PdMotion.staggerCards(binding.rvMenuFoods);
         binding.rvMenuFoods.setAdapter(adapter);
 
         binding.tabLayoutCategories.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {

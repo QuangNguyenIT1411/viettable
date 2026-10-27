@@ -1,124 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Thực đơn tại bàn "Phố đêm" (DESIGN_PHO_DEM.md section 6 "Thực đơn"): table label, chips, 2-column plate grid,
+     floating yellow cart bar. Written from scratch; view IDs used by DineinMenuFragment are kept (the toolbar is now a
+     round back button). -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorSurface"
-        app:elevation="0dp">
+    <View
+        android:layout_width="420dp"
+        android:layout_height="420dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-190dp"
+        android:background="@drawable/pd_glow_mint"
+        android:importantForAccessibility="no" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="@color/colorTextPrimary">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/bricolage_medium"
-                    android:text="Thực đơn tại bàn"
-                    android:textColor="@color/colorTextPrimary"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/tvTableContext"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="@color/colorPrimary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-        </com.google.android.material.appbar.MaterialToolbar>
-
-        <!-- Category Horizontal Tabs -->
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayoutCategories"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:background="@color/colorSurface"
-            app:tabMode="scrollable" />
-
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvDineinFoods"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="12dp"
-        android:paddingBottom="90dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
-
-    <!-- Bottom Floating Cart Bar -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardStickyCart"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        android:tag="safe_bottom"
-        android:visibility="gone"
-        app:cardBackgroundColor="@color/colorPrimary"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="6dp">
+        android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="12dp">
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:tag="safe_top">
 
-            <ImageView
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_cutlery"
-                app:tint="@color/colorOnPrimary" />
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:background="@drawable/pd_circle_mint"
+                    android:importantForAccessibility="no" />
 
                 <TextView
-                    android:id="@+id/tvCartItemCount"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tvTableContext"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/bricolage_medium"
-                    android:text="2 món mới đã chọn"
-                    android:textColor="@color/colorOnPrimary"
-                    android:textSize="14sp" />
-
-                <TextView
-                    android:id="@+id/tvCartTotalPrice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="130.000 đ"
-                    android:textColor="@color/pd_on_color"
-                    android:textSize="13sp" />
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:textAllCaps="true"
+                    android:textAppearance="@style/TextAppearance.VietTable.Label"
+                    android:textColor="@color/pd_mint"
+                    tools:text="Bàn B4 • Chi nhánh Quận 1" />
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnViewDineinCart"
-                style="@style/Widget.VietTable.Button.Gold"
-                android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Xem giỏ &amp; Gọi" />
+                android:layout_marginTop="6dp"
+                android:accessibilityHeading="true"
+                android:text="@string/pd_dinein_menu_title"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayoutCategories"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="18dp"
+            android:clipToPadding="false"
+            android:paddingHorizontal="18dp"
+            app:tabMode="scrollable" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvDineinFoods"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingHorizontal="18dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="120dp" />
+    </LinearLayout>
+
+    <!-- Floating cart bar; the wrapper takes the navigation bar inset. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:tag="safe_bottom">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardStickyCart"
+            style="@style/Widget.VietTable.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/pd_screen_margin"
+            android:layout_marginBottom="16dp"
+            android:outlineSpotShadowColor="@color/black"
+            android:visibility="gone"
+            app:cardBackgroundColor="@color/pd_yellow"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="14dp"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="64dp"
+                android:orientation="horizontal"
+                android:paddingVertical="8dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="8dp">
+
+                <ImageView
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/pd_circle_dark"
+                    android:importantForAccessibility="no"
+                    android:padding="11dp"
+                    android:src="@drawable/ic_cutlery"
+                    app:tint="@color/pd_yellow" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvCartItemCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_on_color"
+                        tools:text="2 món mới đã chọn" />
+
+                    <TextView
+                        android:id="@+id/tvCartTotalPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Price"
+                        android:textColor="@color/pd_on_color"
+                        tools:text="130.000đ" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnViewDineinCart"
+                    style="@style/Widget.VietTable.Button.Primary"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:minHeight="48dp"
+                    android:paddingHorizontal="18dp"
+                    android:text="@string/pd_dinein_cart_open"
+                    android:backgroundTint="@color/pd_on_color"
+                    android:textColor="@color/pd_yellow"
+                    app:backgroundTint="@color/pd_on_color" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
+</FrameLayout>

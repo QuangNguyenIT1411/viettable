@@ -8,7 +8,9 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.adapter.FoodAdapter;
+import com.restaurant.viettable.util.PdMotion;
 import com.restaurant.viettable.databinding.FragmentFavoritesBinding;
 import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.model.FoodItem;
@@ -52,8 +54,9 @@ public class FavoritesFragment extends BaseFragment {
                 persistFavorite(food);
                 if (!food.isFavorite()) showFavoriteFoods();
             }
-        });
+        }, R.layout.item_food_plate);
         binding.rvFavorites.setAdapter(adapter);
+        PdMotion.staggerCards(binding.rvFavorites);
         binding.btnRetryFavorites.setOnClickListener(v -> loadFavorites());
         showFavoriteFoods();
         loadFavorites();

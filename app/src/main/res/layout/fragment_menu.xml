@@ -1,181 +1,221 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<!-- Thực đơn "Phố đêm" (DESIGN_PHO_DEM.md section 6 "Thực đơn"): chips on top, 2-column plate grid, floating
+     yellow cart bar. Written from scratch; view IDs used by MenuFragment are kept. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream">
+    android:background="@color/pd_bg">
 
-    <!-- Top Bar -->
+    <View
+        android:layout_width="420dp"
+        android:layout_height="420dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-190dp"
+        android:background="@drawable/pd_glow_red"
+        android:importantForAccessibility="no" />
+
     <LinearLayout
-        android:id="@+id/topBarMenu"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:minHeight="56dp"
-        android:tag="safe_top"
-        android:background="@color/surface"
-        android:elevation="2dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/a11y_back"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back"
-            app:tint="@color/primary" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/food_menu_title"
-                android:textColor="@color/primary"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvMenuBranch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/btnSearchMenu"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/a11y_search"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_search"
-            app:tint="@color/primary" />
-    </LinearLayout>
-
-    <!-- Category Tabs -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayoutCategories"
-        android:layout_width="0dp"
-        android:layout_height="44dp"
-        android:background="@color/surface"
-        app:tabMode="scrollable"
-        app:layout_constraintTop_toBottomOf="@id/topBarMenu"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Food Grid -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvMenuFoods"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:padding="16dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutMenuState"
-        app:layout_constraintBottom_toTopOf="@id/cardCartBottomBar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <LinearLayout
-        android:id="@+id/layoutMenuState"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="16dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tabLayoutCategories"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-        <ProgressBar
-            android:id="@+id/progressMenuCatalog"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:visibility="gone" />
-        <TextView
-            android:id="@+id/tvMenuCatalogState"
+            android:id="@+id/topBarMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:accessibilityLiveRegion="polite"
-            android:textColor="@color/text_primary" />
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRetryMenuCatalog"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:tag="safe_top">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/btnSearchMenu"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_search"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_search"
+                app:tint="@color/pd_cream" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvMenuBranch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/catalog_retry" />
+            android:layout_marginStart="@dimen/pd_screen_margin"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="@dimen/pd_screen_margin"
+            android:background="?attr/selectableItemBackground"
+            android:drawableEnd="@drawable/ic_arrow_down"
+            android:drawablePadding="4dp"
+            android:drawableTint="@color/pd_yellow"
+            android:gravity="center_vertical"
+            android:minHeight="32dp"
+            android:textAllCaps="true"
+            android:textAppearance="@style/TextAppearance.VietTable.Label"
+            android:textColor="@color/pd_yellow"
+            tools:text="Chi nhánh Quận 1" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/pd_screen_margin"
+            android:layout_marginTop="2dp"
+            android:accessibilityHeading="true"
+            android:text="@string/food_menu_title"
+            android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayoutCategories"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="18dp"
+            android:clipToPadding="false"
+            android:paddingHorizontal="18dp"
+            app:tabMode="scrollable" />
+
+        <LinearLayout
+            android:id="@+id/layoutMenuState"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/progressMenuCatalog"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:indeterminateTint="@color/pd_yellow"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvMenuCatalogState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:accessibilityLiveRegion="polite"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRetryMenuCatalog"
+                style="@style/Widget.VietTable.Button.Ghost"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/catalog_retry" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMenuFoods"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingHorizontal="18dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="120dp" />
     </LinearLayout>
 
-    <!-- Sticky Cart Summary Bar (visible when cart has items) -->
+    <!-- Floating cart bar (visible when the cart has items); the wrapper takes the navigation bar inset. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:tag="safe_bottom">
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardCartBottomBar"
         style="@style/Widget.VietTable.Card"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginHorizontal="@dimen/pd_screen_margin"
+        android:layout_marginBottom="16dp"
+        android:outlineSpotShadowColor="@color/black"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/primary"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="6dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:cardBackgroundColor="@color/pd_yellow"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="14dp"
+        tools:visibility="visible">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="52dp"
-            android:tag="safe_bottom"
             android:gravity="center_vertical"
+            android:minHeight="64dp"
             android:orientation="horizontal"
-            android:paddingHorizontal="16dp">
+            android:paddingStart="10dp"
+            android:paddingEnd="8dp">
 
             <TextView
                 android:id="@+id/tvCartBadgeCount"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
-                android:background="@drawable/bg_badge"
-                android:backgroundTint="@color/accent_gold"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/pd_circle_dark"
                 android:gravity="center"
-                android:text="2"
-                android:textColor="@color/pd_on_color"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Price"
+                android:textColor="@color/pd_yellow"
+                android:textSize="16sp"
+                tools:text="2" />
 
-            <TextView
-                android:id="@+id/tvCartBottomPrice"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_weight="1"
-                android:text="178.000đ"
-                android:textColor="@color/pd_on_color"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:drawableEnd="@drawable/ic_arrow_forward"
-                android:drawablePadding="4dp"
-                android:drawableTint="@color/accent_gold"
-                android:text="Xem giỏ hàng"
-                android:textColor="@color/accent_gold"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pd_cart_bar_label"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_on_color" />
+
+                <TextView
+                    android:id="@+id/tvCartBottomPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.VietTable.Price"
+                    android:textColor="@color/pd_on_color"
+                    tools:text="178.000đ" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="@string/pd_cart_bar_open"
+                android:src="@drawable/pd_btn_arrow_yellow" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </FrameLayout>
+</FrameLayout>

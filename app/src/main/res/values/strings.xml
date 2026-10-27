@@ -269,6 +269,12 @@ TABLE</string>
     <string name="pd_login_title">Chào mừng trở lại</string>
     <string name="pd_login_sub">Đăng nhập để đặt bàn, tích điểm và nhận ưu đãi riêng.</string>
     <string name="pd_register_title">Tạo tài khoản mới</string>
+    <string name="pd_cart_bar_label">Giỏ hàng</string>
+    <string name="pd_cart_bar_open">Xem giỏ hàng</string>
+    <string name="pd_dinein_menu_title">Gọi món tại bàn</string>
+    <string name="pd_dinein_cart_open">Xem giỏ &amp; Gọi</string>
+    <string name="pd_cart_title">Giỏ của bàn</string>
+    <string name="pd_cart_note_label">GHI CHÚ CHO BẾP</string>
     <string name="pd_sold_out">Hết món</string>
     <string name="pd_onsite_heading_wait">Đang chờ thanh toán</string>
     <string name="pd_onsite_heading_transfer">Quét để thanh toán</string>
