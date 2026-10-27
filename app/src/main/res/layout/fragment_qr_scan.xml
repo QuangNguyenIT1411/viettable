@@ -1,62 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Quét QR "Phố đêm" (DESIGN_PHO_DEM.md sections 5–7): camera full screen, yellow corner viewfinder with the
+     scan bar, title over a fade, manual table-code card on surface. Written from scratch; view IDs used by
+     QrScanFragment are kept (the root stays a CoordinatorLayout: the card's margin follows the keyboard). -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="@color/pd_bg">
 
-    <!-- Camera state and permission controls. -->
-    <LinearLayout
-        android:id="@+id/qrHeader"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:elevation="8dp"
-        android:padding="16dp"
-        android:tag="safe_top">
-
-        <TextView
-            android:id="@+id/tvQrTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/bricolage_medium"
-            android:text="Quét mã QR tại bàn"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnToggleManualEntry"
-            style="@style/Widget.VietTable.Button.Secondary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Nhập mã bàn thủ công" />
-
-        <TextView
-            android:id="@+id/tvCameraStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Đang kiểm tra quyền camera..."
-            android:textColor="#B0BEC5"
-            android:textSize="13sp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCameraPermission"
-            style="@style/Widget.VietTable.Button.Secondary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Cho phép camera"
-            android:visibility="gone" />
-    </LinearLayout>
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
 
     <!-- Camera preview and QR viewfinder. -->
     <RelativeLayout
         android:id="@+id/cameraContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center">
+        android:layout_height="match_parent">
 
         <androidx.camera.view.PreviewView
             android:id="@+id/previewView"
@@ -66,12 +32,23 @@
             app:implementationMode="performance"
             app:scaleType="fillCenter" />
 
-        <View
+        <FrameLayout
             android:id="@+id/viewfinderBorder"
             android:layout_width="260dp"
             android:layout_height="260dp"
             android:layout_centerInParent="true"
-            android:background="@drawable/bg_qr_viewfinder_frame" />
+            android:background="@drawable/pd_qr_corners">
+
+            <View
+                android:id="@+id/viewQrScanLine"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginHorizontal="18dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/pd_scan_line"
+                android:importantForAccessibility="no"
+                android:visibility="gone" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tvScanHint"
@@ -79,23 +56,87 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/viewfinderBorder"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_badge"
-            android:backgroundTint="#80000000"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/pd_pill_dark"
+            android:gravity="center"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="10dp"
             android:text="Đưa mã QR vào giữa khung"
-            android:textColor="#EEEEEE"
-            android:textSize="12sp" />
+            android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
 
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progressCamera"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_centerInParent="true"
+            android:indeterminate="true"
             android:visibility="gone"
-            app:indicatorColor="@color/colorSecondary" />
+            app:indicatorColor="@color/pd_yellow" />
     </RelativeLayout>
+
+    <!-- Title, camera state and permission controls. -->
+    <LinearLayout
+        android:id="@+id/qrHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pd_fade_top"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="20dp"
+        android:paddingBottom="36dp"
+        android:tag="safe_top">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="VÀO BÀN"
+            android:textAppearance="@style/TextAppearance.VietTable.Label"
+            android:textColor="@color/pd_yellow" />
+
+        <TextView
+            android:id="@+id/tvQrTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:accessibilityHeading="true"
+            android:text="Quét mã QR tại bàn"
+            android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+        <TextView
+            android:id="@+id/tvCameraStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Đang kiểm tra quyền camera..."
+            android:textAppearance="@style/TextAppearance.VietTable.Body"
+            android:textColor="@color/pd_muted" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleManualEntry"
+                style="@style/Widget.VietTable.Button.Ghost"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nhập mã bàn thủ công"
+                android:backgroundTint="@color/pd_surface_2"
+                app:backgroundTint="@color/pd_surface_2" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCameraPermission"
+                style="@style/Widget.VietTable.Button.Primary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Cho phép camera"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
 
     <!-- Manual table-code entry backed by the Gateway QR validation endpoint. -->
     <com.google.android.material.card.MaterialCardView
@@ -104,64 +145,68 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/colorSurface"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="8dp">
+        app:cardBackgroundColor="@color/pd_surface"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/pd_line"
+        app:strokeWidth="1dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp"
+            android:paddingHorizontal="22dp"
+            android:paddingTop="24dp"
+            android:paddingBottom="28dp"
             android:tag="safe_bottom">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/bricolage_medium"
-                android:text="Mã bàn"
-                android:textColor="@color/colorTextPrimary"
-                android:textSize="15sp" />
-
-            <!-- Manual Table Code Input -->
-            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:text="NHẬP THỦ CÔNG"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow" />
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilTableCode"
-                    style="@style/Widget.VietTable.TextInputLayout"
-                    android:layout_width="0dp"
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Mã bàn"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Mã được in ngay bên dưới QR trên bàn."
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilTableCode"
+                style="@style/Widget.VietTable.TextInputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Nhập mã in bên dưới QR"
+                app:startIconDrawable="@drawable/ic_qr_scan">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etTableCode"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Nhập mã in bên dưới QR"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp">
+                    android:imeOptions="actionDone"
+                    android:inputType="textCapCharacters"
+                    android:singleLine="true" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etTableCode"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:imeOptions="actionDone"
-                        android:inputType="textCapCharacters"
-                        android:singleLine="true"
-                        android:textSize="14sp" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSubmitTableCode"
-                    style="@style/Widget.VietTable.Button.Primary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="52dp"
-                    android:layout_marginStart="8dp"
-                    android:text="Vào bàn" />
-            </LinearLayout>
-
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSubmitTableCode"
+                style="@style/Widget.VietTable.Button.Primary.Arrow"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="16dp"
+                android:text="Vào bàn" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

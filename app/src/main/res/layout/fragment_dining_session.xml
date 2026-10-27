@@ -1,136 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<!-- Phiên bàn "Phố đêm" (DESIGN_PHO_DEM.md sections 5–6): mint glow (at the table), branch label, table title
+     Display.XL, status pill, running total card, yellow "Gọi thêm món", three action tiles, order rounds.
+     Written from scratch; view IDs used by DiningSessionFragment are kept (the toolbar is now a round home button). -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/surface"
-        app:elevation="1dp">
+    <View
+        android:layout_width="460dp"
+        android:layout_height="460dp"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="-220dp"
+        android:layout_marginTop="-170dp"
+        android:background="@drawable/pd_glow_mint"
+        android:importantForAccessibility="no" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_home"
-            app:navigationIconTint="@color/primary"
-            app:navigationContentDescription="Về trang chủ"
-            app:title="Phiên dùng bữa"
-            app:titleTextColor="@color/text_primary"
-            app:subtitleTextColor="@color/text_secondary" />
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/sessionContent"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="96dp"
-        android:visibility="gone"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:orientation="vertical">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:paddingTop="16dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:tag="safe_top">
 
-            <!-- Dining Table & Session Summary Card -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="Về trang chủ"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_home"
+                app:tint="@color/pd_cream" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/tvSessionStatusBadge"
+                style="@style/Widget.VietTable.StatusPill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="ĐANG PHỤC VỤ" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/sessionContent"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:paddingHorizontal="@dimen/pd_screen_margin"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="32dp"
+                    android:tag="safe_bottom">
 
-                    <!-- Branch & Table Header -->
+                    <TextView
+                        android:id="@+id/tvSessionBranch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Label"
+                        android:textColor="@color/pd_yellow"
+                        tools:text="Chi nhánh Quận 1" />
+
+                    <TextView
+                        android:id="@+id/tvSessionTable"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:accessibilityHeading="true"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                        tools:text="Bàn B4" />
+
+                    <TextView
+                        android:id="@+id/tvSessionId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        tools:text="Phiên: #20 • Bắt đầu: 18:42, 27/10/2026" />
+
+                    <TextView
+                        android:id="@+id/tvSessionDuration"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        android:visibility="gone" />
+
+                    <!-- Running total -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="22dp"
+                        android:background="@drawable/pd_card_surface"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/tvSessionBranch"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="13sp" />
-
-                            <TextView
-                                android:id="@+id/tvSessionTable"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:textColor="@color/text_primary"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/tvSessionStatusBadge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_status_chip"
-                            android:paddingHorizontal="12dp"
-                            android:paddingVertical="5dp"
-                            android:textColor="@color/primary"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- Session ID & Duration Details -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tvSessionId"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-
-                        <TextView
-                            android:id="@+id/tvSessionDuration"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:visibility="gone"
-                            android:textColor="@color/text_primary"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginVertical="16dp"
-                        android:background="@color/divider" />
-
-                    <!-- Quick Metrics Strip -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:padding="22dp">
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -142,22 +135,23 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Tổng tạm tính"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
+                                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                                android:textColor="@color/pd_muted" />
 
                             <TextView
                                 android:id="@+id/tvEstimatedTotalAmount"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:textColor="@color/primary"
-                                android:textSize="22sp"
-                                android:textStyle="bold" />
+                                android:layout_marginTop="4dp"
+                                android:textAppearance="@style/TextAppearance.VietTable.Price"
+                                android:textColor="@color/pd_yellow"
+                                tools:text="272.500đ" />
                         </LinearLayout>
 
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
                             android:gravity="end"
                             android:orientation="vertical">
 
@@ -165,267 +159,250 @@
                                 android:id="@+id/tvTotalDishesCount"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textColor="@color/text_primary"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                                tools:text="5 món" />
 
                             <TextView
                                 android:id="@+id/tvOrderRoundsCount"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
+                                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                                android:textColor="@color/pd_muted"
+                                tools:text="2 đợt" />
                         </LinearLayout>
                     </LinearLayout>
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/cardOrderMore"
+                        style="@style/Widget.VietTable.Button.Primary.Arrow"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="16dp"
+                        android:text="Gọi thêm món" />
+
+                    <!-- Track / call staff / pay -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/cardTrackOrder"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/pd_tile"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="16dp">
+
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/pd_circle_yellow"
+                                android:importantForAccessibility="no"
+                                android:padding="11dp"
+                                android:src="@drawable/ic_clock"
+                                app:tint="@color/pd_on_color" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:gravity="center"
+                                android:text="Tiến độ món"
+                                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/cardCallStaff"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/pd_tile"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="16dp">
+
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/pd_circle_red"
+                                android:importantForAccessibility="no"
+                                android:padding="11dp"
+                                android:src="@drawable/ic_service_staff"
+                                app:tint="@color/pd_cream" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:gravity="center"
+                                android:text="Gọi nhân viên"
+                                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/cardRequestPayment"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/pd_tile"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_horizontal"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="16dp">
+
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:background="@drawable/pd_circle_mint"
+                                android:importantForAccessibility="no"
+                                android:padding="11dp"
+                                android:src="@drawable/ic_card"
+                                app:tint="@color/pd_on_color" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:gravity="center"
+                                android:text="Thanh toán"
+                                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Orders in this session -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="28dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Các đợt gọi món"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+                        <TextView
+                            android:id="@+id/tvViewAllCurrentOrders"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="4dp"
+                            android:text="Xem tất cả"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                            android:textColor="@color/pd_yellow" />
+                    </LinearLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvSessionOrders"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:nestedScrollingEnabled="false" />
+
+                    <!-- Leave the table: shown only while no order round was sent -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCancelTable"
+                        style="@style/Widget.VietTable.Button.Ghost"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="24dp"
+                        android:text="Hủy bàn"
+                        android:textColor="@color/pd_red"
+                        android:visibility="gone"
+                        app:strokeColor="@color/pd_red" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDiningReturnHome"
+                        style="@style/Widget.VietTable.Button.Ghost"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="16dp"
+                        android:text="Về trang chủ" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </androidx.core.widget.NestedScrollView>
 
-            <!-- PRIMARY ACTION: GỌI MÓN (Prominent Large CTA) -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/cardOrderMore"
-                style="@style/Widget.VietTable.Button.Primary"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/btn_height_primary"
-                android:layout_marginTop="16dp"
-                android:text="GỌI THÊM MÓN"
-                android:textSize="15sp"
-                app:icon="@drawable/ic_cutlery"
-                app:iconGravity="textStart"
-                app:iconPadding="10dp"
-                app:iconTint="@color/pd_on_color" />
-
-            <!-- Secondary Actions Row: Track Order, Call Staff, Payment -->
             <LinearLayout
+                android:id="@+id/emptySessionState"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal">
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="32dp"
+                android:tag="safe_bottom"
+                android:visibility="gone">
 
-                <!-- Action 1: Track Order -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardTrackOrder"
-                    style="@style/Widget.VietTable.Card.Outlined"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingVertical="14dp"
-                        android:paddingHorizontal="4dp">
-
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/ic_clock"
-                            app:tint="@color/semantic_info" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Tiến độ món"
-                            android:textColor="@color/text_primary"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Action 2: Call Staff -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardCallStaff"
-                    style="@style/Widget.VietTable.Card.Outlined"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingVertical="14dp"
-                        android:paddingHorizontal="4dp">
-
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/ic_service_staff"
-                            app:tint="@color/accent_gold_dark" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Gọi nhân viên"
-                            android:textColor="@color/text_primary"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <!-- Action 3: Request Payment -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardRequestPayment"
-                    style="@style/Widget.VietTable.Card.Outlined"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingVertical="14dp"
-                        android:paddingHorizontal="4dp">
-
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/ic_card"
-                            app:tint="@color/primary" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Thanh toán"
-                            android:textColor="@color/text_primary"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
-
-            <!-- Orders in this Session -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:background="@drawable/pd_circle_surface2"
+                    android:contentDescription="@null"
+                    android:padding="24dp"
+                    android:src="@drawable/ic_qr_scan"
+                    app:tint="@color/pd_dim" />
 
                 <TextView
-                    android:layout_width="0dp"
+                    android:id="@+id/tvEmptySessionTitle"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Các đợt gọi món trong bàn"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="20dp"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
 
                 <TextView
-                    android:id="@+id/tvViewAllCurrentOrders"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tvEmptySessionMessage"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="4dp"
-                    android:text="Xem tất cả"
-                    android:textColor="@color/primary"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEmptySessionPrimary"
+                    style="@style/Widget.VietTable.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="24dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEmptySessionReturnHome"
+                    style="@style/Widget.VietTable.Button.Ghost"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="12dp"
+                    android:text="Về trang chủ" />
             </LinearLayout>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvSessionOrders"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:nestedScrollingEnabled="false" />
-
-            <!-- Leave the table: shown only while no order round was sent -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCancelTable"
-                style="@style/Widget.VietTable.Button.Destructive"
-                android:layout_width="match_parent"
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressSession"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:layout_marginTop="24dp"
-                android:text="Hủy bàn"
-                android:visibility="gone" />
-
-            <!-- Secondary Return Home Action -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDiningReturnHome"
-                style="@style/Widget.VietTable.Button.Outlined"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp"
-                android:text="Về trang chủ"
-                app:icon="@drawable/ic_home"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp"
-                app:iconTint="@color/primary" />
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <LinearLayout
-        android:id="@+id/emptySessionState"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="32dp"
-        android:visibility="gone"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <ImageView
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_qr_scan"
-            app:tint="@color/primary" />
-
-        <TextView
-            android:id="@+id/tvEmptySessionTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:gravity="center"
-            android:textColor="@color/text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvEmptySessionMessage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEmptySessionPrimary"
-            style="@style/Widget.VietTable.Button.Primary"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/btn_height_primary"
-            android:layout_marginTop="24dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnEmptySessionReturnHome"
-            style="@style/Widget.VietTable.Button.Outlined"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="12dp"
-            android:text="Về trang chủ" />
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="@color/pd_yellow" />
+        </FrameLayout>
     </LinearLayout>
-
-    <com.google.android.material.progressindicator.CircularProgressIndicator
-        android:id="@+id/progressSession"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="center"
-        android:visibility="gone"
-        app:indicatorColor="@color/primary"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

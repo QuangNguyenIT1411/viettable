@@ -60,6 +60,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
     private int manualPanelBaseBottomMargin;
     private final AtomicBoolean frameInFlight = new AtomicBoolean(false);
     private final AtomicBoolean qrConsumed = new AtomicBoolean(false);
+    private android.animation.ObjectAnimator scanMotion;
 
     private final ActivityResultLauncher<String> cameraPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -115,6 +116,12 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
                     ? windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom : 0;
             int navigationBottom = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
             int extraBottom = Math.max(0, imeBottom - navigationBottom);
+            // With the keyboard up the code card rises over the header: keep only the title above it.
+            int headerExtras = imeBottom > 0 ? View.GONE : View.VISIBLE;
+            if (binding != null) {
+                binding.tvCameraStatus.setVisibility(headerExtras);
+                binding.btnToggleManualEntry.setVisibility(headerExtras);
+            }
             ViewGroup.LayoutParams raw = panel.getLayoutParams();
             if (raw instanceof CoordinatorLayout.LayoutParams) {
                 CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) raw;
@@ -300,6 +307,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
     private void navigateWithConsumedQr(String code) {
         if (binding == null || !isAdded()) return;
         hideKeyboard();
+        stopScanMotion();
         binding.progressCamera.setVisibility(View.VISIBLE);
         binding.tvCameraStatus.setText("Đã đọc QR. Đang xác thực mã bàn...");
         binding.tvScanHint.setText("Đang xác thực");
@@ -321,6 +329,26 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
         binding.btnCameraPermission.setVisibility(View.GONE);
         binding.tvCameraStatus.setText("Camera đang hoạt động. Đưa QR trên bàn vào giữa khung.");
         binding.tvScanHint.setText("Đưa mã QR vào giữa khung");
+        startScanMotion();
+    }
+
+    /** The scan bar runs up and down inside the viewfinder while the camera reads (DESIGN_PHO_DEM.md section 7). */
+    private void startScanMotion() {
+        if (binding == null || scanMotion != null) return;
+        if (!com.restaurant.viettable.util.PdMotion.enabled(requireContext())) return;
+        binding.viewQrScanLine.setVisibility(View.VISIBLE);
+        float travel = (260 - 56 - 24) * getResources().getDisplayMetrics().density;
+        scanMotion = android.animation.ObjectAnimator.ofFloat(binding.viewQrScanLine, View.TRANSLATION_Y, 0f, travel);
+        scanMotion.setDuration(1800);
+        scanMotion.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        scanMotion.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scanMotion.start();
+    }
+
+    private void stopScanMotion() {
+        if (scanMotion != null) scanMotion.cancel();
+        scanMotion = null;
+        if (binding != null) binding.viewQrScanLine.setVisibility(View.GONE);
     }
 
     private void showCameraError(String message) {
@@ -381,6 +409,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
     }
 
     private void stopCamera() {
+        stopScanMotion();
         if (imageAnalysis != null) imageAnalysis.clearAnalyzer();
         if (cameraProvider != null) cameraProvider.unbindAll();
         imageAnalysis = null;

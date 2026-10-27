@@ -16,6 +16,7 @@ import com.restaurant.viettable.adapter.SessionOrderAdapter;
 import com.restaurant.viettable.data.AppStateManager;
 import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.databinding.FragmentDiningSessionBinding;
+import com.restaurant.viettable.ui.common.PdStatusPill;
 import com.restaurant.viettable.model.DiningSession;
 import com.restaurant.viettable.model.Order;
 import com.restaurant.viettable.model.OrderItem;
@@ -60,7 +61,7 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
         appStateManager.addListener(this);
         SignalRManager.getInstance().addListener(this);
 
-        binding.toolbar.setNavigationOnClickListener(v -> returnToHome());
+        binding.btnBack.setOnClickListener(v -> returnToHome());
         binding.btnDiningReturnHome.setOnClickListener(v -> returnToHome());
         binding.btnEmptySessionReturnHome.setOnClickListener(v -> returnToHome());
         binding.btnCancelTable.setOnClickListener(v -> confirmCancelTable());
@@ -210,6 +211,7 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
         binding.progressSession.setVisibility(View.GONE);
         binding.sessionContent.setVisibility(View.GONE);
         binding.emptySessionState.setVisibility(View.VISIBLE);
+        binding.tvSessionStatusBadge.setVisibility(View.GONE);
         binding.tvEmptySessionTitle.setText("Chưa có phiên dùng bữa");
         binding.tvEmptySessionMessage.setText("Hãy quét hoặc nhập mã QR trên bàn để bắt đầu phiên phục vụ.");
         binding.btnEmptySessionPrimary.setText("Quét hoặc nhập mã bàn");
@@ -220,6 +222,7 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
         binding.progressSession.setVisibility(View.GONE);
         binding.sessionContent.setVisibility(View.GONE);
         binding.emptySessionState.setVisibility(View.VISIBLE);
+        binding.tvSessionStatusBadge.setVisibility(View.GONE);
         binding.tvEmptySessionTitle.setText("Không thể tải phiên dùng bữa");
         binding.tvEmptySessionMessage.setText(message);
         binding.btnEmptySessionPrimary.setText("Thử lại");
@@ -234,19 +237,11 @@ public class DiningSessionFragment extends BaseFragment implements AppStateManag
             binding.tvSessionBranch.setText(session.getBranchName());
             binding.tvSessionId.setText("Phiên: #" + session.getId() + " • Bắt đầu: " + DisplayFormatters.dateTime(session.getStartTime()));
 
-            binding.tvSessionStatusBadge.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
+            binding.tvSessionStatusBadge.setVisibility(View.VISIBLE);
             if (session.getStatus() == DiningSession.Status.PAYMENT_REQUESTED) {
-                binding.tvSessionStatusBadge.setText("CHỜ THANH TOÁN");
-                binding.tvSessionStatusBadge.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(0xFFFFF3E0)
-                );
-                binding.tvSessionStatusBadge.setTextColor(0xFFD84315);
+                PdStatusPill.apply(binding.tvSessionStatusBadge, "CHỜ THANH TOÁN", PdStatusPill.Tone.WAITING);
             } else {
-                binding.tvSessionStatusBadge.setText("ĐANG PHỤC VỤ");
-                binding.tvSessionStatusBadge.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(0xFFE8F5E9)
-                );
-                binding.tvSessionStatusBadge.setTextColor(0xFF2E7D5B);
+                PdStatusPill.apply(binding.tvSessionStatusBadge, "ĐANG PHỤC VỤ", PdStatusPill.Tone.SUCCESS);
             }
 
             int totalDishes = 0;

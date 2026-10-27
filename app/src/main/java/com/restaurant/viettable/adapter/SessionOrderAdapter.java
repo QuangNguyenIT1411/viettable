@@ -74,24 +74,8 @@ public class SessionOrderAdapter extends RecyclerView.Adapter<SessionOrderAdapte
             binding.tvOrderItemCount.setText("Tổng " + itemCount + " món");
             binding.tvOrderSubtotal.setText(order.getFormattedTotalAmount());
 
-            // Status pill (DESIGN_PHO_DEM.md section 5): sent = neutral, confirmed / done = mint, cooking = yellow, cancelled = red.
-            switch (order.getStatus()) {
-                case PLACED:
-                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐÃ GỬI", PdStatusPill.Tone.NEUTRAL);
-                    break;
-                case CONFIRMED:
-                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐÃ XÁC NHẬN", PdStatusPill.Tone.SUCCESS);
-                    break;
-                case IN_PROGRESS:
-                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐANG XỬ LÝ", PdStatusPill.Tone.WAITING);
-                    break;
-                case COMPLETED:
-                    PdStatusPill.apply(binding.tvOrderStatusBadge, "HOÀN THÀNH", PdStatusPill.Tone.SUCCESS);
-                    break;
-                case CANCELLED:
-                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐÃ HỦY", PdStatusPill.Tone.ERROR);
-                    break;
-            }
+            // Status pill (DESIGN_PHO_DEM.md section 5).
+            PdStatusPill.applyOrder(binding.tvOrderStatusBadge, order.getStatus());
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) listener.onOrderClick(order);

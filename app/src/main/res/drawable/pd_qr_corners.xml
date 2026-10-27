@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- QR viewfinder: four rounded yellow corners (DESIGN_PHO_DEM.md "Quét QR" accent = pd_yellow). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="260dp"
+    android:height="260dp"
+    android:viewportWidth="260"
+    android:viewportHeight="260">
+    <path
+        android:pathData="M4,56 V30 A26,26 0 0 1 30,4 H56 M204,4 H230 A26,26 0 0 1 256,30 V56 M256,204 V230 A26,26 0 0 1 230,256 H204 M56,256 H30 A26,26 0 0 1 4,230 V204"
+        android:strokeWidth="6"
+        android:strokeColor="@color/pd_yellow"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+</vector>

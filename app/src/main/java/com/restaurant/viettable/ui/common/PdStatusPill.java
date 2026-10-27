@@ -9,6 +9,7 @@ import androidx.annotation.DrawableRes;
 import androidx.core.content.ContextCompat;
 
 import com.restaurant.viettable.R;
+import com.restaurant.viettable.model.Order;
 import com.restaurant.viettable.model.Reservation;
 
 /**
@@ -38,6 +39,18 @@ public final class PdStatusPill {
                 return Tone.ERROR;
             default:
                 return Tone.NEUTRAL;
+        }
+    }
+
+    /** Order round states: sent = neutral, confirmed / done = mint, cooking = yellow, cancelled = red. */
+    public static void applyOrder(TextView pill, Order.Status status) {
+        if (status == null) { apply(pill, "ĐÃ GỬI", Tone.NEUTRAL); return; }
+        switch (status) {
+            case CONFIRMED: apply(pill, "ĐÃ XÁC NHẬN", Tone.SUCCESS); break;
+            case IN_PROGRESS: apply(pill, "ĐANG XỬ LÝ", Tone.WAITING); break;
+            case COMPLETED: apply(pill, "HOÀN THÀNH", Tone.SUCCESS); break;
+            case CANCELLED: apply(pill, "ĐÃ HỦY", Tone.ERROR); break;
+            default: apply(pill, "ĐÃ GỬI", Tone.NEUTRAL); break;
         }
     }
 
