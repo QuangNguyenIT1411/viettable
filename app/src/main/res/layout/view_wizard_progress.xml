@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Booking wizard progress "Phố đêm": step name + fraction, then five pill segments (DESIGN_PHO_DEM.md section 6
+     "Đặt bàn"). View IDs are kept; progressWizard takes the same setProgress(0..100). -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/surface"
     android:orientation="vertical"
-    android:paddingHorizontal="16dp"
-    android:paddingTop="12dp"
+    android:paddingHorizontal="@dimen/pd_screen_margin"
+    android:paddingTop="8dp"
     android:paddingBottom="8dp">
 
     <LinearLayout
@@ -21,27 +22,24 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Bước 1: Chọn ngày"
-            android:textColor="@color/primary"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textAllCaps="true"
+            android:textAppearance="@style/TextAppearance.VietTable.Label"
+            android:textColor="@color/pd_yellow"
+            tools:text="Bước 1: Chọn ngày" />
 
         <TextView
             android:id="@+id/tvWizardStepFraction"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="1/6"
-            android:textColor="@color/text_tertiary"
-            android:textSize="12sp" />
+            android:layout_marginStart="12dp"
+            android:textAppearance="@style/TextAppearance.VietTable.Label"
+            android:textColor="@color/pd_muted"
+            tools:text="1/5" />
     </LinearLayout>
 
-    <com.google.android.material.progressindicator.LinearProgressIndicator
+    <com.restaurant.viettable.ui.common.PdStepSegments
         android:id="@+id/progressWizard"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_marginTop="8dp"
-        app:indicatorColor="@color/primary"
-        app:trackColor="@color/primary_container"
-        app:trackCornerRadius="2dp" />
-
+        android:layout_height="8dp"
+        android:layout_marginTop="10dp" />
 </LinearLayout>
