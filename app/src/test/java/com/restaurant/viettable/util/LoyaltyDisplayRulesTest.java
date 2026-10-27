@@ -51,12 +51,24 @@ public class LoyaltyDisplayRulesTest {
 
     @Test
     public void conversionComesOnlyFromTheServer() {
-        assertNull(LoyaltyDisplayRules.Conversion.of(0, 1000));
-        assertNull(LoyaltyDisplayRules.Conversion.of(10, 0));
-        LoyaltyDisplayRules.Conversion c = LoyaltyDisplayRules.Conversion.of(10, 1000);
+        assertNull(LoyaltyDisplayRules.Conversion.of(0, 1000, 10));
+        assertNull(LoyaltyDisplayRules.Conversion.of(10, 0, 10));
+        assertNull(LoyaltyDisplayRules.Conversion.of(10, 1000, 0));
+        LoyaltyDisplayRules.Conversion c = LoyaltyDisplayRules.Conversion.of(10, 1000, 10);
         assertEquals(10_000, c.discount(1000));
         assertEquals(1000, c.usable(1500));   // whole steps only
         assertEquals(0, c.usable(999));
         assertEquals(0, c.discount(-5));
+    }
+
+    @Test
+    public void billCapIsTenPercentInWholeSteps() {
+        LoyaltyDisplayRules.Conversion c = LoyaltyDisplayRules.Conversion.of(10, 1000, 10);
+        // 245.000đ bill -> 24.500đ -> 2.450 points -> 2.000 points (20.000đ), even with a big balance.
+        assertEquals(2000, c.usable(10_000, 245_000));
+        assertEquals(20_000, c.discount(c.usable(10_000, 245_000)));
+        assertEquals(1000, c.usable(1_500, 245_000));   // balance is the tighter limit
+        assertEquals(0, c.usable(10_000, 99_999));       // 10% < one step
+        assertEquals(0, c.usable(10_000, 0));
     }
 }

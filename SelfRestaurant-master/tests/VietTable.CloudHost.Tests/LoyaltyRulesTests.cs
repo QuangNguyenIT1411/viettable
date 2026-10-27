@@ -39,14 +39,26 @@ public sealed class LoyaltyRulesTests
     }
 
     [Fact]
+    public void Redeeming_takes_at_most_10_percent_of_the_bill()
+    {
+        // 245.000đ -> at most 24.500đ off -> 2.450 points -> 2.000 in whole steps (20.000đ).
+        Assert.Equal(24_500m, LoyaltyRules.MaxDiscount(245_000));
+        var points = LoyaltyRules.RedeemablePoints(requested: 10_000, balance: 10_000, payable: 245_000);
+        Assert.Equal(2_000, points);
+        Assert.Equal(20_000m, LoyaltyRules.Discount(points));
+        Assert.Equal(10, LoyaltyRules.MaxDiscountPercent);
+    }
+
+    [Fact]
     public void Redeeming_never_exceeds_the_bill()
     {
-        // A 25.000đ bill can absorb at most 2.500 points -> 2.000 in whole steps (20.000đ off), never a negative total.
-        var points = LoyaltyRules.RedeemablePoints(requested: 10_000, balance: 10_000, payable: 25_000);
-        Assert.Equal(2_000, points);
-        Assert.True(LoyaltyRules.Discount(points) <= 25_000m);
-        Assert.Equal(0, LoyaltyRules.RedeemablePoints(requested: 1_000, balance: 10_000, payable: 9_999));
+        // 10% of a 99.999đ bill is 9.999đ = 999 points: not even one step.
+        Assert.Equal(0, LoyaltyRules.RedeemablePoints(requested: 1_000, balance: 10_000, payable: 99_999));
+        Assert.Equal(1_000, LoyaltyRules.RedeemablePoints(requested: 1_000, balance: 10_000, payable: 100_000));
         Assert.Equal(0, LoyaltyRules.RedeemablePoints(requested: 1_000, balance: 10_000, payable: 0));
+        // Never more off than the bill itself, whatever is requested.
+        foreach (var payable in new[] { 1m, 50_000m, 245_000m, 9_999_999m })
+            Assert.True(LoyaltyRules.Discount(LoyaltyRules.RedeemablePoints(int.MaxValue, int.MaxValue, payable)) <= payable);
     }
 
     [Fact]
@@ -71,6 +83,7 @@ public sealed class LoyaltyRulesTests
         Assert.DoesNotContain("0.01m", identity);
         Assert.Contains("LoyaltyRules.RedeemablePoints", mobile);
         Assert.Contains("pointValueVnd = SelfRestaurant.Loyalty.LoyaltyRules.PointValueVnd", mobile);
+        Assert.Contains("maxPointsDiscountPercent = SelfRestaurant.Loyalty.LoyaltyRules.MaxDiscountPercent", mobile);
         Assert.DoesNotContain("* 1000m", mobile);
         Assert.Contains("LoyaltyRules.RedeemablePoints", cashier);
         Assert.DoesNotContain("0.10m", cashier);

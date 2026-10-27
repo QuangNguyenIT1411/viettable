@@ -170,6 +170,17 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
+                    <!-- Server's cap: points take at most N% off the bill (filled by the code; hidden until known). -->
+                    <TextView
+                        android:id="@+id/tvPointsCap"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:text=""
+                        android:textColor="@color/colorTextSecondary"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
                     <TextView
                         android:id="@+id/tvCalculatedDiscount"
                         android:layout_width="wrap_content"

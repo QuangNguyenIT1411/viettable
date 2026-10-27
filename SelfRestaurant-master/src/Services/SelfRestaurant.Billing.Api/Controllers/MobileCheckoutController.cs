@@ -66,6 +66,7 @@ public sealed class MobileCheckoutController : ControllerBase
             // The app shows the points conversion only from these (it never assumes a rate).
             pointValueVnd = SelfRestaurant.Loyalty.LoyaltyRules.PointValueVnd,
             pointsStep = SelfRestaurant.Loyalty.LoyaltyRules.RedeemStep,
+            maxPointsDiscountPercent = SelfRestaurant.Loyalty.LoyaltyRules.MaxDiscountPercent,
         });
 
     // VietQR for an app payment the customer chose to pay by bank transfer; the cashier confirms receipt.
@@ -133,7 +134,7 @@ public sealed class MobileCheckoutController : ControllerBase
         if (customer is null) return NotFound(new { code = "customer_not_found", message = "Không tìm thấy khách hàng." });
         if (request.Points > customer.LoyaltyPoints) return Conflict(new { code = "insufficient_points", message = "Điểm khả dụng không đủ." });
         var payableAfterVoucher = Math.Max(0, entity.Subtotal - entity.VoucherDiscount);
-        // Shared rules: 1 point = 10đ, whole 1.000-point steps, capped by the balance and by the bill.
+        // Shared rules: 1 point = 10đ, whole 1.000-point steps, capped by the balance and by 10% of the bill.
         entity.PointsApplied = SelfRestaurant.Loyalty.LoyaltyRules.RedeemablePoints(request.Points, customer.LoyaltyPoints, payableAfterVoucher);
         entity.PointsDiscount = SelfRestaurant.Loyalty.LoyaltyRules.Discount(entity.PointsApplied);
         Recalculate(entity); await _db.SaveChangesAsync(ct); return Ok(MapQuote(entity));

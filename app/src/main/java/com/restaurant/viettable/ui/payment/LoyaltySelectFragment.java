@@ -105,9 +105,15 @@ public class LoyaltySelectFragment extends BaseFragment {
         });
     }
 
-    /** Whole steps the balance allows (0 until both the balance and the conversion are known). */
+    /**
+     * Whole steps the balance and the bill allow (0 until the balance, conversion and bill are known). The bill is
+     * the server quote's subtotal minus voucher, the same amount the server caps at 10%.
+     */
     private long usablePoints() {
-        return conversion == null || !balanceKnown ? 0 : conversion.usable(maxPoints);
+        if (conversion == null || !balanceKnown) return 0;
+        com.restaurant.viettable.model.Invoice quote = com.restaurant.viettable.data.MobileRepository.getInstance().currentCheckoutInvoice();
+        if (quote == null) return 0;
+        return conversion.usable(maxPoints, Math.max(0, quote.getSubtotal() - quote.getVoucherDiscount()));
     }
 
     private void pickSteps(int steps) {
@@ -162,6 +168,10 @@ public class LoyaltySelectFragment extends BaseFragment {
         binding.btnPlusPoints.setEnabled(step > 0 && selectedPoints + step <= usablePoints());
         binding.btnMinusPoints.setEnabled(step > 0 && selectedPoints >= step);
         binding.btnQuickMax.setEnabled(usablePoints() > 0);
+        // "Tối đa 10% hoá đơn": the server's cap, shown with the most points this bill allows.
+        binding.tvPointsCap.setVisibility(conversion != null && balanceKnown ? View.VISIBLE : View.GONE);
+        if (conversion != null) binding.tvPointsCap.setText(String.format(Locale.GERMANY,
+                "Tối đa %d%% hoá đơn: dùng được %,d điểm", conversion.maxPercent, usablePoints()));
     }
 
     @Override

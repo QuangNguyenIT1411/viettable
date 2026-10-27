@@ -1168,15 +1168,15 @@ public final class MobileRepository {
     }
 
     /**
-     * The points conversion the server uses (GET /payment-options "pointValueVnd" and "pointsStep"); null when the
-     * server does not send both, so the app offers no conversion instead of guessing one.
+     * The points conversion the server uses (GET /payment-options "pointValueVnd", "pointsStep" and
+     * "maxPointsDiscountPercent"); null when one is missing, so the app offers no conversion instead of guessing.
      */
     public void loadPointsConversion(Callback<com.restaurant.viettable.util.LoyaltyDisplayRules.Conversion> callback) {
         api().get("/api/mobile/v1/payment-options", true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 JSONObject row = body instanceof JSONObject ? (JSONObject) body : null;
                 callback.onSuccess(row == null ? null : com.restaurant.viettable.util.LoyaltyDisplayRules.Conversion.of(
-                        row.optLong("pointValueVnd", 0), row.optLong("pointsStep", 0)));
+                        row.optLong("pointValueVnd", 0), row.optLong("pointsStep", 0), row.optInt("maxPointsDiscountPercent", 0)));
             }
             @Override public void onError(ApiException error) { callback.onError(error); }
         });

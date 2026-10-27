@@ -288,15 +288,18 @@ export function DashboardPage({ onLogout }: Props) {
   // Points conversion comes from the backend (same rules as the app); without it nothing can be redeemed.
   const pointValueVnd = activeOrder?.pointValueVnd ?? 0;
   const pointsStep = activeOrder?.pointsStep ?? 0;
+  const maxPointsDiscountPercent = activeOrder?.maxPointsDiscountPercent ?? 0;
 
   const checkoutPreview = useMemo(() => {
     const rawDiscount = Number(discountAmount || "0");
     const safeDiscount = Number.isFinite(rawDiscount) ? clamp(rawDiscount, 0, subtotal) : 0;
     const baseTotal = Math.max(0, subtotal - safeDiscount);
-    const canRedeem = pointValueVnd > 0 && pointsStep > 0;
-    // Capped by the balance and by the bill, in whole steps: mirrors LoyaltyRules.RedeemablePoints on the server.
+    const canRedeem = pointValueVnd > 0 && pointsStep > 0 && maxPointsDiscountPercent > 0;
+    // Capped by the balance and by the server's share of the bill (10%), in whole steps:
+    // mirrors LoyaltyRules.RedeemablePoints on the server.
+    const maxDiscount = Math.floor((baseTotal * maxPointsDiscountPercent) / 100);
     const maxPointsAllowed = canRedeem
-      ? Math.floor(Math.min(pointsAvailable, Math.floor(baseTotal / pointValueVnd)) / pointsStep) * pointsStep
+      ? Math.floor(Math.min(pointsAvailable, Math.floor(maxDiscount / pointValueVnd)) / pointsStep) * pointsStep
       : 0;
     const rawPoints = Number(pointsUsedInput || "0");
     const safePoints = canRedeem && Number.isFinite(rawPoints)
@@ -318,7 +321,7 @@ export function DashboardPage({ onLogout }: Props) {
       paymentAmount: effectivePayment,
       changeAmount,
     };
-  }, [discountAmount, paymentAmount, paymentMethod, pointValueVnd, pointsAvailable, pointsStep, pointsUsedInput, subtotal]);
+  }, [discountAmount, maxPointsDiscountPercent, paymentAmount, paymentMethod, pointValueVnd, pointsAvailable, pointsStep, pointsUsedInput, subtotal]);
 
   useEffect(() => {
     if (!activeOrder) {

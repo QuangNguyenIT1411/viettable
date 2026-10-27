@@ -206,7 +206,7 @@ public sealed class CashierController : ControllerBase
         if (customerSnapshot is not null && requestedPoints > 0)
         {
             // Same rules as the app (SelfRestaurant.Loyalty.LoyaltyRules): 1 point = 10đ, whole 1.000-point steps,
-            // capped by the balance and by the bill.
+            // capped by the balance and by 10% of the bill.
             usedPoints = SelfRestaurant.Loyalty.LoyaltyRules.RedeemablePoints(requestedPoints, customerSnapshot.LoyaltyPoints, baseTotal);
         }
 
