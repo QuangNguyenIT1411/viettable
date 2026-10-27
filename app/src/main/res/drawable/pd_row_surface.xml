@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings / list row: surface, row radius, light ripple when pressed (DESIGN_PHO_DEM.md section 6 "Cài đặt"). -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/pd_ripple">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/pd_surface" />
+            <corners android:radius="@dimen/pd_radius_row" />
+        </shape>
+    </item>
+</ripple>

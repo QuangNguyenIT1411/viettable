@@ -1,595 +1,587 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Tôi "Phố đêm" (DESIGN_PHO_DEM.md section 6 "Tôi / Hồ sơ / Thẻ thành viên / Cài đặt"): profile header, plum member
+     card (real tier and points from ProfileFragment), surface rows with round icons, yellow switch, red logout.
+     Written from scratch; view IDs used by ProfileFragment are kept. Bottom padding clears the floating nav. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground">
+    android:background="@color/pd_bg">
+
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_red"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
         android:clipToPadding="false"
-        android:paddingBottom="96dp">
+        android:overScrollMode="never"
+        android:paddingBottom="140dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Clean Modern Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:tag="safe_top"
-                android:orientation="vertical"
-                android:paddingHorizontal="20dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="12dp">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:paddingTop="20dp"
+                android:tag="safe_top">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/unbounded_bold"
-                    android:text="Tài khoản"
-                    android:textColor="@color/colorTextPrimary"
-                    android:textSize="24sp" />
-            </LinearLayout>
+                <FrameLayout
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/pd_plate"
+                    android:padding="5dp">
 
-            <!-- User Profile Card -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="4dp">
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="14dp"
+                        android:src="@drawable/ic_profile"
+                        app:tint="@color/pd_cream" />
+                </FrameLayout>
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    android:layout_marginStart="16dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                    <!-- Avatar -->
-                    <FrameLayout
-                        android:layout_width="60dp"
-                        android:layout_height="60dp">
-
-                        <ImageView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:background="@drawable/bg_round_floating_btn"
-                            android:backgroundTint="@color/surface_secondary"
-                            android:padding="14dp"
-                            android:src="@drawable/ic_profile"
-                            app:tint="@color/colorPrimary" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:text="TÀI KHOẢN"
+                        android:textAppearance="@style/TextAppearance.VietTable.Label"
+                        android:textColor="@color/pd_yellow" />
 
-                        <TextView
-                            android:id="@+id/tvProfileName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/bricolage_bold"
-                            android:text="Nguyễn Văn A"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="18sp" />
+                    <TextView
+                        android:id="@+id/tvProfileName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:accessibilityHeading="true"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.L"
+                        tools:text="Nguyễn Vinh Quang" />
 
-                        <TextView
-                            android:id="@+id/tvProfilePhone"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text=""
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="13sp" />
-
-                        <TextView
-                            android:id="@+id/tvProfileTierBadge"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:background="@drawable/bg_status_badge"
-                            android:backgroundTint="@color/pd_yellow_soft"
-                            android:fontFamily="@font/bricolage_bold"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
-                            android:text="HẠNG VÀNG"
-                            android:textColor="@color/pd_yellow"
-                            android:textSize="11sp" />
-                    </LinearLayout>
-
-                    <!-- Edit Header Quick Action Button -->
-                        <ImageView
-                            android:id="@+id/btnEditProfileHeader"
-                            android:layout_width="48dp"
-                            android:layout_height="48dp"
-                            android:contentDescription="@string/a11y_edit_profile"
-                        android:background="@drawable/bg_round_floating_btn"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_arrow_forward"
-                        app:tint="@color/colorTextSecondary" />
+                    <TextView
+                        android:id="@+id/tvProfilePhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        tools:text="0901 234 567" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Loyalty Points Banner Floating Card -->
+                <ImageView
+                    android:id="@+id/btnEditProfileHeader"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/pd_circle_surface2"
+                    android:clickable="true"
+                    android:contentDescription="@string/a11y_edit_profile"
+                    android:focusable="true"
+                    android:padding="13dp"
+                    android:src="@drawable/ic_arrow_forward"
+                    app:tint="@color/pd_cream" />
+            </LinearLayout>
+
+            <!-- Member card: plum, tier pill, points (real values from the code). -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardProfileLoyalty"
-                style="@style/Widget.VietTable.Card.Gold"
+                style="@style/Widget.VietTable.Card.Plum"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="24dp"
                 android:clickable="true"
                 android:focusable="true">
 
-                <LinearLayout
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    android:layout_height="wrap_content">
 
-                    <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_round_floating_btn"
-                        android:backgroundTint="@color/pd_yellow_soft"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_loyalty"
-                        app:tint="@color/colorSecondary" />
+                    <View
+                        android:layout_width="220dp"
+                        android:layout_height="220dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="-90dp"
+                        android:layout_marginEnd="-80dp"
+                        android:background="@drawable/pd_glow_yellow"
+                        android:importantForAccessibility="no" />
 
                     <LinearLayout
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:padding="22dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="THẺ THÀNH VIÊN"
+                                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                                android:textColor="@color/pd_muted" />
+
+                            <TextView
+                                android:id="@+id/tvProfileTierBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_status_chip"
+                                android:backgroundTint="@color/pd_yellow"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="5dp"
+                                android:textAllCaps="true"
+                                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                                android:textColor="@color/pd_on_color"
+                                tools:text="Hạng Vàng" />
+                        </LinearLayout>
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="18dp"
                             android:text="Điểm tích lũy hiện có"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="12sp" />
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_muted" />
 
-                        <TextView
-                            android:id="@+id/tvProfilePoints"
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:fontFamily="@font/unbounded_bold"
-                            android:text="15.000 điểm"
-                            android:textColor="@color/colorPrimary"
-                            android:textSize="19sp" />
-                    </LinearLayout>
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="@font/bricolage_bold"
-                        android:text="Chi tiết >"
-                        android:textColor="@color/colorSecondary"
-                        android:textSize="13sp" />
-                </LinearLayout>
+                            <TextView
+                                android:id="@+id/tvProfilePoints"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textAppearance="@style/TextAppearance.VietTable.Display.L"
+                                android:textColor="@color/pd_yellow"
+                                tools:text="3.250 điểm" />
+
+                            <ImageView
+                                android:layout_width="44dp"
+                                android:layout_height="44dp"
+                                android:layout_marginStart="8dp"
+                                android:contentDescription="Xem thẻ thành viên"
+                                android:src="@drawable/pd_btn_arrow_ghost" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Active Dining Session Card (Screen 15 persistent) -->
             <FrameLayout
                 android:id="@+id/containerProfileActiveDining"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="12dp" />
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="14dp" />
 
-            <!-- SECTION 1: TÀI KHOẢN -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="8dp"
-                android:fontFamily="@font/bricolage_bold"
-                android:letterSpacing="0.04"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
                 android:text="TÀI KHOẢN"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="12sp" />
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_muted" />
 
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp">
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="2dp"
+                android:orientation="vertical">
 
                 <LinearLayout
+                    android:id="@+id/rowEditProfile"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
 
-                    <!-- Item: Edit Profile -->
-                    <LinearLayout
-                        android:id="@+id/rowEditProfile"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_yellow"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_profile"
+                        app:tint="@color/pd_on_color" />
 
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_profile"
-                            app:tint="@color/colorPrimary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Thông tin cá nhân"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_arrow_forward"
-                            app:tint="@color/colorTextSecondary" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="52dp"
-                        android:background="@color/colorDivider" />
-
-                    <!-- Item: Reservation History -->
-                    <LinearLayout
-                        android:id="@+id/rowResHistory"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_reservation"
-                            app:tint="@color/colorPrimary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Lịch sử đặt bàn"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_arrow_forward"
-                            app:tint="@color/colorTextSecondary" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="52dp"
-                        android:background="@color/colorDivider" />
-
-                    <!-- Item: Order History -->
-                    <LinearLayout
-                        android:id="@+id/rowOrderHistory"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_orders"
-                            app:tint="@color/colorPrimary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Lịch sử phiên và hóa đơn"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_arrow_forward"
-                            app:tint="@color/colorTextSecondary" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="52dp"
-                        android:background="@color/colorDivider" />
-
-                    <LinearLayout
-                        android:id="@+id/rowReviews"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_star"
-                            app:tint="@color/colorPrimary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Đánh giá của tôi"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_arrow_forward"
-                            app:tint="@color/colorTextSecondary" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- SECTION 2: ƯU ĐÃI & THÀNH VIÊN -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="8dp"
-                android:fontFamily="@font/bricolage_bold"
-                android:letterSpacing="0.04"
-                android:text="ƯU ĐÃI &amp; THÀNH VIÊN"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="12sp" />
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <!-- Item: My Vouchers -->
-                    <LinearLayout
-                        android:id="@+id/rowVouchers"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_voucher"
-                            app:tint="@color/colorSecondary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Ưu đãi của tôi (Vouchers)"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_arrow_forward"
-                            app:tint="@color/colorTextSecondary" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- SECTION 3: HỆ THỐNG -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="8dp"
-                android:fontFamily="@font/bricolage_bold"
-                android:letterSpacing="0.04"
-                android:text="HỆ THỐNG"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="12sp" />
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <!-- Item: Fingerprint login (hidden on phones without an enrolled strong fingerprint) -->
-                    <LinearLayout
-                        android:id="@+id/rowBiometricLogin"
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:minHeight="52dp"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:visibility="gone">
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Thông tin cá nhân"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
 
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_lock"
-                            app:tint="@color/colorPrimary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Đăng nhập bằng vân tay"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchBiometricLogin"
-                            android:saveEnabled="false"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerBiometricLogin"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="52dp"
-                        android:background="@color/colorDivider"
-                        android:visibility="gone" />
-
-                    <!-- Item: Settings -->
-                    <LinearLayout
-                        android:id="@+id/rowSettings"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_info"
-                            app:tint="@color/colorPrimary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Cài đặt ứng dụng"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_arrow_forward"
-                            app:tint="@color/colorTextSecondary" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginStart="52dp"
-                        android:background="@color/colorDivider" />
-
-                    <!-- Item: Support -->
-                    <LinearLayout
-                        android:id="@+id/rowSupport"
-                        android:layout_width="match_parent"
-                        android:layout_height="52dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_phone"
-                            app:tint="@color/colorPrimary" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Hỗ trợ &amp; Trợ giúp"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:src="@drawable/ic_arrow_forward"
-                            app:tint="@color/colorTextSecondary" />
-                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Logout Button -->
+                <LinearLayout
+                    android:id="@+id/rowResHistory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_reservation"
+                        app:tint="@color/pd_cream" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Lịch sử đặt bàn"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowOrderHistory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_orders"
+                        app:tint="@color/pd_cream" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Lịch sử phiên và hóa đơn"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowReviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_star"
+                        app:tint="@color/pd_cream" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Đánh giá của tôi"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:text="ƯU ĐÃI &amp; THÀNH VIÊN"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_muted" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="2dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/rowVouchers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_plum"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_voucher"
+                        app:tint="@color/pd_yellow" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Ưu đãi của tôi (Vouchers)"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:text="HỆ THỐNG"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_muted" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="2dp"
+                android:orientation="vertical">
+
+                <!-- Fingerprint login (hidden on phones without an enrolled strong fingerprint). -->
+                <LinearLayout
+                    android:id="@+id/rowBiometricLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_fingerprint"
+                        app:tint="@color/pd_cream" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Đăng nhập bằng vân tay"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchBiometricLogin"
+                        style="@style/Widget.VietTable.Switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:saveEnabled="false" />
+                </LinearLayout>
+
+                <!-- Kept for ProfileFragment (shown with the fingerprint row); rows are separate cards now. -->
+                <View
+                    android:id="@+id/dividerBiometricLogin"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/rowSettings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_info"
+                        app:tint="@color/pd_cream" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Cài đặt ứng dụng"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowSupport"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_phone"
+                        app:tint="@color/pd_cream" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Hỗ trợ &amp; Trợ giúp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
+                </LinearLayout>
+            </LinearLayout>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogout"
-                style="@style/Widget.VietTable.Button.Destructive"
+                style="@style/Widget.VietTable.Button.Red"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="16dp"
-                android:layout_marginTop="24dp"
+                android:layout_height="56dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
                 android:text="Đăng xuất tài khoản" />
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>
