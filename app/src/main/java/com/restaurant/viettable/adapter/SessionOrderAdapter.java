@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemSessionOrderBinding;
+import com.restaurant.viettable.ui.common.PdStatusPill;
 import com.restaurant.viettable.model.Order;
 import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.model.OrderItem;
@@ -73,43 +74,22 @@ public class SessionOrderAdapter extends RecyclerView.Adapter<SessionOrderAdapte
             binding.tvOrderItemCount.setText("Tổng " + itemCount + " món");
             binding.tvOrderSubtotal.setText(order.getFormattedTotalAmount());
 
-            // Status chip with guaranteed readable contrast
-            binding.tvOrderStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);
+            // Status pill (DESIGN_PHO_DEM.md section 5): sent = neutral, confirmed / done = mint, cooking = yellow, cancelled = red.
             switch (order.getStatus()) {
                 case PLACED:
-                    binding.tvOrderStatusBadge.setText("ĐÃ GỬI");
-                    binding.tvOrderStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFE1F5FE)
-                    );
-                    binding.tvOrderStatusBadge.setTextColor(0xFF01579B);
+                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐÃ GỬI", PdStatusPill.Tone.NEUTRAL);
                     break;
                 case CONFIRMED:
-                    binding.tvOrderStatusBadge.setText("ĐÃ XÁC NHẬN");
-                    binding.tvOrderStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFF3E5F5)
-                    );
-                    binding.tvOrderStatusBadge.setTextColor(0xFF4A148C);
+                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐÃ XÁC NHẬN", PdStatusPill.Tone.SUCCESS);
                     break;
                 case IN_PROGRESS:
-                    binding.tvOrderStatusBadge.setText("ĐANG XỬ LÝ");
-                    binding.tvOrderStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFFFF3E0)
-                    );
-                    binding.tvOrderStatusBadge.setTextColor(0xFFD84315);
+                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐANG XỬ LÝ", PdStatusPill.Tone.WAITING);
                     break;
                 case COMPLETED:
-                    binding.tvOrderStatusBadge.setText("HOÀN THÀNH");
-                    binding.tvOrderStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFE8F5E9)
-                    );
-                    binding.tvOrderStatusBadge.setTextColor(0xFF1B5E20);
+                    PdStatusPill.apply(binding.tvOrderStatusBadge, "HOÀN THÀNH", PdStatusPill.Tone.SUCCESS);
                     break;
                 case CANCELLED:
-                    binding.tvOrderStatusBadge.setText("ĐÃ HỦY");
-                    binding.tvOrderStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFFFEBEE)
-                    );
-                    binding.tvOrderStatusBadge.setTextColor(0xFFB71C1C);
+                    PdStatusPill.apply(binding.tvOrderStatusBadge, "ĐÃ HỦY", PdStatusPill.Tone.ERROR);
                     break;
             }
 

@@ -1,165 +1,189 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Đơn hàng "Phố đêm" (DESIGN_PHO_DEM.md section 6 "Tiến độ món / Đơn hiện tại", "Hóa đơn / Lịch sử hóa đơn"):
+     big title, chip tabs, active table card, session / invoice cards, line-icon empty states with a ghost retry.
+     Written from scratch; view IDs used by OrderHistoryFragment are kept. Bottom padding clears the floating nav. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/colorSurface"
-        app:elevation="0dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="Đơn hàng"
-            app:titleTextColor="@color/colorTextPrimary" />
-
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayoutOrderHistory"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:background="@color/colorSurface">
-
-            <com.google.android.material.tabs.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Đang diễn ra" />
-
-            <com.google.android.material.tabs.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Lịch sử phiên" />
-
-            <com.google.android.material.tabs.TabItem
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Hóa đơn" />
-        </com.google.android.material.tabs.TabLayout>
-    </com.google.android.material.appbar.AppBarLayout>
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_red"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="80dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingTop="20dp"
+            android:paddingBottom="140dp">
 
-            <!-- Active Dining Session Container -->
-            <FrameLayout
-                android:id="@+id/containerActiveSession"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <!-- Empty state when no active session -->
-            <LinearLayout
-                android:id="@+id/layoutEmptyOngoing"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="60dp"
-                android:gravity="center"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:text="BỮA ĂN CỦA BẠN"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Đơn hàng"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabLayoutOrderHistory"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="18dp"
+                android:clipToPadding="false"
+                android:paddingHorizontal="18dp"
+                app:tabMode="scrollable">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Đang diễn ra" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Lịch sử phiên" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hóa đơn" />
+            </com.google.android.material.tabs.TabLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:visibility="gone">
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:paddingTop="16dp">
 
-                <ImageView
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:background="@drawable/bg_badge"
-                    android:backgroundTint="@color/pd_surface_2"
-                    android:padding="16dp"
-                    android:src="@drawable/ic_cutlery"
-                    app:tint="@color/colorTextSecondary" />
+                <FrameLayout
+                    android:id="@+id/containerActiveSession"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/layoutEmptyOngoing"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:fontFamily="@font/bricolage_medium"
-                    android:text="Không có bàn ăn nào đang hoạt động"
-                    android:textColor="@color/colorTextPrimary"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="40dp"
                     android:gravity="center"
-                    android:text="Hãy quét mã QR tại bàn khi bạn đến nhà hàng để bắt đầu gọi món."
-                    android:textColor="@color/colorTextSecondary"
-                    android:textSize="13sp" />
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnEmptyScanQr"
-                    style="@style/Widget.VietTable.Button.Primary"
-                    android:layout_width="wrap_content"
+                    <ImageView
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="26dp"
+                        android:src="@drawable/ic_cutlery"
+                        app:tint="@color/pd_dim" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:gravity="center"
+                        android:text="Không có bàn ăn nào đang hoạt động"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="Hãy quét mã QR tại bàn khi bạn đến nhà hàng để bắt đầu gọi món."
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEmptyScanQr"
+                        style="@style/Widget.VietTable.Button.Primary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="20dp"
+                        android:text="Quét mã QR tại bàn"
+                        app:icon="@drawable/ic_qr_scan"
+                        app:iconGravity="textStart" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvPastOrders"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:text="Quét mã QR tại bàn" />
-            </LinearLayout>
-
-            <!-- Past orders list -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvPastOrders"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                android:visibility="gone" />
-
-            <!-- Empty state for past orders -->
-            <LinearLayout
-                android:id="@+id/layoutEmptyPast"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="60dp"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <com.google.android.material.progressindicator.CircularProgressIndicator
-                    android:id="@+id/progressHistoryInvoices"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:nestedScrollingEnabled="false"
                     android:visibility="gone" />
 
-                <ImageView
-                    android:id="@+id/ivHistoryEmptyIcon"
-                    android:layout_width="80dp"
-                    android:layout_height="80dp"
-                    android:background="@drawable/bg_badge"
-                    android:backgroundTint="@color/pd_surface_2"
-                    android:padding="16dp"
-                    android:src="@drawable/ic_card"
-                    app:tint="@color/colorTextSecondary" />
-
-                <TextView
-                    android:id="@+id/tvHistoryEmptyMessage"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/layoutEmptyPast"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:fontFamily="@font/bricolage_medium"
-                    android:text="Chưa có lịch sử phiên dùng bữa"
-                    android:textColor="@color/colorTextPrimary"
-                    android:textSize="16sp" />
+                    android:layout_marginTop="40dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRetryHistoryInvoices"
-                    style="@style/Widget.VietTable.Button.Outlined"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Thử tải lại"
-                    android:visibility="gone" />
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/progressHistoryInvoices"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:visibility="gone"
+                        app:indicatorColor="@color/pd_yellow" />
+
+                    <ImageView
+                        android:id="@+id/ivHistoryEmptyIcon"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="26dp"
+                        android:src="@drawable/ic_card"
+                        app:tint="@color/pd_dim" />
+
+                    <TextView
+                        android:id="@+id/tvHistoryEmptyMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:gravity="center"
+                        android:text="Chưa có lịch sử phiên dùng bữa"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRetryHistoryInvoices"
+                        style="@style/Widget.VietTable.Button.Ghost"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Thử tải lại"
+                        android:visibility="gone" />
+                </LinearLayout>
             </LinearLayout>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

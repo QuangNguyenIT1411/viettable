@@ -1,71 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Invoice history card "Phố đêm": mint receipt icon, invoice title + status pill (set by InvoiceHistoryAdapter),
+     meta, payment and yellow total. View IDs are kept. -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/Widget.VietTable.Card"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardInvoiceHistory"
+    style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp">
+    app:cardCornerRadius="@dimen/pd_radius_row">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal"
+        android:padding="18dp">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/pd_circle_mint"
+            android:importantForAccessibility="no"
+            android:padding="12dp"
+            android:src="@drawable/ic_card"
+            app:tint="@color/pd_on_color" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
             <TextView
                 android:id="@+id/tvHistoryInvoiceCode"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                tools:text="Hóa đơn #412" />
+
             <TextView
                 android:id="@+id/tvHistoryInvoiceStatus"
+                style="@style/Widget.VietTable.StatusPill"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_status_badge"
-                android:paddingHorizontal="9dp"
-                android:paddingVertical="4dp"
-                android:textColor="@color/semantic_success"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="6dp"
+                tools:text="ĐÃ THANH TOÁN" />
+
+            <TextView
+                android:id="@+id/tvHistoryInvoiceMeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="26/10 20:40 • Chi nhánh Quận 1 • Bàn B4" />
+
+            <TextView
+                android:id="@+id/tvHistoryInvoicePayment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="Thanh toán: Tại bàn • Chuyển khoản" />
+
+            <TextView
+                android:id="@+id/tvHistoryInvoiceTotal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Price"
+                android:textColor="@color/pd_yellow"
+                tools:text="Tổng cộng  272.500đ" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvHistoryInvoiceMeta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tvHistoryInvoicePayment"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-
-        <TextView
-            android:id="@+id/tvHistoryInvoiceTotal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="9dp"
-            android:gravity="end"
-            android:textColor="@color/primary"
-            android:textSize="17sp"
-            android:textStyle="bold" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

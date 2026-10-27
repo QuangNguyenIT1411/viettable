@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.restaurant.viettable.databinding.ItemInvoiceHistoryBinding;
+import com.restaurant.viettable.ui.common.PdStatusPill;
 import com.restaurant.viettable.model.InvoiceHistoryItem;
 import com.restaurant.viettable.util.DisplayFormatters;
 import com.restaurant.viettable.util.StatusLabels;
@@ -30,7 +31,8 @@ public class InvoiceHistoryAdapter extends RecyclerView.Adapter<InvoiceHistoryAd
         InvoiceHistoryItem invoice = invoices.get(position);
         holder.binding.tvHistoryInvoiceCode.setText(StatusLabels.invoiceTitle(invoice.getInvoiceId(), invoice.getInvoiceCode())
                 + " • " + StatusLabels.sessionLabel(invoice.getDiningSessionId()));
-        holder.binding.tvHistoryInvoiceStatus.setText(statusLabel(invoice.getPaymentStatus()));
+        PdStatusPill.apply(holder.binding.tvHistoryInvoiceStatus, statusLabel(invoice.getPaymentStatus()),
+                statusTone(invoice.getPaymentStatus()));
         holder.binding.tvHistoryInvoiceMeta.setText(DisplayFormatters.dateTime(invoice.getIssuedAtUtc()) + " • "
                 + invoice.getBranchName() + " • " + invoice.getTableLabel());
         holder.binding.tvHistoryInvoicePayment.setText("Thanh toán: " + paymentLabel(invoice));
@@ -38,6 +40,16 @@ public class InvoiceHistoryAdapter extends RecyclerView.Adapter<InvoiceHistoryAd
         holder.binding.cardInvoiceHistory.setOnClickListener(v -> { if (listener != null) listener.onInvoiceClick(invoice); });
     }
     @Override public int getItemCount() { return invoices == null ? 0 : invoices.size(); }
+
+    /** Paid = mint, waiting = yellow, failed / cancelled = red, anything else neutral (section 5). */
+    private static PdStatusPill.Tone statusTone(String status) {
+        if (status == null || status.isEmpty() || "SUCCEEDED".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status))
+            return PdStatusPill.Tone.SUCCESS;
+        String s = status.toUpperCase(Locale.ROOT);
+        if (s.contains("FAIL") || s.contains("CANCEL") || s.contains("EXPIRE")) return PdStatusPill.Tone.ERROR;
+        if (s.contains("PENDING") || s.contains("PROCESS")) return PdStatusPill.Tone.WAITING;
+        return PdStatusPill.Tone.NEUTRAL;
+    }
 
     private static String statusLabel(String status) {
         if ("SUCCEEDED".equalsIgnoreCase(status)) return "ĐÃ THANH TOÁN";

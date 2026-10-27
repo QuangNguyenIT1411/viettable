@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Order round "Phố đêm": surface_2 row card (sits inside session cards), title + status pill (set by
+     SessionOrderAdapter), dishes, count and yellow subtotal. View IDs are kept. -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp">
+    android:layout_marginBottom="10dp"
+    app:cardBackgroundColor="@color/pd_surface_2"
+    app:cardCornerRadius="@dimen/pd_radius_row">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,51 +18,35 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/tvOrderTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+            tools:text="Đơn #38 • 18:48" />
 
-            <TextView
-                android:id="@+id/tvOrderTitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="@font/bricolage_bold"
-                android:text="Đơn #VT-001 • 18:48"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/tvOrderStatusBadge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_status_badge"
-                android:backgroundTint="@color/semantic_success_bg"
-                android:fontFamily="@font/bricolage_bold"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="4dp"
-                android:text="ĐÃ PHỤC VỤ"
-                android:textColor="@color/semantic_success"
-                android:textSize="11sp" />
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvOrderStatusBadge"
+            style="@style/Widget.VietTable.StatusPill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            tools:text="HOÀN THÀNH" />
 
         <TextView
             android:id="@+id/tvOrderItemsSummary"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:lineSpacingExtra="3dp"
-            android:text="2x Phở bò tái lăn, 2x Trà sen Tây Hồ"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            android:layout_marginTop="10dp"
+            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+            android:textColor="@color/pd_muted"
+            tools:text="2x Phở bò tái lăn, 2x Trà sen Tây Hồ" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="12dp"
-            android:background="@color/divider" />
+            android:background="@color/pd_line" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -69,19 +59,19 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Tổng 4 món"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="Tổng 4 món" />
 
             <TextView
                 android:id="@+id/tvOrderSubtotal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/unbounded_bold"
-                android:text="256.000 đ"
-                android:textColor="@color/primary"
-                android:textSize="16sp" />
+                android:layout_marginStart="10dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Price"
+                android:textColor="@color/pd_yellow"
+                android:textSize="16sp"
+                tools:text="256.000đ" />
         </LinearLayout>
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>
