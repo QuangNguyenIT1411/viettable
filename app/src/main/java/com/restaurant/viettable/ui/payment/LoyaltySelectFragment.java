@@ -56,7 +56,7 @@ public class LoyaltySelectFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         User user = appStateManager.getCurrentUser();
         if (user != null) setBalance(user.getLoyaltyPoints());
