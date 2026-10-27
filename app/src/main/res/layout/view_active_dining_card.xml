@@ -67,6 +67,7 @@
             android:textColor="@color/pd_muted"
             tools:text="1 đợt gọi món đang xử lý · Bắt đầu 19:02" />
 
+        <!-- Row 1: "Gọi món" + "Theo dõi" share the width; row 2: "Thanh toán" takes the whole card, at every font size. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -83,8 +84,8 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:maxLines="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
                 android:text="@string/active_dining_action_order"
                 android:textSize="14sp" />
 
@@ -98,25 +99,22 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:maxLines="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
                 android:text="@string/active_dining_action_track"
                 android:textSize="14sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnDiningPay"
-                style="@style/Widget.VietTable.Button.Red"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:maxLines="1"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:text="@string/active_dining_action_pay"
-                android:textSize="14sp" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDiningPay"
+            style="@style/Widget.VietTable.Button.Red"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:maxLines="1"
+            android:text="@string/active_dining_action_pay"
+            android:textSize="14sp" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

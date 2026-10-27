@@ -54,13 +54,17 @@ public final class DisplayFormatters {
         }
     }
 
-    /** "Bắt đầu 19:02" when the session started today, "Bắt đầu 19:02, 25/10/2026" otherwise. */
+    /**
+     * "Bắt đầu 19:02" when the session started today, "Bắt đầu 19:02, 25/10/2026" otherwise. The space inside
+     * "Bắt đầu 19:02" is a non-breaking one so the time never wraps alone onto the next line.
+     */
     public static String startedAt(String value, ZoneId zone, LocalDate today) {
         Instant started = instant(value);
         if (started == null) return "Chưa rõ giờ bắt đầu";
         ZonedDateTime local = started.atZone(zone);
         String time = local.format(DateTimeFormatter.ofPattern("HH:mm", new Locale("vi", "VN")));
-        return local.toLocalDate().equals(today) ? "Bắt đầu " + time : "Bắt đầu " + time + ", " + local.format(DATE);
+        String label = "Bắt\u00A0đầu\u00A0" + time;
+        return local.toLocalDate().equals(today) ? label : label + ",\u00A0" + local.format(DATE);
     }
 
     /** The table as a title: "B4" -> "Bàn B4"; labels that already say "Bàn ..." stay as they are. */

@@ -49,12 +49,13 @@ public class DisplayFormattersTest {
     @Test
     public void startedAt_showsDateOnlyWhenNotToday() {
         java.time.ZoneId vn = java.time.ZoneId.of("Asia/Ho_Chi_Minh");
-        assertEquals("Bắt đầu 19:02",
+        // Non-breaking spaces (\u00A0): "Bắt đầu 19:02" never splits across two lines.
+        assertEquals("Bắt\u00A0đầu\u00A019:02",
                 DisplayFormatters.startedAt("2026-10-26T12:02:00Z", vn, java.time.LocalDate.of(2026, 10, 26)));
-        assertEquals("Bắt đầu 19:02, 25/10/2026",
+        assertEquals("Bắt\u00A0đầu\u00A019:02,\u00A025/10/2026",
                 DisplayFormatters.startedAt("2026-10-25T12:02:00Z", vn, java.time.LocalDate.of(2026, 10, 26)));
         // 23:30 UTC is already the next day in Viet Nam.
-        assertEquals("Bắt đầu 06:30",
+        assertEquals("Bắt\u00A0đầu\u00A006:30",
                 DisplayFormatters.startedAt("2026-10-25T23:30:00Z", vn, java.time.LocalDate.of(2026, 10, 26)));
         assertEquals("Chưa rõ giờ bắt đầu", DisplayFormatters.startedAt(null, vn, java.time.LocalDate.of(2026, 10, 26)));
     }

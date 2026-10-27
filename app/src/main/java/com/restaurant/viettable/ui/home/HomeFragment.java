@@ -92,11 +92,12 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         String table = seated == null || seated.getStatus() == DiningSession.Status.CLOSED
                 || seated.getStatus() == DiningSession.Status.CANCELLED ? "" : SafeText.clean(seated.getTableLabel());
         boolean atTable = !table.isEmpty();
+        // Seated: the chip reads only "● Bàn 7" (the branch is on the card below); otherwise the branch name as before.
         binding.tvHeaderTable.setVisibility(atTable ? View.VISIBLE : View.GONE);
-        binding.tvHeaderTable.setText(atTable ? getString(R.string.pd_home_at_table, DisplayFormatters.tableTitle(table)) : "");
-        // "Bàn X · " already sits after the dot, so the branch name follows it without a gap.
-        ((LinearLayout.LayoutParams) binding.tvHeaderBranchName.getLayoutParams())
-                .setMarginStart(atTable ? 0 : (int) (10 * getResources().getDisplayMetrics().density));
+        binding.tvHeaderTable.setText(atTable ? DisplayFormatters.tableTitle(table) : "");
+        binding.tvHeaderBranchName.setVisibility(atTable ? View.GONE : View.VISIBLE);
+        binding.btnHeaderBranch.setContentDescription(atTable ? getString(R.string.pd_home_at_table_desc,
+                DisplayFormatters.tableTitle(table), branch == null ? "" : branch.getName()) : null);
         binding.viewHeaderDot.setBackgroundTintList(ColorStateList.valueOf(
                 ContextCompat.getColor(requireContext(), atTable ? R.color.pd_mint : R.color.pd_dim)));
         binding.btnHeaderBranch.setOnClickListener(v -> navigateTo(new ChangeBranchFragment()));

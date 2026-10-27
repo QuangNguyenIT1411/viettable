@@ -260,7 +260,7 @@
     <string name="pd_home_see_all">Xem hết</string>
     <string name="pd_home_for_you">Còn nhiều món ngon</string>
     <string name="pd_home_featured">Thực đơn hôm nay</string>
-    <string name="pd_home_at_table">"%1$s · "</string>
+    <string name="pd_home_at_table_desc">%1$s, %2$s. Đổi chi nhánh</string>
     <string name="pd_sold_out">Hết món</string>
     <string name="pd_add_to_cart">Thêm vào giỏ</string>
 </resources>
