@@ -27,6 +27,7 @@ const navSections = [
       { label: "B\u00e0n & QR", icon: "bi-grid-3x3-gap-fill", path: "/Admin/TablesQR/Index", match: "/admin/tablesqr" },
       { label: "Nh\u00e2n vi\u00ean", icon: "bi-people-fill", path: "/Admin/Employees/Index", match: "/admin/employees" },
       { label: "Kh\u00e1ch h\u00e0ng", icon: "bi-person-badge-fill", path: "/Admin/Customers/Index", match: "/admin/customers" },
+      { label: "Khuy\u1ebfn m\u00e3i", icon: "bi-megaphone-fill", path: "/Admin/Promotions/Index", match: "/admin/promotions" },
     ],
   },
   {

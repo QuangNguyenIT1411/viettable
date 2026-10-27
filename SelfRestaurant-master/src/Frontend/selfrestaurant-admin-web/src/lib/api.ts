@@ -46,7 +46,24 @@ function toDishFormData(payload: Record<string, unknown>, imageFile?: File | nul
   return form;
 }
 
+export type AdminPromotionDto = {
+  promotionId: number; name: string; description?: string | null; imageUrl?: string | null; discountType: string;
+  discountValue: number; maxDiscount?: number | null; minSubtotal: number; branchIds: number[]; startsAtUtc: string;
+  endsAtUtc: string; isActive: boolean; isRunning: boolean; summary: string;
+};
+export type AdminPromotionRequest = {
+  name: string; description: string | null; imageUrl: string | null; discountType: "PERCENT" | "FIXED"; discountValue: number;
+  maxDiscount: number | null; minSubtotal: number; branchIds: number[]; startsAtUtc: string; endsAtUtc: string; isActive: boolean;
+};
+
 export const adminApi = {
+  getPromotions: () => request<AdminPromotionDto[]>("/api/gateway/admin/promotions"),
+  createPromotion: (body: AdminPromotionRequest) =>
+    request<AdminPromotionDto>("/api/gateway/admin/promotions", { method: "POST", body: JSON.stringify(body) }),
+  updatePromotion: (id: number, body: AdminPromotionRequest) =>
+    request<AdminPromotionDto>(`/api/gateway/admin/promotions/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  togglePromotion: (id: number, isActive: boolean) =>
+    request<AdminPromotionDto>(`/api/gateway/admin/promotions/${id}/toggle`, { method: "POST", body: JSON.stringify({ isActive }) }),
   /** Reservation deposits (all branches the admin sees, or one) with their bookings. */
   getDeposits: (branchId?: number | null) =>
     request<DepositListItem[]>(`/api/admin/deposits${branchId ? `?branchId=${branchId}` : ""}`),

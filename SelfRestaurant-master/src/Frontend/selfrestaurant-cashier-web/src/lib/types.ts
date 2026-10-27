@@ -60,6 +60,10 @@ export type CashierOrderCardDto = {
   subtotal: number;
   itemCount: number;
   items: CashierOrderItemCardDto[];
+  /** Best running promotion for this bill (preview; the backend decides at checkout). */
+  promotionId?: number | null;
+  promotionName?: string | null;
+  promotionDiscount?: number;
 };
 
 export type CashierBillHistoryItemDto = {

@@ -16,6 +16,7 @@ import { EmployeesIndexPage } from "./pages/employees/EmployeesIndexPage";
 import { IngredientsModulePage } from "./pages/ingredients/IngredientsModulePage";
 import { InventoryModulePage } from "./pages/inventory/InventoryModulePage";
 import { UnitsModulePage } from "./pages/units/UnitsModulePage";
+import { PromotionsModulePage } from "./pages/promotions/PromotionsModulePage";
 function resolveRoleLanding(roleCode?: string | null) {
   const normalized = roleCode?.trim().toUpperCase();
   if (normalized === "CHEF" || normalized === "KITCHEN_STAFF") return "/Staff/Chef/Index";
@@ -117,6 +118,9 @@ export default function App() {
         ))}
         <Route path="/Admin/Categories/Edit" element={<Navigate to="/Admin/Categories/Index" replace />} />
         <Route path="/Admin/Categories/Units" element={<Navigate to="/Admin/Units/Index" replace />} />
+        <Route path="/Admin/Promotions/Index" element={<PromotionsModulePage mode="index" onLogout={logout} />} />
+        <Route path="/Admin/Promotions/Create" element={<PromotionsModulePage mode="create" onLogout={logout} />} />
+        <Route path="/Admin/Promotions/Edit/:promotionId" element={<PromotionsModulePage mode="edit" onLogout={logout} />} />
         <Route path="/Admin/Units/Index" element={<UnitsModulePage mode="index" onLogout={logout} />} />
         <Route path="/Admin/Units/Create" element={<UnitsModulePage mode="create" onLogout={logout} />} />
         <Route path="/Admin/Units/Edit/:unitId" element={<UnitsModulePage mode="edit" onLogout={logout} />} />

@@ -291,10 +291,17 @@ export function DashboardPage({ onLogout }: Props) {
   const pointsStep = activeOrder?.pointsStep ?? 0;
   const maxPointsDiscountPercent = activeOrder?.maxPointsDiscountPercent ?? 0;
 
+  const promotionDiscount = activeOrder?.promotionDiscount ?? 0;
+  const promotionName = activeOrder?.promotionName ?? null;
+
   const checkoutPreview = useMemo(() => {
     const rawDiscount = Number(discountAmount || "0");
-    const safeDiscount = Number.isFinite(rawDiscount) ? clamp(rawDiscount, 0, subtotal) : 0;
-    const baseTotal = Math.max(0, subtotal - safeDiscount);
+    const manualDiscount = Number.isFinite(rawDiscount) ? clamp(rawDiscount, 0, subtotal) : 0;
+    // Same rule as the backend (CheckoutPricing): the running promotion OR the cashier's discount, the better one.
+    const promotionWins = promotionDiscount > 0 && promotionDiscount >= manualDiscount;
+    const promotionApplied = promotionWins ? Math.min(promotionDiscount, subtotal) : 0;
+    const safeDiscount = promotionWins ? 0 : manualDiscount;
+    const baseTotal = Math.max(0, subtotal - safeDiscount - promotionApplied);
     const canRedeem = pointValueVnd > 0 && pointsStep > 0 && maxPointsDiscountPercent > 0;
     // Capped by the balance and by the server's share of the bill (10%), in whole steps:
     // mirrors LoyaltyRules.RedeemablePoints on the server.
@@ -307,7 +314,7 @@ export function DashboardPage({ onLogout }: Props) {
       ? Math.floor(clamp(rawPoints, 0, maxPointsAllowed) / pointsStep) * pointsStep
       : 0;
     const pointsDiscount = safePoints * pointValueVnd;
-    const total = Math.max(0, subtotal - safeDiscount - pointsDiscount);
+    const total = Math.max(0, subtotal - safeDiscount - promotionApplied - pointsDiscount);
     const rawPayment = Number(paymentAmount || "0");
     const safePayment = Number.isFinite(rawPayment) ? Math.max(0, rawPayment) : 0;
     const effectivePayment = paymentMethod === "TRANSFER" ? total : safePayment;
@@ -315,6 +322,11 @@ export function DashboardPage({ onLogout }: Props) {
 
     return {
       discount: safeDiscount,
+      promotionApplied,
+      promotionNote: promotionDiscount > 0 && manualDiscount > 0
+        ? (promotionWins ? `Áp dụng khuyến mãi "${promotionName}" vì lợi hơn giảm giá nhập tay; không cộng dồn.`
+          : `Áp dụng giảm giá nhập tay vì lợi hơn khuyến mãi "${promotionName}"; không cộng dồn.`)
+        : null,
       maxPointsAllowed,
       pointsUsed: safePoints,
       pointsDiscount,
@@ -322,7 +334,7 @@ export function DashboardPage({ onLogout }: Props) {
       paymentAmount: effectivePayment,
       changeAmount,
     };
-  }, [discountAmount, maxPointsDiscountPercent, paymentAmount, paymentMethod, pointValueVnd, pointsAvailable, pointsStep, pointsUsedInput, subtotal]);
+  }, [discountAmount, maxPointsDiscountPercent, paymentAmount, paymentMethod, pointValueVnd, pointsAvailable, pointsStep, pointsUsedInput, promotionDiscount, promotionName, subtotal]);
 
   useEffect(() => {
     if (!activeOrder) {
@@ -750,6 +762,14 @@ export function DashboardPage({ onLogout }: Props) {
                   <span className="muted">%</span>
                 </div>
               </div>
+              {promotionDiscount > 0 ? (
+                <div className="total-row" data-promotion-row>
+                  <span>Khuyến mãi{promotionName ? ` (${promotionName})` : ""}:</span>
+                  <strong>{checkoutPreview.promotionApplied > 0
+                    ? `-${checkoutPreview.promotionApplied.toLocaleString("vi-VN")} đ` : "Không áp dụng"}</strong>
+                </div>
+              ) : null}
+              {checkoutPreview.promotionNote ? <div className="muted small" role="note">{checkoutPreview.promotionNote}</div> : null}
               {checkoutPreview.pointsUsed > 0 ? (
                 <div className="total-row">
                   <span>Giảm bằng điểm:</span>
