@@ -59,6 +59,10 @@ public class InvoiceHistoryItem {
     public void setTableLabel(String label) { tableLabel = label; }
     public long getSubtotal() { return subtotal; }
     public long getDiscount() { return discount; }
+    private long depositApplied;
+    /** Reservation deposit taken off this invoice (not part of the discount). */
+    public long getDepositApplied() { return depositApplied; }
+    public void setDepositApplied(long value) { depositApplied = Math.max(0, value); }
     public long getTotalAmount() { return totalAmount; }
     public String getIssuedAtUtc() { return issuedAtUtc; }
     public String getPaymentCode() { return paymentCode; }

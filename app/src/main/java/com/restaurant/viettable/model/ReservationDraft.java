@@ -38,8 +38,7 @@ public class ReservationDraft implements Serializable {
     public int getGuestCount() { return guestCount; }
     public void setGuestCount(int guestCount) {
         this.guestCount = guestCount;
-        // Business rule: groups >= 6 require deposit
-        this.needsDeposit = guestCount >= 6;
+        // Whether a deposit is owed comes from the server's policy (ResGuestCountFragment), never a fixed rule here.
     }
 
     public String getAreaName() { return areaName; }

@@ -130,6 +130,7 @@ public class ResDetailFragment extends BaseFragment implements AppStateManager.S
         binding.btnScanQrCheckin.setVisibility(ReservationSchedule.canCheckIn(status, reservedAt, now) ? View.VISIBLE : View.GONE);
         binding.btnChangeRes.setVisibility(ReservationSchedule.canChange(status, reservedAt, now) ? View.VISIBLE : View.GONE);
         binding.btnCancelRes.setVisibility(ReservationSchedule.canCancel(status, reservedAt, now) ? View.VISIBLE : View.GONE);
+        bindDeposit(status);
         boolean preOrderOpen = ReservationSchedule.canPreOrder(status, reservedAt, now);
         binding.btnGoPreOrder.setVisibility(preOrderOpen || reservation.hasPreOrder() ? View.VISIBLE : View.GONE);
         if (preOrderOpen || reservation.hasPreOrder()) {
@@ -140,6 +141,26 @@ public class ResDetailFragment extends BaseFragment implements AppStateManager.S
         } else {
             binding.tvPreOrderNotice.setVisibility(View.GONE);
         }
+    }
+
+    /** Deposit card from the server's state; "Chuyển khoản đặt cọc" while the booking still waits for it. */
+    private void bindDeposit(Reservation.Status status) {
+        if (reservation.getDepositAmount() <= 0) { binding.cardDetailDeposit.setVisibility(View.GONE); return; }
+        binding.cardDetailDeposit.setVisibility(View.VISIBLE);
+        boolean waiting = status == Reservation.Status.PENDING_DEPOSIT;
+        binding.tvDetailDeposit.setText(com.restaurant.viettable.util.DepositRules.statusLine(waiting ? "PENDING" : "PAID", reservation.getDepositAmount()));
+        binding.btnPayDeposit.setVisibility(waiting ? View.VISIBLE : View.GONE);
+        binding.btnPayDeposit.setOnClickListener(v -> navigateTo(ResDepositFragment.newInstance(reservation)));
+        String id = reservation.getId();
+        com.restaurant.viettable.data.MobileRepository.getInstance().loadDeposit(id, new com.restaurant.viettable.data.MobileRepository.Callback<com.restaurant.viettable.model.DepositInfo>() {
+            @Override public void onSuccess(com.restaurant.viettable.model.DepositInfo info) {
+                if (binding == null || reservation == null || !id.equals(reservation.getId())) return;
+                String line = com.restaurant.viettable.util.DepositRules.statusLine(info.getStatus(), info.getAmount());
+                if (line != null) binding.tvDetailDeposit.setText(line);
+                binding.btnPayDeposit.setVisibility(com.restaurant.viettable.util.DepositRules.isWaiting(info.getStatus()) ? View.VISIBLE : View.GONE);
+            }
+            @Override public void onError(com.restaurant.viettable.network.ApiException error) { }
+        });
     }
 
     @Override

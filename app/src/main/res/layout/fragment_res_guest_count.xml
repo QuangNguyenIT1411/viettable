@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Đặt bàn bước 3 "Phố đêm": big steppers for adults and children (DESIGN_PHO_DEM.md section 5 "Bộ đếm").
-     Written from scratch; view IDs used by ResGuestCountFragment are kept. The deposit note text is unchanged (the
-     deposit work will rewrite it). -->
+     Written from scratch; view IDs used by ResGuestCountFragment are kept. The deposit note comes from the server's
+     deposit policy (hidden when the feature is off). -->
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -239,11 +239,12 @@
                     app:tint="@color/pd_yellow" />
 
                 <TextView
+                    android:id="@+id/tvDepositNotice"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:text="Lưu ý: Bàn từ 6 khách trở lên cần đặt cọc 100.000đ để giữ chỗ chắc chắn. Tiền cọc sẽ được hoàn trừ vào hóa đơn khi thanh toán."
+                    tools:text="Từ 6 khách cần đặt cọc 50.000đ/khách: 300.000đ, chuyển khoản VietQR trong 15 phút để giữ bàn."
                     android:textAppearance="@style/TextAppearance.VietTable.Caption"
                     android:textColor="@color/pd_cream" />
             </LinearLayout>

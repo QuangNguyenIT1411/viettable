@@ -179,6 +179,44 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Deposit (docs/DEPOSIT_PLAN.md): soft yellow card, only for a booking with a deposit. -->
+            <LinearLayout
+                android:id="@+id/cardDetailDeposit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/pd_card_yellow_soft"
+                android:orientation="vertical"
+                android:padding="22dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Đặt cọc"
+                    android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+                <TextView
+                    android:id="@+id/tvDetailDeposit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_cream"
+                    tools:text="Tiền cọc 300.000đ: đã nhận, trừ vào hóa đơn khi dùng bữa" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPayDeposit"
+                    style="@style/Widget.VietTable.Button.Primary.Arrow"
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:text="Chuyển khoản đặt cọc"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </LinearLayout>
+
             <!-- Check-in -->
             <LinearLayout
                 android:layout_width="match_parent"

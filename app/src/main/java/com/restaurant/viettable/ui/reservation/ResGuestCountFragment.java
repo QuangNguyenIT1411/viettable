@@ -12,9 +12,15 @@ import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentResGuestCountBinding;
 import com.restaurant.viettable.model.ReservationDraft;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.data.MobileRepository;
+import com.restaurant.viettable.model.DepositPolicy;
+import com.restaurant.viettable.network.ApiException;
+import com.restaurant.viettable.util.DepositRules;
 import com.restaurant.viettable.util.DisplayFormatters;
 
 public class ResGuestCountFragment extends BaseFragment {
+
+    private DepositPolicy policy = MobileRepository.getInstance().cachedDepositPolicy();
 
     private static final String ARG_DRAFT = "arg_draft";
     private FragmentResGuestCountBinding binding;
@@ -85,9 +91,16 @@ public class ResGuestCountFragment extends BaseFragment {
         });
 
         updateGuestViews();
+        MobileRepository.getInstance().loadDepositPolicy(new MobileRepository.Callback<DepositPolicy>() {
+            @Override public void onSuccess(DepositPolicy value) { policy = value; if (binding != null) updateGuestViews(); }
+            @Override public void onError(ApiException error) { }
+        });
 
         binding.btnContinue.setOnClickListener(v -> {
             draft.setGuestCount(adults + children);
+            long deposit = DepositRules.requiredAmount(policy, adults + children);
+            draft.setDepositAmount(deposit);
+            draft.setNeedsDeposit(deposit > 0);
             navigateTo(ResTableLayoutFragment.newInstance(draft)); // the area step only had "Khu vực chung"
         });
     }
@@ -96,7 +109,9 @@ public class ResGuestCountFragment extends BaseFragment {
         binding.tvAdultCount.setText(String.valueOf(adults));
         binding.tvChildCount.setText(String.valueOf(children));
         int total = adults + children;
-        binding.layoutDepositNotice.setVisibility(total >= 6 ? View.VISIBLE : View.GONE);
+        String notice = DepositRules.notice(policy, total);
+        binding.layoutDepositNotice.setVisibility(notice == null ? View.GONE : View.VISIBLE);
+        binding.tvDepositNotice.setText(notice == null ? "" : notice);
     }
 
     @Override

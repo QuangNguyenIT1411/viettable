@@ -88,7 +88,8 @@ public final class ReservationSchedule {
 
     /** Change time/guests: still open and the reserved time has not come yet. */
     public static boolean canChange(Reservation.Status status, Instant reservedAt, Instant now) {
-        return open(status) && reservedAt != null && now.isBefore(reservedAt);
+        // Waiting for the deposit: pay first (the server refuses a change until then).
+        return open(status) && status != Reservation.Status.PENDING_DEPOSIT && reservedAt != null && now.isBefore(reservedAt);
     }
 
     /** Cancel: still open and not past the arrival window (the server marks it "Không đến" then). */
@@ -133,6 +134,7 @@ public final class ReservationSchedule {
         boolean hasReason = reason != null && !reason.trim().isEmpty();
         switch (status) {
             case PENDING: return "Nhà hàng sẽ xác nhận sớm. Bàn đã được giữ cho bạn; bạn sẽ nhận thông báo khi có kết quả.";
+            case PENDING_DEPOSIT: return "Bàn được giữ trong thời gian đặt cọc. Chuyển khoản đặt cọc để hoàn tất; quá hạn đặt bàn sẽ tự hủy.";
             case REJECTED: {
                 String text = hasReason ? reason.trim() : "Nhà hàng không thể nhận đặt bàn này";
                 if (!text.endsWith(".") && !text.endsWith("!") && !text.endsWith("?")) text += ".";

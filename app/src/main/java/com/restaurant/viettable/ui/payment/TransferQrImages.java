@@ -15,10 +15,11 @@ import org.json.JSONObject;
 import java.io.OutputStream;
 
 /** VietQR image from the server (PNG in base64): decode, describe and save to the gallery. */
-final class TransferQrImages {
+/** Shared by the table payment (VietQR) and the reservation deposit screens. */
+public final class TransferQrImages {
     private TransferQrImages() { }
 
-    static Bitmap decode(String base64) {
+    public static Bitmap decode(String base64) {
         if (base64 == null || base64.isEmpty()) return null;
         try {
             byte[] png = Base64.decode(base64, Base64.DEFAULT);
@@ -29,12 +30,12 @@ final class TransferQrImages {
     }
 
     /** Amount as bank apps want it pasted: digits only ("245000", not "245.000 đ"). */
-    static String amountDigits(double amount) {
+    public static String amountDigits(double amount) {
         return String.valueOf(Math.max(0, Math.round(amount)));
     }
 
     /** Puts {@code text} on the clipboard; false when there is nothing to copy. */
-    static boolean copy(Context context, String label, String text) {
+    public static boolean copy(Context context, String label, String text) {
         if (text == null || text.trim().isEmpty()) return false;
         android.content.ClipboardManager clipboard = (android.content.ClipboardManager)
                 context.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -44,7 +45,7 @@ final class TransferQrImages {
     }
 
     /** Saves into Pictures/VietTable (Android 10+, no permission needed). Older Android: returns false. */
-    static boolean saveToGallery(Context context, Bitmap image, String name) {
+    public static boolean saveToGallery(Context context, Bitmap image, String name) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return false;
         ContentResolver resolver = context.getContentResolver();
         ContentValues values = new ContentValues();

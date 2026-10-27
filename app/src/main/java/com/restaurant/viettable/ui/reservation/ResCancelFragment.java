@@ -62,11 +62,7 @@ public class ResCancelFragment extends BaseFragment {
             binding.tvCancelResCode.setText("Mã đặt bàn: #" + reservation.getId());
             binding.tvCancelResSummary.setText(reservation.getBranchName() + " • " + reservation.getTimeSlot() + ", " + DisplayFormatters.date(reservation.getDate()) + " • " + reservation.getTableLabel());
 
-            if (reservation.getDepositAmount() > 0) {
-                binding.tvRefundDetails.setText("Tiền cọc " + String.format(java.util.Locale.GERMANY, "%,dđ", reservation.getDepositAmount()) + " sẽ được hoàn trả về tài khoản ban đầu trong 1-3 ngày làm việc theo chính sách hoàn cọc.");
-            } else {
-                binding.tvRefundDetails.setText("Lịch đặt bàn này không có tiền cọc. Bạn không bị tính phí.");
-            }
+            bindRefundNotice();
 
             binding.btnConfirmCancelDestructive.setOnClickListener(v -> {
                 com.restaurant.viettable.ui.common.DialogHelper.showDestructiveDialog(
@@ -85,6 +81,30 @@ public class ResCancelFragment extends BaseFragment {
                 );
             });
         }
+    }
+
+    /** Before the guest confirms: refunded (≥ cutoff hours ahead), kept (later) or nothing paid, from the server's state. */
+    private void bindRefundNotice() {
+        java.time.Instant reservedAt = DisplayFormatters.instant(reservation.getReservedAt());
+        int hours = MobileRepository.getInstance().cachedDepositPolicy().getRefundCutoffHours();
+        String guess = reservation.getDepositAmount() <= 0 ? "NOT_REQUIRED"
+                : reservation.getStatus() == Reservation.Status.PENDING_DEPOSIT ? "PENDING" : "PAID";
+        binding.tvRefundDetails.setText(com.restaurant.viettable.util.DepositRules.cancelNotice(guess, reservation.getDepositAmount(),
+                reservedAt, java.time.Instant.now(), hours));
+        if (reservation.getDepositAmount() <= 0) return;
+        MobileRepository.getInstance().loadDepositPolicy(new MobileRepository.Callback<com.restaurant.viettable.model.DepositPolicy>() {
+            @Override public void onSuccess(com.restaurant.viettable.model.DepositPolicy policy) {
+                MobileRepository.getInstance().loadDeposit(reservation.getId(), new MobileRepository.Callback<com.restaurant.viettable.model.DepositInfo>() {
+                    @Override public void onSuccess(com.restaurant.viettable.model.DepositInfo info) {
+                        if (binding == null) return;
+                        binding.tvRefundDetails.setText(com.restaurant.viettable.util.DepositRules.cancelNotice(info.getStatus(), info.getAmount(),
+                                reservedAt, java.time.Instant.now(), policy.getRefundCutoffHours()));
+                    }
+                    @Override public void onError(ApiException error) { }
+                });
+            }
+            @Override public void onError(ApiException error) { }
+        });
     }
 
     @Override

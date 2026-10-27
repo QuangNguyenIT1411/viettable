@@ -52,6 +52,10 @@ public class Invoice implements Serializable {
     public long getTax() { return tax; }
     public long getVoucherDiscount() { return voucherDiscount; }
     public long getLoyaltyDiscount() { return loyaltyDiscount; }
+    /** Reservation deposit taken off the bill ("Đã đặt cọc −X đ"); already out of finalTotal. */
+    private long depositApplied;
+    public long getDepositApplied() { return depositApplied; }
+    public void setDepositApplied(long value) { depositApplied = Math.max(0, value); }
     public long getFinalTotal() { return finalTotal; }
     public String getPaymentMethod() { return paymentMethod; }
     public String getPaymentLocation() { return paymentLocation; }

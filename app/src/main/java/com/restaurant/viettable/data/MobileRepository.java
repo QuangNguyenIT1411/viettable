@@ -1128,6 +1128,7 @@ public final class MobileRepository {
                 Math.round(row.optDouble("discount")), Math.round(row.optDouble("totalAmount")),
                 SafeText.json(row, "issuedAtUtc"), SafeText.json(row, "paymentCode"), SafeText.json(row, "paymentChannel"),
                 SafeText.json(row, "paymentMethod"), SafeText.json(row, "paymentLocation"), SafeText.json(row, "paymentStatus"), lines);
+        invoice.setDepositApplied(Math.round(row.optDouble("depositApplied", 0)));
         invoice.setTableLabel(tableLabel(String.valueOf(branchId), invoice.getTableId()));
         return invoice;
     }
@@ -1158,6 +1159,46 @@ public final class MobileRepository {
     }
 
     /** VietQR of a pending bank-transfer payment: bank, account, amount, transfer content and a PNG (base64). */
+    private volatile com.restaurant.viettable.model.DepositPolicy depositPolicy;
+
+    /** Deposit rules from the server (cached once read); OFF until then, so nothing is ever assumed. */
+    public void loadDepositPolicy(Callback<com.restaurant.viettable.model.DepositPolicy> callback) {
+        com.restaurant.viettable.model.DepositPolicy cached = depositPolicy;
+        if (cached != null) { callback.onSuccess(cached); return; }
+        api().get("/api/mobile/v1/reservations/deposit-policy", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject row = body instanceof JSONObject ? (JSONObject) body : new JSONObject();
+                com.restaurant.viettable.model.DepositPolicy policy = new com.restaurant.viettable.model.DepositPolicy(
+                        row.optBoolean("enabled"), row.optInt("minGuests"), row.optLong("perGuestVnd"),
+                        row.optInt("paymentMinutes"), row.optInt("refundCutoffHours"));
+                depositPolicy = policy;
+                callback.onSuccess(policy);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    public com.restaurant.viettable.model.DepositPolicy cachedDepositPolicy() {
+        com.restaurant.viettable.model.DepositPolicy cached = depositPolicy;
+        return cached == null ? com.restaurant.viettable.model.DepositPolicy.OFF : cached;
+    }
+
+    /** The booking's deposit, with its VietQR while it still waits (the server also repairs any missed step). */
+    public void loadDeposit(String reservationId, Callback<com.restaurant.viettable.model.DepositInfo> callback) {
+        api().get("/api/mobile/v1/reservations/" + reservationId + "/deposit", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject row = body instanceof JSONObject ? (JSONObject) body : new JSONObject();
+                callback.onSuccess(new com.restaurant.viettable.model.DepositInfo(row.optBoolean("required"),
+                        row.optLong("amountVnd"), SafeText.json(row, "status", "NOT_REQUIRED"), SafeText.json(row, "policyMessage", ""),
+                        row.isNull("dueAtUtc") ? null : SafeText.json(row, "dueAtUtc", null),
+                        row.isNull("closedReason") ? null : SafeText.json(row, "closedReason", null),
+                        row.isNull("reservationStatus") ? null : SafeText.json(row, "reservationStatus", null),
+                        row.optJSONObject("transfer")));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void loadTransferQr(int paymentId, Callback<JSONObject> callback) {
         api().get("/api/mobile/v1/payments/" + paymentId + "/transfer-qr", true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
@@ -1500,6 +1541,8 @@ public final class MobileRepository {
         reservation.setTableLabel(tableLabel(branchId, reservation.getTableId()));
         reservation.setReservedAt(reserved);
         reservation.setStatusReason(row.isNull("statusReason") ? null : SafeText.json(row, "statusReason", null));
+        reservation.setDepositAmount(row.isNull("depositAmount") ? 0 : Math.round(row.optDouble("depositAmount", 0)));
+        reservation.setDepositDueAtUtc(row.isNull("depositDueAtUtc") ? null : SafeText.json(row, "depositDueAtUtc", null));
         return reservation;
     }
 
@@ -1580,6 +1623,7 @@ public final class MobileRepository {
                 session == null ? "VietTable" : session.getBranchName(), session == null ? "" : session.getTableId(), subtotal,
                 0, 0, voucher, points, Math.round(quote.optDouble("totalAmount")), "Chưa chọn", "", SafeText.json(quote, "expiresAtUtc"));
         invoice.setTableLabel(session == null ? "Chưa có thông tin bàn" : session.getTableLabel());
+        invoice.setDepositApplied(Math.round(quote.optDouble("depositApplied", 0)));
         return invoice;
     }
 
@@ -1592,6 +1636,7 @@ public final class MobileRepository {
                 "Đã thanh toán", "", SafeText.json(value, "issuedAtUtc"));
         invoice.setBackendInvoiceId(value.optInt("invoiceId"));
         invoice.setBackendPaymentId(value.optInt("paymentId"));
+        invoice.setDepositApplied(Math.round(value.optDouble("depositApplied", 0)));
         invoice.setTableLabel(session == null ? tableLabel(String.valueOf(value.optInt("branchId")), String.valueOf(value.optInt("tableId"))) : session.getTableLabel());
         return invoice;
     }
@@ -1639,7 +1684,7 @@ public final class MobileRepository {
                 SafeText.json(row, "createdAtUtc", null), SafeText.json(row, "updatedAtUtc", null));
     }
 
-    private static Reservation.Status reservationStatus(String value) {
+    public static Reservation.Status reservationStatus(String value) {
         String normalized = value.replace("CheckedIn", "CHECKED_IN").replace("CheckingIn", "CHECKING_IN")
                 .replace("NoShow", "NO_SHOW").replace("PendingDeposit", "PENDING_DEPOSIT").toUpperCase(Locale.ROOT);
         try { return Reservation.Status.valueOf(normalized); } catch (Exception e) { return Reservation.Status.PENDING; }

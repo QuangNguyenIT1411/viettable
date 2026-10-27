@@ -225,6 +225,8 @@ public class InvoiceFragment extends BaseFragment {
             binding.layoutLoyaltyDiscount.setVisibility(loyaltyDiscount > 0 ? View.VISIBLE : View.GONE);
             binding.tvVoucherDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", voucherDiscount));
             binding.tvLoyaltyDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", loyaltyDiscount));
+            binding.layoutDepositApplied.setVisibility(quote.getDepositApplied() > 0 ? View.VISIBLE : View.GONE);
+            binding.tvDepositAppliedAmount.setText(String.format(Locale.GERMANY, "-%,dđ", quote.getDepositApplied()));
         } else {
             binding.btnProceedToPaymentType.setEnabled(false);
             binding.btnSplitBill.setEnabled(false);

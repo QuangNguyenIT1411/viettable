@@ -218,6 +218,33 @@
                         tools:text="-20.000đ" />
                 </LinearLayout>
 
+                <!-- Reservation deposit paid ahead (docs/DEPOSIT_PLAN.md). -->
+                <LinearLayout
+                    android:id="@+id/layoutDepositApplied"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Đã đặt cọc"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_yellow" />
+
+                    <TextView
+                        android:id="@+id/tvDepositAppliedAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_yellow"
+                        tools:text="-300.000đ" />
+                </LinearLayout>
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"

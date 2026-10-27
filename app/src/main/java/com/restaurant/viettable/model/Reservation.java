@@ -88,6 +88,10 @@ public class Reservation implements Serializable {
     public List<String> getSpecialTags() { return specialTags; }
     public long getDepositAmount() { return depositAmount; }
     public void setDepositAmount(long depositAmount) { this.depositAmount = depositAmount; }
+    /** While "Chờ đặt cọc": unpaid after this moment (UTC) the server cancels the booking. */
+    private String depositDueAtUtc;
+    public String getDepositDueAtUtc() { return depositDueAtUtc; }
+    public void setDepositDueAtUtc(String value) { depositDueAtUtc = value; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public String getReservedAt() { return reservedAt; }

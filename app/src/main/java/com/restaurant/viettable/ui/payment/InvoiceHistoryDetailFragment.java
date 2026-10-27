@@ -92,6 +92,14 @@ public class InvoiceHistoryDetailFragment extends BaseFragment {
             row.setTextColor(requireContext().getColor(R.color.text_secondary));
             binding.layoutInvoiceDetailItems.addView(row);
         }
+        if (invoice.getDepositApplied() > 0) {
+            TextView row = new TextView(requireContext());
+            row.setText("Đã đặt cọc     " + String.format(Locale.GERMANY, "-%,dđ", invoice.getDepositApplied()));
+            row.setTextColor(requireContext().getColor(R.color.pd_yellow));
+            row.setTextSize(14);
+            row.setPadding(0, 7, 0, 7);
+            binding.layoutInvoiceDetailItems.addView(row);
+        }
         binding.tvInvoiceDetailTotal.setText(String.format(Locale.GERMANY, "Tổng cộng  %,dđ", invoice.getTotalAmount()));
     }
 

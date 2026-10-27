@@ -31,6 +31,8 @@ public class ResNoteFragment extends BaseFragment {
     private ReservationDraft draft;
     private final List<String> specialTags = Arrays.asList("Sinh nhật", "Kỷ niệm", "Tiếp khách", "Cầu hôn", "Có trẻ nhỏ", "Ghế trẻ em");
     private final List<String> selectedTags = new ArrayList<>();
+    /** The booking this step created; kept with the fragment so Back from the deposit screen cannot book twice. */
+    private Reservation created;
 
     public static ResNoteFragment newInstance(ReservationDraft draft) {
         ResNoteFragment f = new ResNoteFragment();
@@ -84,8 +86,8 @@ public class ResNoteFragment extends BaseFragment {
             @Override public void afterTextChanged(android.text.Editable s) { }
         });
 
-        if (draft.isNeedsDeposit()) {
-            binding.btnContinueOrConfirm.setText("Tiếp tục đặt cọc (100.000đ)");
+        if (draft.isNeedsDeposit() && draft.getDepositAmount() > 0) {
+            binding.btnContinueOrConfirm.setText("Tiếp tục đặt cọc (" + com.restaurant.viettable.util.DepositRules.money(draft.getDepositAmount()) + ")");
         } else {
             binding.btnContinueOrConfirm.setText("Xác nhận đặt bàn ngay");
         }
@@ -103,6 +105,8 @@ public class ResNoteFragment extends BaseFragment {
         }
 
         binding.btnContinueOrConfirm.setOnClickListener(v -> {
+            // Back from the deposit screen: the booking already exists, never book a second table.
+            if (created != null) { openNext(created); return; }
             String note = binding.etReservationNote.getText() != null ? binding.etReservationNote.getText().toString().trim() : "";
             draft.setNote(note);
             String phone = binding.etContactPhone.getText() != null ? binding.etContactPhone.getText().toString().trim() : "";
@@ -119,9 +123,10 @@ public class ResNoteFragment extends BaseFragment {
             binding.btnContinueOrConfirm.setEnabled(false);
             MobileRepository.getInstance().createReservation(draft, new MobileRepository.Callback<Reservation>() {
                 @Override public void onSuccess(Reservation value) {
+                    created = value;
                     if (binding == null) return;
                     binding.btnContinueOrConfirm.setEnabled(true);
-                    navigateTo(ResConfirmationFragment.newInstance(value));
+                    openNext(value);
                 }
                 @Override public void onError(ApiException error) {
                     if (binding == null) return;
@@ -138,6 +143,12 @@ public class ResNoteFragment extends BaseFragment {
                 }
             });
         });
+    }
+
+    /** A booking waiting for its deposit goes to the VietQR screen; any other to "Đặt bàn thành công". */
+    private void openNext(Reservation value) {
+        if (value.getStatus() == Reservation.Status.PENDING_DEPOSIT) navigateTo(ResDepositFragment.newInstance(value));
+        else navigateTo(ResConfirmationFragment.newInstance(value));
     }
 
     @Override

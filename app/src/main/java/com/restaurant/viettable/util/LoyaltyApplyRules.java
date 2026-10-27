@@ -62,7 +62,8 @@ public final class LoyaltyApplyRules {
                     "Số điểm khả dụng trên máy chủ không đủ cho lượt đổi này. Hóa đơn chưa thay đổi. "
                             + "Hãy quay lại, kiểm tra số dư rồi chọn lại.");
         }
-        if ("state_conflict".equals(code)) {
+        // quote_locked: the server's own code since the deposit release; state_conflict: older servers.
+        if ("quote_locked".equals(code) || "state_conflict".equals(code)) {
             return new Outcome(Kind.QUOTE_LOCKED, 0, "Không đổi được điểm", LOCKED_EXPLANATION);
         }
         if ("quote_expired".equals(code)) {

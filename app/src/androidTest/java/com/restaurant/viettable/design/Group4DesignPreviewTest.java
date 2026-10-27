@@ -167,6 +167,15 @@ public class Group4DesignPreviewTest {
                 return com.restaurant.viettable.ui.order.CurrentOrdersFragment.newInstance();
             case "orderdetail":
                 return com.restaurant.viettable.ui.order.OrderDetailFragment.newInstance(order(state.getActiveDiningSession()));
+            case "deposit": {
+                Reservation r = reservation("901", Reservation.Status.PENDING_DEPOSIT);
+                r.setGuestCount(6);
+                r.setDepositAmount(300_000);
+                return com.restaurant.viettable.ui.reservation.ResDepositFragment.newInstance(r);
+            }
+            case "resguest-deposit":
+                setPolicy();
+                return ResGuestCountFragment.newInstance(draft(state));
             case "profile":
                 state.setLoggedIn(true);
                 return new ProfileFragment();
@@ -242,6 +251,15 @@ public class Group4DesignPreviewTest {
             case "restable":
                 fillTables(a);
                 break;
+            case "deposit":
+                fillDeposit(a);
+                break;
+            case "resguest-deposit": {
+                // 6 guests: tap "+" twice from the draft's 4.
+                View plus = a.findViewById(R.id.btnPlusAdult);
+                if (plus != null) { plus.performClick(); plus.performClick(); }
+                break;
+            }
             case "qr-manual": {
                 View toggle = a.findViewById(R.id.btnToggleManualEntry);
                 if (toggle != null) toggle.performClick();
@@ -277,6 +295,43 @@ public class Group4DesignPreviewTest {
     }
 
     /** The map needs the server; put sample tables into the fragment's own list and let its code draw them. */
+    /** The server's deposit policy as it would answer with the feature on (offline preview). */
+    private static void setPolicy() {
+        try {
+            java.lang.reflect.Field field = com.restaurant.viettable.data.MobileRepository.class.getDeclaredField("depositPolicy");
+            field.setAccessible(true);
+            field.set(com.restaurant.viettable.data.MobileRepository.getInstance(),
+                    new com.restaurant.viettable.model.DepositPolicy(true, 6, 50_000, 15, 2));
+        } catch (Exception ignored) { }
+    }
+
+    /** A waiting deposit with a made-up QR picture (a checkerboard, not a payable code). */
+    private static void fillDeposit(MainActivity a) {
+        try {
+            android.graphics.Bitmap bmp = android.graphics.Bitmap.createBitmap(29, 29, android.graphics.Bitmap.Config.ARGB_8888);
+            for (int x = 0; x < 29; x++) for (int y = 0; y < 29; y++)
+                bmp.setPixel(x, y, ((x * 7 + y * 3) % 5 < 2 || (x < 7 && y < 7) || (x > 21 && y < 7) || (x < 7 && y > 21)) ? 0xFF000000 : 0xFFFFFFFF);
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            android.graphics.Bitmap.createScaledBitmap(bmp, 290, 290, false).compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out);
+            org.json.JSONObject qr = new org.json.JSONObject().put("bankName", "BIDV").put("accountNumber", "8830150124")
+                    .put("accountName", "NGUYEN VINH QUANG").put("amount", 300000).put("content", "VT DC901")
+                    .put("autoConfirm", true).put("qrPngBase64", android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP));
+            String due = java.time.Instant.now().plusSeconds(14 * 60 + 32).toString();
+            com.restaurant.viettable.model.DepositInfo info = new com.restaurant.viettable.model.DepositInfo(true, 300_000, "PENDING",
+                    "Chuyển khoản đúng số tiền và nội dung để giữ bàn. Hệ thống tự xác nhận khi nhận được tiền.", due, null, "PendingDeposit", qr);
+            for (Fragment f : a.getSupportFragmentManager().getFragments()) {
+                if (f instanceof com.restaurant.viettable.ui.reservation.ResDepositFragment) {
+                    java.lang.reflect.Method apply = f.getClass().getDeclaredMethod("apply", com.restaurant.viettable.model.DepositInfo.class);
+                    apply.setAccessible(true);
+                    java.lang.reflect.Field finished = f.getClass().getDeclaredField("finished");
+                    finished.setAccessible(true);
+                    finished.set(f, false);
+                    apply.invoke(f, info);
+                }
+            }
+        } catch (Exception ignored) { }
+    }
+
     private static void fillTables(MainActivity a) {
         for (Fragment f : a.getSupportFragmentManager().getFragments()) {
             if (!(f instanceof ResTableLayoutFragment)) continue;
