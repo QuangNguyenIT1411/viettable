@@ -93,35 +93,12 @@ public class ResDetailFragment extends BaseFragment implements AppStateManager.S
         binding.tvDetailBranch.setText(reservation.getBranchName());
         binding.tvDetailDateTime.setText(reservation.getTimeSlot() + " • " + DisplayFormatters.date(reservation.getDate()));
         binding.tvDetailTable.setText(SafeText.join(" • ", reservation.getTableLabel(), reservation.getAreaName(), reservation.getGuestCount() + " khách"));
-        binding.tvDetailStatusBadge.setText(reservation.getStatusDisplayText());
-        binding.tvDetailStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);
-        switch (reservation.getStatus()) {
-            case CONFIRMED:
-                binding.tvDetailStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
-                binding.tvDetailStatusBadge.setTextColor(0xFF1B5E20);
-                break;
-            case PENDING:
-            case PENDING_DEPOSIT:
-                binding.tvDetailStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFF3E0));
-                binding.tvDetailStatusBadge.setTextColor(0xFFE65100);
-                break;
-            case CHECKED_IN:
-                binding.tvDetailStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE1F5FE));
-                binding.tvDetailStatusBadge.setTextColor(0xFF01579B);
-                break;
-            case COMPLETED:
-                binding.tvDetailStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF5F5F5));
-                binding.tvDetailStatusBadge.setTextColor(0xFF616161);
-                break;
-            case CANCELLED:
-            case NO_SHOW:
-            case REJECTED:
-                binding.tvDetailStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
-                binding.tvDetailStatusBadge.setTextColor(0xFFB71C1C);
-                break;
-            default:
-                break;
-        }
+        com.restaurant.viettable.ui.common.PdStatusPill.Tone tone =
+                com.restaurant.viettable.ui.common.PdStatusPill.toneFor(reservation.getStatus());
+        com.restaurant.viettable.ui.common.PdStatusPill.apply(binding.tvDetailStatusBadge, reservation.getStatusDisplayText(), tone);
+        // Rejection / cancellation reason sits on soft red, other notes on soft yellow (section 6).
+        binding.tvDetailStatusInfo.setBackgroundResource(tone == com.restaurant.viettable.ui.common.PdStatusPill.Tone.ERROR
+                ? R.drawable.pd_card_red_soft : R.drawable.pd_card_yellow_soft);
 
         if (!SafeText.isBlank(reservation.getNote())) {
             binding.tvDetailNote.setVisibility(View.VISIBLE);

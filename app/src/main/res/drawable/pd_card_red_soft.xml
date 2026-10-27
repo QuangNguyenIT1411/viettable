@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft red note card (rejection / cancellation reason, section 6). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/pd_red_soft" />
+    <corners android:radius="@dimen/pd_radius_row" />
+</shape>
