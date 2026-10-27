@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemResHistoryBinding;
+import com.restaurant.viettable.ui.common.PdStatusPill;
 import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.util.DisplayFormatters;
 
@@ -62,34 +63,7 @@ public class ResHistoryAdapter extends RecyclerView.Adapter<ResHistoryAdapter.Re
                     || "0".equals(r.getTableLabel()) ? "Chưa xếp bàn" : r.getTableLabel();
             binding.tvHistDetails.setText(table + " • " + r.getGuestCount() + " khách"
                     + (r.getAreaName() == null || r.getAreaName().isEmpty() ? "" : " • " + r.getAreaName()));
-            binding.tvHistStatusBadge.setText(r.getStatusDisplayText());
-            binding.tvHistStatusBadge.setBackgroundResource(R.drawable.bg_status_badge);
-            switch (r.getStatus()) {
-                case CONFIRMED:
-                    binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
-                    binding.tvHistStatusBadge.setTextColor(0xFF1B5E20);
-                    break;
-                case PENDING:
-                case PENDING_DEPOSIT:
-                    binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFF3E0));
-                    binding.tvHistStatusBadge.setTextColor(0xFFE65100);
-                    break;
-                case CHECKING_IN:
-                case CHECKED_IN:
-                    binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE1F5FE));
-                    binding.tvHistStatusBadge.setTextColor(0xFF01579B);
-                    break;
-                case COMPLETED:
-                    binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFF5F5F5));
-                    binding.tvHistStatusBadge.setTextColor(0xFF616161);
-                    break;
-                case CANCELLED:
-                case NO_SHOW:
-                case REJECTED:
-                    binding.tvHistStatusBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
-                    binding.tvHistStatusBadge.setTextColor(0xFFB71C1C);
-                    break;
-            }
+            PdStatusPill.apply(binding.tvHistStatusBadge, r.getStatusDisplayText(), PdStatusPill.toneFor(r.getStatus()));
 
             binding.cardResItem.setOnClickListener(v -> {
                 if (listener != null) listener.onReservationClick(r);

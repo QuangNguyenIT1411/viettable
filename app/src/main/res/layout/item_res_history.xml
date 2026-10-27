@@ -1,79 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Booking history card "Phố đêm": code label + status pill (set by ResHistoryAdapter), branch, time, table.
+     View IDs are kept. -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardResItem"
     style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="6dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp">
+    android:layout_marginVertical="7dp"
+    app:cardCornerRadius="@dimen/pd_radius_row">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal"
+        android:padding="18dp">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/pd_circle_yellow"
+            android:importantForAccessibility="no"
+            android:padding="12dp"
+            android:src="@drawable/ic_reservation"
+            app:tint="@color/pd_on_color" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
+            <!-- Code and status on separate lines so neither is squeezed at large font sizes. -->
             <TextView
                 android:id="@+id/tvHistResId"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="#RES-8899"
-                android:textColor="@color/primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                tools:text="#8899" />
 
             <TextView
                 android:id="@+id/tvHistStatusBadge"
+                style="@style/Widget.VietTable.StatusPill"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_status_badge"
-                android:backgroundTint="@color/pd_mint_soft"
-                android:paddingHorizontal="8dp"
-                android:paddingVertical="3dp"
-                android:text="Đã xác nhận"
-                android:textColor="@color/primary"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="6dp"
+                tools:text="Đã xác nhận" />
+
+            <TextView
+                android:id="@+id/tvHistBranch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                tools:text="Chi nhánh Quận 1" />
+
+            <TextView
+                android:id="@+id/tvHistDateTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Price"
+                android:textColor="@color/pd_yellow"
+                android:textSize="16sp"
+                tools:text="19:00 • 27/10/2026" />
+
+            <TextView
+                android:id="@+id/tvHistDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="Bàn B4 • 4 khách • Khu cửa sổ" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvHistBranch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text=""
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvHistDateTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="19:00 • Hôm nay, 20/09"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tvHistDetails"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text=""
-            android:textColor="@color/text_tertiary"
-            android:textSize="12sp" />
-
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
