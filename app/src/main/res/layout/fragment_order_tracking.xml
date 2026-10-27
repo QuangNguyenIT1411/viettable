@@ -1,358 +1,388 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<!-- Tiến độ món "Phố đêm" (DESIGN_PHO_DEM.md section 6, design P04). Written from scratch; view IDs used by
+     OrderTrackingFragment / TrackedItemAdapter are kept. The design's "Giục bếp" button has no function in the app, so it is not drawn. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/surface"
-        app:elevation="1dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationContentDescription="@string/a11y_back"
-            app:navigationIconTint="@color/text_primary"
-            app:title="Tiến độ món ăn"
-            app:titleTextColor="@color/text_primary" />
-    </com.google.android.material.appbar.AppBarLayout>
+    <View
+        android:layout_width="460dp"
+        android:layout_height="460dp"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="-220dp"
+        android:layout_marginTop="-170dp"
+        android:background="@drawable/pd_glow_mint"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/contentOrderTracking"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="96dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
+            android:id="@+id/layoutTrackingContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:paddingBottom="132dp">
 
-            <!-- Tier 1: Order-Level Lifecycle Stepper Card -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Tiến độ đợt gọi mới nhất"
-                            android:textColor="@color/text_primary"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvTrackingOrderId"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_status_chip"
-                            android:paddingHorizontal="10dp"
-                            android:paddingVertical="4dp"
-                            android:text=""
-                            android:textColor="@color/primary"
-                            android:textSize="11sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- 4-Step Visual Stepper Bar -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <!-- Step 1: Đã gửi (PLACED) -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/ivStep1"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:background="@drawable/bg_round_floating_btn"
-                                android:backgroundTint="@color/semantic_success"
-                                android:padding="7dp"
-                                android:src="@drawable/ic_check"
-                                app:tint="@color/pd_on_color" />
-
-                            <TextView
-                                android:id="@+id/tvStep1"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:text="Đã gửi"
-                                android:textColor="@color/semantic_success"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <View
-                            android:id="@+id/line1To2"
-                            android:layout_width="0dp"
-                            android:layout_height="2.5dp"
-                            android:layout_marginBottom="12dp"
-                            android:layout_weight="0.8"
-                            android:background="@color/semantic_success" />
-
-                        <!-- Step 2: Xác nhận (CONFIRMED) -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/ivStep2"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:background="@drawable/bg_round_floating_btn"
-                                android:backgroundTint="@color/semantic_success"
-                                android:padding="7dp"
-                                android:src="@drawable/ic_check"
-                                app:tint="@color/pd_on_color" />
-
-                            <TextView
-                                android:id="@+id/tvStep2"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:text="Xác nhận"
-                                android:textColor="@color/semantic_success"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <View
-                            android:id="@+id/line2To3"
-                            android:layout_width="0dp"
-                            android:layout_height="2.5dp"
-                            android:layout_marginBottom="12dp"
-                            android:layout_weight="0.8"
-                            android:background="@color/accent_gold" />
-
-                        <!-- Step 3: Đang xử lý (IN_PROGRESS) -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/ivStep3"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:background="@drawable/bg_round_floating_btn"
-                                android:backgroundTint="@color/accent_gold"
-                                android:padding="7dp"
-                                android:src="@drawable/ic_clock"
-                                app:tint="@color/pd_on_color" />
-
-                            <TextView
-                                android:id="@+id/tvStep3"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:text="Đang xử lý"
-                                android:textColor="@color/accent_gold_dark"
-                                android:textSize="11sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <View
-                            android:id="@+id/line3To4"
-                            android:layout_width="0dp"
-                            android:layout_height="2.5dp"
-                            android:layout_marginBottom="12dp"
-                            android:layout_weight="0.8"
-                            android:background="@color/divider" />
-
-                        <!-- Step 4: Hoàn thành (COMPLETED) -->
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <ImageView
-                                android:id="@+id/ivStep4"
-                                android:layout_width="32dp"
-                                android:layout_height="32dp"
-                                android:background="@drawable/bg_round_floating_btn"
-                                android:backgroundTint="@color/divider"
-                                android:padding="7dp"
-                                android:src="@drawable/ic_cutlery"
-                                app:tint="@color/text_secondary" />
-
-                            <TextView
-                                android:id="@+id/tvStep4"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="6dp"
-                                android:text="Hoàn thành"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- "x/y món đã xong" (owner, 26/10): ready or served dishes out of all dishes not cancelled. -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardDishesDone"
-                style="@style/Widget.VietTable.Card"
+            <TextView
+                android:id="@+id/tvTrackingOrderId"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:visibility="gone"
-                app:cardBackgroundColor="@color/pd_surface"
-                app:cardCornerRadius="@dimen/pd_radius_card">
+                android:layout_marginTop="32dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                tools:text="BÀN B4 · ĐƠN #38" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+            <TextView
+                android:id="@+id/tvTrackingTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="@string/pd_tracking_title_cooking"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                android:textSize="34sp"
+                app:lineHeight="40sp" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/tvDishesDoneCount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
-                            android:textColor="@color/pd_yellow"
-                            tools:text="3/5" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:text="món đã xong"
-                            android:textAppearance="@style/TextAppearance.VietTable.Body"
-                            android:textColor="@color/pd_muted" />
-                    </LinearLayout>
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/progressDishesDone"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:max="100"
-                        app:indicatorColor="@color/pd_yellow"
-                        app:trackColor="@color/pd_surface_2"
-                        app:trackCornerRadius="6dp"
-                        app:trackThickness="10dp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Tier 2: Item-Level Status List Header -->
+            <!-- "x/y món đã xong": real counts only (hidden when there is no dish). -->
             <LinearLayout
+                android:id="@+id/cardDishesDone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvDishesDoneCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                        android:textColor="@color/pd_yellow"
+                        android:textSize="44sp"
+                        app:lineHeight="50sp"
+                        tools:text="3/5" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:text="@string/pd_tracking_dishes_done"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+                </LinearLayout>
+
+                <com.restaurant.viettable.ui.common.PdProgressBar
+                    android:id="@+id/progressDishesDone"
+                    android:layout_width="match_parent"
+                    android:layout_height="24dp"
+                    android:layout_marginTop="18dp"
+                    android:importantForAccessibility="no" />
+            </LinearLayout>
+
+            <!-- Order-level steps (Đã gửi / Xác nhận / Đang xử lý / Hoàn thành): kept, drawn as a slim surface card. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="8dp"
+                    android:text="@string/pd_tracking_latest_order"
+                    android:textAppearance="@style/TextAppearance.VietTable.Label" />
+                <!-- Circles sit at 12.5 / 37.5 / 62.5 / 87.5 %; each line runs from one circle to the next, labels centre under their circle. -->
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp">
+
+                    <androidx.constraintlayout.widget.Guideline
+                        android:id="@+id/gStep0"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintGuide_percent="0" />
+
+                    <androidx.constraintlayout.widget.Guideline
+                        android:id="@+id/gStep1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintGuide_percent="0.25" />
+
+                    <androidx.constraintlayout.widget.Guideline
+                        android:id="@+id/gStep2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintGuide_percent="0.5" />
+
+                    <androidx.constraintlayout.widget.Guideline
+                        android:id="@+id/gStep3"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintGuide_percent="0.75" />
+
+                    <androidx.constraintlayout.widget.Guideline
+                        android:id="@+id/gStep4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        app:layout_constraintGuide_percent="1" />
+
+                    <View
+                        android:id="@+id/line1To2"
+                        android:layout_width="0dp"
+                        android:layout_height="3dp"
+                        android:background="@color/pd_mint"
+                        app:layout_constraintBottom_toBottomOf="@id/ivStep1"
+                        app:layout_constraintEnd_toStartOf="@id/ivStep2"
+                        app:layout_constraintStart_toEndOf="@id/ivStep1"
+                        app:layout_constraintTop_toTopOf="@id/ivStep1" />
+
+                    <View
+                        android:id="@+id/line2To3"
+                        android:layout_width="0dp"
+                        android:layout_height="3dp"
+                        android:background="@color/pd_line"
+                        app:layout_constraintBottom_toBottomOf="@id/ivStep2"
+                        app:layout_constraintEnd_toStartOf="@id/ivStep3"
+                        app:layout_constraintStart_toEndOf="@id/ivStep2"
+                        app:layout_constraintTop_toTopOf="@id/ivStep2" />
+
+                    <View
+                        android:id="@+id/line3To4"
+                        android:layout_width="0dp"
+                        android:layout_height="3dp"
+                        android:background="@color/pd_line"
+                        app:layout_constraintBottom_toBottomOf="@id/ivStep3"
+                        app:layout_constraintEnd_toStartOf="@id/ivStep4"
+                        app:layout_constraintStart_toEndOf="@id/ivStep3"
+                        app:layout_constraintTop_toTopOf="@id/ivStep3" />
+
+                    <ImageView
+                        android:id="@+id/ivStep1"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/pd_dot"
+                        android:backgroundTint="@color/pd_mint"
+                        android:contentDescription="@null"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_check"
+                        app:layout_constraintEnd_toStartOf="@id/gStep1"
+                        app:layout_constraintStart_toStartOf="@id/gStep0"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/pd_on_color" />
+
+                    <ImageView
+                        android:id="@+id/ivStep2"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/pd_dot"
+                        android:backgroundTint="@color/pd_line"
+                        android:contentDescription="@null"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_check"
+                        app:layout_constraintEnd_toStartOf="@id/gStep2"
+                        app:layout_constraintStart_toStartOf="@id/gStep1"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/pd_muted" />
+
+                    <ImageView
+                        android:id="@+id/ivStep3"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/pd_dot"
+                        android:backgroundTint="@color/pd_line"
+                        android:contentDescription="@null"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_clock"
+                        app:layout_constraintEnd_toStartOf="@id/gStep3"
+                        app:layout_constraintStart_toStartOf="@id/gStep2"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/pd_muted" />
+
+                    <ImageView
+                        android:id="@+id/ivStep4"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/pd_dot"
+                        android:backgroundTint="@color/pd_line"
+                        android:contentDescription="@null"
+                        android:padding="8dp"
+                        android:src="@drawable/ic_cutlery"
+                        app:layout_constraintEnd_toStartOf="@id/gStep4"
+                        app:layout_constraintStart_toStartOf="@id/gStep3"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvStep1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_horizontal"
+                        android:text="Đã gửi"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_mint"
+                        app:layout_constraintEnd_toStartOf="@id/gStep1"
+                        app:layout_constraintStart_toStartOf="@id/gStep0"
+                        app:layout_constraintTop_toBottomOf="@id/ivStep1" />
+
+                    <TextView
+                        android:id="@+id/tvStep2"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_horizontal"
+                        android:text="Xác nhận"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        app:layout_constraintEnd_toStartOf="@id/gStep2"
+                        app:layout_constraintStart_toStartOf="@id/gStep1"
+                        app:layout_constraintTop_toBottomOf="@id/ivStep2" />
+
+                    <TextView
+                        android:id="@+id/tvStep3"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_horizontal"
+                        android:text="Đang xử lý"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        app:layout_constraintEnd_toStartOf="@id/gStep3"
+                        app:layout_constraintStart_toStartOf="@id/gStep2"
+                        app:layout_constraintTop_toBottomOf="@id/ivStep3" />
+
+                    <TextView
+                        android:id="@+id/tvStep4"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_horizontal"
+                        android:text="Hoàn thành"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        app:layout_constraintEnd_toStartOf="@id/gStep4"
+                        app:layout_constraintStart_toStartOf="@id/gStep3"
+                        app:layout_constraintTop_toBottomOf="@id/ivStep4" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
+
+            <!-- Dish list -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="12dp"
                     android:layout_weight="1"
                     android:text="Tiến độ từng món ăn"
-                    android:textColor="@color/text_primary"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
 
                 <TextView
                     android:id="@+id/tvRefreshOrderStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_category_chip"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="5dp"
-                    android:text="Chạm để cập nhật trạng thái từ bếp"
-                    android:textColor="@color/primary"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:background="@drawable/pd_chip_idle"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:paddingHorizontal="18dp"
+                    android:text="Cập nhật"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_yellow" />
             </LinearLayout>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Nhấn vào món để xem chi tiết bếp và ước tính thời gian"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvTrackedItems"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:nestedScrollingEnabled="false" />
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Loading / empty / error -->
     <LinearLayout
         android:id="@+id/layoutOrderTrackingState"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:padding="32dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:padding="32dp">
+
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/progressOrderTracking"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:visibility="gone" />
+            android:indeterminate="true"
+            android:visibility="gone"
+            app:indicatorColor="@color/pd_yellow" />
+
         <TextView
             android:id="@+id/tvOrderTrackingState"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
+            android:textAppearance="@style/TextAppearance.VietTable.Body"
+            android:textColor="@color/pd_muted"
             android:visibility="gone" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRetryOrderTracking"
-            style="@style/Widget.VietTable.Button.Outlined"
+            style="@style/Widget.VietTable.Button.Ghost"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -360,22 +390,24 @@
             android:visibility="gone" />
     </LinearLayout>
 
-    <!-- Bottom Actions -->
+    <!-- Bottom action -->
     <LinearLayout
+        android:id="@+id/layoutTrackingActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:tag="safe_bottom"
-        android:background="@color/surface"
-        android:elevation="8dp"
-        android:padding="16dp">
+        android:background="@color/pd_bg"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBackToSession"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/btn_height_primary"
+            android:layout_height="60dp"
             android:text="Về trang bàn ăn" />
     </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

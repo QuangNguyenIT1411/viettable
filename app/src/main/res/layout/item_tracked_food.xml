@@ -1,68 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- One dish row of Tiến độ món (design P04): small plate, name, solid status pill. Same view IDs as before. -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp">
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/pd_surface"
+    app:cardCornerRadius="@dimen/pd_radius_row"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
+        android:minHeight="72dp"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_category_chip"
-            android:padding="8dp"
-            android:src="@drawable/ic_cutlery"
-            app:tint="@color/primary" />
+        <FrameLayout
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@drawable/pd_plate"
+            android:elevation="3dp"
+            android:outlineSpotShadowColor="@color/black"
+            android:padding="4dp">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivTrackedFoodImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/pd_plate_empty"
+                android:contentDescription="@null"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="14dp"
+            android:layout_marginEnd="10dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvTrackedFoodName"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Chả cá Lã Vọng"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                android:textColor="@color/pd_cream"
+                tools:text="Bún chả Hà Nội ×2" />
 
             <TextView
                 android:id="@+id/tvTrackedFoodOptions"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:text="SL: 1 • Kèm bún và thì là"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="Cay vừa · ít hành" />
 
             <TextView
                 android:id="@+id/tvTrackedFoodTime"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Gọi lúc 19:15"
-                android:textColor="@color/text_tertiary"
-                android:textSize="11sp" />
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="Gọi lúc 19:15" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnConfirmReceived"
                 style="@style/Widget.VietTable.Button.Text"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginTop="4dp"
-                android:minHeight="40dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="-12dp"
+                android:layout_marginTop="2dp"
+                android:minHeight="48dp"
                 android:text="Tôi đã nhận món"
                 android:textAllCaps="false"
                 android:visibility="gone" />
@@ -70,15 +90,10 @@
 
         <TextView
             android:id="@+id/tvTrackedItemStatusBadge"
+            style="@style/Widget.VietTable.StatusPill.Solid"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_status_chip"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="5dp"
-            android:text="SẴN SÀNG"
-            android:textColor="@color/semantic_success"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            tools:drawableStart="@drawable/ic_cloche"
+            tools:text="Sẵn sàng" />
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

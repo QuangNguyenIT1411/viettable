@@ -25,6 +25,8 @@ import com.restaurant.viettable.network.RealtimeEventPolicy;
 import com.restaurant.viettable.network.SignalRManager;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.ui.session.DiningSessionFragment;
+import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.PdMotion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +58,7 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
         appStateManager.addListener(this);
         SignalRManager.getInstance().addListener(this);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         binding.btnBackToSession.setOnClickListener(v -> {
             navigateTo(DiningSessionFragment.newInstance());
@@ -66,6 +68,7 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
         binding.btnRetryOrderTracking.setOnClickListener(v -> refreshOrders());
 
         loadTrackedData();
+        PdMotion.enterBlocks(binding.layoutTrackingContent, 6);
         refreshOrders();
     }
 
@@ -77,7 +80,8 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
             List<Order> orders = session.getOrders();
             if (!orders.isEmpty()) {
                 Order latest = orders.get(orders.size() - 1);
-                binding.tvTrackingOrderId.setText("#" + latest.getId() + " • " + latest.getStatusDisplayText().toUpperCase());
+                String table = session.getTableLabel() == null || session.getTableLabel().trim().isEmpty() ? "" : DisplayFormatters.tableTitle(session.getTableLabel()) + " · ";
+                binding.tvTrackingOrderId.setText((table + "Đơn #" + latest.getId() + " · " + latest.getStatusDisplayText()).toUpperCase(new java.util.Locale("vi", "VN")));
                 updateStepperState(latest.getStatus());
             }
 
@@ -216,6 +220,8 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
     private void bindDishesDone(List<OrderItem> items) {
         com.restaurant.viettable.util.DishProgress progress = com.restaurant.viettable.util.DishProgress.of(items);
         binding.cardDishesDone.setVisibility(progress.total == 0 ? View.GONE : View.VISIBLE);
+        binding.tvTrackingTitle.setText(progress.total > 0 && progress.done == progress.total
+                ? R.string.pd_tracking_title_done : R.string.pd_tracking_title_cooking);
         binding.tvDishesDoneCount.setText(progress.label());
         binding.cardDishesDone.setContentDescription(progress.done + " trên " + progress.total + " món đã xong");
         binding.progressDishesDone.setProgressCompat(progress.percent(), com.restaurant.viettable.util.PdMotion.enabled(requireContext()));

@@ -74,45 +74,32 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
         }
 
         public void bind(OrderItem item, OnTrackedItemClickListener listener, OnReceiveClickListener receiveListener, boolean pending) {
-            binding.tvTrackedFoodName.setText(item.getFoodName());
-            binding.tvTrackedFoodOptions.setText(SafeText.join(" • ", "SL: " + item.getQuantity(), item.getOptionsSummary()));
+            binding.tvTrackedFoodName.setText(item.getQuantity() > 1
+                    ? item.getFoodName() + " ×" + item.getQuantity() : item.getFoodName());
+            String options = SafeText.clean(item.getOptionsSummary());
+            binding.tvTrackedFoodOptions.setText(options);
+            binding.tvTrackedFoodOptions.setVisibility(options.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
             binding.tvTrackedFoodTime.setText("Gọi lúc " + DisplayFormatters.dateTime(item.getCreatedAt()));
+            bindPlate(item);
 
             switch (item.getStatus()) {
                 case PENDING:
-                    binding.tvTrackedItemStatusBadge.setText("CHỜ BẾP");
-                    binding.tvTrackedItemStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFEEEEEE)
-                    );
-                    binding.tvTrackedItemStatusBadge.setTextColor(0xFF616161);
+                    pill("Chờ bếp", R.color.pd_surface_2, R.color.pd_muted, R.drawable.ic_clock);
                     break;
                 case CONFIRMED:
-                    binding.tvTrackedItemStatusBadge.setText("ĐÃ NHẬN");
-                    binding.tvTrackedItemStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFE1F5FE)
-                    );
-                    binding.tvTrackedItemStatusBadge.setTextColor(0xFF0288D1);
+                    pill("Đã nhận", R.color.pd_surface_2, R.color.pd_muted, R.drawable.ic_check);
                     break;
                 case PREPARING:
-                    binding.tvTrackedItemStatusBadge.setText("ĐANG NẤU");
-                    binding.tvTrackedItemStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFFFF3E0)
-                    );
-                    binding.tvTrackedItemStatusBadge.setTextColor(0xFFED6C02);
+                    pill("Đang nấu", R.color.pd_yellow, R.color.pd_on_color, R.drawable.ic_flame);
                     break;
                 case READY:
-                    binding.tvTrackedItemStatusBadge.setText("SẴN SÀNG");
-                    binding.tvTrackedItemStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFFBE9E7)
-                    );
-                    binding.tvTrackedItemStatusBadge.setTextColor(0xFFD84315);
+                    pill("Sẵn sàng", R.color.pd_mint, R.color.pd_on_color, R.drawable.ic_cloche);
                     break;
                 case SERVED:
-                    binding.tvTrackedItemStatusBadge.setText("ĐÃ PHỤC VỤ");
-                    binding.tvTrackedItemStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFE8F5E9)
-                    );
-                    binding.tvTrackedItemStatusBadge.setTextColor(0xFF2E7D32);
+                    pill("Đã phục vụ", R.color.pd_mint, R.color.pd_on_color, R.drawable.ic_check);
+                    break;
+                case CANCELLED:
+                    pill("Đã hủy", R.color.pd_red, R.color.pd_on_color, R.drawable.ic_close);
                     break;
             }
 
@@ -124,6 +111,35 @@ public class TrackedItemAdapter extends RecyclerView.Adapter<TrackedItemAdapter.
             binding.btnConfirmReceived.setEnabled(!pending);
             binding.btnConfirmReceived.setText(pending ? "Đang cập nhật…" : "Tôi đã nhận món");
             binding.btnConfirmReceived.setOnClickListener(canReceive && !pending ? v -> receiveListener.onReceive(item) : null);
+        }
+
+        /** Status pill as in design P04: coloured fill, on_color text, 14dp icon tinted like the text. */
+        private void pill(String text, int fillColor, int textColor, int iconRes) {
+            android.content.Context context = itemView.getContext();
+            android.widget.TextView badge = binding.tvTrackedItemStatusBadge;
+            badge.setText(text);
+            badge.setBackgroundTintList(ContextCompat.getColorStateList(context, fillColor));
+            badge.setTextColor(ContextCompat.getColor(context, textColor));
+            android.graphics.drawable.Drawable icon = ContextCompat.getDrawable(context, iconRes).mutate();
+            int size = (int) (14 * context.getResources().getDisplayMetrics().density);
+            icon.setBounds(0, 0, size, size);
+            badge.setCompoundDrawablesRelative(icon, null, null, null);
+            badge.setCompoundDrawableTintList(ContextCompat.getColorStateList(context, textColor));
+        }
+
+        /** The order line only carries the dish name, so the photo comes from the menu entry with the same name (empty plate when none). */
+        private void bindPlate(OrderItem item) {
+            com.restaurant.viettable.model.FoodItem match = null;
+            String name = SafeText.clean(item.getFoodName());
+            for (com.restaurant.viettable.model.FoodItem food : com.restaurant.viettable.data.AppStateManager.getInstance().getFoodItems()) {
+                if (food.getName() != null && food.getName().trim().equalsIgnoreCase(name.trim())) { match = food; break; }
+            }
+            if (match != null) {
+                com.restaurant.viettable.util.ImageLoader.getInstance().load(match, binding.ivTrackedFoodImage);
+            } else {
+                binding.ivTrackedFoodImage.setImageDrawable(null);
+            }
+            binding.ivTrackedFoodImage.setBackgroundResource(R.drawable.pd_plate_empty);
         }
     }
 }
