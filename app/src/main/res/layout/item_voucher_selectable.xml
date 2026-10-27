@@ -1,72 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Voucher row "Phố đêm": plum offer card (section 2), yellow 2dp border when selected (set by VoucherSelectAdapter).
+     View IDs are kept. -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardVoucherSelectable"
+    style="@style/Widget.VietTable.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="@color/colorSurface"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp"
-    app:strokeColor="@color/colorDivider"
-    app:strokeWidth="1dp">
+    app:cardBackgroundColor="@color/pd_plum"
+    app:cardCornerRadius="@dimen/pd_radius_row"
+    app:strokeColor="@color/transparent"
+    app:strokeWidth="2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="18dp">
 
         <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_badge"
-            android:backgroundTint="@color/pd_yellow_soft"
-            android:padding="8dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/pd_circle_yellow"
+            android:importantForAccessibility="no"
+            android:padding="12dp"
             android:src="@drawable/ic_voucher"
-            app:tint="@color/colorSecondary" />
+            app:tint="@color/pd_on_color" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="14dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvVoucherTitle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/bricolage_medium"
-                android:text="Giảm 50.000 đ"
-                android:textColor="@color/colorTextPrimary"
-                android:textSize="15sp" />
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                tools:text="Giảm 50.000đ" />
 
             <TextView
                 android:id="@+id/tvVoucherDesc"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="Áp dụng cho hóa đơn từ 400.000đ"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="12sp" />
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="Áp dụng cho hóa đơn từ 400.000đ" />
 
             <TextView
                 android:id="@+id/tvVoucherExpiry"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="HSD: 30/09/2026"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="11sp" />
+                android:layout_marginTop="6dp"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow"
+                tools:text="HSD: 30/09/2026" />
         </LinearLayout>
 
         <RadioButton
             android:id="@+id/rbVoucherSelect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:buttonTint="@color/pd_yellow"
             android:clickable="false" />
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

@@ -54,7 +54,7 @@ public class VoucherSelectFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         List<Voucher> availableVouchers = appStateManager.getVouchers();
         adapter = new VoucherSelectAdapter(availableVouchers, voucher -> {

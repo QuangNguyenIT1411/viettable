@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.ItemVoucherSelectableBinding;
 import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.util.DisplayFormatters;
@@ -67,6 +68,9 @@ public class VoucherSelectAdapter extends RecyclerView.Adapter<VoucherSelectAdap
             binding.tvVoucherDesc.setText(SafeText.clean(voucher.getDescription()));
             binding.tvVoucherExpiry.setText("HSD: " + DisplayFormatters.date(voucher.getExpiryDate()));
             binding.rbVoucherSelect.setChecked(isSelected);
+            // Selected offer gets the yellow 2dp border (DESIGN_PHO_DEM.md section 6 "Chọn phương thức thanh toán").
+            binding.cardVoucherSelectable.setStrokeColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(),
+                    isSelected ? R.color.pd_yellow : R.color.transparent));
 
             itemView.setOnClickListener(v -> {
                 int prev = selectedPosition;
