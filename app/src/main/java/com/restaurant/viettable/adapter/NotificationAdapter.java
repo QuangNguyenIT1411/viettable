@@ -62,15 +62,23 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
             binding.tvNotifTimestamp.setText(DisplayFormatters.dateTime(item.getTimestamp()));
             binding.viewUnreadDot.setVisibility(item.isRead() ? View.GONE : View.VISIBLE);
 
+            // Round icon by type (DESIGN_PHO_DEM.md section 6 "Thông báo"): booking yellow, order red, payment mint, offer plum.
+            int circle, tint;
             if (item.getType() == NotificationItem.Type.RESERVATION) {
                 binding.ivNotifIcon.setImageResource(R.drawable.ic_reservation);
+                circle = R.drawable.pd_circle_yellow; tint = R.color.pd_on_color;
             } else if (item.getType() == NotificationItem.Type.ORDER) {
                 binding.ivNotifIcon.setImageResource(R.drawable.ic_orders);
+                circle = R.drawable.pd_circle_red; tint = R.color.pd_on_color;
             } else if (item.getType() == NotificationItem.Type.PAYMENT) {
                 binding.ivNotifIcon.setImageResource(R.drawable.ic_card);
+                circle = R.drawable.pd_circle_mint; tint = R.color.pd_on_color;
             } else {
                 binding.ivNotifIcon.setImageResource(R.drawable.ic_voucher);
+                circle = R.drawable.pd_circle_plum; tint = R.color.pd_yellow;
             }
+            binding.ivNotifIcon.setBackgroundResource(circle);
+            binding.ivNotifIcon.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(itemView.getContext(), tint));
 
             binding.cardNotification.setOnClickListener(v -> {
                 item.setRead(true);
