@@ -1,223 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<!-- Chọn phương thức thanh toán "Phố đêm" (DESIGN_PHO_DEM.md section 6): big amount, large method cards (the app
+     moves on as soon as one is tapped, so there is no "selected" state). View IDs used by PaymentTypeFragment are kept;
+     the toolbar is now a round back button. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream">
+    android:background="@color/pd_bg">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/surface"
-        app:elevation="1dp">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@drawable/ic_back"
-            app:navigationIconTint="@color/text_primary"
-            app:title="Hình thức thanh toán"
-            app:titleTextColor="@color/text_primary" />
-    </com.google.android.material.appbar.AppBarLayout>
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="-200dp"
+        android:layout_marginTop="-180dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="96dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:tag="safe_all">
 
         <LinearLayout
+            android:id="@+id/layoutPaymentTypeContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:paddingBottom="32dp">
 
-            <!-- Grand Total Display Card -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.VietTable.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="24dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Số tiền cần thanh toán"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/tvPaymentTypeGrandTotal"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="610.200 đ"
-                        android:textColor="@color/primary"
-                        android:textSize="30sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tvPaymentTypeTable"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text=""
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvPaymentTypeTable"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                tools:text="Bàn B4 · Chi nhánh Quận 1" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Hình thức thanh toán"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Chọn phương thức"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:padding="24dp">
 
-            <!-- Option 1: Online Payment Card -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SỐ TIỀN CẦN THANH TOÁN"
+                    android:textAppearance="@style/TextAppearance.VietTable.Label"
+                    android:textColor="@color/pd_muted" />
+
+                <TextView
+                    android:id="@+id/tvPaymentTypeGrandTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                    android:textColor="@color/pd_yellow"
+                    tools:text="610.200đ" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="Chọn phương thức"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+            <!-- Option 1: online payment (hidden unless the VNPAY flag is on). -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPayOnline"
-                android:visibility="gone"
                 style="@style/Widget.VietTable.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="20dp">
-
-                    <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_category_chip"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_card"
-                        app:tint="@color/primary" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Thanh toán Online (Qua App)"
-                            android:textColor="@color/text_primary"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="VietQR, Ví MoMo, ZaloPay, Thẻ ATM/Visa"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_forward"
-                        app:tint="@color/text_secondary" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Option 2: Onsite Payment Card -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPayOnsite"
-                style="@style/Widget.VietTable.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="20dp">
-
-                    <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_category_chip"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_cash"
-                        app:tint="@color/accent_gold_dark" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Tiền mặt"
-                            android:textColor="@color/text_primary"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="Trả tiền mặt tại bàn hoặc tại quầy thu ngân"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_forward"
-                        app:tint="@color/text_secondary" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Option 3: Bank transfer by VietQR (shown when the receiving account is configured) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardPayTransfer"
-                style="@style/Widget.VietTable.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
+                    android:minHeight="104dp"
                     android:orientation="horizontal"
                     android:padding="20dp">
 
                     <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_category_chip"
-                        android:padding="10dp"
-                        android:src="@drawable/ic_qr_scan"
-                        app:tint="@color/accent_gold_dark" />
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="15dp"
+                        android:src="@drawable/ic_card"
+                        app:tint="@color/pd_cream" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -227,31 +129,143 @@
                         android:orientation="vertical">
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="Chuyển khoản"
-                            android:textColor="@color/text_primary"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
+                            android:text="Thanh toán Online (Qua App)"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
 
                         <TextView
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="Quét mã VietQR bằng ứng dụng ngân hàng, số tiền đã điền sẵn"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
+                            android:layout_marginTop="2dp"
+                            android:text="VietQR, Ví MoMo, ZaloPay, Thẻ ATM/Visa"
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_muted" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_arrow_forward"
-                        app:tint="@color/text_secondary" />
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/pd_btn_arrow_ghost" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Option 2: cash. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPayOnsite"
+                style="@style/Widget.VietTable.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="104dp"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
+
+                    <ImageView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/pd_circle_mint"
+                        android:importantForAccessibility="no"
+                        android:padding="15dp"
+                        android:src="@drawable/ic_cash"
+                        app:tint="@color/pd_on_color" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Tiền mặt"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Trả tiền mặt tại bàn hoặc tại quầy thu ngân"
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_muted" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/pd_btn_arrow_ghost" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Option 3: bank transfer by VietQR (shown when the receiving account is configured). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPayTransfer"
+                style="@style/Widget.VietTable.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/pd_plum"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="104dp"
+                    android:orientation="horizontal"
+                    android:padding="20dp">
+
+                    <ImageView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/pd_circle_yellow"
+                        android:importantForAccessibility="no"
+                        android:padding="15dp"
+                        android:src="@drawable/ic_qr_scan"
+                        app:tint="@color/pd_on_color" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Chuyển khoản VietQR"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Quét mã VietQR bằng ứng dụng ngân hàng, số tiền đã điền sẵn"
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_muted" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/pd_btn_arrow_yellow" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>

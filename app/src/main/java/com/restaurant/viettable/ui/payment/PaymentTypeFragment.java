@@ -68,7 +68,7 @@ public class PaymentTypeFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
+        binding.btnBack.setOnClickListener(v -> navigateBack());
 
         if (invoice != null) {
             binding.tvPaymentTypeGrandTotal.setText(splitPart == null ? invoice.getFormattedFinalTotal() : splitPart.getFormattedAmount());
