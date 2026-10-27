@@ -34,6 +34,10 @@ public sealed class Reservation
     public int? StatusChangedByEmployeeId { get; set; }
     /// <summary>The rejection reason shown to the guest, or how the booking was confirmed ("Tự xác nhận khi check-in").</summary>
     public string? StatusReason { get; set; }
+    /// <summary>Deposit the guest must pay by VietQR (docs/DEPOSIT_PLAN.md); null when none is required.</summary>
+    public decimal? DepositAmount { get; set; }
+    /// <summary>While "PendingDeposit": unpaid after this moment the booking is cancelled and the table freed.</summary>
+    public DateTime? DepositDueAtUtc { get; set; }
     public ICollection<ReservationPreOrderItem> PreOrderItems { get; set; } = new List<ReservationPreOrderItem>();
     public ICollection<ReservationTable> ReservationTables { get; set; } = new List<ReservationTable>();
 }

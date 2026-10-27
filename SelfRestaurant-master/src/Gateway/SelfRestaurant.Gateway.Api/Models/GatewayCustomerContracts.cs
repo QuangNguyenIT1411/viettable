@@ -62,7 +62,9 @@ public sealed record CreateReservationApiRequest(
     string? Note,
     string? IdempotencyKey,
     string? RequestHash = null,
-    string? InitialStatus = null);
+    string? InitialStatus = null,
+    decimal? DepositAmount = null,
+    DateTime? DepositDueAtUtc = null);
 
 public sealed record ReplaceReservationPreOrderItemsApiRequest(
     IReadOnlyList<ReservationPreOrderItemRequest>? Items);
@@ -101,7 +103,9 @@ public sealed record ReservationDto(
     IReadOnlyList<ReservationPreOrderItemDto> PreOrderItems,
     DateTime? StatusChangedAtUtc = null,
     int? StatusChangedByEmployeeId = null,
-    string? StatusReason = null);
+    string? StatusReason = null,
+    decimal? DepositAmount = null,
+    DateTime? DepositDueAtUtc = null);
 
 public sealed record ReservationAssignedTableDto(int TableId, bool IsPrimary);
 

@@ -75,6 +75,13 @@ public sealed class CustomersController : ControllerBase
             return BadRequest(new { message = "Thời gian đặt bàn không được ở quá khứ." });
         }
 
+        // The Gateway asks for a deposit (feature on, party at the threshold): the booking waits for the money.
+        var depositRequired = string.Equals(request.InitialStatus, PendingDeposit, StringComparison.OrdinalIgnoreCase);
+        if (depositRequired && (request.DepositAmount is not > 0 || request.DepositDueAtUtc is null))
+        {
+            return BadRequest(new { code = "validation_failed", message = "Thiếu số tiền hoặc hạn đặt cọc." });
+        }
+
         await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         // Two guests confirming the same table at once (map, item 5): the second waits here, then sees the first
         // booking and gets 409. Without it SQL Server picked a deadlock victim and the guest saw a 500.
@@ -96,11 +103,13 @@ public sealed class CustomersController : ControllerBase
             }
         }
 
+        var holdNow = DateTime.UtcNow;
         if (request.TableId is > 0 && await _db.Reservations.AnyAsync(x =>
                 x.BranchId == request.BranchId && x.TableId == request.TableId
                 && x.ReservedAt < request.ReservedAt.AddMinutes(120)
                 && x.ReservedAt.AddMinutes(120) > request.ReservedAt
-                && !ClosedReservationStatuses.Contains(x.Status), cancellationToken))
+                && !ClosedReservationStatuses.Contains(x.Status)
+                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < holdNow), cancellationToken))
             return Conflict(new { code = "reservation_slot_unavailable", message = "Bàn đã được giữ trong khung giờ này." });
 
         var now = DateTime.UtcNow;
@@ -115,7 +124,10 @@ public sealed class CustomersController : ControllerBase
             PartySize = request.PartySize,
             ReservedAt = request.ReservedAt,
             ArrivalWindowMinutes = 30,
-            Status = string.Equals(request.InitialStatus, "Confirmed", StringComparison.OrdinalIgnoreCase) ? "Confirmed" : "Pending",
+            Status = string.Equals(request.InitialStatus, "Confirmed", StringComparison.OrdinalIgnoreCase) ? "Confirmed"
+                : depositRequired ? PendingDeposit : "Pending",
+            DepositAmount = depositRequired ? request.DepositAmount : null,
+            DepositDueAtUtc = depositRequired ? request.DepositDueAtUtc!.Value.ToUniversalTime() : null,
             Note = note,
             CreatedAtUtc = now,
             IdempotencyKey = idempotencyKey,
@@ -203,6 +215,18 @@ public sealed class CustomersController : ControllerBase
         return reservation is null ? NotFound(new { message = "Không tìm thấy đặt bàn." }) : Ok(MapReservation(reservation));
     }
 
+    /// <summary>Up to 200 bookings by id (staff deposit list).</summary>
+    [HttpGet("api/internal/reservations/by-ids")]
+    public async Task<ActionResult<IReadOnlyList<object>>> GetReservationsByIds([FromQuery] string? ids, CancellationToken cancellationToken)
+    {
+        var wanted = (ids ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => int.TryParse(x, out var id) ? id : 0).Where(x => x > 0).Distinct().Take(200).ToArray();
+        if (wanted.Length == 0) return Ok(Array.Empty<object>());
+        var reservations = await _db.Reservations.AsNoTracking().Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
+            .Where(x => wanted.Contains(x.ReservationId)).ToListAsync(cancellationToken);
+        return Ok(reservations.Select(MapReservation).ToArray());
+    }
+
     [HttpGet("api/internal/reservations/by-idempotency/{key}")]
     public async Task<ActionResult<object>> GetReservationByIdempotencyKey(string key, CancellationToken cancellationToken)
     {
@@ -284,7 +308,9 @@ public sealed class CustomersController : ControllerBase
         var query = _db.Reservations.AsNoTracking()
             .Where(x => x.BranchId == branchId && x.TableId != null
                 && x.ReservedAt < toUtc && x.ReservedAt.AddMinutes(120) > fromUtc
-                && !ClosedReservationStatuses.Contains(x.Status));
+                && !ClosedReservationStatuses.Contains(x.Status)
+                // An unpaid deposit past its 15 minutes frees the table at once, before any read marks it cancelled.
+                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < DateTime.UtcNow));
         if (excludeReservationId is > 0) query = query.Where(x => x.ReservationId != excludeReservationId.Value);
         return Ok(await query.Select(x => x.TableId!.Value).Distinct().ToListAsync(cancellationToken));
     }
@@ -301,7 +327,8 @@ public sealed class CustomersController : ControllerBase
             return BadRequest(new { code = "validation_failed", message = "Khoảng thời gian không hợp lệ." });
         var hold = await _db.Reservations.AsNoTracking()
             .Where(x => x.BranchId == branchId && x.TableId == tableId && x.ReservedAt >= fromUtc && x.ReservedAt <= toUtc
-                && (x.Status == "Pending" || x.Status == "Confirmed" || x.Status == "CheckingIn"))
+                && (x.Status == "Pending" || x.Status == "Confirmed" || x.Status == "CheckingIn"
+                    || (x.Status == PendingDeposit && x.DepositDueAtUtc >= DateTime.UtcNow)))
             .OrderBy(x => x.ReservedAt)
             .Select(x => new { x.ReservationId, x.CustomerId, x.ReservedAt })
             .FirstOrDefaultAsync(cancellationToken);
@@ -325,6 +352,8 @@ public sealed class CustomersController : ControllerBase
         var reservation = await _db.Reservations.Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
             .FirstOrDefaultAsync(x => x.ReservationId == reservationId, cancellationToken);
         if (reservation is null) return NotFound(new { code = "reservation_not_found", message = "Không tìm thấy đặt bàn." });
+        if (string.Equals(reservation.Status, PendingDeposit, StringComparison.OrdinalIgnoreCase))
+            return Conflict(new { code = "deposit_pending", message = "Vui lòng hoàn tất đặt cọc trước khi thay đổi đặt bàn." });
         if (!string.Equals(reservation.Status, "Pending", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(reservation.Status, "Confirmed", StringComparison.OrdinalIgnoreCase))
             return Conflict(new { code = "reservation_state_conflict", message = "Trạng thái hiện tại không cho phép thay đổi đặt bàn." });
@@ -336,11 +365,13 @@ public sealed class CustomersController : ControllerBase
         }
         if (request.PartySize is < 1 or > 30 || request.ReservedAt.ToUniversalTime() < DateTime.UtcNow.AddMinutes(-5))
             return BadRequest(new { code = "validation_failed", message = "Số khách hoặc thời gian đặt bàn không hợp lệ." });
+        var updateNow = DateTime.UtcNow;
         if (request.TableId is > 0 && await _db.Reservations.AnyAsync(x => x.ReservationId != reservationId
                 && x.BranchId == reservation.BranchId && x.TableId == request.TableId
                 && x.ReservedAt < request.ReservedAt.AddMinutes(120)
                 && x.ReservedAt.AddMinutes(120) > request.ReservedAt
-                && !ClosedReservationStatuses.Contains(x.Status), cancellationToken))
+                && !ClosedReservationStatuses.Contains(x.Status)
+                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < updateNow), cancellationToken))
             return Conflict(new { code = "reservation_slot_unavailable", message = "Bàn đã được giữ trong khung giờ này." });
 
         reservation.TableId = request.TableId;
@@ -616,6 +647,10 @@ public sealed class CustomersController : ControllerBase
         {
             return Conflict(new { message = "Không thể check-in đặt bàn đã hủy, bị từ chối, không đến hoặc đã hoàn tất." });
         }
+        if (string.Equals(entity.Status, PendingDeposit, StringComparison.OrdinalIgnoreCase))
+        {
+            return Conflict(new { code = "deposit_pending", message = "Đặt bàn chưa được đặt cọc nên chưa thể check-in." });
+        }
 
         AutoConfirmIfPending(entity, request?.CheckedInByEmployeeId, DateTime.UtcNow);
         entity.Status = "CheckingIn";
@@ -624,6 +659,31 @@ public sealed class CustomersController : ControllerBase
         CompleteCheckIn(entity, request);
         SyncReservationTables(entity, request);
         await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationCheckedIn, entity, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        return Ok(MapReservation(entity));
+    }
+
+    /// <summary>
+    /// The SePay webhook confirmed the deposit (Billing): the booking now waits for the restaurant like any other.
+    /// Repeats are no-ops; a booking already closed (e.g. expired a moment before) is 409 so the money becomes a refund.
+    /// </summary>
+    [HttpPost("api/internal/reservations/{reservationId:int}/deposit-paid")]
+    public async Task<ActionResult<object>> MarkDepositPaid(int reservationId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await BeginReservationLockAsync(reservationId, cancellationToken);
+        var entity = await _db.Reservations.Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
+            .FirstOrDefaultAsync(x => x.ReservationId == reservationId, cancellationToken);
+        if (entity is null) return NotFound(new { code = "reservation_not_found", message = "Không tìm thấy đặt bàn." });
+        if (!string.Equals(entity.Status, PendingDeposit, StringComparison.OrdinalIgnoreCase))
+        {
+            return entity.DepositAmount is > 0 && !ClosedReservationStatuses.Contains(entity.Status)
+                ? Ok(MapReservation(entity))
+                : Conflict(new { code = "reservation_closed", message = "Đặt bàn đã đóng trước khi nhận được tiền cọc." });
+        }
+        entity.Status = "Pending";
+        entity.UpdatedAtUtc = DateTime.UtcNow;
+        await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationDepositPaid, entity, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         if (transaction is not null) await transaction.CommitAsync(cancellationToken);
         return Ok(MapReservation(entity));
@@ -1034,6 +1094,7 @@ public sealed class CustomersController : ControllerBase
     private async Task MarkNoShowsAsync(int? customerId, int? branchId, int? reservationId, CancellationToken ct)
     {
         if (!_db.Database.IsRelational()) return;
+        await ExpireUnpaidDepositsAsync(customerId, branchId, reservationId, ct);
         var now = DateTime.UtcNow;
         var cutoff = now.AddMinutes(-DefaultArrivalWindowMinutes);
         var query = _db.Reservations.Where(x => (x.Status == "Pending" || x.Status == "Confirmed") && x.ReservedAt < cutoff);
@@ -1051,6 +1112,33 @@ public sealed class CustomersController : ControllerBase
             .Where(x => candidates.Contains(x.ReservationId) && x.Status == "NoShow" && x.CustomerId != null).ToListAsync(ct);
         foreach (var reservation in missed)
             await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationNoShow, reservation, ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public const string PendingDeposit = "PendingDeposit";
+    public const string DepositExpiredReason = "Hết hạn đặt cọc";
+
+    /// <summary>"PendingDeposit" past its due time → Cancelled ("Hết hạn đặt cọc"), told once to the guest. Same
+    /// read-time approach as the no-shows (no background job on Vercel); the status test is part of the UPDATE.</summary>
+    private async Task ExpireUnpaidDepositsAsync(int? customerId, int? branchId, int? reservationId, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var query = _db.Reservations.Where(x => x.Status == PendingDeposit && x.DepositDueAtUtc < now);
+        if (customerId is > 0) query = query.Where(x => x.CustomerId == customerId.Value);
+        if (branchId is > 0) query = query.Where(x => x.BranchId == branchId.Value);
+        if (reservationId is > 0) query = query.Where(x => x.ReservationId == reservationId.Value);
+        var candidates = await query.Select(x => x.ReservationId).ToListAsync(ct);
+        if (candidates.Count == 0) return;
+        var changed = await _db.Reservations.Where(x => candidates.Contains(x.ReservationId)
+                && x.Status == PendingDeposit && x.DepositDueAtUtc < now)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, "Cancelled").SetProperty(x => x.CancelledAtUtc, now)
+                .SetProperty(x => x.StatusReason, DepositExpiredReason).SetProperty(x => x.UpdatedAtUtc, now), ct);
+        if (changed == 0) return;
+        var expired = await _db.Reservations.AsNoTracking()
+            .Where(x => candidates.Contains(x.ReservationId) && x.Status == "Cancelled" && x.StatusReason == DepositExpiredReason
+                && x.CustomerId != null).ToListAsync(ct);
+        foreach (var reservation in expired)
+            await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationDepositExpired, reservation, ct);
         await _db.SaveChangesAsync(ct);
     }
 
@@ -1154,6 +1242,8 @@ public sealed class CustomersController : ControllerBase
             statusChangedAtUtc = reservation.StatusChangedAtUtc,
             statusChangedByEmployeeId = reservation.StatusChangedByEmployeeId,
             statusReason = reservation.StatusReason,
+            depositAmount = reservation.DepositAmount,
+            depositDueAtUtc = reservation.DepositDueAtUtc,
             assignedTables,
             preOrderItems = items
         };
@@ -1170,7 +1260,9 @@ public sealed class CustomersController : ControllerBase
         string? Note,
         string? IdempotencyKey,
         string? RequestHash = null,
-        string? InitialStatus = null);
+        string? InitialStatus = null,
+        decimal? DepositAmount = null,
+        DateTime? DepositDueAtUtc = null);
 
     public sealed record UpdateReservationRequest(int? TableId, int PartySize, DateTime ReservedAt,
         string? Note, string? MutationKey, string? MutationHash);

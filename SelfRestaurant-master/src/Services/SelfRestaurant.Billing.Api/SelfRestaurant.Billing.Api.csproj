@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../../Shared/CloudCompatibility/CloudHosting.cs" Link="Infrastructure/Cloud/CloudHosting.cs" />
     <Compile Include="../../Shared/Loyalty/LoyaltyRules.cs" Link="Infrastructure/Loyalty/LoyaltyRules.cs" />
+    <Compile Include="../../Shared/Deposits/DepositRules.cs" Link="Infrastructure/Deposits/DepositRules.cs" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.22" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">

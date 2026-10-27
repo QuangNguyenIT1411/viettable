@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="../../src/Shared/Loyalty/LoyaltyRules.cs" Link="Infrastructure/Loyalty/LoyaltyRules.cs" />
+    <Compile Include="../../src/Shared/Deposits/DepositRules.cs" Link="Infrastructure/Deposits/DepositRules.cs" />
   </ItemGroup>
 </Project>

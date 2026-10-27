@@ -23,12 +23,15 @@ public sealed class MobileReservationsGatewayController : ControllerBase
     private readonly ILogger<MobileReservationsGatewayController> _logger;
     private readonly SelfRestaurant.Gateway.Api.Infrastructure.CustomerInboxNotifier _inbox;
     private readonly SelfRestaurant.Gateway.Api.Infrastructure.StaffBranchEvents _staffEvents;
+    private readonly ReservationDepositCoordinator _deposits;
 
     public MobileReservationsGatewayController(CustomersClient customers, CatalogClient catalog, IdentityClient identity, OrdersClient orders,
         IConfiguration configuration, ILogger<MobileReservationsGatewayController> logger,
         SelfRestaurant.Gateway.Api.Infrastructure.CustomerInboxNotifier inbox,
-        SelfRestaurant.Gateway.Api.Infrastructure.StaffBranchEvents staffEvents)
+        SelfRestaurant.Gateway.Api.Infrastructure.StaffBranchEvents staffEvents,
+        ReservationDepositCoordinator deposits)
     {
+        _deposits = deposits;
         _inbox = inbox;
         _staffEvents = staffEvents;
         _customers = customers;
@@ -89,13 +92,23 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var contactName = string.IsNullOrWhiteSpace(request.ContactName) ? profile.Name : request.ContactName.Trim();
         if (contactName.Length > 100) contactName = contactName[..100];
         var hash = Hash(new { request.BranchId, TableId = table.TableId, request.PartySize, ReservedAt = request.ReservedAt.UtcDateTime, Note = request.Note?.Trim() });
+        // From the threshold on (feature flag on), the booking waits for its deposit; unpaid after 15 minutes it is
+        // cancelled and the table freed (docs/DEPOSIT_PLAN.md).
+        var depositAmount = _deposits.RequiredAmount(request.PartySize);
         try
         {
             // Pending until the cashier confirms (or the guest checks in); the table is held meanwhile.
             var created = await _customers.CreateReservationAsync(new CreateReservationApiRequest(
                 contactName, phone, actorId, request.BranchId, table.TableId, request.PartySize,
-                request.ReservedAt.UtcDateTime, request.Note, scopedKey, hash), ct);
+                request.ReservedAt.UtcDateTime, request.Note, scopedKey, hash,
+                depositAmount > 0 ? SelfRestaurant.Deposits.DepositRules.ReservationPendingDeposit : null,
+                depositAmount > 0 ? depositAmount : null,
+                depositAmount > 0 ? SelfRestaurant.Deposits.DepositRules.DueAt(DateTime.UtcNow, _deposits.Options) : null), ct);
             if (created is null) return MobileError("create_reservation_failed", "Không thể tạo đặt bàn.", 502);
+            // Best effort: a missed Billing row is created by the app's first deposit read.
+            try { await _deposits.EnsureCreatedAsync(created, ct); }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            { _logger.LogWarning("Deposit row deferred for reservation {ReservationId} ({ErrorType}).", created.ReservationId, ex.GetType().Name); }
             await _inbox.PushAsync(actorId, ct); // Customers wrote "Đặt bàn thành công"
             await NudgeCashierAsync(created.BranchId);
             return Ok(created);
@@ -192,6 +205,8 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             // check in, so a missed call only leaves an unused pre-order row.
             try { await _orders.CancelReservationPreOrderAsync(reservationId, ct); }
             catch (Exception ex) { _logger.LogWarning("Pre-order cancel skipped for reservation {ReservationId} ({ErrorType}).", reservationId, ex.GetType().Name); }
+            // Paid deposit: refund by hand when cancelled 2 hours ahead, kept when later; an unpaid one just closes.
+            await _deposits.SyncQuietlyAsync(result, ct);
             await _inbox.PushAsync(CurrentCustomerId(), ct);
             await NudgeCashierAsync(result.BranchId);
             return Ok(result);
@@ -199,14 +214,45 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         catch (ApiClientException ex) { return DownstreamError(ex, "cancel_reservation_failed"); }
     }
 
+    /// <summary>Deposit rules for the booking screens; the app never assumes an amount.</summary>
+    [HttpGet("deposit-policy")]
+    public ActionResult<object> DepositPolicy() => Ok(_deposits.Policy());
+
+    /// <summary>The booking's deposit, its VietQR while waiting, and the time left. The app reads it every few seconds
+    /// while the guest pays; each read also repairs a step a failed call left out.</summary>
     [HttpGet("{reservationId:int}/deposit")]
     public async Task<ActionResult<MobileDepositResponse>> GetDeposit(int reservationId, CancellationToken ct)
     {
         var owned = await GetOwned(reservationId, ct);
         if (owned.Error is not null) return owned.Error;
-        return Ok(new MobileDepositResponse(reservationId, false, 0, "NOT_REQUIRED",
-            "Chi nhánh hiện chưa yêu cầu đặt cọc cho đặt bàn này."));
+        try
+        {
+            var view = await _deposits.SyncAsync(owned.Reservation!, includeQr: true, ct);
+            if (view is null)
+                return Ok(new MobileDepositResponse(reservationId, false, 0, "NOT_REQUIRED",
+                    "Đặt bàn này không cần đặt cọc.", ReservationStatus: owned.Reservation!.Status));
+            var d = view.Deposit;
+            return Ok(new MobileDepositResponse(reservationId, true, d.GetProperty("amount").GetInt64(), view.Status,
+                DepositMessage(view.Status, _deposits.Options.RefundCutoffHours),
+                d.TryGetProperty("dueAtUtc", out var due) && due.ValueKind == JsonValueKind.String ? due.GetDateTime() : null,
+                d.TryGetProperty("paidAtUtc", out var paid) && paid.ValueKind == JsonValueKind.String ? paid.GetDateTime() : null,
+                ReservationDepositView.Text(d, "closedReason"), view.Transfer, view.Reservation.Status));
+        }
+        catch (ApiClientException ex) { return DownstreamError(ex, "deposit_unavailable"); }
     }
+
+    private static string DepositMessage(string status, int cutoffHours) => status switch
+    {
+        "PENDING" => "Chuyển khoản đúng số tiền và nội dung để giữ bàn. Hệ thống tự xác nhận khi nhận được tiền.",
+        "EXPIRED" => "Đã quá thời gian đặt cọc nên đặt bàn đã được hủy.",
+        "CANCELLED" => "Đặt bàn đã hủy trước khi đặt cọc.",
+        "PAID" => $"Đã nhận tiền cọc. Tiền cọc được trừ vào hóa đơn khi dùng bữa; hủy trước giờ đến từ {cutoffHours} giờ được hoàn cọc.",
+        "APPLIED" => "Tiền cọc đã được trừ vào hóa đơn.",
+        "REFUND_REQUIRED" => "Nhà hàng sẽ hoàn tiền cọc cho bạn.",
+        "REFUNDED" => "Nhà hàng đã hoàn tiền cọc.",
+        "FORFEITED" => $"Tiền cọc không được hoàn (hủy dưới {cutoffHours} giờ trước giờ đến hoặc không đến).",
+        _ => "Đặt bàn có đặt cọc.",
+    };
 
     [HttpGet("{reservationId:int}/preorder")]
     public async Task<ActionResult<MobilePreOrderResponse>> GetPreOrder(int reservationId, CancellationToken ct)
@@ -316,7 +362,7 @@ public sealed class MobileReservationsGatewayController : ControllerBase
     }
 
     private static bool IsOpenReservation(ReservationDto x) =>
-        x.Status is not null && new[] { "Pending", "Confirmed", "CheckingIn" }.Contains(x.Status, StringComparer.OrdinalIgnoreCase);
+        x.Status is not null && new[] { "PendingDeposit", "Pending", "Confirmed", "CheckingIn" }.Contains(x.Status, StringComparer.OrdinalIgnoreCase);
 
     private ObjectResult? ValidateSchedule(int partySize, DateTimeOffset at)
     {

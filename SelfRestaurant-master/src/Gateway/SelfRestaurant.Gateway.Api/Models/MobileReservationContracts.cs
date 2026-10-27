@@ -25,8 +25,11 @@ public sealed record CreateMobileReservationRequest(int BranchId, int? TableId, 
 public sealed record UpdateMobileReservationRequest(int? TableId, int PartySize,
     DateTimeOffset ReservedAt, string? Note = null);
 public sealed record MobileReservationListResponse(IReadOnlyList<ReservationDto> Items, string? NextCursor);
+/// <summary>Status: NOT_REQUIRED, PENDING, EXPIRED, CANCELLED, PAID, APPLIED, REFUND_REQUIRED, REFUNDED, FORFEITED.
+/// Transfer (VietQR, content "VT DC{id}") only while PENDING.</summary>
 public sealed record MobileDepositResponse(int ReservationId, bool Required, long AmountVnd,
-    string Status, string PolicyMessage);
+    string Status, string PolicyMessage, DateTime? DueAtUtc = null, DateTime? PaidAtUtc = null,
+    string? ClosedReason = null, System.Text.Json.JsonElement? Transfer = null, string? ReservationStatus = null);
 public sealed record MobilePreOrderItemRequest(int DishId, int Quantity, string? Note = null);
 public sealed record MobilePreOrderUpdateRequest(IReadOnlyList<MobilePreOrderItemRequest>? Items);
 public sealed record MobilePreOrderResponse(int ReservationId, string Status, decimal Subtotal,

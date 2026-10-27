@@ -90,6 +90,8 @@ builder.Services.AddSingleton<BankTransferQrService>();
 builder.Services.Configure<SePayOptions>(builder.Configuration.GetSection("Payments:SePay"));
 builder.Services.AddScoped<ISePayPaymentConfirmer, SePayPaymentConfirmer>();
 builder.Services.AddScoped<SePayWebhookService>();
+builder.Services.Configure<SelfRestaurant.Deposits.DepositOptions>(builder.Configuration.GetSection(SelfRestaurant.Deposits.DepositOptions.Section));
+builder.Services.AddScoped<ReservationDepositService>();
 
 registrationTiming?.Dispose();
 using var buildTiming = SelfRestaurant.CloudCompatibility.CloudHosting.Measure("Billing", "builder-build");

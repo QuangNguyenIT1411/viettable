@@ -303,6 +303,12 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<decimal?>("DepositAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("DepositDueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("DiningSessionCode")
                         .HasMaxLength(64)
                         .IsUnicode(false)

@@ -265,6 +265,27 @@ public sealed class StaffCashierGatewayController : ControllerBase
     public Task<ActionResult<ReservationDto>> MarkReservationNoShow(int reservationId, [FromServices] CustomerInboxNotifier inbox,
         CancellationToken ct) => DecideReservation(reservationId, "no-show", null, inbox, ct);
 
+    /// <summary>Deposits of the cashier's branch with their bookings (newest first).</summary>
+    [HttpGet("/api/cashier/deposits")]
+    public async Task<ActionResult<IReadOnlyList<object>>> GetDeposits([FromServices] ReservationDepositCoordinator deposits, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await deposits.StaffListAsync(staff.BranchId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "get_deposits_failed", ex.Message, ex.StatusCode); }
+    }
+
+    /// <summary>"Đã hoàn cọc": the cashier refunded the guest by hand (only a deposit waiting for a refund).</summary>
+    [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Reservations)]
+    [HttpPost("/api/cashier/deposits/{depositId:int}/refunded")]
+    public async Task<ActionResult<object>> MarkDepositRefunded(int depositId, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await _billingClient.MarkDepositRefundedAsync(depositId, staff.EmployeeId, staff.BranchId, ct)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "deposit_refund_failed", ex.Message, ex.StatusCode); }
+    }
+
     private async Task<ActionResult<ReservationDto>> DecideReservation(int reservationId, string decision, string? reason,
         CustomerInboxNotifier inbox, CancellationToken ct)
     {
@@ -285,6 +306,9 @@ public sealed class StaffCashierGatewayController : ControllerBase
             if (decision == "no-show")
                 try { await _ordersClient.CancelReservationPreOrderAsync(reservationId, ct); }
                 catch (Exception ex) { _logger.LogWarning("Pre-order cancel skipped for reservation {ReservationId} ({ErrorType}).", reservationId, ex.GetType().Name); }
+            // Rejected → refund by hand; no-show → deposit kept (docs/DEPOSIT_PLAN.md).
+            if (decision is "reject" or "no-show")
+                await HttpContext.RequestServices.GetRequiredService<ReservationDepositCoordinator>().SyncQuietlyAsync(updated, ct);
             if (!string.Equals(current.Status, updated.Status, StringComparison.OrdinalIgnoreCase))
                 await inbox.ReservationChangedAsync(updated.CustomerId, updated.ReservationId, updated.Status, ct);
             return Ok(updated);

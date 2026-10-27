@@ -15,6 +15,11 @@ public sealed class CheckoutQuote
     public decimal VoucherDiscount { get; set; }
     public int PointsApplied { get; set; }
     public decimal PointsDiscount { get; set; }
+    /// <summary>Paid reservation deposit that may come off this bill (0 when none).</summary>
+    public decimal DepositAmount { get; set; }
+    /// <summary>The part of DepositAmount taken off: never more than what is left after voucher and points.</summary>
+    public decimal DepositApplied { get; set; }
+    public int? ReservationDepositId { get; set; }
     public decimal TotalAmount { get; set; }
     public string IdempotencyKey { get; set; } = null!;
     public string RequestHash { get; set; } = null!;
@@ -76,6 +81,8 @@ public sealed class Invoice
     public int CustomerId { get; set; }
     public decimal Subtotal { get; set; }
     public decimal Discount { get; set; }
+    /// <summary>Reservation deposit taken off this invoice ("Đã đặt cọc −X đ"); not part of Discount.</summary>
+    public decimal DepositApplied { get; set; }
     public decimal TotalAmount { get; set; }
     public string ItemsJson { get; set; } = "[]";
     public DateTime IssuedAtUtc { get; set; }

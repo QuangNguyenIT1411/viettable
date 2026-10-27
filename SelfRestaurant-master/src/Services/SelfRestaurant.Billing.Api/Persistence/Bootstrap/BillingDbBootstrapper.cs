@@ -61,6 +61,30 @@ public static class BillingDbBootstrapper
                 CREATE INDEX IX_BankTransferEvents_BranchOutcome ON dbo.BankTransferEvents(BranchId, Outcome, ResolvedAtUtc);
             END;
             """, cancellationToken);
+        // Reservation deposits (docs/DEPOSIT_PLAN.md); PostgreSQL gets them from migration ReservationDeposits.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'DepositAmount') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD DepositAmount DECIMAL(18,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_DepositAmount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'DepositApplied') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD DepositApplied DECIMAL(18,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_DepositApplied DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'ReservationDepositId') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD ReservationDepositId INT NULL;
+            IF COL_LENGTH('dbo.Invoices', 'DepositApplied') IS NULL
+                ALTER TABLE dbo.Invoices ADD DepositApplied DECIMAL(18,2) NOT NULL CONSTRAINT DF_Invoices_DepositApplied DEFAULT (0) WITH VALUES;
+            IF OBJECT_ID(N'dbo.ReservationDeposits', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.ReservationDeposits(
+                    ReservationDepositId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ReservationDeposits PRIMARY KEY,
+                    ReservationId INT NOT NULL, CustomerId INT NOT NULL, BranchId INT NOT NULL, PartySize INT NOT NULL,
+                    Amount DECIMAL(18,2) NOT NULL, Status VARCHAR(30) NOT NULL, ReservedAtUtc DATETIME2 NOT NULL, DueAtUtc DATETIME2 NOT NULL,
+                    PaidAmount DECIMAL(18,2) NULL, PaidAtUtc DATETIME2 NULL, ProviderTransactionId VARCHAR(100) NULL,
+                    AppliedCheckoutQuoteId INT NULL, AppliedAmount DECIMAL(18,2) NULL, AppliedAtUtc DATETIME2 NULL,
+                    ClosedReason NVARCHAR(300) NULL, RefundedAtUtc DATETIME2 NULL, RefundedByEmployeeId INT NULL,
+                    CreatedAtUtc DATETIME2 NOT NULL, UpdatedAtUtc DATETIME2 NOT NULL);
+                CREATE UNIQUE INDEX UX_ReservationDeposits_ReservationId ON dbo.ReservationDeposits(ReservationId);
+                CREATE INDEX IX_ReservationDeposits_BranchStatus ON dbo.ReservationDeposits(BranchId, Status);
+            END;
+            """, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);
     }
 

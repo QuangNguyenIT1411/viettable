@@ -422,6 +422,12 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("DepositAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("DepositApplied")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("DiningSessionCode")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -461,6 +467,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                         .HasMaxLength(64)
                         .IsUnicode(false)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<int?>("ReservationDepositId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -512,6 +521,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("DepositApplied")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("DiningSessionId")
                         .HasColumnType("integer");
@@ -791,6 +803,89 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                         .HasFilter("\"ProviderReference\" IS NOT NULL");
 
                     b.ToTable("MobilePayments", "billing");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.ReservationDeposit", b =>
+                {
+                    b.Property<int>("ReservationDepositId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReservationDepositId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("AppliedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("AppliedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("AppliedCheckoutQuoteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ClosedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("DueAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("PaidAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PartySize")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ProviderTransactionId")
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("RefundedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RefundedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReservationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReservedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ReservationDepositId");
+
+                    b.HasIndex("ReservationId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_ReservationDeposits_ReservationId");
+
+                    b.HasIndex("BranchId", "Status")
+                        .HasDatabaseName("IX_ReservationDeposits_BranchStatus");
+
+                    b.ToTable("ReservationDeposits", "billing");
                 });
 
             modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.SplitBill", b =>

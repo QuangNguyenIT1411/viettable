@@ -337,7 +337,8 @@ public sealed class DiningSessionsController : ControllerBase
         var rows = items.Select(x => new CheckoutItem(x.ItemID, x.OrderID, x.DishID,
             names.GetValueOrDefault(x.DishID) ?? $"Món #{x.DishID}", x.Quantity, x.UnitPrice, x.LineTotal)).ToArray();
         return Ok(new DiningSessionCheckoutContext(session.DiningSessionId, session.SessionCode, session.CustomerId,
-            session.BranchId, session.TableId, session.Status, orders.Select(x => x.OrderID).ToArray(), rows.Sum(x => x.LineTotal), rows));
+            session.BranchId, session.TableId, session.Status, orders.Select(x => x.OrderID).ToArray(), rows.Sum(x => x.LineTotal), rows,
+            session.ReservationId)); // Billing takes the booking's paid deposit off the bill
     }
 
     [HttpPost("{sessionId:int}/payment-request")]
@@ -652,7 +653,8 @@ public sealed class DiningSessionsController : ControllerBase
     public sealed record CompletePaymentRequest(int CustomerId, int CheckoutQuoteId, int PaymentId);
     public sealed record CheckoutItem(int ItemId, int OrderId, int DishId, string DishName, int Quantity, decimal UnitPrice, decimal LineTotal);
     public sealed record DiningSessionCheckoutContext(int DiningSessionId, string DiningSessionCode, int CustomerId,
-        int BranchId, int TableId, string Status, IReadOnlyList<int> OrderIds, decimal Subtotal, IReadOnlyList<CheckoutItem> Items);
+        int BranchId, int TableId, string Status, IReadOnlyList<int> OrderIds, decimal Subtotal, IReadOnlyList<CheckoutItem> Items,
+        int? ReservationId = null);
     public sealed record DiningSessionResponse(int DiningSessionId, string SessionCode, int CustomerId, int BranchId,
         int TableId, int? ReservationId, string Status, int? ConvertedOrderId, DateTime StartedAtUtc,
         DateTime? PaymentRequestedAtUtc, DateTime? EndedAtUtc, bool AlreadyCheckedIn);

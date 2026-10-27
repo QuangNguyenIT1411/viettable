@@ -33,6 +33,10 @@ public sealed class MobileBillingGatewayController : ControllerBase
     [HttpPost("checkout/quotes/{quoteId:int}/voucher")]
     public async Task<ActionResult<object>> Voucher(int quoteId, ApplyVoucherRequest request, CancellationToken ct) => await Simple(() => _billing.ApplyVoucherAsync(quoteId, new { customerId = Actor(), request.VoucherId }, ct));
 
+    /// <summary>The stored quote (after Back the app reloads it instead of trusting its own copy).</summary>
+    [HttpGet("checkout/quotes/{quoteId:int}")]
+    public Task<ActionResult<object>> GetQuote(int quoteId, CancellationToken ct) => Get(() => _billing.GetMobileQuoteAsync(quoteId, Actor()!.Value, ct));
+
     [HttpPost("checkout/quotes/{quoteId:int}/loyalty")]
     public async Task<ActionResult<object>> Loyalty(int quoteId, ApplyLoyaltyRequest request, CancellationToken ct) => await Simple(() => _billing.ApplyLoyaltyAsync(quoteId, new { customerId = Actor(), request.Points }, ct));
 

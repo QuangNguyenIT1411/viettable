@@ -82,6 +82,8 @@ public sealed class CustomersDbContext : DbContext
             entity.Property(e => e.PreOrderSubmittedAtUtc).HasColumnType("datetime2");
             entity.Property(e => e.StatusChangedAtUtc).HasColumnType("datetime2");
             entity.Property(e => e.StatusReason).HasMaxLength(300);
+            entity.Property(e => e.DepositAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.DepositDueAtUtc).HasColumnType("datetime2");
             entity.HasMany(e => e.PreOrderItems)
                 .WithOne(e => e.Reservation)
                 .HasForeignKey(e => e.ReservationId)

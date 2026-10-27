@@ -136,6 +136,30 @@ public sealed class BillingClient : ApiClientBase
             throw new ApiClientException("Không tìm thấy dữ liệu thanh toán.", 404, code);
         return value;
     }
+    // ---- Reservation deposits (docs/DEPOSIT_PLAN.md) ----
+    public Task<JsonElement> CreateDepositAsync(object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>("/api/internal/deposits", request, ct);
+
+    /// <summary>{ deposit, transfer } or null when the booking has no deposit row.</summary>
+    public async Task<JsonElement?> GetDepositAsync(int reservationId, bool includeQr, CancellationToken ct)
+    {
+        var value = await GetAsync<JsonElement>($"/api/internal/deposits/by-reservation/{reservationId}?includeQr={(includeQr ? "true" : "false")}", ct);
+        return value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? null : value;
+    }
+
+    public Task<JsonElement> CloseDepositAsync(int reservationId, object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/deposits/by-reservation/{reservationId}/close", request, ct);
+
+    public async Task<IReadOnlyList<JsonElement>> ListDepositsAsync(int? branchId, CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<JsonElement>>("/api/internal/deposits" + (branchId is > 0 ? $"?branchId={branchId}" : ""), ct)
+            ?? Array.Empty<JsonElement>();
+
+    public Task<JsonElement> MarkDepositRefundedAsync(int depositId, int employeeId, int? branchId, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/deposits/{depositId}/refunded", new { employeeId, branchId }, ct);
+
+    public Task<JsonElement> GetMobileQuoteAsync(int quoteId, int customerId, CancellationToken ct) =>
+        GetRequiredAsync($"/api/internal/mobile/checkout/quotes/{quoteId}?customerId={customerId}", "quote_not_found", ct);
+
     public Task<JsonElement> CreateSplitBillAsync(int sessionId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/dining-sessions/{sessionId}/split-bill", request, ct);
     public Task<JsonElement> GetSessionSplitBillAsync(int sessionId, int customerId, CancellationToken ct) => GetRequiredAsync($"/api/internal/mobile/dining-sessions/{sessionId}/split-bill?customerId={customerId}", "split_bill_not_found", ct);
     public Task<JsonElement> GetSplitBillAsync(int splitBillId, int customerId, CancellationToken ct) => GetRequiredAsync($"/api/internal/mobile/split-bills/{splitBillId}?customerId={customerId}", "split_bill_not_found", ct);

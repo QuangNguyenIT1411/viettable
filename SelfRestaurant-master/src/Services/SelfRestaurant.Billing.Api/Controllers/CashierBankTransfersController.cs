@@ -19,7 +19,10 @@ public sealed class CashierBankTransfersController(BillingDbContext db) : Contro
     public static readonly string[] WarningOutcomes =
     [
         SePayMatchRules.AmountTooLow, SePayMatchRules.NoMatch, SePayMatchRules.BranchMismatch,
-        SePayMatchRules.NotTransfer, SePayMatchRules.PaymentNotPending, SePayMatchRules.SessionNotPayable
+        SePayMatchRules.NotTransfer, SePayMatchRules.PaymentNotPending, SePayMatchRules.SessionNotPayable,
+        // Reservation deposits: too little money, unknown booking, or already paid (late money is a refund to do instead).
+        SelfRestaurant.Deposits.DepositRules.OutcomeAmountTooLow, SelfRestaurant.Deposits.DepositRules.OutcomeNoMatch,
+        SelfRestaurant.Deposits.DepositRules.OutcomeNotPending
     ];
 
     [HttpGet("alerts")]

@@ -22,6 +22,7 @@ public sealed class BillingDbContext : DbContext
     public DbSet<SplitBill> SplitBills => Set<SplitBill>();
     public DbSet<SplitBillPart> SplitBillParts => Set<SplitBillPart>();
     public DbSet<BankTransferEvent> BankTransferEvents => Set<BankTransferEvent>();
+    public DbSet<ReservationDeposit> ReservationDeposits => Set<ReservationDeposit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -130,7 +131,8 @@ public sealed class BillingDbContext : DbContext
             entity.Property(x => x.IdempotencyKey).HasMaxLength(140).IsUnicode(false);
             entity.Property(x => x.RequestHash).HasMaxLength(64).IsUnicode(false);
             entity.Property(x => x.ItemsJson).HasColumnType("nvarchar(max)");
-            foreach (var p in new[] { nameof(CheckoutQuote.Subtotal), nameof(CheckoutQuote.VoucherDiscount), nameof(CheckoutQuote.PointsDiscount), nameof(CheckoutQuote.TotalAmount) })
+            foreach (var p in new[] { nameof(CheckoutQuote.Subtotal), nameof(CheckoutQuote.VoucherDiscount), nameof(CheckoutQuote.PointsDiscount), nameof(CheckoutQuote.TotalAmount),
+                         nameof(CheckoutQuote.DepositAmount), nameof(CheckoutQuote.DepositApplied) })
                 entity.Property(p).HasColumnType("decimal(18,2)");
         });
         modelBuilder.Entity<Voucher>(entity =>
@@ -158,6 +160,7 @@ public sealed class BillingDbContext : DbContext
             entity.HasIndex(x => new { x.SettlementCompletedAtUtc, x.RecoveryLastAttemptAtUtc, x.InvoiceId }).HasDatabaseName("IX_Invoices_RecoveryPending");
             entity.Property(x => x.InvoiceCode).HasMaxLength(50).IsUnicode(false); entity.Property(x => x.ItemsJson).HasColumnType("nvarchar(max)");
             entity.Property(x => x.Subtotal).HasColumnType("decimal(18,2)"); entity.Property(x => x.Discount).HasColumnType("decimal(18,2)"); entity.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.DepositApplied).HasColumnType("decimal(18,2)");
         });
         modelBuilder.Entity<SplitBill>(entity =>
         {
@@ -185,6 +188,21 @@ public sealed class BillingDbContext : DbContext
             entity.Property(x => x.Content).HasMaxLength(500);
             entity.Property(x => x.TransactionDate).HasMaxLength(40).IsUnicode(false);
             entity.Property(x => x.Outcome).HasMaxLength(30).IsUnicode(false);
+        });
+
+        modelBuilder.Entity<ReservationDeposit>(entity =>
+        {
+            entity.ToTable("ReservationDeposits");
+            entity.HasKey(x => x.ReservationDepositId);
+            // One deposit per booking: a retried create returns the same row.
+            entity.HasIndex(x => x.ReservationId).IsUnique().HasDatabaseName("UX_ReservationDeposits_ReservationId");
+            entity.HasIndex(x => new { x.BranchId, x.Status }).HasDatabaseName("IX_ReservationDeposits_BranchStatus");
+            entity.Property(x => x.Status).HasMaxLength(30).IsUnicode(false);
+            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PaidAmount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.AppliedAmount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.ProviderTransactionId).HasMaxLength(100).IsUnicode(false);
+            entity.Property(x => x.ClosedReason).HasMaxLength(300);
         });
 
         if (Database.IsNpgsql())

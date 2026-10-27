@@ -148,6 +148,15 @@ public sealed class CustomersClient : ApiClientBase
             request,
             cancellationToken);
 
+    /// <summary>Billing received the deposit: PendingDeposit → Pending. 409 when the booking closed first.</summary>
+    public Task<ReservationDto?> MarkDepositPaidAsync(int reservationId, CancellationToken cancellationToken) =>
+        PostForAsync<object, ReservationDto>($"/api/internal/reservations/{reservationId}/deposit-paid", new { }, cancellationToken);
+
+    public async Task<IReadOnlyList<ReservationDto>> GetReservationsByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken) =>
+        ids.Count == 0 ? Array.Empty<ReservationDto>()
+            : await GetAsync<IReadOnlyList<ReservationDto>>($"/api/internal/reservations/by-ids?ids={string.Join(',', ids.Take(200))}", cancellationToken)
+              ?? Array.Empty<ReservationDto>();
+
     public Task<ReservationDto?> FailReservationCheckInAsync(int reservationId, CancellationToken cancellationToken) =>
         PostForAsync<object, ReservationDto>(
             $"/api/customers/reservations/{reservationId}/fail-check-in",

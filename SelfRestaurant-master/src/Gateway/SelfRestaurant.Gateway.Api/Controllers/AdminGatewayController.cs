@@ -144,6 +144,29 @@ public sealed class AdminGatewayController : ControllerBase
         }
     }
 
+    /// <summary>Reservation deposits (one branch, or every branch the admin sees) with their bookings.</summary>
+    [HttpGet("/api/admin/deposits")]
+    public async Task<ActionResult<IReadOnlyList<object>>> GetDeposits([FromQuery] int? branchId,
+        [FromServices] ReservationDepositCoordinator deposits, CancellationToken cancellationToken)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        var targetBranchId = branchId is > 0 ? branchId : admin.BranchId;
+        try { return Ok(await deposits.StaffListAsync(targetBranchId is > 0 ? targetBranchId : null, cancellationToken)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_deposits_failed", ex); }
+    }
+
+    /// <summary>"Đã hoàn cọc" from the admin screen.</summary>
+    [HttpPost("/api/admin/deposits/{depositId:int}/refunded")]
+    public async Task<ActionResult<object>> MarkDepositRefunded(int depositId, [FromServices] BillingClient billing,
+        CancellationToken cancellationToken)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await billing.MarkDepositRefundedAsync(depositId, admin.EmployeeId, admin.BranchId is > 0 ? admin.BranchId : null, cancellationToken)); }
+        catch (ApiClientException ex) { return HandleApiClientException("deposit_refund_failed", ex); }
+    }
+
     [HttpGet("categories")]
     public async Task<ActionResult<AdminCategoriesScreenDto>> GetCategories(CancellationToken cancellationToken)
     {

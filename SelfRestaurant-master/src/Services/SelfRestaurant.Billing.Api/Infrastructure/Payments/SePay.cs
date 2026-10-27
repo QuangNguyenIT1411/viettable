@@ -66,6 +66,20 @@ public static partial class SePayContentParser
             .Where(x => x.Branch > 0 && x.Payment > 0).Distinct().ToList();
         return found.Count == 1 ? new PaymentReference(found[0].Branch, found[0].Payment) : null;
     }
+
+    // Reservation deposit "VT DC{reservationId}" (DepositRules.TransferContent).
+    [GeneratedRegex(@"(?<![A-Z0-9])VT ?DC ?(\d{1,9})(?!\d)", RegexOptions.CultureInvariant)]
+    private static partial Regex DepositReference();
+
+    /// <summary>The reservation id of a deposit transfer; null when none or more than one different id.</summary>
+    public static int? ParseDeposit(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return null;
+        var normalized = Regex.Replace(content.ToUpperInvariant(), "[^A-Z0-9]+", " ");
+        var found = DepositReference().Matches(normalized)
+            .Select(m => int.TryParse(m.Groups[1].Value, out var id) ? id : 0).Where(x => x > 0).Distinct().ToList();
+        return found.Count == 1 ? found[0] : null;
+    }
 }
 
 public sealed record SePayTransfer(string Id, string AccountNumber, string? SubAccount, string TransferType, decimal Amount,
@@ -115,7 +129,8 @@ public static class SePayMatchRules
 
 /// <summary>What the gateway needs to notify the customer and the cashier screen. No transfer content.</summary>
 public sealed record SePayWebhookResult(int StatusCode, string Outcome, int? BranchId = null, int? PaymentId = null,
-    int? CustomerId = null, int? DiningSessionId = null, decimal? Amount = null, string? PaymentStatus = null);
+    int? CustomerId = null, int? DiningSessionId = null, decimal? Amount = null, string? PaymentStatus = null,
+    int? ReservationId = null);
 
 /// <summary>Seam over PaymentFinalizationService (its transactions/locks need a real database).</summary>
 public interface ISePayPaymentConfirmer
@@ -191,6 +206,9 @@ public sealed class SePayWebhookService(BillingDbContext db, IOptions<SePayOptio
         }
 
         var reference = SePayContentParser.Parse(transfer.Content);
+        // A reservation deposit never touches the table payment path; content naming both is left to the cashier.
+        if (SePayContentParser.ParseDeposit(transfer.Content) is int depositReservationId)
+            return await ProcessDepositAsync(row, transfer, reference is null ? depositReservationId : null, now, ct);
         Payment? payment = null;
         int? branchId = null;
         if (reference is not null)
@@ -229,6 +247,44 @@ public sealed class SePayWebhookService(BillingDbContext db, IOptions<SePayOptio
         return confirmed is null
             ? new(200, outcome, row.BranchId, row.PaymentId)
             : new(200, outcome, row.BranchId, confirmed.PaymentId, confirmed.CustomerId, confirmed.DiningSessionId, confirmed.Amount, confirmed.Status);
+    }
+
+    /// <summary>
+    /// "VT DC{reservationId}": enough money in time → PAID; late (booking already expired/cancelled) → REFUND_REQUIRED;
+    /// too little → stays waiting and the cashier sees a warning. The deposit and the event row commit together.
+    /// </summary>
+    private async Task<SePayWebhookResult> ProcessDepositAsync(BankTransferEvent row, SePayTransfer transfer, int? reservationId,
+        DateTimeOffset now, CancellationToken ct)
+    {
+        await using var tx = db.Database.IsRelational() ? await db.Database.BeginTransactionAsync(ct) : null;
+        if (tx is not null && reservationId is > 0)
+            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(db, ReservationDepositService.LockName(reservationId.Value), ct);
+        var deposit = reservationId is > 0
+            ? await db.ReservationDeposits.FirstOrDefaultAsync(x => x.ReservationId == reservationId.Value, ct) : null;
+        if (deposit is not null && tx is not null) await db.Entry(deposit).ReloadAsync(ct);
+        var outcome = SelfRestaurant.Deposits.DepositRules.DecidePayment(deposit?.Status, deposit?.Amount ?? 0, deposit?.DueAtUtc ?? default,
+            transfer.Amount, now.UtcDateTime);
+        if (deposit is not null && outcome is SelfRestaurant.Deposits.DepositRules.OutcomePaid or SelfRestaurant.Deposits.DepositRules.OutcomeLate)
+        {
+            deposit.Status = outcome == SelfRestaurant.Deposits.DepositRules.OutcomePaid
+                ? SelfRestaurant.Deposits.DepositRules.Paid : SelfRestaurant.Deposits.DepositRules.RefundRequired;
+            if (outcome == SelfRestaurant.Deposits.DepositRules.OutcomeLate) deposit.ClosedReason = "Tiền cọc tới sau khi hết hạn";
+            deposit.PaidAmount = transfer.Amount;
+            deposit.PaidAtUtc = now.UtcDateTime;
+            deposit.ProviderTransactionId = Cut("SEPAY:" + transfer.Id, 100);
+            deposit.UpdatedAtUtc = DateTime.UtcNow;
+        }
+        row = await db.BankTransferEvents.SingleAsync(x => x.BankTransferEventId == row.BankTransferEventId, ct);
+        row.Outcome = outcome;
+        row.Overpaid = deposit is not null && outcome == SelfRestaurant.Deposits.DepositRules.OutcomePaid && transfer.Amount > deposit.Amount;
+        row.PaymentId = null;
+        row.BranchId = deposit?.BranchId;
+        row.ProcessedAtUtc = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        if (tx is not null) await tx.CommitAsync(ct);
+        logger.LogInformation("SePay webhook {SePayId}: {Outcome} for reservation deposit {ReservationId}, amount {Amount}.",
+            transfer.Id, outcome, reservationId, transfer.Amount);
+        return new(200, outcome, deposit?.BranchId, null, deposit?.CustomerId, null, transfer.Amount, deposit?.Status, deposit?.ReservationId);
     }
 
     private static string? Cut(string? value, int max) => value is null ? null : value.Length <= max ? value : value[..max];

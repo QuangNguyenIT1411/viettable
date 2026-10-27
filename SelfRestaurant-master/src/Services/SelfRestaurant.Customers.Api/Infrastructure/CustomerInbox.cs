@@ -19,6 +19,8 @@ public static class CustomerInbox
     public const string ReservationNoShow = "reservation.no-show.v1";
     public const string ReservationConfirmed = "reservation.confirmed.v1";
     public const string ReservationRejected = "reservation.rejected.v1";
+    public const string ReservationDepositPaid = "reservation.deposit-paid.v1";
+    public const string ReservationDepositExpired = "reservation.deposit-expired.v1";
     public const string KitchenStarted = "order.kitchen-started.v1";
     public const string OrderReady = "order.status-ready.v1";
     public const string OrderCancelled = "order.cancelled.v1";
@@ -39,6 +41,8 @@ public static class CustomerInbox
         [ReservationNoShow] = "Đặt bàn đã quá giờ",
         [ReservationConfirmed] = "Đặt bàn đã được xác nhận",
         [ReservationRejected] = "Đặt bàn bị từ chối",
+        [ReservationDepositPaid] = "Đã nhận tiền cọc",
+        [ReservationDepositExpired] = "Đặt bàn đã hủy do chưa đặt cọc",
         [KitchenStarted] = "Bếp đã nhận đơn",
         [OrderReady] = "Món ăn đã sẵn sàng",
         [OrderCancelled] = "Đơn hàng bị hủy",
@@ -99,7 +103,11 @@ public static class CustomerInbox
 
     public static string ReservationMessage(string eventName, Reservation r) => eventName switch
     {
+        ReservationCreated when r.Status == PendingDeposit && r.DepositDueAtUtc is not null =>
+            $"Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} cho {r.PartySize} khách đang chờ đặt cọc {Money(r.DepositAmount)}. Vui lòng chuyển khoản trước {When(r.DepositDueAtUtc.Value)} để giữ bàn.",
         ReservationCreated => $"Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} cho {r.PartySize} khách đã được ghi nhận. Nhà hàng sẽ xác nhận sớm.",
+        ReservationDepositPaid => $"Đã nhận tiền cọc {Money(r.DepositAmount)} cho đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)}. Nhà hàng sẽ xác nhận sớm.",
+        ReservationDepositExpired => $"Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} đã được hủy vì chưa nhận được tiền cọc đúng hạn.",
         ReservationConfirmed => $"Nhà hàng đã xác nhận đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} cho {r.PartySize} khách. Hẹn gặp quý khách!",
         ReservationRejected => $"Đặt bàn bị từ chối: {(r.StatusReason ?? "Nhà hàng không thể nhận đặt bàn này").TrimEnd('.', ' ')}. Đặt bàn {r.ReservationCode} lúc {When(r.ReservedAt)} đã được hủy, bạn có thể đặt giờ khác.",
         ReservationUpdated => $"Đặt bàn {r.ReservationCode} đã đổi sang {When(r.ReservedAt)}, {r.PartySize} khách.",
@@ -110,6 +118,11 @@ public static class CustomerInbox
     };
 
     /// <summary>Queues the reservation event for its customer (walk-in bookings without an account get none).</summary>
+    public const string PendingDeposit = "PendingDeposit";
+
+    private static string Money(decimal? value) =>
+        string.Format(System.Globalization.CultureInfo.GetCultureInfo("vi-VN"), "{0:N0}đ", value ?? 0);
+
     public static Task AddReservationAsync(CustomersDbContext db, string eventName, Reservation r, CancellationToken ct) =>
         r.CustomerId is > 0 ? AddAsync(db, r.CustomerId.Value, eventName, r.ReservationId, ReservationMessage(eventName, r), 0, ct) : Task.CompletedTask;
 

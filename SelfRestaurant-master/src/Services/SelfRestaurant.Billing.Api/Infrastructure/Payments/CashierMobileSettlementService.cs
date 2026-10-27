@@ -130,6 +130,7 @@ public sealed class CashierMobileSettlementService(BillingDbContext db, OrdersAp
                 IdempotencyKey = key, RequestHash = Hash(key), ItemsJson = JsonSerializer.Serialize(context.Items),
                 ExpiresAtUtc = now.AddMinutes(15), CreatedAtUtc = now, UpdatedAtUtc = now
             };
+            ReservationDepositService.AttachToQuote(quote, await ReservationDepositService.PaidForReservationAsync(db, context.ReservationId, ct));
             db.CheckoutQuotes.Add(quote);
             await db.SaveChangesAsync(ct);
         }
