@@ -32,6 +32,11 @@ public final class HomeDisplayRules {
                 : String.format(Locale.ROOT, "%d,%dK", thousands, rest);
     }
 
+    /** Like {@link #shortPrice} but never rounds: 89950 stays "89.950đ" (used where the exact total matters, e.g. the add button). */
+    public static String exactShortPrice(long amount) {
+        return amount % 100 == 0 ? shortPrice(amount) : String.format(Locale.GERMANY, "%,dđ", amount);
+    }
+
     /** "Món của bếp hôm nay": the first dish on sale that Admin marked as today's special; null when there is none. */
     public static FoodItem chefPick(List<FoodItem> foods) {
         for (FoodItem food : foods) {

@@ -41,6 +41,13 @@ public class HomeDisplayRulesTest {
     }
 
     @Test
+    public void exactShortPriceNeverRounds() {
+        assertEquals("130K", HomeDisplayRules.exactShortPrice(130_000));
+        assertEquals("135,5K", HomeDisplayRules.exactShortPrice(135_500));
+        assertEquals("89.950đ", HomeDisplayRules.exactShortPrice(89_950));
+    }
+
+    @Test
     public void chefPickIsTodaysSpecialOnSale() {
         FoodItem soldOutSpecial = dish("1", 50_000, 0, false, true);
         FoodItem plain = dish("2", 40_000, 0, true, false);

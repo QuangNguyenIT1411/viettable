@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "-" of the quantity stepper. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/pd_ripple">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/pd_surface" />
+        </shape>
+    </item>
+</ripple>

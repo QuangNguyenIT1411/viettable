@@ -8,13 +8,16 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.widget.NestedScrollView;
 
 import com.google.android.material.chip.Chip;
 import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentFoodDetailBinding;
 import com.restaurant.viettable.model.FoodItem;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.HomeDisplayRules;
 import com.restaurant.viettable.util.ImageLoader;
+import com.restaurant.viettable.util.PdMotion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +60,7 @@ public class FoodDetailFragment extends BaseFragment {
     @Override
     protected void onApplyInsets(@NonNull View root, androidx.core.graphics.Insets statusBars, androidx.core.graphics.Insets navigationBars) {
         super.onApplyInsets(root, statusBars, navigationBars);
-        setStatusBarLightIcons(false); // Dark icons over warm light food hero
+        darkStatusIcons(true); // the yellow header needs dark clock and battery
 
         int baseMargin = (int) (16 * getResources().getDisplayMetrics().density);
         ViewGroup.MarginLayoutParams backLp = (ViewGroup.MarginLayoutParams) binding.btnBack.getLayoutParams();
@@ -95,7 +98,8 @@ public class FoodDetailFragment extends BaseFragment {
         if (foodItem != null) {
             ImageLoader.getInstance().load(foodItem, binding.ivFoodHero);
             binding.tvFoodName.setText(foodItem.getName());
-            binding.tvFoodPrice.setText(foodItem.getFormattedPrice());
+            binding.tvFoodPrice.setText(HomeDisplayRules.exactShortPrice(foodItem.getPrice()));
+            binding.tvFoodPrice.setContentDescription(foodItem.getFormattedPrice());
             binding.tvFoodRating.setText(foodItem.getRating() + " (" + foodItem.getSoldCount() + " đã bán)");
             binding.layoutFoodRating.setVisibility(foodItem.getRating() > 0 ? View.VISIBLE : View.GONE);
             binding.tvDescription.setText(SafeText.clean(foodItem.getDescription()));
@@ -203,7 +207,41 @@ public class FoodDetailFragment extends BaseFragment {
             });
 
             updatePriceButton();
+            compactAddButtonAtLargeFont();
+            watchHeaderForStatusBar();
+            PdMotion.dishEnter(binding.plateFoodHero, binding.tvFoodPrice);
+            PdMotion.enterBlocks(binding.layoutFoodSheet, 6);
         }
+    }
+
+    /** At 130% font the label no longer fits next to the arrow circle (the design allows a centred label on a small button). */
+    private void compactAddButtonAtLargeFont() {
+        if (getResources().getConfiguration().fontScale > 1.15f) {
+            binding.btnSubmitAddToCart.setIcon(null);
+            binding.btnSubmitAddToCart.setGravity(android.view.Gravity.CENTER);
+            binding.btnSubmitAddToCart.setPadding(0, 0, 0, 0);
+        }
+    }
+
+    /** Status bar icons are dark over the yellow header and turn light once the dark sheet scrolls under the bar. */
+    private void watchHeaderForStatusBar() {
+        final boolean[] light = {false};
+        binding.scrollFoodDetail.setOnScrollChangeListener((NestedScrollView.OnScrollChangeListener)
+                (v, x, y, oldX, oldY) -> {
+                    boolean wantLight = y > binding.layoutFoodHeader.getHeight()
+                            - (int) (80 * getResources().getDisplayMetrics().density);
+                    if (wantLight != light[0]) {
+                        light[0] = wantLight;
+                        darkStatusIcons(!wantLight);
+                    }
+                });
+    }
+
+    /** MainActivity keeps the system icons light on purpose; this one screen is yellow on top, so it asks for dark ones itself and gives them back on leaving. */
+    private void darkStatusIcons(boolean dark) {
+        if (getActivity() == null) return;
+        androidx.core.view.WindowCompat.getInsetsController(getActivity().getWindow(), getActivity().getWindow().getDecorView())
+                .setAppearanceLightStatusBars(dark);
     }
 
     private void updateFavoriteIcon() {
@@ -220,11 +258,12 @@ public class FoodDetailFragment extends BaseFragment {
     private void updatePriceButton() {
         if (foodItem == null) return;
         long total = foodItem.getPrice() * quantity; // server price; no surcharge added in the app
-        binding.btnSubmitAddToCart.setText("Thêm vào giỏ • " + String.format(java.util.Locale.GERMANY, "%,dđ", total));
+        binding.btnSubmitAddToCart.setText("Thêm · " + HomeDisplayRules.exactShortPrice(total));
     }
 
     @Override
     public void onDestroyView() {
+        darkStatusIcons(false);
         super.onDestroyView();
         binding = null;
     }

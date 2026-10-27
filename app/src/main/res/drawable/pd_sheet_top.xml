@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bottom sheet look (DESIGN_PHO_DEM.md section 5): page colour, 36dp top corners. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/pd_bg" />
+    <corners android:topLeftRadius="36dp" android:topRightRadius="36dp" />
+</shape>

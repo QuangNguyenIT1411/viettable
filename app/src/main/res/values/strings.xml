@@ -262,5 +262,13 @@
     <string name="pd_home_featured">Thực đơn hôm nay</string>
     <string name="pd_home_at_table_desc">%1$s, %2$s. Đổi chi nhánh</string>
     <string name="pd_sold_out">Hết món</string>
+    <string name="pd_onsite_heading_wait">Đang chờ thanh toán</string>
+    <string name="pd_onsite_heading_transfer">Quét để thanh toán</string>
+    <string name="pd_onsite_wait_cash">Đang chờ phục vụ thanh toán</string>
+    <string name="pd_onsite_wait_transfer">Đang chờ ngân hàng xác nhận…</string>
+    <string name="pd_tracking_title_cooking">Bếp đang nổi lửa</string>
+    <string name="pd_tracking_title_done">Món đã lên đủ</string>
+    <string name="pd_tracking_dishes_done">món đã xong</string>
+    <string name="pd_tracking_latest_order">Tiến độ đợt gọi mới nhất</string>
     <string name="pd_add_to_cart">Thêm vào giỏ</string>
 </resources>

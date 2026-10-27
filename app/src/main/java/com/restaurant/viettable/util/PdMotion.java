@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LayoutAnimationController;
+import android.view.animation.OvershootInterpolator;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -37,6 +38,21 @@ public final class PdMotion {
                     .setDuration(320).setInterpolator(decelerate).start();
             animated++;
         }
+    }
+
+    /** Big dish on the detail screen: turns from -30 degrees and grows 0.8 to 1 (400ms, slight overshoot); the price sticker pops in after it. */
+    public static void dishEnter(View plate, View sticker) {
+        if (!enabled(plate.getContext())) return;
+        plate.setRotation(-30f);
+        plate.setScaleX(0.8f);
+        plate.setScaleY(0.8f);
+        plate.setAlpha(0f);
+        plate.animate().rotation(0f).scaleX(1f).scaleY(1f).alpha(1f).setDuration(400)
+                .setInterpolator(new OvershootInterpolator(1.1f)).start();
+        sticker.setScaleX(0f);
+        sticker.setScaleY(0f);
+        sticker.animate().scaleX(1f).scaleY(1f).setStartDelay(260).setDuration(320)
+                .setInterpolator(new OvershootInterpolator(2f)).start();
     }
 
     /** Dish cards slide up one after another (stagger 50ms) the first time a list is laid out. */

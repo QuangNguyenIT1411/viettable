@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cream round button: "+" of the quantity stepper, small copy buttons on the cream ticket. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#33000000">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/pd_cream" />
+        </shape>
+    </item>
+</ripple>

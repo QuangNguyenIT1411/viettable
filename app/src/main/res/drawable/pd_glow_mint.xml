@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Soft mint glow behind the Tiến độ món / Thành công titles (DESIGN_PHO_DEM.md section 2: blurred circle, 15-30%). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="50%"
+        android:centerColor="#337FD3AA"
+        android:startColor="#667FD3AA"
+        android:endColor="#007FD3AA" />
+</shape>

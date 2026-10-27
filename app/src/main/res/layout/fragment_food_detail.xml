@@ -1,316 +1,370 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<!-- Chi tiết món "Phố đêm" (DESIGN_PHO_DEM.md section 6, design P03). Written from scratch; view IDs used by
+     FoodDetailFragment are kept (btnBack, btnFavorite, ivFoodHero, tvFoodName, tvFoodPrice, ..., btnSubmitAddToCart). -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream">
+    android:background="@color/pd_yellow">
 
     <androidx.core.widget.NestedScrollView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:id="@+id/scrollFoodDetail"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:fillViewport="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottomBarAddToCart"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:overScrollMode="never">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingBottom="32dp">
+            android:clipChildren="false"
+            android:orientation="vertical">
 
-            <!-- Large Food Visual Focal Header -->
+            <!-- Yellow header: concentric rings, big plate, tilted price sticker. Rings are clipped by the header. -->
             <FrameLayout
+                android:id="@+id/layoutFoodHeader"
                 android:layout_width="match_parent"
-                android:layout_height="260dp"
-                android:background="@drawable/bg_food_hero">
-
-                <ImageView
-                    android:id="@+id/ivFoodHero"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:contentDescription="@null" />
+                android:layout_height="400dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
                 <View
+                    android:id="@+id/viewFoodRings"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_hero_image_scrim" />
+                    android:background="@drawable/pd_rings_dark"
+                    android:importantForAccessibility="no" />
 
-                <!-- Floating Round Back Button -->
-                <ImageButton
-                    android:id="@+id/btnBack"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_margin="16dp"
-                    android:background="@drawable/bg_round_floating_btn"
-                    android:contentDescription="@string/a11y_back"
-                    android:elevation="3dp"
-                    android:src="@drawable/ic_back"
-                    app:tint="@color/text_primary" />
+                <!-- Stage: plate with the price sticker glued to its upper right, spilling a little past the rim. -->
+                <FrameLayout
+                    android:id="@+id/stageFoodHero"
+                    android:layout_width="260dp"
+                    android:layout_height="260dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="28dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                <!-- Floating Round Favorite Button -->
-                <ImageButton
-                    android:id="@+id/btnFavorite"
-                    android:contentDescription="@string/a11y_add_favorite"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="top|end"
-                    android:layout_margin="16dp"
-                    android:background="@drawable/bg_round_floating_btn"
-                    android:elevation="3dp"
-                    android:src="@drawable/ic_favorite_border"
-                    app:tint="@color/semantic_error" />
-            </FrameLayout>
+                    <FrameLayout
+                        android:id="@+id/plateFoodHero"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/pd_plate"
+                        android:elevation="16dp"
+                        android:outlineSpotShadowColor="@color/black"
+                        android:padding="26dp">
 
-            <!-- Food Info Block -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingHorizontal="20dp"
-                android:paddingTop="20dp">
-
-                <!-- Title & Price Header -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:id="@+id/tvFoodName"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:textColor="@color/text_primary"
-                        android:textSize="22sp"
-                        android:textStyle="bold"
-                        tools:text="Phở bò tái lăn" />
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/ivFoodHero"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/pd_plate_empty"
+                            android:contentDescription="@null"
+                            android:scaleType="centerCrop"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearance.VietTable.Circle" />
+                    </FrameLayout>
 
                     <TextView
                         android:id="@+id/tvFoodPrice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:textColor="@color/primary"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="22dp"
+                        android:layout_marginEnd="-26dp"
+                        android:background="@drawable/pd_price_sticker"
+                        android:elevation="24dp"
+                        android:outlineSpotShadowColor="@color/black"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="8dp"
+                        android:rotation="8"
+                        android:textAppearance="@style/TextAppearance.VietTable.Price"
+                        android:textColor="@color/pd_on_color"
                         android:textSize="22sp"
-                        android:textStyle="bold"
-                        tools:text="89.000đ" />
-                </LinearLayout>
+                        tools:text="65K" />
+                </FrameLayout>
 
-                <!-- Rating and Sales Count -->
+                <!-- Dark round buttons. btnBack / btnFavorite get the status-bar margin in onApplyInsets. -->
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="top|start"
+                    android:layout_marginStart="@dimen/pd_screen_margin"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/pd_circle_dark"
+                    android:contentDescription="@string/a11y_back"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/pd_cream" />
+
+                <ImageButton
+                    android:id="@+id/btnFavorite"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginEnd="@dimen/pd_screen_margin"
+                    android:background="@drawable/pd_circle_dark"
+                    android:contentDescription="@string/a11y_add_favorite"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_favorite_border"
+                    app:tint="@color/pd_red" />
+            </FrameLayout>
+
+            <!-- Sheet: name, rating, description, options, kitchen note. -->
+            <LinearLayout
+                android:id="@+id/layoutFoodSheet"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="-40dp"
+                android:background="@drawable/pd_sheet_top"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:paddingTop="14dp"
+                android:paddingBottom="132dp">
+
+                <View
+                    android:layout_width="44dp"
+                    android:layout_height="5dp"
+                    android:layout_gravity="center_horizontal"
+                    android:background="@drawable/pd_sheet_handle"
+                    android:importantForAccessibility="no" />
+
+                <TextView
+                    android:id="@+id/tvFoodName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="22dp"
+                    android:accessibilityHeading="true"
+                    android:textAppearance="@style/TextAppearance.VietTable.Display.L"
+                    tools:text="Bún chả Hà Nội" />
+
+                <!-- Rating and sold count; hidden when the dish has no rating. -->
                 <LinearLayout
                     android:id="@+id/layoutFoodRating"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/ic_star" />
+                        android:src="@drawable/ic_star"
+                        app:tint="@color/pd_yellow" />
 
                     <TextView
                         android:id="@+id/tvFoodRating"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        tools:text="4.9 (1.250 đã bán)" />
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted"
+                        tools:text="4.8 (126 đã bán)" />
                 </LinearLayout>
 
-                <!-- Description -->
                 <TextView
                     android:id="@+id/tvDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:lineSpacingExtra="4dp"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    tools:text="Mô tả món ăn từ hệ thống." />
+                    android:layout_marginTop="16dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted"
+                    tools:text="Chả nướng than hoa, nước mắm chua ngọt pha tại bàn, ăn kèm rau sống và bún tươi trong ngày." />
 
-                <!-- Dietary & Nutrition info strip -->
+                <!-- Ingredients / allergy / nutrition: one surface card, only the lines that have data. -->
                 <LinearLayout
                     android:id="@+id/layoutDietaryInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:background="@drawable/bg_category_chip"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/pd_card_surface_row"
                     android:orientation="vertical"
-                    android:padding="14dp">
+                    android:padding="16dp">
 
                     <TextView
                         android:id="@+id/tvIngredients"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp"
-                        tools:text="Thành phần: nguyên liệu từ hệ thống." />
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        tools:text="Thành phần: thịt heo, bún, rau sống." />
 
                     <TextView
                         android:id="@+id/tvAllergy"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textColor="@color/semantic_error"
-                        android:textSize="12sp"
-                        tools:text="Dị ứng: thông tin từ hệ thống." />
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_red"
+                        tools:text="Dị ứng: nước mắm, đậu phộng." />
 
                     <TextView
                         android:id="@+id/tvNutrition"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textColor="@color/text_tertiary"
-                        android:textSize="12sp"
-                        tools:text="Dinh dưỡng: thông tin từ hệ thống." />
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        tools:text="Dinh dưỡng: 520 kcal." />
                 </LinearLayout>
 
-                <!-- Size Selection -->
+                <!-- Options: headings are small uppercase labels; chips come from the dish's own data. -->
                 <TextView
                     android:id="@+id/tvSizeHeading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
+                    android:layout_marginTop="28dp"
                     android:text="@string/food_size"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.VietTable.Label" />
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupSizes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
+                    app:chipSpacingVertical="4dp"
                     app:singleSelection="true" />
 
-                <!-- Topping Selection -->
                 <TextView
                     android:id="@+id/tvToppingHeading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="24dp"
                     android:text="@string/food_topping"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.VietTable.Label" />
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupToppings"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp" />
+                    android:layout_marginTop="10dp"
+                    app:chipSpacingVertical="4dp" />
 
-                <!-- Spicy Level -->
                 <TextView
+                    android:id="@+id/tvSpicyHeading"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="24dp"
                     android:text="@string/food_spicy_level"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.VietTable.Label" />
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupSpicy"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="10dp"
+                    app:chipSpacingVertical="4dp"
                     app:singleSelection="true" />
 
-                <!-- Kitchen Note -->
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.VietTable.TextInputLayout"
+                <!-- Kitchen note -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:hint="@string/food_note">
+                    android:layout_marginTop="24dp"
+                    android:background="@drawable/pd_note_box"
+                    android:gravity="center_vertical"
+                    android:minHeight="56dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="20dp">
 
-                    <com.google.android.material.textfield.TextInputEditText
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_cutlery"
+                        app:tint="@color/pd_muted" />
+
+                    <EditText
                         android:id="@+id/etNote"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:inputType="text" />
-                </com.google.android.material.textfield.TextInputLayout>
-
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:hint="@string/food_note"
+                        android:imeOptions="actionDone"
+                        android:inputType="text"
+                        android:minHeight="48dp"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_cream"
+                        android:textColorHint="@color/pd_dim" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Sticky Bottom Bar with Safe Inset -->
+    <!-- Fixed bottom bar: quantity stepper + red "Thêm · <price>" pill. -->
     <LinearLayout
         android:id="@+id/bottomBarAddToCart"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="72dp"
-        android:background="@color/surface"
-        android:elevation="8dp"
+        android:layout_gravity="bottom"
+        android:background="@color/pd_bg"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp">
 
-        <!-- Quantity Stepper -->
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_search_input"
+            android:layout_height="60dp"
+            android:background="@drawable/pd_stepper_bg"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="6dp">
+            android:paddingHorizontal="8dp">
 
             <ImageButton
                 android:id="@+id/btnMinus"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/pd_circle_surface"
                 android:contentDescription="Giảm số lượng"
+                android:padding="11dp"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_remove"
-                app:tint="@color/primary" />
+                app:tint="@color/pd_cream" />
 
             <TextView
                 android:id="@+id/tvQuantity"
-                android:layout_width="36dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
+                android:minWidth="32dp"
                 android:text="1"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Price"
+                android:textColor="@color/pd_cream" />
 
             <ImageButton
                 android:id="@+id/btnPlus"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/pd_circle_cream"
                 android:contentDescription="Tăng số lượng"
+                android:padding="11dp"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_add"
-                app:tint="@color/primary" />
+                app:tint="@color/pd_on_color" />
         </LinearLayout>
 
-        <!-- Primary Add to Cart Action -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSubmitAddToCart"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Red.Arrow"
             android:layout_width="0dp"
-            android:layout_height="@dimen/btn_height_primary"
+            android:layout_height="60dp"
             android:layout_marginStart="12dp"
             android:layout_weight="1"
-            tools:text="Thêm vào giỏ • 89.000đ"
-            android:textSize="14sp" />
+            android:maxLines="1"
+            android:paddingStart="20dp"
+            android:textSize="15sp"
+            tools:text="Thêm · 130K" />
     </LinearLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>
