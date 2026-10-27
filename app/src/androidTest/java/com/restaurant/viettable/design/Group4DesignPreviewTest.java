@@ -30,7 +30,18 @@ import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.model.User;
 import com.restaurant.viettable.ui.food.MenuFragment;
+import com.restaurant.viettable.model.Reservation;
+import com.restaurant.viettable.model.ReservationDraft;
+import com.restaurant.viettable.model.TableMapItem;
 import com.restaurant.viettable.ui.payment.InvoiceFragment;
+import com.restaurant.viettable.ui.reservation.ResConfirmationFragment;
+import com.restaurant.viettable.ui.reservation.ResDateFragment;
+import com.restaurant.viettable.ui.reservation.ResDetailFragment;
+import com.restaurant.viettable.ui.reservation.ResGuestCountFragment;
+import com.restaurant.viettable.ui.reservation.ResHistoryFragment;
+import com.restaurant.viettable.ui.reservation.ResNoteFragment;
+import com.restaurant.viettable.ui.reservation.ResTableLayoutFragment;
+import com.restaurant.viettable.ui.reservation.ResTimeFragment;
 import com.restaurant.viettable.ui.payment.LoyaltySelectFragment;
 import com.restaurant.viettable.ui.payment.PaymentTypeFragment;
 import com.restaurant.viettable.ui.payment.VoucherSelectFragment;
@@ -103,6 +114,31 @@ public class Group4DesignPreviewTest {
                 return LoyaltySelectFragment.newInstance(null);
             case "voucher":
                 return VoucherSelectFragment.newInstance(0);
+            case "resdate":
+                return ResDateFragment.newInstance();
+            case "restime":
+                return ResTimeFragment.newInstance(draft(state));
+            case "resguest":
+                return ResGuestCountFragment.newInstance(draft(state));
+            case "restable":
+                return ResTableLayoutFragment.newInstance(draft(state));
+            case "resnote":
+                return ResNoteFragment.newInstance(draft(state));
+            case "resconfirm": {
+                Reservation pending = reservation("8899", Reservation.Status.PENDING);
+                return ResConfirmationFragment.newInstance(pending);
+            }
+            case "reshistory":
+                state.replaceReservations(new ArrayList<>(Arrays.asList(
+                        reservation("8899", Reservation.Status.PENDING),
+                        reservation("8870", Reservation.Status.CONFIRMED),
+                        reservation("8812", Reservation.Status.REJECTED))));
+                return ResHistoryFragment.newInstance();
+            case "resdetail": {
+                Reservation rejected = reservation("8812", Reservation.Status.REJECTED);
+                rejected.setStatusReason("Nhà hàng đã kín chỗ khung giờ này");
+                return ResDetailFragment.newInstance(rejected);
+            }
             default:
                 state.addToCart(foods.get(1), 1, "Tiêu chuẩn", new ArrayList<>(), 0, "");
                 return new MenuFragment();
@@ -165,9 +201,67 @@ public class Group4DesignPreviewTest {
                 }
                 break;
             }
+            case "restable":
+                fillTables(a);
+                break;
             default:
                 break;
         }
+    }
+
+    /** The map needs the server; put sample tables into the fragment's own list and let its code draw them. */
+    private static void fillTables(MainActivity a) {
+        for (Fragment f : a.getSupportFragmentManager().getFragments()) {
+            if (!(f instanceof ResTableLayoutFragment)) continue;
+            try {
+                java.lang.reflect.Field tables = ResTableLayoutFragment.class.getDeclaredField("tables");
+                tables.setAccessible(true);
+                @SuppressWarnings("unchecked") List<TableMapItem> list = (List<TableMapItem>) tables.get(f);
+                list.clear();
+                list.add(new TableMapItem("1", 1, 2, TableMapItem.TOO_SMALL, "Không đủ ghế"));
+                list.add(new TableMapItem("2", 2, 2, TableMapItem.TOO_SMALL, "Không đủ ghế"));
+                list.add(new TableMapItem("3", 3, 4, TableMapItem.AVAILABLE, ""));
+                list.add(new TableMapItem("4", 4, 4, TableMapItem.AVAILABLE, ""));
+                list.add(new TableMapItem("5", 5, 4, TableMapItem.BOOKED, "Đã được đặt"));
+                list.add(new TableMapItem("6", 6, 4, TableMapItem.IN_USE, "Đang có khách"));
+                list.add(new TableMapItem("7", 7, 6, TableMapItem.AVAILABLE, ""));
+                list.add(new TableMapItem("8", 8, 6, TableMapItem.INACTIVE, "Tạm ngưng"));
+                java.lang.reflect.Field selected = ResTableLayoutFragment.class.getDeclaredField("selectedTableId");
+                selected.setAccessible(true);
+                selected.set(f, "4");
+                java.lang.reflect.Method render = ResTableLayoutFragment.class.getDeclaredMethod("render");
+                render.setAccessible(true);
+                render.invoke(f);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+            show(a, R.id.tvSelectedTableBanner);
+            text(a, R.id.tvSelectedTableBanner, "Đã chọn Bàn 4 (4 người)");
+            View hide = a.findViewById(R.id.progressTableMap);
+            if (hide != null) hide.setVisibility(View.GONE);
+            View cont = a.findViewById(R.id.btnContinue);
+            if (cont != null) cont.setEnabled(true);
+        }
+    }
+
+    private static ReservationDraft draft(AppStateManager state) {
+        ReservationDraft draft = new ReservationDraft();
+        draft.setBranch(state.getSelectedBranch());
+        draft.setDate(java.time.LocalDate.now().plusDays(2).format(java.time.format.DateTimeFormatter.ofPattern(
+                "EEEE, dd/MM/yyyy", new java.util.Locale("vi", "VN"))));
+        draft.setTimeSlot("19:00");
+        draft.setGuestCount(4);
+        draft.setTableId("4");
+        draft.setAreaName("Khu cửa sổ");
+        return draft;
+    }
+
+    private static Reservation reservation(String id, Reservation.Status status) {
+        Reservation r = new Reservation(id, "1", "Chi nhánh Quận 1", "12 Lê Lợi, Quận 1", "2026-10-29", "19:00", 4,
+                "Khu cửa sổ", "4", "Chuẩn bị thêm 1 ghế trẻ em.", new ArrayList<>(), 0, status, false,
+                "Nguyễn Vinh Quang", "0901234567");
+        r.setTableLabel("Bàn B4");
+        return r;
     }
 
     private static View invoiceRow(MainActivity a, String name, String price) {
