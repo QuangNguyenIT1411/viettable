@@ -167,6 +167,15 @@ public class Group4DesignPreviewTest {
                 return com.restaurant.viettable.ui.order.CurrentOrdersFragment.newInstance();
             case "orderdetail":
                 return com.restaurant.viettable.ui.order.OrderDetailFragment.newInstance(order(state.getActiveDiningSession()));
+            case "promotions":
+                return new com.restaurant.viettable.ui.home.PromotionsFragment();
+            case "promodetail":
+                return com.restaurant.viettable.ui.home.PromotionDetailFragment.newInstance(samplePromotions().get(0));
+            case "home-promo":
+                return new com.restaurant.viettable.ui.home.HomeFragment();
+            case "invoice-promo":
+                state.getActiveDiningSession().getOrders().add(order(state.getActiveDiningSession()));
+                return InvoiceFragment.newInstance();
             case "deposit": {
                 Reservation r = reservation("901", Reservation.Status.PENDING_DEPOSIT);
                 r.setGuestCount(6);
@@ -254,6 +263,22 @@ public class Group4DesignPreviewTest {
             case "deposit":
                 fillDeposit(a);
                 break;
+            case "promotions":
+                fillPromotions(a);
+                break;
+            case "home-promo":
+                fillHomeBanner(a);
+                break;
+            case "invoice-promo": {
+                fill("invoice", a);
+                show(a, R.id.layoutPromotionDiscount);
+                text(a, R.id.tvPromotionLabel, "Khuyến mãi: Giờ vàng cuối tuần");
+                text(a, R.id.tvPromotionDiscountAmount, "-25.000đ");
+                show(a, R.id.tvDiscountNote);
+                text(a, R.id.tvDiscountNote, "Áp dụng khuyến mãi \"Giờ vàng cuối tuần\" (−25.000đ) vì lợi hơn voucher (−20.000đ); không cộng dồn.");
+                text(a, R.id.tvInvoiceGrandTotal, "247.500đ");
+                break;
+            }
             case "resguest-deposit": {
                 // 6 guests: tap "+" twice from the draft's 4.
                 View plus = a.findViewById(R.id.btnPlusAdult);
@@ -295,6 +320,53 @@ public class Group4DesignPreviewTest {
     }
 
     /** The map needs the server; put sample tables into the fragment's own list and let its code draw them. */
+    private static java.util.List<com.restaurant.viettable.model.Promotion> samplePromotions() {
+        String end = java.time.Instant.now().plusSeconds(3 * 86_400).toString();
+        return new ArrayList<>(Arrays.asList(
+                new com.restaurant.viettable.model.Promotion(12, "Giờ vàng cuối tuần", "Áp dụng cho bữa tối thứ Bảy và Chủ nhật tại quán.",
+                        null, "PERCENT", 10, 50_000, 300_000, new ArrayList<>(Arrays.asList(1)), "2026-10-27T00:00:00Z", end,
+                        "Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ"),
+                new com.restaurant.viettable.model.Promotion(13, "Chào thành viên mới", null, null, "FIXED", 30_000, 0, 0,
+                        new ArrayList<>(), "2026-10-27T00:00:00Z", end, "Giảm 30.000đ cho mọi hóa đơn")));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void fillPromotions(MainActivity a) {
+        try {
+            for (Fragment f : a.getSupportFragmentManager().getFragments()) {
+                if (!(f instanceof com.restaurant.viettable.ui.home.PromotionsFragment)) continue;
+                java.lang.reflect.Field items = f.getClass().getDeclaredField("items");
+                items.setAccessible(true);
+                java.util.List<com.restaurant.viettable.model.Promotion> list = (java.util.List<com.restaurant.viettable.model.Promotion>) items.get(f);
+                list.clear();
+                list.addAll(samplePromotions());
+                java.lang.reflect.Field adapter = f.getClass().getDeclaredField("adapter");
+                adapter.setAccessible(true);
+                ((RecyclerView.Adapter<?>) adapter.get(f)).notifyDataSetChanged();
+                java.lang.reflect.Method render = f.getClass().getDeclaredMethod("render", boolean.class, String.class);
+                render.setAccessible(true);
+                render.invoke(f, false, null);
+            }
+        } catch (Exception ignored) { }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void fillHomeBanner(MainActivity a) {
+        try {
+            for (Fragment f : a.getSupportFragmentManager().getFragments()) {
+                if (!(f instanceof com.restaurant.viettable.ui.home.HomeFragment)) continue;
+                java.lang.reflect.Field items = f.getClass().getDeclaredField("promotions");
+                items.setAccessible(true);
+                java.util.List<com.restaurant.viettable.model.Promotion> list = (java.util.List<com.restaurant.viettable.model.Promotion>) items.get(f);
+                list.clear();
+                list.addAll(samplePromotions());
+                java.lang.reflect.Method render = f.getClass().getDeclaredMethod("renderPromotionBanner");
+                render.setAccessible(true);
+                render.invoke(f);
+            }
+        } catch (Exception ignored) { }
+    }
+
     /** The server's deposit policy as it would answer with the feature on (offline preview). */
     private static void setPolicy() {
         try {
