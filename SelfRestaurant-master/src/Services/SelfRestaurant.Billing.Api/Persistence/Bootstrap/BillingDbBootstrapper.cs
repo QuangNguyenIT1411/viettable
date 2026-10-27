@@ -85,6 +85,33 @@ public static class BillingDbBootstrapper
                 CREATE INDEX IX_ReservationDeposits_BranchStatus ON dbo.ReservationDeposits(BranchId, Status);
             END;
             """, cancellationToken);
+        // Promotions (docs/PROMO_PLAN.md); PostgreSQL gets them from migration Promotions.
+        await db.Database.ExecuteSqlRawAsync("""
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'PromotionId') IS NULL ALTER TABLE dbo.CheckoutQuotes ADD PromotionId INT NULL;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'PromotionName') IS NULL ALTER TABLE dbo.CheckoutQuotes ADD PromotionName NVARCHAR(200) NULL;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'PromotionOfferDiscount') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD PromotionOfferDiscount DECIMAL(18,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_PromotionOffer DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'PromotionDiscount') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD PromotionDiscount DECIMAL(18,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_PromotionDiscount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'VoucherOfferDiscount') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD VoucherOfferDiscount DECIMAL(18,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_VoucherOffer DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'DiscountNote') IS NULL ALTER TABLE dbo.CheckoutQuotes ADD DiscountNote NVARCHAR(300) NULL;
+            IF COL_LENGTH('dbo.Invoices', 'PromotionDiscount') IS NULL
+                ALTER TABLE dbo.Invoices ADD PromotionDiscount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Invoices_PromotionDiscount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Bills', 'PromotionId') IS NULL ALTER TABLE dbo.Bills ADD PromotionId INT NULL;
+            IF COL_LENGTH('dbo.Bills', 'PromotionDiscount') IS NULL
+                ALTER TABLE dbo.Bills ADD PromotionDiscount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Bills_PromotionDiscount DEFAULT (0) WITH VALUES;
+            IF OBJECT_ID(N'dbo.Promotions', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.Promotions(
+                    PromotionId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Promotions PRIMARY KEY,
+                    Name NVARCHAR(200) NOT NULL, Description NVARCHAR(1000) NULL, ImageUrl NVARCHAR(1000) NULL,
+                    DiscountType VARCHAR(20) NOT NULL, DiscountValue DECIMAL(18,2) NOT NULL, MaxDiscount DECIMAL(18,2) NULL,
+                    MinSubtotal DECIMAL(18,2) NOT NULL, BranchIds VARCHAR(500) NULL, StartsAtUtc DATETIME2 NOT NULL, EndsAtUtc DATETIME2 NOT NULL,
+                    IsActive BIT NOT NULL, NotifiedAtUtc DATETIME2 NULL, CreatedAtUtc DATETIME2 NOT NULL, UpdatedAtUtc DATETIME2 NOT NULL);
+                CREATE INDEX IX_Promotions_Running ON dbo.Promotions(IsActive, StartsAtUtc, EndsAtUtc);
+            END;
+            """, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);
     }
 

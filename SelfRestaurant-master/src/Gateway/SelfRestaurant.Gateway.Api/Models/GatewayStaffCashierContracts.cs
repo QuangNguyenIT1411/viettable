@@ -36,7 +36,12 @@ public sealed record CashierOrderCardDto(
     // Points conversion for the cashier web, from the same shared rules the backend uses (1 point = 10đ, steps of 1.000).
     int PointValueVnd = SelfRestaurant.Loyalty.LoyaltyRules.PointValueVnd,
     int PointsStep = SelfRestaurant.Loyalty.LoyaltyRules.RedeemStep,
-    int MaxPointsDiscountPercent = SelfRestaurant.Loyalty.LoyaltyRules.MaxDiscountPercent);
+    int MaxPointsDiscountPercent = SelfRestaurant.Loyalty.LoyaltyRules.MaxDiscountPercent,
+    // Best running promotion for this bill (preview); at checkout the backend uses it or the cashier's discount,
+    // whichever is better, never both (CheckoutPricing).
+    int? PromotionId = null,
+    string? PromotionName = null,
+    decimal PromotionDiscount = 0);
 
 public sealed record CashierBillHistoryItemDto(
     int BillId,

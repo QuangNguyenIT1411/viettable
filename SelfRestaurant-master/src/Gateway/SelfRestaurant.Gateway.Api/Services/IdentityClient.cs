@@ -69,6 +69,10 @@ public sealed class IdentityClient : ApiClientBase
     public Task ValidateResetPasswordTokenAsync(string token, CancellationToken cancellationToken) =>
         GetAsync<object>($"/api/identity/password/reset/validate?token={Uri.EscapeDataString(token)}", cancellationToken);
 
+    /// <summary>Every active customer (announcing a new promotion).</summary>
+    public async Task<IReadOnlyList<int>> GetActiveCustomerIdsAsync(CancellationToken cancellationToken) =>
+        await GetAsync<IReadOnlyList<int>>("/api/internal/customers/active-ids", cancellationToken) ?? Array.Empty<int>();
+
     public Task<CustomerProfileResponse?> GetCustomerAsync(int customerId, CancellationToken cancellationToken) =>
         GetAsync<CustomerProfileResponse>($"/api/customers/{customerId}", cancellationToken);
 

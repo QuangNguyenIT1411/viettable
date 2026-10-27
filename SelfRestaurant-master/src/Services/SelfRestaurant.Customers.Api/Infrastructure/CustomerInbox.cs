@@ -31,6 +31,8 @@ public static class CustomerInbox
     public const string PaymentCancelled = "billing.payment-cancelled.v1";
     public const string PointsEarned = "loyalty.points-earned.v1";
     public const string TierUp = "loyalty.tier-up.v1";
+    /// <summary>A promotion started running (category "offer" = the app's "Ưu đãi" tab).</summary>
+    public const string PromotionCreated = "promotion.created.v1";
 
     private static readonly Dictionary<string, string> Titles = new(StringComparer.Ordinal)
     {
@@ -53,6 +55,7 @@ public static class CustomerInbox
         [PaymentCancelled] = "Giao dịch đã hủy",
         [PointsEarned] = "Cộng điểm thưởng",
         [TierUp] = "Lên hạng thành viên",
+        [PromotionCreated] = "Ưu đãi mới",
     };
 
     /// <summary>Events that may happen more than once for the same item (a reservation can be changed again).</summary>

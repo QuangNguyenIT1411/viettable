@@ -136,6 +136,35 @@ public sealed class BillingClient : ApiClientBase
             throw new ApiClientException("Không tìm thấy dữ liệu thanh toán.", 404, code);
         return value;
     }
+    // ---- Promotions (docs/PROMO_PLAN.md) ----
+    public async Task<IReadOnlyList<JsonElement>> GetPromotionsAsync(CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<JsonElement>>("/api/internal/promotions", ct) ?? Array.Empty<JsonElement>();
+
+    public async Task<IReadOnlyList<JsonElement>> GetActivePromotionsAsync(int? branchId, CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<JsonElement>>("/api/internal/promotions/active" + (branchId is > 0 ? $"?branchId={branchId}" : ""), ct)
+            ?? Array.Empty<JsonElement>();
+
+    public async Task<JsonElement?> GetPromotionAsync(int promotionId, CancellationToken ct)
+    {
+        var value = await GetAsync<JsonElement>($"/api/internal/promotions/{promotionId}", ct);
+        return value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? null : value;
+    }
+
+    public Task<JsonElement> CreatePromotionAsync(object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>("/api/internal/promotions", request, ct);
+
+    public Task<JsonElement> UpdatePromotionAsync(int promotionId, object request, CancellationToken ct) =>
+        PutForAsync<object, JsonElement>($"/api/internal/promotions/{promotionId}", request, ct);
+
+    public Task<JsonElement> TogglePromotionAsync(int promotionId, bool isActive, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/promotions/{promotionId}/toggle", new { isActive }, ct);
+
+    public async Task<IReadOnlyList<JsonElement>> GetDuePromotionAnnouncementsAsync(CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<JsonElement>>("/api/internal/promotions/due-announcements", ct) ?? Array.Empty<JsonElement>();
+
+    public Task<JsonElement> MarkPromotionAnnouncedAsync(int promotionId, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/promotions/{promotionId}/announced", new { }, ct);
+
     // ---- Reservation deposits (docs/DEPOSIT_PLAN.md) ----
     public Task<JsonElement> CreateDepositAsync(object request, CancellationToken ct) =>
         PostForAsync<object, JsonElement>("/api/internal/deposits", request, ct);

@@ -78,14 +78,17 @@ public sealed class LoyaltyRulesTests
         var mobile = Read("src/Services/SelfRestaurant.Billing.Api/Controllers/MobileCheckoutController.cs");
         var cashier = Read("src/Services/SelfRestaurant.Billing.Api/Controllers/CashierController.cs");
         var profile = Read("src/Services/SelfRestaurant.Identity.Api/Controllers/MobileProfileController.cs");
+        // Since the promotions release both checkouts price through the one formula, which uses the shared rules.
+        var pricing = Read("src/Services/SelfRestaurant.Billing.Api/Infrastructure/Payments/CheckoutPricing.cs");
+        Assert.Contains("LoyaltyRules.RedeemablePoints", pricing);
         Assert.Contains("LoyaltyRules.PointsEarned", identity);
         Assert.Contains("LoyaltyRules.SettledPoints", identity);
         Assert.DoesNotContain("0.01m", identity);
-        Assert.Contains("LoyaltyRules.RedeemablePoints", mobile);
+        Assert.Contains("CheckoutPricing.Apply(entity, customer.LoyaltyPoints)", mobile);
         Assert.Contains("pointValueVnd = SelfRestaurant.Loyalty.LoyaltyRules.PointValueVnd", mobile);
         Assert.Contains("maxPointsDiscountPercent = SelfRestaurant.Loyalty.LoyaltyRules.MaxDiscountPercent", mobile);
         Assert.DoesNotContain("* 1000m", mobile);
-        Assert.Contains("LoyaltyRules.RedeemablePoints", cashier);
+        Assert.Contains("CheckoutPricing.Compute(", cashier);
         Assert.DoesNotContain("0.10m", cashier);
         Assert.DoesNotContain("5%", profile);
     }

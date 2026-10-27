@@ -362,6 +362,12 @@ public sealed class IdentityController : ControllerBase
         });
     }
 
+    /// <summary>Active customer ids, for announcing a new promotion to everyone ("Ưu đãi mới").</summary>
+    [HttpGet("/api/internal/customers/active-ids")]
+    public async Task<ActionResult<IReadOnlyList<int>>> GetActiveCustomerIds(CancellationToken cancellationToken) =>
+        Ok(await _db.Customers.AsNoTracking().Where(c => (c.IsActive ?? false) == true)
+            .OrderBy(c => c.CustomerID).Select(c => c.CustomerID).Take(20000).ToListAsync(cancellationToken));
+
     [HttpGet("/api/internal/customers:batch")]
     public async Task<ActionResult<IReadOnlyList<object>>> GetCustomersBatch([FromQuery] int[]? ids, CancellationToken cancellationToken)
     {

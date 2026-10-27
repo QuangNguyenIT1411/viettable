@@ -143,7 +143,8 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
             if (!await db.Invoices.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct))
                 db.Invoices.Add(new Invoice { InvoiceCode = $"INV-{Guid.NewGuid():N}", CheckoutQuoteId = quote.CheckoutQuoteId,
                     PaymentId = payment.PaymentId, DiningSessionId = quote.DiningSessionId, CustomerId = quote.CustomerId,
-                    Subtotal = quote.Subtotal, Discount = quote.VoucherDiscount + quote.PointsDiscount, DepositApplied = quote.DepositApplied,
+                    Subtotal = quote.Subtotal, Discount = quote.PromotionDiscount + quote.VoucherDiscount + quote.PointsDiscount,
+                    PromotionDiscount = quote.PromotionDiscount, DepositApplied = quote.DepositApplied,
                     TotalAmount = quote.TotalAmount, ItemsJson = quote.ItemsJson, IssuedAtUtc = DateTime.UtcNow });
             await ReservationDepositService.MarkAppliedAsync(db, quote, ct);
         }

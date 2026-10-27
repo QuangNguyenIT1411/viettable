@@ -28,6 +28,11 @@ public sealed class Bills
 
     public decimal Discount { get; set; }
 
+    /// <summary>Promotion applied at the counter instead of the cashier's discount when it was better (docs/PROMO_PLAN.md).</summary>
+    public int? PromotionId { get; set; }
+
+    public decimal PromotionDiscount { get; set; }
+
     public decimal PointsDiscount { get; set; }
 
     public int? PointsUsed { get; set; }

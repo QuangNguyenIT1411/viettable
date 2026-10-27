@@ -148,6 +148,10 @@ public sealed class CustomersClient : ApiClientBase
             request,
             cancellationToken);
 
+    /// <summary>One inbox row per customer (a repeat adds nothing).</summary>
+    public Task BroadcastInboxAsync(IReadOnlyList<int> customerIds, string eventName, int refId, string message, CancellationToken ct) =>
+        PostAsync("/api/internal/inbox/broadcast", new { customerIds, eventName, refId, message }, ct);
+
     /// <summary>Billing received the deposit: PendingDeposit → Pending. 409 when the booking closed first.</summary>
     public Task<ReservationDto?> MarkDepositPaidAsync(int reservationId, CancellationToken cancellationToken) =>
         PostForAsync<object, ReservationDto>($"/api/internal/reservations/{reservationId}/deposit-paid", new { }, cancellationToken);

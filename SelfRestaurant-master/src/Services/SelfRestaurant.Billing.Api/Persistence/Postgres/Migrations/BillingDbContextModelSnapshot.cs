@@ -184,6 +184,12 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int?>("PointsUsed")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("PromotionDiscount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int?>("PromotionId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("decimal(18, 2)");
 
@@ -437,6 +443,10 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int>("DiningSessionId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("DiscountNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<DateTime>("ExpiresAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -454,6 +464,19 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("PointsDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PromotionDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("PromotionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PromotionName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("PromotionOfferDiscount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("QuoteCode")
@@ -494,6 +517,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.Property<int?>("VoucherId")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("VoucherOfferDiscount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("CheckoutQuoteId");
 
@@ -546,6 +572,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.Property<int>("PaymentId")
                         .HasColumnType("integer");
+
+                    b.Property<decimal>("PromotionDiscount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("RecoveryAttemptCount")
                         .HasColumnType("integer");
@@ -803,6 +832,73 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                         .HasFilter("\"ProviderReference\" IS NOT NULL");
 
                     b.ToTable("MobilePayments", "billing");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.Promotion", b =>
+                {
+                    b.Property<int>("PromotionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PromotionId"));
+
+                    b.Property<string>("BranchIds")
+                        .HasMaxLength(500)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("EndsAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MaxDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MinSubtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("NotifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("StartsAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PromotionId");
+
+                    b.HasIndex("IsActive", "StartsAtUtc", "EndsAtUtc")
+                        .HasDatabaseName("IX_Promotions_Running");
+
+                    b.ToTable("Promotions", "billing");
                 });
 
             modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.ReservationDeposit", b =>

@@ -49,7 +49,9 @@ public sealed class MobileCheckoutController : ControllerBase
             PointsDiscount = 0, IdempotencyKey = request.IdempotencyKey.Trim(), RequestHash = request.RequestHash,
             ItemsJson = JsonSerializer.Serialize(context.Items), ExpiresAtUtc = now.AddMinutes(15), CreatedAtUtc = now, UpdatedAtUtc = now
         };
-        // A booking's paid deposit comes off the bill ("Đã đặt cọc −X đ").
+        // The best running promotion of the branch, then a booking's paid deposit ("Đã đặt cọc −X đ").
+        CheckoutPricing.AttachPromotion(quote, await InternalPromotionsController.OffersAsync(_db, now, ct), now);
+        CheckoutPricing.Apply(quote);
         ReservationDepositService.AttachToQuote(quote, await ReservationDepositService.PaidForReservationAsync(_db, context.ReservationId, ct));
         _db.CheckoutQuotes.Add(quote);
         try { await _db.SaveChangesAsync(ct); }
@@ -121,7 +123,7 @@ public sealed class MobileCheckoutController : ControllerBase
     {
         var quote = await OwnedOpenQuote(quoteId, request.CustomerId, ct); if (quote.Result is not null) return quote.Result;
         var entity = quote.Value!;
-        if (request.VoucherId is null) { entity.VoucherId = null; entity.VoucherDiscount = 0; }
+        if (request.VoucherId is null) { entity.VoucherId = null; entity.VoucherOfferDiscount = 0; }
         else
         {
             var now = DateTime.UtcNow;
@@ -129,9 +131,10 @@ public sealed class MobileCheckoutController : ControllerBase
             if (voucher is null) return NotFound(new { code = "voucher_not_found", message = "Voucher không tồn tại hoặc đã hết hạn." });
             if (entity.Subtotal < voucher.MinSubtotal) return Conflict(new { code = "voucher_minimum_not_met", message = "Đơn chưa đạt giá trị tối thiểu của voucher." });
             entity.VoucherId = voucher.VoucherId;
-            entity.VoucherDiscount = voucher.DiscountType == "PERCENT" ? entity.Subtotal * voucher.DiscountValue / 100 : voucher.DiscountValue;
-            if (voucher.MaxDiscount is not null) entity.VoucherDiscount = Math.Min(entity.VoucherDiscount, voucher.MaxDiscount.Value);
-            entity.VoucherDiscount = Math.Min(entity.Subtotal, Math.Floor(entity.VoucherDiscount));
+            var offer = voucher.DiscountType == "PERCENT" ? entity.Subtotal * voucher.DiscountValue / 100 : voucher.DiscountValue;
+            if (voucher.MaxDiscount is not null) offer = Math.Min(offer, voucher.MaxDiscount.Value);
+            // Kept as an offer: CheckoutPricing uses it only when better than the promotion (never both).
+            entity.VoucherOfferDiscount = Math.Min(entity.Subtotal, Math.Floor(offer));
         }
         Recalculate(entity); await _db.SaveChangesAsync(ct); return Ok(MapQuote(entity));
     }
@@ -145,11 +148,11 @@ public sealed class MobileCheckoutController : ControllerBase
         var customer = await _customers.GetCustomerAsync(request.CustomerId, ct);
         if (customer is null) return NotFound(new { code = "customer_not_found", message = "Không tìm thấy khách hàng." });
         if (request.Points > customer.LoyaltyPoints) return Conflict(new { code = "insufficient_points", message = "Điểm khả dụng không đủ." });
-        var payableAfterVoucher = Math.Max(0, entity.Subtotal - entity.VoucherDiscount);
-        // Shared rules: 1 point = 10đ, whole 1.000-point steps, capped by the balance and by 10% of the bill.
-        entity.PointsApplied = SelfRestaurant.Loyalty.LoyaltyRules.RedeemablePoints(request.Points, customer.LoyaltyPoints, payableAfterVoucher);
-        entity.PointsDiscount = SelfRestaurant.Loyalty.LoyaltyRules.Discount(entity.PointsApplied);
-        Recalculate(entity); await _db.SaveChangesAsync(ct); return Ok(MapQuote(entity));
+        // Shared rules (CheckoutPricing): 1 point = 10đ, whole 1.000-point steps, capped by the balance and by 10% of the
+        // bill after the promotion/voucher.
+        entity.PointsApplied = request.Points;
+        CheckoutPricing.Apply(entity, customer.LoyaltyPoints);
+        await _db.SaveChangesAsync(ct); return Ok(MapQuote(entity));
     }
 
     [HttpPost("dining-sessions/{sessionId:int}/payment-request")]
@@ -493,7 +496,7 @@ public sealed class MobileCheckoutController : ControllerBase
         return new BadRequestObjectResult(new { code = "invalid_payment_method", message = "ONLINE chỉ hỗ trợ QR không kèm location; ONSITE cần TABLE/CASHIER và CASH/QR/TRANSFER." });
     }
     private static void Recalculate(CheckoutQuote q) => ReservationDepositService.Recalculate(q);
-    private static object MapQuote(CheckoutQuote q) => new { q.CheckoutQuoteId, q.QuoteCode, q.DiningSessionId, q.Status, subtotal = Money(q.Subtotal), voucherDiscount = Money(q.VoucherDiscount), q.PointsApplied, pointsDiscount = Money(q.PointsDiscount), depositApplied = Money(q.DepositApplied), totalAmount = Money(q.TotalAmount), q.ExpiresAtUtc, items = JsonSerializer.Deserialize<JsonElement>(q.ItemsJson) };
+    private static object MapQuote(CheckoutQuote q) => new { q.CheckoutQuoteId, q.QuoteCode, q.DiningSessionId, q.Status, subtotal = Money(q.Subtotal), voucherDiscount = Money(q.VoucherDiscount), q.PointsApplied, pointsDiscount = Money(q.PointsDiscount), depositApplied = Money(q.DepositApplied), q.PromotionId, q.PromotionName, promotionDiscount = Money(q.PromotionDiscount), q.DiscountNote, totalAmount = Money(q.TotalAmount), q.ExpiresAtUtc, items = JsonSerializer.Deserialize<JsonElement>(q.ItemsJson) };
     private static object MapPayment(Payment p) => new { p.PaymentId, p.PaymentCode, p.CheckoutQuoteId, p.DiningSessionId, amount = Money(p.Amount), p.Currency, p.Channel, p.Method, p.Location, p.Status, p.AttemptNumber, p.ProviderName, p.ProviderReference, p.ProviderTransactionId, paymentUrl = p.ProviderPaymentUrl, providerExpiresAtUtc = p.ProviderExpiresAtUtc, p.FailureCode, p.CreatedAtUtc, p.UpdatedAtUtc, p.CompletedAtUtc };
     private static object MapInvoice(Invoice x) => new { x.InvoiceId, x.InvoiceCode, x.CheckoutQuoteId, x.PaymentId, x.DiningSessionId, subtotal = Money(x.Subtotal), discount = Money(x.Discount), totalAmount = Money(x.TotalAmount), items = JsonSerializer.Deserialize<JsonElement>(x.ItemsJson), x.IssuedAtUtc };
     private async Task<object> MapCustomerInvoiceAsync(Invoice invoice, CancellationToken ct)
@@ -508,6 +511,7 @@ public sealed class MobileCheckoutController : ControllerBase
     {
         invoice.InvoiceId, invoice.InvoiceCode, invoice.CheckoutQuoteId, invoice.PaymentId, invoice.DiningSessionId,
         subtotal = Money(invoice.Subtotal), discount = Money(invoice.Discount), depositApplied = Money(invoice.DepositApplied),
+        promotionDiscount = Money(invoice.PromotionDiscount), promotionName = quote?.PromotionName,
         totalAmount = Money(invoice.TotalAmount),
         items = JsonSerializer.Deserialize<JsonElement>(invoice.ItemsJson), invoice.IssuedAtUtc,
         branchId = quote?.BranchId, tableId = quote?.TableId, diningSessionCode = quote?.DiningSessionCode,

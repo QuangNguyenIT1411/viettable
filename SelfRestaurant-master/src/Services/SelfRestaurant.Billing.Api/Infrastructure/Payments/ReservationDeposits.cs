@@ -116,14 +116,8 @@ public sealed class ReservationDepositService(BillingDbContext db, IOptions<Depo
         Recalculate(quote);
     }
 
-    /// <summary>Total = subtotal − voucher − points − deposit (deposit capped at what is left, never below 0).</summary>
-    public static void Recalculate(CheckoutQuote quote)
-    {
-        var afterDiscounts = Math.Max(0, quote.Subtotal - quote.VoucherDiscount - quote.PointsDiscount);
-        quote.DepositApplied = DepositRules.Applicable(quote.DepositAmount, afterDiscounts);
-        quote.TotalAmount = afterDiscounts - quote.DepositApplied;
-        quote.UpdatedAtUtc = DateTime.UtcNow;
-    }
+    /// <summary>Re-prices the quote with the one formula (promotion/voucher → points → deposit): CheckoutPricing.</summary>
+    public static void Recalculate(CheckoutQuote quote) => CheckoutPricing.Apply(quote);
 
     /// <summary>The bill is paid: its deposit is used up. Caller owns the transaction (PaymentFinalizationService).</summary>
     public static async Task MarkAppliedAsync(BillingDbContext db, CheckoutQuote quote, CancellationToken ct)

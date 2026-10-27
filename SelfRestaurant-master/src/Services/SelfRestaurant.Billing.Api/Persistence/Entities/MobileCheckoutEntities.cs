@@ -20,6 +20,16 @@ public sealed class CheckoutQuote
     /// <summary>The part of DepositAmount taken off: never more than what is left after voucher and points.</summary>
     public decimal DepositApplied { get; set; }
     public int? ReservationDepositId { get; set; }
+    /// <summary>Best running promotion when the quote was made (its amount is fixed for the quote).</summary>
+    public int? PromotionId { get; set; }
+    public string? PromotionName { get; set; }
+    public decimal PromotionOfferDiscount { get; set; }
+    /// <summary>The promotion's part actually taken off (0 when the voucher is better).</summary>
+    public decimal PromotionDiscount { get; set; }
+    /// <summary>The chosen voucher's value; VoucherDiscount is the part actually taken off (0 when the promotion is better).</summary>
+    public decimal VoucherOfferDiscount { get; set; }
+    /// <summary>Why the promotion or the voucher was used when the guest had both (never both).</summary>
+    public string? DiscountNote { get; set; }
     public decimal TotalAmount { get; set; }
     public string IdempotencyKey { get; set; } = null!;
     public string RequestHash { get; set; } = null!;
@@ -83,6 +93,8 @@ public sealed class Invoice
     public decimal Discount { get; set; }
     /// <summary>Reservation deposit taken off this invoice ("Đã đặt cọc −X đ"); not part of Discount.</summary>
     public decimal DepositApplied { get; set; }
+    /// <summary>Promotion taken off this invoice ("Khuyến mãi −X đ"); also counted in Discount.</summary>
+    public decimal PromotionDiscount { get; set; }
     public decimal TotalAmount { get; set; }
     public string ItemsJson { get; set; } = "[]";
     public DateTime IssuedAtUtc { get; set; }

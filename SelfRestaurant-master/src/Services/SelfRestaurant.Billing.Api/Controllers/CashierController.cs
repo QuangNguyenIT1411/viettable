@@ -58,9 +58,13 @@ public sealed class CashierController : ControllerBase
                 cancellationToken))
             .ToDictionary(x => x.CustomerId);
 
+        var now = DateTime.UtcNow;
+        var offers = await InternalPromotionsController.OffersAsync(_db, now, cancellationToken);
         var payload = orders
             .Select(o =>
             {
+                // Preview for the counter screen; the amount charged is computed again at checkout (CheckoutPricing).
+                var promotion = CheckoutPricing.Best(offers, branchId, o.Subtotal, now);
                 customerLookup.TryGetValue(o.CustomerId ?? 0, out var customer);
 
                 var items = o.Items
@@ -90,7 +94,10 @@ public sealed class CashierController : ControllerBase
                     o.StatusName,
                     o.Subtotal,
                     o.ItemCount,
-                    items);
+                    items,
+                    promotion?.Offer.PromotionId,
+                    promotion?.Offer.Name,
+                    promotion?.Discount ?? 0);
             })
             .ToList();
 
@@ -182,13 +189,7 @@ public sealed class CashierController : ControllerBase
         }
 
         var subtotal = order.Subtotal;
-        var discount = request.Discount < 0 ? 0 : request.Discount;
-        if (discount > subtotal)
-        {
-            discount = subtotal;
-        }
-
-        var baseTotal = subtotal - discount;
+        var manualDiscount = request.Discount < 0 ? 0 : Math.Min(request.Discount, subtotal);
         CustomersApiClient.CustomerSnapshotResponse? customerSnapshot = null;
         if (order.CustomerId is int customerId && customerId > 0)
         {
@@ -202,20 +203,17 @@ public sealed class CashierController : ControllerBase
 
         var pointsBefore = customerSnapshot?.LoyaltyPoints ?? 0;
         var requestedPoints = request.PointsUsed < 0 ? 0 : request.PointsUsed;
-        var usedPoints = 0;
-        if (customerSnapshot is not null && requestedPoints > 0)
-        {
-            // Same rules as the app (SelfRestaurant.Loyalty.LoyaltyRules): 1 point = 10đ, whole 1.000-point steps,
-            // capped by the balance and by 10% of the bill.
-            usedPoints = SelfRestaurant.Loyalty.LoyaltyRules.RedeemablePoints(requestedPoints, customerSnapshot.LoyaltyPoints, baseTotal);
-        }
-
-        var pointsDiscount = SelfRestaurant.Loyalty.LoyaltyRules.Discount(usedPoints);
-        var totalAmount = baseTotal - pointsDiscount;
-        if (totalAmount < 0)
-        {
-            totalAmount = 0;
-        }
+        // The one formula shared with the app (CheckoutPricing): best promotion OR the cashier's discount (the better
+        // one), then points capped at 10% of what is left.
+        var promotion = CheckoutPricing.Best(await InternalPromotionsController.OffersAsync(_db, DateTime.UtcNow, cancellationToken),
+            order.BranchId ?? 0, subtotal, DateTime.UtcNow);
+        var pricing = CheckoutPricing.Compute(new PricingInput(subtotal, promotion?.Offer.PromotionId, promotion?.Offer.Name,
+            promotion?.Discount ?? 0, manualDiscount, customerSnapshot is null ? 0 : requestedPoints, customerSnapshot?.LoyaltyPoints ?? 0, 0,
+            "giảm giá của thu ngân"));
+        var discount = pricing.VoucherDiscount;
+        var usedPoints = pricing.PointsApplied;
+        var pointsDiscount = pricing.PointsDiscount;
+        var totalAmount = pricing.Total;
 
         var paymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "CASH" : request.PaymentMethod.Trim().ToUpperInvariant();
         if (paymentMethod == "CARD")
@@ -271,6 +269,8 @@ public sealed class CashierController : ControllerBase
             BillTime = DateTime.Now,
             Subtotal = subtotal,
             Discount = discount,
+            PromotionId = pricing.PromotionId,
+            PromotionDiscount = pricing.PromotionDiscount,
             PointsDiscount = pointsDiscount,
             PointsUsed = usedPoints > 0 ? (int?)usedPoints : null,
             TotalAmount = totalAmount,
@@ -399,7 +399,10 @@ public sealed class CashierController : ControllerBase
             PointsEarned: earnedPoints,
             CustomerPoints: customerPointsAfter,
             CustomerName: customerName,
-            PointsBefore: pointsBefore));
+            PointsBefore: pointsBefore,
+            PromotionName: pricing.PromotionName,
+            PromotionDiscount: pricing.PromotionDiscount,
+            DiscountNote: pricing.DiscountNote));
     }
 
     [HttpGet("api/internal/audit-logs")]
@@ -868,7 +871,10 @@ public sealed class CashierController : ControllerBase
         string StatusName,
         decimal Subtotal,
         int ItemCount,
-        IReadOnlyList<CashierOrderItemResponse> Items);
+        IReadOnlyList<CashierOrderItemResponse> Items,
+        int? PromotionId = null,
+        string? PromotionName = null,
+        decimal PromotionDiscount = 0);
 
     public sealed record CheckoutRequest(
         int EmployeeId,
@@ -890,5 +896,8 @@ public sealed class CashierController : ControllerBase
         int PointsBefore,
         int? MobilePaymentId = null,
         int? CustomerId = null,
-        int? DiningSessionId = null);
+        int? DiningSessionId = null,
+        string? PromotionName = null,
+        decimal PromotionDiscount = 0,
+        string? DiscountNote = null);
 }

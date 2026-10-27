@@ -112,8 +112,10 @@ public sealed class ReservationDepositTests
         ReservationDepositService.AttachToQuote(quote, Deposit(status: DepositRules.Paid));
         Assert.Equal(300_000m, quote.DepositApplied);
         Assert.Equal(500_000m, quote.TotalAmount);
-        quote.VoucherDiscount = 50_000m; quote.PointsDiscount = 10_000m;
+        quote.VoucherId = 1; quote.VoucherOfferDiscount = 50_000m; quote.PointsApplied = 1_000; // 1.000 points = 10.000đ
         ReservationDepositService.Recalculate(quote);
+        Assert.Equal(50_000m, quote.VoucherDiscount);
+        Assert.Equal(10_000m, quote.PointsDiscount);
         Assert.Equal(300_000m, quote.DepositApplied);
         Assert.Equal(440_000m, quote.TotalAmount);
     }

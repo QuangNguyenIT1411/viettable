@@ -207,6 +207,7 @@ builder.Services.AddScoped<CustomerPaymentNotifier>();
 builder.Services.AddScoped<CustomerInboxNotifier>();
 builder.Services.Configure<SelfRestaurant.Deposits.DepositOptions>(builder.Configuration.GetSection(SelfRestaurant.Deposits.DepositOptions.Section));
 builder.Services.AddScoped<ReservationDepositCoordinator>();
+builder.Services.AddScoped<PromotionAnnouncer>();
 
 configureServices?.Invoke(builder);
 registrationTiming?.Dispose();

@@ -749,7 +749,8 @@ public sealed class StaffCashierGatewayController : ControllerBase
             o.CustomerPoints,
             o.Subtotal,
             o.ItemCount,
-            o.Items.Select(i => new CashierOrderItemCardDto(i.DishName, i.Quantity, i.UnitPrice, i.LineTotal, ResolveDishImage(i.Image, i.DishName), i.StatusCode)).ToArray())).ToArray();
+            o.Items.Select(i => new CashierOrderItemCardDto(i.DishName, i.Quantity, i.UnitPrice, i.LineTotal, ResolveDishImage(i.Image, i.DishName), i.StatusCode)).ToArray(),
+            PromotionId: o.PromotionId, PromotionName: o.PromotionName, PromotionDiscount: o.PromotionDiscount)).ToArray();
 
         var activeOrderByTableId = orders
             .Where(o => o.TableId > 0 && !string.Equals(o.StatusCode, "COMPLETED", StringComparison.OrdinalIgnoreCase))

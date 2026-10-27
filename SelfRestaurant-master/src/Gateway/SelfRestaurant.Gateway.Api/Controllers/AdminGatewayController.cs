@@ -144,6 +144,46 @@ public sealed class AdminGatewayController : ControllerBase
         }
     }
 
+    // ---- Promotions (docs/PROMO_PLAN.md): admin only; a promotion that is running now is announced at once. ----
+
+    [HttpGet("promotions")]
+    public async Task<ActionResult<object>> GetPromotions([FromServices] BillingClient billing, CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await billing.GetPromotionsAsync(ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_promotions_failed", ex); }
+    }
+
+    [HttpPost("promotions")]
+    public Task<ActionResult<object>> CreatePromotion([FromBody] System.Text.Json.JsonElement request, [FromServices] BillingClient billing,
+        [FromServices] PromotionAnnouncer announcer, CancellationToken ct) =>
+        SavePromotion(() => billing.CreatePromotionAsync(request, ct), announcer, "create_promotion_failed", ct);
+
+    [HttpPut("promotions/{promotionId:int}")]
+    public Task<ActionResult<object>> UpdatePromotion(int promotionId, [FromBody] System.Text.Json.JsonElement request,
+        [FromServices] BillingClient billing, [FromServices] PromotionAnnouncer announcer, CancellationToken ct) =>
+        SavePromotion(() => billing.UpdatePromotionAsync(promotionId, request, ct), announcer, "update_promotion_failed", ct);
+
+    [HttpPost("promotions/{promotionId:int}/toggle")]
+    public Task<ActionResult<object>> TogglePromotion(int promotionId, [FromBody] AdminPromotionToggleRequest request,
+        [FromServices] BillingClient billing, [FromServices] PromotionAnnouncer announcer, CancellationToken ct) =>
+        SavePromotion(() => billing.TogglePromotionAsync(promotionId, request.IsActive, ct), announcer, "toggle_promotion_failed", ct);
+
+    private async Task<ActionResult<object>> SavePromotion(Func<Task<System.Text.Json.JsonElement>> save, PromotionAnnouncer announcer,
+        string fallbackCode, CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try
+        {
+            var saved = await save();
+            await announcer.AnnounceDueAsync(ct); // "Ưu đãi mới" when it runs now; a future start is announced on a later read
+            return Ok(saved);
+        }
+        catch (ApiClientException ex) { return HandleApiClientException(fallbackCode, ex); }
+    }
+
+    public sealed record AdminPromotionToggleRequest(bool IsActive);
+
     /// <summary>Reservation deposits (one branch, or every branch the admin sees) with their bookings.</summary>
     [HttpGet("/api/admin/deposits")]
     public async Task<ActionResult<IReadOnlyList<object>>> GetDeposits([FromQuery] int? branchId,

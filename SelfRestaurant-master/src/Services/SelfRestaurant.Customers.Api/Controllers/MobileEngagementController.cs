@@ -95,6 +95,28 @@ public sealed class MobileEngagementController : ControllerBase
         return Ok(new { created });
     }
 
+    /// <summary>
+    /// One inbox row per customer for an announcement (e.g. "Ưu đãi mới"); a repeat adds nothing (one per customer and
+    /// item). Only events the inbox knows are accepted.
+    /// </summary>
+    [HttpPost("~/api/internal/inbox/broadcast")]
+    public async Task<ActionResult<object>> Broadcast(BroadcastRequest request, CancellationToken ct)
+    {
+        if (!CustomerInbox.IsKnown(request.EventName) || request.RefId <= 0 || string.IsNullOrWhiteSpace(request.Message)
+            || request.CustomerIds is null || request.CustomerIds.Count > 20000) return Validation();
+        var created = 0;
+        foreach (var batch in request.CustomerIds.Where(x => x > 0).Distinct().Chunk(500))
+        {
+            foreach (var customerId in batch)
+                if ((await CustomerInbox.AddAsync(_db, customerId, request.EventName!, request.RefId, request.Message.Trim(), 0, ct)).Created)
+                    created++;
+            await _db.SaveChangesAsync(ct);
+        }
+        return Ok(new { created });
+    }
+
+    public sealed record BroadcastRequest(IReadOnlyList<int>? CustomerIds, string? EventName, int RefId, string? Message);
+
     [HttpPost("customers/{customerId:int}/notifications/read-all")]
     public async Task<ActionResult<object>> ReadAllNotifications(int customerId, CancellationToken ct)
     {

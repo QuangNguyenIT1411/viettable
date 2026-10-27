@@ -258,7 +258,10 @@ public sealed record CashierOrderDto(
     string StatusName,
     decimal Subtotal,
     int ItemCount,
-    IReadOnlyList<CashierOrderItemDto> Items);
+    IReadOnlyList<CashierOrderItemDto> Items,
+    int? PromotionId = null,
+    string? PromotionName = null,
+    decimal PromotionDiscount = 0);
 
 public sealed record CashierCheckoutRequest(
     int EmployeeId,

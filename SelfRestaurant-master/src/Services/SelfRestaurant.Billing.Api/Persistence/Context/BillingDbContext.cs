@@ -23,6 +23,7 @@ public sealed class BillingDbContext : DbContext
     public DbSet<SplitBillPart> SplitBillParts => Set<SplitBillPart>();
     public DbSet<BankTransferEvent> BankTransferEvents => Set<BankTransferEvent>();
     public DbSet<ReservationDeposit> ReservationDeposits => Set<ReservationDeposit>();
+    public DbSet<Promotion> Promotions => Set<Promotion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +45,7 @@ public sealed class BillingDbContext : DbContext
             entity.Property(e => e.BillTime).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
             entity.Property(e => e.ChangeAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Discount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.PromotionDiscount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PaymentAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.PaymentMethod).HasMaxLength(20);
             entity.Property(e => e.PointsDiscount).HasColumnType("decimal(18, 2)");
@@ -131,8 +133,11 @@ public sealed class BillingDbContext : DbContext
             entity.Property(x => x.IdempotencyKey).HasMaxLength(140).IsUnicode(false);
             entity.Property(x => x.RequestHash).HasMaxLength(64).IsUnicode(false);
             entity.Property(x => x.ItemsJson).HasColumnType("nvarchar(max)");
+            entity.Property(x => x.PromotionName).HasMaxLength(200);
+            entity.Property(x => x.DiscountNote).HasMaxLength(300);
             foreach (var p in new[] { nameof(CheckoutQuote.Subtotal), nameof(CheckoutQuote.VoucherDiscount), nameof(CheckoutQuote.PointsDiscount), nameof(CheckoutQuote.TotalAmount),
-                         nameof(CheckoutQuote.DepositAmount), nameof(CheckoutQuote.DepositApplied) })
+                         nameof(CheckoutQuote.DepositAmount), nameof(CheckoutQuote.DepositApplied),
+                         nameof(CheckoutQuote.PromotionOfferDiscount), nameof(CheckoutQuote.PromotionDiscount), nameof(CheckoutQuote.VoucherOfferDiscount) })
                 entity.Property(p).HasColumnType("decimal(18,2)");
         });
         modelBuilder.Entity<Voucher>(entity =>
@@ -161,6 +166,7 @@ public sealed class BillingDbContext : DbContext
             entity.Property(x => x.InvoiceCode).HasMaxLength(50).IsUnicode(false); entity.Property(x => x.ItemsJson).HasColumnType("nvarchar(max)");
             entity.Property(x => x.Subtotal).HasColumnType("decimal(18,2)"); entity.Property(x => x.Discount).HasColumnType("decimal(18,2)"); entity.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
             entity.Property(x => x.DepositApplied).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.PromotionDiscount).HasColumnType("decimal(18,2)");
         });
         modelBuilder.Entity<SplitBill>(entity =>
         {
@@ -188,6 +194,21 @@ public sealed class BillingDbContext : DbContext
             entity.Property(x => x.Content).HasMaxLength(500);
             entity.Property(x => x.TransactionDate).HasMaxLength(40).IsUnicode(false);
             entity.Property(x => x.Outcome).HasMaxLength(30).IsUnicode(false);
+        });
+
+        modelBuilder.Entity<Promotion>(entity =>
+        {
+            entity.ToTable("Promotions");
+            entity.HasKey(x => x.PromotionId);
+            entity.HasIndex(x => new { x.IsActive, x.StartsAtUtc, x.EndsAtUtc }).HasDatabaseName("IX_Promotions_Running");
+            entity.Property(x => x.Name).HasMaxLength(200);
+            entity.Property(x => x.Description).HasMaxLength(1000);
+            entity.Property(x => x.ImageUrl).HasMaxLength(1000);
+            entity.Property(x => x.DiscountType).HasMaxLength(20).IsUnicode(false);
+            entity.Property(x => x.DiscountValue).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.MaxDiscount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.MinSubtotal).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.BranchIds).HasMaxLength(500).IsUnicode(false);
         });
 
         modelBuilder.Entity<ReservationDeposit>(entity =>
