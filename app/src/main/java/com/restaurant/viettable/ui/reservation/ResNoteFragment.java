@@ -52,6 +52,7 @@ public class ResNoteFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentResNoteBinding.inflate(inflater, container, false);
+        setBottomNavVisible(false);
         return binding.getRoot();
     }
 
