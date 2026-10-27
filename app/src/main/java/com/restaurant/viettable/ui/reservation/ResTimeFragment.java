@@ -44,6 +44,7 @@ public class ResTimeFragment extends BaseFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = FragmentResTimeBinding.inflate(inflater, container, false);
+        setBottomNavVisible(false);
         return binding.getRoot();
     }
 
@@ -89,6 +90,8 @@ public class ResTimeFragment extends BaseFragment {
             }
             (lunch ? binding.chipGroupLunch : binding.chipGroupDinner).addView(chip);
         }
+        sizeChipsInThreeColumns(binding.chipGroupLunch);
+        sizeChipsInThreeColumns(binding.chipGroupDinner);
         binding.btnContinue.setEnabled(selectedSlot != null);
         if (selectedSlot == null) showToast("Hôm nay đã hết giờ nhận đặt bàn. Vui lòng chọn ngày khác.");
 
@@ -96,6 +99,23 @@ public class ResTimeFragment extends BaseFragment {
             if (selectedSlot == null) { showToast("Vui lòng chọn giờ đến."); return; }
             draft.setTimeSlot(selectedSlot);
             navigateTo(ResGuestCountFragment.newInstance(draft));
+        });
+    }
+
+    /** Time chips sit in a 3-column grid (DESIGN_PHO_DEM.md section 6 "Đặt bàn": "lưới chip 3 cột"). */
+    private static void sizeChipsInThreeColumns(com.google.android.material.chip.ChipGroup group) {
+        group.post(() -> {
+            int width = group.getWidth() - group.getPaddingLeft() - group.getPaddingRight();
+            if (width <= 0) return;
+            int cell = (width - 2 * group.getChipSpacingHorizontal()) / 3;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View chip = group.getChildAt(i);
+                ViewGroup.LayoutParams lp = chip.getLayoutParams();
+                lp.width = cell;
+                chip.setLayoutParams(lp);
+                if (chip instanceof com.google.android.material.chip.Chip)
+                    ((com.google.android.material.chip.Chip) chip).setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            }
         });
     }
 

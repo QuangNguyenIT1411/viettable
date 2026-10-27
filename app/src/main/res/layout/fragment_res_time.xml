@@ -1,124 +1,128 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<!-- Đặt bàn bước 2 "Phố đêm": time chips in a 3-column grid (sized by ResTimeFragment), past slots dimmed.
+     Written from scratch; view IDs used by ResTimeFragment are kept. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream"
-    android:orientation="vertical">
+    android:background="@color/pd_bg">
 
-    <!-- Top Bar -->
-    <LinearLayout
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="56dp"
-        android:tag="safe_top"
-        android:background="@color/surface"
-        android:elevation="2dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/a11y_back"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back"
-            app:tint="@color/primary" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="Chọn khung giờ"
-            android:textColor="@color/primary"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <include
-        android:id="@+id/wizardProgress"
-        layout="@layout/view_wizard_progress" />
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true">
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingTop="12dp"
+            android:paddingBottom="140dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="@dimen/pd_screen_margin"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
 
             <TextView
                 android:id="@+id/tvDateSelectedDisplay"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Ngày đã chọn: Hôm nay, 20/09"
-                android:textColor="@color/accent_gold_dark"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                tools:text="Ngày đã chọn: 27/10/2026" />
 
-            <!-- Lunch Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Chọn khung giờ"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <include
+                android:id="@+id/wizardProgress"
+                layout="@layout/view_wizard_progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="24dp"
                 android:text="Buổi trưa (10:00 - 14:30)"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupLunch"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="12dp"
+                app:chipSpacingHorizontal="10dp"
+                app:chipSpacingVertical="4dp"
                 app:singleSelection="true" />
 
-            <!-- Dinner Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
                 android:layout_marginTop="24dp"
                 android:text="Buổi chiều tối (15:00 - 21:30)"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupDinner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="12dp"
+                app:chipSpacingHorizontal="10dp"
+                app:chipSpacingVertical="4dp"
                 app:singleSelection="true" />
-
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="72dp"
-        android:tag="safe_bottom"
-        android:background="@color/surface"
-        android:elevation="8dp"
-        android:gravity="center"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp">
+        android:layout_gravity="bottom"
+        android:background="@drawable/pd_fade_bottom"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="28dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnContinue"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
             android:text="@string/btn_continue" />
     </LinearLayout>
-
-</LinearLayout>
+</FrameLayout>
