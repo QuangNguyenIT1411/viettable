@@ -60,7 +60,7 @@ public class ResTimeFragment extends BaseFragment {
         binding.wizardProgress.tvWizardStepFraction.setText("2/5");
         binding.wizardProgress.progressWizard.setProgress(40);
 
-        binding.tvDateSelectedDisplay.setText("Ngày đã chọn: " + DisplayFormatters.date(draft.getDate()));
+        binding.tvDateSelectedDisplay.setText("Ngày đã chọn: " + DisplayFormatters.weekdayDate(draft.getDate()));
 
         // One slot table (10:00–21:30, as the server accepts); today hides the slots less than 15 minutes away.
         java.time.LocalDateTime now = java.time.LocalDateTime.now();

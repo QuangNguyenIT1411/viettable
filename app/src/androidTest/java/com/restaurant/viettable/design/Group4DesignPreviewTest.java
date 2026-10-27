@@ -296,8 +296,7 @@ public class Group4DesignPreviewTest {
     private static ReservationDraft draft(AppStateManager state) {
         ReservationDraft draft = new ReservationDraft();
         draft.setBranch(state.getSelectedBranch());
-        draft.setDate(java.time.LocalDate.now().plusDays(2).format(java.time.format.DateTimeFormatter.ofPattern(
-                "EEEE, dd/MM/yyyy", new java.util.Locale("vi", "VN"))));
+        draft.setDate(java.time.LocalDate.now().plusDays(2).toString());
         draft.setTimeSlot("19:00");
         draft.setGuestCount(4);
         draft.setTableId("4");

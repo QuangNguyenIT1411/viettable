@@ -29,6 +29,7 @@ import com.restaurant.viettable.model.SplitPaymentResult;
 import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.model.User;
 import com.restaurant.viettable.util.DisplayFormatters;
+import com.restaurant.viettable.util.ReservationSchedule;
 import com.restaurant.viettable.util.StatusLabels;
 
 import org.json.JSONArray;
@@ -47,8 +48,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import com.restaurant.viettable.util.NotificationRules;
@@ -1668,13 +1667,8 @@ public final class MobileRepository {
     }
 
     private static String reservationInstant(String dateText, String timeText) {
-        Matcher matcher = Pattern.compile("(\\d{1,2})/(\\d{1,2})(?:/(\\d{4}))?").matcher(dateText);
-        LocalDate date = LocalDate.now().plusDays(1);
-        if (matcher.find()) {
-            int day = Integer.parseInt(matcher.group(1)); int month = Integer.parseInt(matcher.group(2));
-            int year = matcher.group(3) == null ? LocalDate.now().getYear() : Integer.parseInt(matcher.group(3));
-            date = LocalDate.of(year, month, day); if (date.isBefore(LocalDate.now())) date = date.plusYears(1);
-        }
+        LocalDate date = ReservationSchedule.parseDate(dateText, LocalDate.now());
+        if (date == null) date = LocalDate.now().plusDays(1);
         String[] hm = timeText.split(":");
         LocalDateTime local = date.atTime(Integer.parseInt(hm[0]), Integer.parseInt(hm[1]));
         return local.atZone(ZoneId.systemDefault()).toOffsetDateTime().toString();

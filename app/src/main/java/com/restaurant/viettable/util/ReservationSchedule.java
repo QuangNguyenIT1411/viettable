@@ -60,8 +60,18 @@ public final class ReservationSchedule {
         return days;
     }
 
-    /** Reads "…dd/MM/yyyy" (the app's date text); a missing year means the next such day. */
+    /**
+     * Reads the booking draft's ISO "yyyy-MM-dd", or "…dd/MM/yyyy" (a booking loaded from the server); a missing year
+     * means the next such day.
+     */
     public static LocalDate parseDate(String text, LocalDate today) {
+        if (text != null) {
+            try {
+                return LocalDate.parse(text.trim());
+            } catch (java.time.format.DateTimeParseException ignored) {
+                // not ISO: fall through to dd/MM[/yyyy]
+            }
+        }
         Matcher matcher = DAY_MONTH_YEAR.matcher(text == null ? "" : text);
         if (!matcher.find()) return null;
         int day = Integer.parseInt(matcher.group(1));

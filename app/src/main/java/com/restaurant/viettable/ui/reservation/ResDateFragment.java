@@ -76,7 +76,8 @@ public class ResDateFragment extends BaseFragment {
         renderDateCards();
 
         binding.btnContinue.setOnClickListener(v -> {
-            draft.setDate(dateOptions.get(selectedIndex));
+            // ISO "yyyy-MM-dd" in the draft; "Thứ Năm, 29/10/2026" is only formatted for display.
+            draft.setDate(dayOptions.get(selectedIndex).toString());
             navigateTo(ResTimeFragment.newInstance(draft));
         });
     }

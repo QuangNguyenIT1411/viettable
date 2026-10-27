@@ -99,12 +99,13 @@ public class ResChangeFragment extends BaseFragment {
                 if (day.equals(current)) chip.setChecked(true);
                 chip.setOnCheckedChangeListener((btn, isChecked) -> {
                     if (!isChecked) return;
-                    selectedDate = label;
+                    selectedDate = day.toString(); // ISO in state; the label is display only
                     renderTimes(day);
                 });
                 binding.chipGroupChangeDate.addView(chip);
             }
-            if (current == null || !days.contains(current)) { current = days.get(0); selectedDate = dates.get(0); }
+            if (current == null || !days.contains(current)) current = days.get(0);
+            selectedDate = current.toString();
             renderTimes(current);
 
             binding.btnChangeMinusGuest.setOnClickListener(v -> {

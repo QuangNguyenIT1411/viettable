@@ -52,6 +52,19 @@ public class ReservationScheduleTest {
         assertNull(ReservationSchedule.parseDate("không rõ", DAY));
     }
 
+    /** The booking draft keeps ISO "yyyy-MM-dd"; the weekday text is only for display (bug "Chưa rõ ngày" 27/10). */
+    @Test public void draft_date_is_iso_and_formatted_only_for_display() {
+        String stored = LocalDate.of(2026, 10, 29).toString();
+        assertEquals("2026-10-29", stored);
+        assertEquals(LocalDate.of(2026, 10, 29), ReservationSchedule.parseDate(stored, DAY));
+        assertEquals("29/10/2026", DisplayFormatters.date(stored));
+        assertEquals("Thứ Năm, 29/10/2026", DisplayFormatters.weekdayDate(stored));
+        // The old stored text: "Thứ" starts with T and was mistaken for an ISO date-time.
+        assertEquals("Chưa rõ ngày", DisplayFormatters.date("Thứ Năm, 29/10/2026"));
+        // A booking loaded from the server keeps dd/MM/yyyy and still parses.
+        assertEquals(LocalDate.of(2026, 10, 29), ReservationSchedule.parseDate("29/10/2026", DAY));
+    }
+
     @Test public void actions_follow_status_and_time() {
         Instant at = Instant.parse("2026-10-25T12:00:00Z");
         Instant before = at.minusSeconds(3600);

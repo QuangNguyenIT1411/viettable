@@ -16,6 +16,8 @@ public final class DisplayFormatters {
     private static final DateTimeFormatter DATE_TIME =
             DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy", new Locale("vi", "VN"));
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter WEEKDAY_DATE =
+            DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", new Locale("vi", "VN"));
 
     private DisplayFormatters() {}
 
@@ -40,6 +42,15 @@ public final class DisplayFormatters {
             int separator = formatted.indexOf(", ");
             if (separator >= 0) return formatted.substring(separator + 2);
             return normalized.contains("T") ? "Chưa rõ ngày" : normalized;
+        }
+    }
+
+    /** "Thứ Năm, 29/10/2026" for an ISO "yyyy-MM-dd" (the booking draft); other text goes through {@link #date}. */
+    public static String weekdayDate(String isoDate) {
+        try {
+            return LocalDate.parse(isoDate == null ? "" : isoDate.trim()).format(WEEKDAY_DATE);
+        } catch (DateTimeParseException ignored) {
+            return date(isoDate);
         }
     }
 
