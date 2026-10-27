@@ -31,6 +31,12 @@ public class DepositRulesTest {
         assertTrue(text, text.contains("50.000đ/khách") && text.contains("300.000đ") && text.contains("15 phút"));
     }
 
+    @Test public void terms_follow_the_server_flag() {
+        assertTrue(DepositRules.termsText(DepositPolicy.OFF).contains("không cần đặt cọc"));
+        String on = DepositRules.termsText(ON);
+        assertTrue(on, on.contains("6 khách") && on.contains("50.000đ/khách") && !on.contains("không cần đặt cọc"));
+    }
+
     @Test public void countdown_reads_minutes_and_seconds_and_stops_at_zero() {
         assertEquals("15:00", DepositRules.countdown(15 * 60_000));
         assertEquals("14:05", DepositRules.countdown(14 * 60_000 + 4_200));

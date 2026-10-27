@@ -83,7 +83,12 @@ public sealed class MobileEngagementGatewayController : ControllerBase
 
     [AllowAnonymous]
     [HttpGet("support/faqs")]
-    public async Task<ActionResult<object>> Faqs(CancellationToken ct) { try { return Ok(await _customers.GetSupportFaqsAsync(ct)); } catch (ApiClientException ex) { return Downstream(ex); } }
+    public async Task<ActionResult<object>> Faqs([FromServices] Microsoft.Extensions.Options.IOptions<SelfRestaurant.Deposits.DepositOptions> deposit, CancellationToken ct)
+    {
+        // The deposit question follows the backend flag (owner 27/10).
+        try { return Ok(ReservationDepositCoordinator.WithDepositFaq(await _customers.GetSupportFaqsAsync(ct), deposit.Value)); }
+        catch (ApiClientException ex) { return Downstream(ex); }
+    }
 
     [HttpPost("support/requests")]
     public async Task<ActionResult<object>> Support(CreateSupportBody request, CancellationToken ct)

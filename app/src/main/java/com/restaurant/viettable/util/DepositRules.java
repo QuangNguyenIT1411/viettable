@@ -34,6 +34,17 @@ public final class DepositRules {
                 + " giờ được hoàn cọc (nhà hàng hoàn thủ công); hủy sát giờ hoặc không đến sẽ mất cọc.";
     }
 
+    /** "Điều khoản dịch vụ": the deposit sentence only while the server asks for one. */
+    public static String termsText(DepositPolicy policy) {
+        String hold = "VietTable giữ bàn trong vòng 15 phút sau giờ đặt. ";
+        String change = "Quý khách có thể hủy hoặc đổi lịch đặt bàn ngay trong ứng dụng.";
+        if (policy == null || !policy.isEnabled() || policy.getMinGuests() <= 0 || policy.getPerGuestVnd() <= 0)
+            return hold + "Đặt bàn hiện không cần đặt cọc; " + Character.toLowerCase(change.charAt(0)) + change.substring(1);
+        return hold + "Đặt bàn từ " + policy.getMinGuests() + " khách cần đặt cọc " + money(policy.getPerGuestVnd())
+                + "/khách qua VietQR trong " + policy.getPaymentMinutes() + " phút (quá hạn đặt bàn tự hủy). "
+                + policyNote(policy) + " " + change;
+    }
+
     /** "14:05" for the time left; "00:00" once over. */
     public static String countdown(long millisLeft) {
         long seconds = Math.max(0, (millisLeft + 999) / 1000);

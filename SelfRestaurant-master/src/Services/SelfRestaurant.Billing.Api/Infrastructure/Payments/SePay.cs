@@ -186,7 +186,11 @@ public sealed class SePayWebhookService(BillingDbContext db, IOptions<SePayOptio
         if (row is not null && row.Outcome != "RECEIVED")
         {
             logger.LogInformation("SePay webhook {SePayId} already processed ({Outcome}).", transfer.Id, row.Outcome);
-            return new(200, Duplicate, row.BranchId, row.PaymentId);
+            // Deposit money already recorded here: SePay retries when the Gateway could not update the booking (5xx),
+            // so the retry carries the booking id and the Gateway repeats its (idempotent) step.
+            var recordedDepositReservationId = row.Outcome is SelfRestaurant.Deposits.DepositRules.OutcomePaid or SelfRestaurant.Deposits.DepositRules.OutcomeLate
+                ? SePayContentParser.ParseDeposit(row.Content) : null;
+            return new(200, Duplicate, row.BranchId, row.PaymentId, ReservationId: recordedDepositReservationId);
         }
         if (row is null)
         {

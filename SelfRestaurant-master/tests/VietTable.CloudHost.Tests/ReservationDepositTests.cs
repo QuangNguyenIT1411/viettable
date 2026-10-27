@@ -189,6 +189,7 @@ public sealed class ReservationDepositTests
         Assert.Equal(7, first.CustomerId);
         Assert.Equal(1, first.BranchId);
         Assert.Equal(SePayWebhookService.Duplicate, second.Outcome);
+        Assert.Equal(901, second.ReservationId); // the retry names the booking again (Gateway repeats its step)
         Assert.Equal(0, confirmer.Calls); // the table payment path is never touched
         var deposit = await db.ReservationDeposits.SingleAsync();
         Assert.Equal(DepositRules.Paid, deposit.Status);

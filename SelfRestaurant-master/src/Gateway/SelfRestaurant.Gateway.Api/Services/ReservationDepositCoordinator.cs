@@ -93,6 +93,42 @@ public sealed class ReservationDepositCoordinator(BillingClient billing, Custome
         return new ReservationDepositView(reservation, deposit, transfer);
     }
 
+    /// <summary>
+    /// After SePay: Billing recorded deposit money for this booking; move the booking on (PendingDeposit → Pending, or
+    /// a refund to do when it closed first). Any failure other than "booking gone" is thrown, so the webhook answers
+    /// 5xx and SePay delivers again; every step here is idempotent.
+    /// </summary>
+    public async Task<ReservationDepositView?> RecordPaymentAsync(int reservationId, CancellationToken ct)
+    {
+        var booking = await customers.GetReservationByIdAsync(reservationId, ct);
+        return booking is null ? null : await SyncAsync(booking, false, ct);
+    }
+
+    /// <summary>Support FAQ: the deposit question only while the feature is on, with the configured numbers.</summary>
+    public static System.Text.Json.Nodes.JsonNode WithDepositFaq(JsonElement faqs, DepositOptions options) =>
+        WithDepositFaq(faqs, options.Enabled, options.MinGuests, options.PerGuestVnd, options.PaymentMinutes, options.RefundCutoffHours);
+
+    public static System.Text.Json.Nodes.JsonNode WithDepositFaq(JsonElement faqs, bool enabled, int minGuests, decimal perGuestVnd,
+        int paymentMinutes, int refundCutoffHours)
+    {
+        var options = new { Enabled = enabled, MinGuests = minGuests, PerGuestVnd = perGuestVnd, PaymentMinutes = paymentMinutes, RefundCutoffHours = refundCutoffHours };
+        var node = System.Text.Json.Nodes.JsonNode.Parse(faqs.ValueKind is JsonValueKind.Object ? faqs.GetRawText() : "{\"items\":[]}")!;
+        if (!options.Enabled || options.MinGuests <= 0 || options.PerGuestVnd <= 0) return node;
+        var items = node["items"] as System.Text.Json.Nodes.JsonArray ?? new System.Text.Json.Nodes.JsonArray();
+        node["items"] = items;
+        var perGuest = options.PerGuestVnd.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
+        items.Add(new System.Text.Json.Nodes.JsonObject
+        {
+            ["faqId"] = "deposit",
+            ["question"] = "Khi nào cần đặt cọc?",
+            ["answer"] = $"Đặt bàn từ {options.MinGuests} khách cần đặt cọc {perGuest}đ/khách, chuyển khoản VietQR trong "
+                + $"{options.PaymentMinutes} phút để giữ bàn (quá hạn đặt bàn tự hủy). Tiền cọc được trừ vào hóa đơn khi dùng bữa. "
+                + $"Hủy trước giờ đến từ {options.RefundCutoffHours} giờ hoặc nhà hàng từ chối: được hoàn cọc (nhà hàng hoàn thủ công); "
+                + "hủy sát giờ hoặc không đến: mất cọc.",
+        });
+        return node;
+    }
+
     /// <summary>Best effort after a booking closed: a failure is repaired by the next read.</summary>
     public async Task SyncQuietlyAsync(ReservationDto? reservation, CancellationToken ct)
     {

@@ -67,15 +67,12 @@ public class SettingsFragment extends BaseFragment {
                     .show();
         });
 
-        binding.rowTerms.setOnClickListener(v -> {
-            com.restaurant.viettable.ui.common.DialogHelper.showInfoDialog(
-                    requireContext(),
-                    "Điều khoản dịch vụ",
-                    "VietTable giữ bàn trong vòng 15 phút sau giờ đặt. Đặt bàn hiện không cần đặt cọc; quý khách có thể hủy hoặc đổi lịch đặt bàn ngay trong ứng dụng.",
-                    "Đóng",
-                    null
-            );
-        });
+        // The deposit sentence follows the server's flag (owner 27/10): never "no deposit" while one is asked.
+        binding.rowTerms.setOnClickListener(v -> MobileRepository.getInstance().loadDepositPolicy(
+                new MobileRepository.Callback<com.restaurant.viettable.model.DepositPolicy>() {
+                    @Override public void onSuccess(com.restaurant.viettable.model.DepositPolicy policy) { showTerms(policy); }
+                    @Override public void onError(ApiException error) { showTerms(MobileRepository.getInstance().cachedDepositPolicy()); }
+                }));
 
         binding.rowPrivacy.setOnClickListener(v -> {
             com.restaurant.viettable.ui.common.DialogHelper.showInfoDialog(
@@ -87,6 +84,10 @@ public class SettingsFragment extends BaseFragment {
             );
         });
 
+        MobileRepository.getInstance().loadDepositPolicy(new MobileRepository.Callback<com.restaurant.viettable.model.DepositPolicy>() {
+            @Override public void onSuccess(com.restaurant.viettable.model.DepositPolicy policy) { }
+            @Override public void onError(ApiException error) { }
+        });
         MobileRepository.getInstance().loadSettings(new MobileRepository.Callback<JSONObject>() {
             @Override public void onSuccess(JSONObject value) {
                 if (binding == null) return;
@@ -106,6 +107,12 @@ public class SettingsFragment extends BaseFragment {
                     @Override public void onSuccess(JSONObject value) {}
                     @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
                 });
+    }
+
+    private void showTerms(com.restaurant.viettable.model.DepositPolicy policy) {
+        if (binding == null) return;
+        com.restaurant.viettable.ui.common.DialogHelper.showInfoDialog(requireContext(), "Điều khoản dịch vụ",
+                com.restaurant.viettable.util.DepositRules.termsText(policy), "Đóng", null);
     }
 
     @Override
