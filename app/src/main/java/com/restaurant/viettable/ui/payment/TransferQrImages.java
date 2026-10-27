@@ -13,8 +13,6 @@ import android.util.Base64;
 import org.json.JSONObject;
 
 import java.io.OutputStream;
-import java.util.Locale;
-import com.restaurant.viettable.util.SafeText;
 
 /** VietQR image from the server (PNG in base64): decode, describe and save to the gallery. */
 final class TransferQrImages {
@@ -28,14 +26,6 @@ final class TransferQrImages {
         } catch (IllegalArgumentException e) {
             return null;
         }
-    }
-
-    static String details(JSONObject qr) {
-        return "Ngân hàng: " + SafeText.json(qr, "bankName")
-                + "\nChủ tài khoản: " + SafeText.json(qr, "accountName")
-                + "\nSố tài khoản: " + SafeText.json(qr, "accountNumber")
-                + "\nSố tiền: " + String.format(Locale.GERMANY, "%,d đ", Math.round(qr.optDouble("amount")))
-                + "\nNội dung: " + SafeText.json(qr, "content");
     }
 
     /** Amount as bank apps want it pasted: digits only ("245000", not "245.000 đ"). */

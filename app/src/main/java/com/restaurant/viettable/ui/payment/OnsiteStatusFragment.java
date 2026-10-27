@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.restaurant.viettable.R;
 import com.restaurant.viettable.databinding.FragmentOnsiteStatusBinding;
 import com.restaurant.viettable.data.MobileRepository;
 import com.restaurant.viettable.model.Invoice;
@@ -18,6 +19,7 @@ import com.restaurant.viettable.model.SplitBill;
 import com.restaurant.viettable.model.PaymentInfo;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.PdMotion;
 import com.restaurant.viettable.util.SafeText;
 
 public class OnsiteStatusFragment extends BaseFragment implements com.restaurant.viettable.ui.lock.LockExempt {
@@ -37,6 +39,7 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
     private boolean requestInFlight;
     private boolean finishing;
     private int viewGeneration;
+    private final java.util.List<android.animation.Animator> loops = new java.util.ArrayList<>();
 
     public static OnsiteStatusFragment newInstance(Invoice invoice, String location, PaymentInfo payment) {
         OnsiteStatusFragment f = new OnsiteStatusFragment();
@@ -87,9 +90,14 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
         if (invoice != null && PaymentTypeFragment.TRANSFER_LABEL.equals(invoice.getPaymentMethod()) && payment != null
                 && com.restaurant.viettable.util.PaymentPollPolicy.showsTransferQr(payment.getStatus())) {
             binding.cardTransferQr.setVisibility(View.VISIBLE);
+            binding.btnSaveTransferQr.setVisibility(View.VISIBLE);
+            binding.tvOnsiteHeading.setText(R.string.pd_onsite_heading_transfer);
+            binding.tvOnsiteWaitTitle.setText(R.string.pd_onsite_wait_transfer);
+            binding.tvTransferHint.setVisibility(View.VISIBLE);
             loadTransferQr();
         }
 
+        startWaitingMotion();
         binding.btnRefreshOnsiteStatus.setOnClickListener(v -> { waitStartedAt = android.os.SystemClock.elapsedRealtime(); schedulePoll(0); });
         if (waitStartedAt == 0) waitStartedAt = android.os.SystemClock.elapsedRealtime();
         pollRunnable = this::refreshStatus;
@@ -234,12 +242,16 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
                 if (image == null) { binding.tvTransferState.setText("Không hiển thị được mã QR."); return; }
                 binding.ivTransferQr.setImageBitmap(image);
                 binding.tvTransferState.setVisibility(View.GONE);
-                binding.tvTransferDetails.setText(TransferQrImages.details(qr));
-                binding.tvTransferDetails.setVisibility(View.VISIBLE);
+                binding.tvTransferBankAccount.setText(SafeText.join(" · ", SafeText.json(qr, "bankName"), SafeText.json(qr, "accountNumber")));
+                binding.tvTransferAccountName.setText(SafeText.json(qr, "accountName"));
+                binding.layoutTransferAccount.setVisibility(View.VISIBLE);
+                binding.tvTransferContent.setText(SafeText.json(qr, "content"));
+                binding.layoutTransferTear.setVisibility(View.VISIBLE);
+                binding.layoutTransferContent.setVisibility(View.VISIBLE);
                 bindCopy(binding.btnCopyAccount, "Số tài khoản", SafeText.json(qr, "accountNumber"));
                 bindCopy(binding.btnCopyAmount, "Số tiền", TransferQrImages.amountDigits(qr.optDouble("amount")));
                 bindCopy(binding.btnCopyContent, "Nội dung chuyển khoản", SafeText.json(qr, "content"));
-                binding.groupTransferCopy.setVisibility(View.VISIBLE);
+                startScanMotion();
                 binding.tvTransferHint.setText(qr.optBoolean("autoConfirm")
                         ? "Hệ thống sẽ tự xác nhận khi nhận được tiền."
                         : "Sau khi chuyển khoản, vui lòng chờ thu ngân kiểm tra và xác nhận.");
@@ -252,14 +264,42 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
             @Override public void onError(ApiException error) {
                 if (binding == null) return;
                 // 409: the payment is no longer waiting (paid or cancelled meanwhile); let the status check decide.
-                if (error.getStatusCode() == 409) { binding.cardTransferQr.setVisibility(View.GONE); schedulePoll(0); }
+                if (error.getStatusCode() == 409) { binding.cardTransferQr.setVisibility(View.GONE); binding.btnSaveTransferQr.setVisibility(View.GONE); schedulePoll(0); }
                 else binding.tvTransferState.setText(apiError(error));
             }
         });
     }
 
+    /** The "waiting" dot sends out a mint ring every 1.2s (DESIGN_PHO_DEM.md section 7). */
+    private void startWaitingMotion() {
+        if (!PdMotion.enabled(requireContext())) return;
+        android.animation.ObjectAnimator ring = android.animation.ObjectAnimator.ofPropertyValuesHolder(binding.viewWaitPulse,
+                android.animation.PropertyValuesHolder.ofFloat(View.SCALE_X, 0.45f, 1f),
+                android.animation.PropertyValuesHolder.ofFloat(View.SCALE_Y, 0.45f, 1f),
+                android.animation.PropertyValuesHolder.ofFloat(View.ALPHA, 0.6f, 0f));
+        ring.setDuration(1200);
+        ring.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        ring.start();
+        loops.add(ring);
+    }
+
+    /** The scan bar runs up and down over the QR (1.8s, repeating). */
+    private void startScanMotion() {
+        binding.viewScanLine.setVisibility(View.VISIBLE);
+        if (!PdMotion.enabled(requireContext())) { binding.viewScanLine.setVisibility(View.GONE); return; }
+        float travel = (220 - 56) * getResources().getDisplayMetrics().density;
+        android.animation.ObjectAnimator scan = android.animation.ObjectAnimator.ofFloat(binding.viewScanLine, View.TRANSLATION_Y, 0f, travel);
+        scan.setDuration(1800);
+        scan.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        scan.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        scan.start();
+        loops.add(scan);
+    }
+
     @Override
     public void onDestroyView() {
+        for (android.animation.Animator loop : loops) loop.cancel();
+        loops.clear();
         if (pollRunnable != null) handler.removeCallbacks(pollRunnable);
         viewGeneration++;
         requestInFlight = false;

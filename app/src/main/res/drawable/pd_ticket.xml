@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cream "ticket" holding the VietQR (DESIGN_PHO_DEM.md section 6, VietQR). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/pd_cream" />
+    <corners android:radius="32dp" />
+</shape>

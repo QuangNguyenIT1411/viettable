@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- White rounded box behind the QR: bank apps need a white quiet zone. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FFFFFF" />
+    <corners android:radius="24dp" />
+</shape>

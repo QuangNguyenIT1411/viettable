@@ -1,284 +1,432 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Chờ thanh toán / chuyển khoản VietQR "Phố đêm" (DESIGN_PHO_DEM.md section 6, design P05). Written from scratch;
+     view IDs used by OnsiteStatusFragment are kept. Cash payments show the same screen without the ticket. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground">
+    android:background="@color/pd_bg">
+
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="-200dp"
+        android:background="@drawable/pd_glow_red"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollOnsiteStatus"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="96dp">
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
+            android:id="@+id/layoutOnsiteContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="24dp"
-            android:tag="safe_top">
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:paddingBottom="132dp">
 
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:layout_marginTop="32dp"
-                android:indeterminate="true"
-                app:indicatorColor="@color/colorPrimary"
-                app:indicatorSize="56dp"
-                app:trackColor="@color/colorDivider"
-                app:trackThickness="5dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:fontFamily="@font/bricolage_medium"
-                android:text="Đang chờ phục vụ thanh toán"
-                android:textColor="@color/colorTextPrimary"
-                android:textSize="20sp" />
+            <!-- Close = the old "Quay lại hóa đơn" (opens the same cancel-request dialog). -->
+            <ImageButton
+                android:id="@+id/btnCancelOnsiteRequest"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="Quay lại hóa đơn"
+                android:padding="13dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_close"
+                app:tint="@color/pd_cream" />
 
             <TextView
-                android:id="@+id/tvOnsiteStatusDesc"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:lineSpacingExtra="3dp"
-                android:text="Yêu cầu thanh toán của bạn đã được gửi tới nhân viên phụ trách khu vực."
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="14sp" />
-
-            <!-- Invoice Summary Card -->
-            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/tvOnsiteHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:cardBackgroundColor="@color/colorSurface"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/colorDivider"
-                app:strokeWidth="1dp">
+                android:layout_marginTop="28dp"
+                android:text="@string/pd_onsite_heading_wait"
+                android:textAppearance="@style/TextAppearance.VietTable.Label" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvOnsiteTotal"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    android:layout_weight="1"
+                    android:accessibilityHeading="true"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                    android:textSize="38sp"
+                    app:autoSizeMaxTextSize="38sp"
+                    app:autoSizeMinTextSize="20sp"
+                    app:autoSizeTextType="uniform"
+                    tools:text="245.000đ" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
+                <ImageButton
+                    android:id="@+id/btnCopyAmount"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/pd_circle_surface2"
+                    android:contentDescription="Sao chép số tiền"
+                    android:padding="13dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_copy"
+                    android:visibility="gone"
+                    app:tint="@color/pd_yellow"
+                    tools:visibility="visible" />
+            </LinearLayout>
 
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Địa điểm:"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvOnsiteLocation"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text=""
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Hình thức:"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvOnsiteMethod"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="Tiền mặt"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Tổng tiền cần thanh toán:"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvOnsiteTotal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="610.200 đ"
-                            android:textColor="@color/colorSecondary"
-                            android:textSize="16sp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Bank transfer: VietQR with amount and transfer content filled in -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Ticket: bank + account on top, QR, tear line, transfer content. Only for bank transfers. -->
+            <LinearLayout
                 android:id="@+id/cardTransferQr"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/pd_ticket"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:padding="24dp"
                 android:visibility="gone"
-                app:cardBackgroundColor="@color/colorSurface"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/colorDivider"
-                app:strokeWidth="1dp">
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:id="@+id/layoutTransferAccount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvTransferBankAccount"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                            android:textColor="@color/pd_on_color"
+                            android:textIsSelectable="true"
+                            tools:text="BIDV · 8830150124" />
+
+                        <TextView
+                            android:id="@+id/tvTransferAccountName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:alpha="0.7"
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_on_color"
+                            tools:text="NGUYEN VINH QUANG" />
+                    </LinearLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnCopyAccount"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/pd_circle_dark"
+                        android:contentDescription="Sao chép số tài khoản"
+                        android:padding="13dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_copy"
+                        app:tint="@color/pd_yellow" />
+                </LinearLayout>
+
+                <!-- QR on a white box with the scan bar running over it. -->
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/pd_qr_box"
+                    android:padding="12dp">
+
+                    <ImageView
+                        android:id="@+id/ivTransferQr"
+                        android:layout_width="220dp"
+                        android:layout_height="220dp"
+                        android:contentDescription="Mã VietQR chuyển khoản"
+                        android:scaleType="fitCenter" />
+
+                    <View
+                        android:id="@+id/viewScanLine"
+                        android:layout_width="220dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/pd_scan_line"
+                        android:importantForAccessibility="no"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvTransferState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:text="Đang tạo mã QR…"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_on_color" />
+
+                <!-- Tear line: two page-coloured notches on the ticket edges. -->
+                <FrameLayout
+                    android:id="@+id/layoutTransferTear"
+                    android:layout_width="match_parent"
+                    android:layout_height="28dp"
+                    android:layout_marginTop="16dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <com.restaurant.viettable.ui.common.PdDashLine
+                        android:layout_width="match_parent"
+                        android:layout_height="12dp"
+                        android:layout_gravity="center_vertical" />
+
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="start|center_vertical"
+                        android:layout_marginStart="-38dp"
+                        android:background="@drawable/pd_notch"
+                        android:importantForAccessibility="no" />
+
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="end|center_vertical"
+                        android:layout_marginEnd="-38dp"
+                        android:background="@drawable/pd_notch"
+                        android:importantForAccessibility="no" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutTransferContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:alpha="0.7"
+                            android:text="Nội dung chuyển khoản"
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_on_color" />
+
+                        <TextView
+                            android:id="@+id/tvTransferContent"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                            android:textColor="@color/pd_on_color"
+                            android:textIsSelectable="true"
+                            tools:text="VT0412 BAN B4" />
+                    </LinearLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnCopyContent"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/pd_circle_dark"
+                        android:contentDescription="Sao chép nội dung chuyển khoản"
+                        android:padding="13dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_copy"
+                        app:tint="@color/pd_yellow" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Waiting status: pulsing mint dot + what the server / cashier is doing. -->
+            <LinearLayout
+                android:id="@+id/cardOnsiteWaiting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/pd_card_surface_row"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="20dp">
+
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="top">
+
+                    <View
+                        android:id="@+id/viewWaitPulse"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:background="@drawable/pd_dot"
+                        android:backgroundTint="@color/pd_mint"
+                        android:importantForAccessibility="no" />
+
+                    <View
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/pd_dot"
+                        android:backgroundTint="@color/pd_mint"
+                        android:importantForAccessibility="no" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvOnsiteWaitTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pd_onsite_wait_cash"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream" />
+
+                    <TextView
+                        android:id="@+id/tvOnsiteStatusDesc"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Yêu cầu thanh toán của bạn đã được gửi tới nhân viên phụ trách khu vực."
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvTransferHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Sau khi chuyển khoản, vui lòng chờ thu ngân kiểm tra và xác nhận."
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Where and how -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/pd_card_surface_row"
+                android:orientation="vertical"
+                android:padding="20dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:orientation="horizontal">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/bricolage_medium"
-                        android:text="Quét mã để chuyển khoản"
-                        android:textColor="@color/colorTextPrimary"
-                        android:textSize="16sp" />
-
-                    <ImageView
-                        android:id="@+id/ivTransferQr"
-                        android:layout_width="240dp"
-                        android:layout_height="240dp"
-                        android:layout_marginTop="12dp"
-                        android:background="@android:color/white"
-                        android:contentDescription="Mã VietQR chuyển khoản"
-                        android:scaleType="fitCenter" />
+                        android:text="Địa điểm"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
 
                     <TextView
-                        android:id="@+id/tvTransferState"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/tvOnsiteLocation"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:text="Đang tạo mã QR…"
-                        android:textColor="@color/colorTextSecondary"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/tvTransferDetails"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:lineSpacingExtra="4dp"
-                        android:textColor="@color/colorTextPrimary"
-                        android:textIsSelectable="true"
-                        android:textSize="14sp"
-                        android:visibility="gone" />
-
-                    <!-- Copy what guests type into their bank app (owner, 26/10). Wraps to more lines at large font sizes. -->
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/groupTransferCopy"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:visibility="gone"
-                        app:chipSpacingHorizontal="8dp">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/btnCopyAccount"
-                            style="@style/Widget.Material3.Chip.Assist"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sao chép số TK"
-                            app:chipIcon="@drawable/ic_copy" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/btnCopyAmount"
-                            style="@style/Widget.Material3.Chip.Assist"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sao chép số tiền"
-                            app:chipIcon="@drawable/ic_copy" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/btnCopyContent"
-                            style="@style/Widget.Material3.Chip.Assist"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sao chép nội dung"
-                            app:chipIcon="@drawable/ic_copy" />
-                    </com.google.android.material.chip.ChipGroup>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSaveTransferQr"
-                        style="@style/Widget.VietTable.Button.Outlined"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:enabled="false"
-                        android:text="Lưu ảnh QR" />
-
-                    <TextView
-                        android:id="@+id/tvTransferHint"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:text="Sau khi chuyển khoản, vui lòng chờ thu ngân kiểm tra và xác nhận."
-                        android:textColor="@color/colorTextSecondary"
-                        android:textSize="12sp" />
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream"
+                        tools:text="Tại bàn (B4)" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Hình thức"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvOnsiteMethod"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream"
+                        tools:text="Chuyển khoản" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveTransferQr"
+                style="@style/Widget.VietTable.Button.Ghost.Arrow"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="16dp"
+                android:enabled="false"
+                android:text="Lưu ảnh mã QR"
+                android:visibility="gone"
+                tools:visibility="visible" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Actions -->
+    <!-- Bottom action -->
     <LinearLayout
+        android:id="@+id/layoutOnsiteActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:tag="safe_bottom"
-        android:background="@color/colorSurface"
-        android:elevation="8dp"
+        android:background="@color/pd_bg"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRefreshOnsiteStatus"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Kiểm tra trạng thái thanh toán" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCancelOnsiteRequest"
-            style="@style/Widget.VietTable.Button.Text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Quay lại hóa đơn" />
+            android:layout_height="60dp"
+            android:text="Kiểm tra trạng thái" />
     </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>
