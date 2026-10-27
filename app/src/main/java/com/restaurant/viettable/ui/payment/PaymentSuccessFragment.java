@@ -23,6 +23,7 @@ public class PaymentSuccessFragment extends BaseFragment implements com.restaura
     private static final String ARG_INVOICE = "arg_invoice";
     private FragmentPaymentSuccessBinding binding;
     private Invoice invoice;
+    private android.animation.ObjectAnimator ringSpin;
     // The points arrive in the inbox a little after the payment settles: look again a few times, then stay hidden.
     private static final long[] POINTS_RETRY_MS = {0, 3000, 8000, 15000};
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
@@ -74,7 +75,13 @@ public class PaymentSuccessFragment extends BaseFragment implements com.restaura
             binding.tvSuccessInvoiceId.setText(com.restaurant.viettable.util.StatusLabels.invoiceTitle(invoice.getBackendInvoiceId(), invoice.getId()));
             binding.tvSuccessMethod.setText(invoice.getPaymentMethod());
             binding.tvSuccessBranch.setText(SafeText.join(" • ", invoice.getTableLabel(), invoice.getBranchName()));
+            boolean hasTime = !SafeText.isBlank(invoice.getTimestamp());
+            binding.rowSuccessTime.setVisibility(hasTime ? View.VISIBLE : View.GONE);
+            if (hasTime) binding.tvSuccessTime.setText(com.restaurant.viettable.util.DisplayFormatters.dateTime(invoice.getTimestamp()));
+            binding.tvSuccessSubtitle.setText("Đã thanh toán " + invoice.getFormattedFinalTotal()
+                    + (SafeText.isBlank(invoice.getPaymentMethod()) ? "" : " · " + invoice.getPaymentMethod()));
         }
+        playEntryMotion();
 
         binding.btnReviewMeal.setOnClickListener(v -> {
             if (invoice != null && invoice.getBackendInvoiceId() > 0) navigateTo(ReviewFragment.newInstanceForInvoice(invoice.getBackendInvoiceId()));
@@ -88,6 +95,24 @@ public class PaymentSuccessFragment extends BaseFragment implements com.restaura
                 new androidx.activity.OnBackPressedCallback(true) {
                     @Override public void handleOnBackPressed() { switchTab(R.id.nav_home); }
                 });
+    }
+
+    /** Tick pops in, dashed ring turns slowly, paper falls once and the phone gives a short success buzz (section 7). */
+    private void playEntryMotion() {
+        if (!com.restaurant.viettable.util.PdMotion.enabled(requireContext())) return;
+        binding.badgeSuccess.setScaleX(0f);
+        binding.badgeSuccess.setScaleY(0f);
+        binding.badgeSuccess.animate().scaleX(1f).scaleY(1f).setStartDelay(120).setDuration(450)
+                .setInterpolator(new android.view.animation.OvershootInterpolator(2.2f)).start();
+        ringSpin = android.animation.ObjectAnimator.ofFloat(binding.viewSuccessRing, View.ROTATION, 0f, 360f);
+        ringSpin.setDuration(14000);
+        ringSpin.setInterpolator(new android.view.animation.LinearInterpolator());
+        ringSpin.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        ringSpin.start();
+        com.restaurant.viettable.util.PdMotion.enterBlocks(binding.layoutSuccessContent, 6);
+        binding.viewConfetti.play();
+        binding.badgeSuccess.performHapticFeedback(android.os.Build.VERSION.SDK_INT >= 30
+                ? android.view.HapticFeedbackConstants.CONFIRM : android.view.HapticFeedbackConstants.CONTEXT_CLICK);
     }
 
     private void reloadInbox() {
@@ -116,6 +141,7 @@ public class PaymentSuccessFragment extends BaseFragment implements com.restaura
 
     @Override
     public void onDestroyView() {
+        if (ringSpin != null) ringSpin.cancel();
         handler.removeCallbacksAndMessages(null);
         appStateManager.removeListener(this);
         super.onDestroyView();

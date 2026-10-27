@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dashed mint ring that turns slowly around the success badge. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <stroke
+        android:width="2dp"
+        android:color="@color/pd_mint"
+        android:dashGap="9dp"
+        android:dashWidth="9dp" />
+</shape>

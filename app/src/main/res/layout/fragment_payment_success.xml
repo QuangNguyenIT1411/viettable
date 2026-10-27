@@ -1,230 +1,311 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Thanh toán thành công "Phố đêm" (DESIGN_PHO_DEM.md section 6, design P06). Written from scratch;
+     view IDs used by PaymentSuccessFragment and the UI tests are kept. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/colorBackground">
+    android:background="@color/pd_bg">
+
+    <View
+        android:layout_width="560dp"
+        android:layout_height="560dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="-170dp"
+        android:background="@drawable/pd_glow_mint"
+        android:importantForAccessibility="no" />
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollPaymentSuccess"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="100dp">
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
+            android:id="@+id/layoutSuccessContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:padding="24dp"
-            android:tag="safe_top">
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingBottom="176dp">
 
-            <ImageView
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:layout_marginTop="24dp"
-                android:background="@drawable/bg_badge"
-                android:backgroundTint="@color/pd_mint_soft"
-                android:padding="16dp"
-                android:src="@drawable/ic_check"
-                app:tint="@color/colorSuccess" />
+            <!-- Badge: mint disc with a tick, dashed ring turning slowly around it. -->
+            <FrameLayout
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="56dp">
+
+                <View
+                    android:id="@+id/viewSuccessRing"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/pd_ring_dash_mint"
+                    android:importantForAccessibility="no" />
+
+                <FrameLayout
+                    android:id="@+id/badgeSuccess"
+                    android:layout_width="156dp"
+                    android:layout_height="156dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/pd_circle_mint">
+
+                    <ImageView
+                        android:layout_width="76dp"
+                        android:layout_height="76dp"
+                        android:layout_gravity="center"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_check"
+                        app:tint="@color/pd_on_color" />
+                </FrameLayout>
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tvSuccessTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:gravity="center"
-                android:fontFamily="@font/bricolage_medium"
-                android:text="Ngon miệng nhé!"
-                android:textColor="@color/colorTextPrimary"
-                android:textSize="22sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:gravity="center"
-                android:text="Cảm ơn quý khách đã dùng bữa tại VietTable Restaurant."
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="14sp" />
-
-            <!-- Invoice Summary Card -->
-            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                app:cardBackgroundColor="@color/colorSurface"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeColor="@color/colorDivider"
-                app:strokeWidth="1dp">
+                android:layout_marginTop="32dp"
+                android:accessibilityHeading="true"
+                android:gravity="center_horizontal"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                android:textSize="32sp"
+                app:lineHeight="40sp"
+                tools:text="Ngon miệng nhé, Quang!" />
+
+            <TextView
+                android:id="@+id/tvSuccessSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_horizontal"
+                android:text="Cảm ơn quý khách đã dùng bữa tại VietTable Restaurant."
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted" />
+
+            <!-- Receipt -->
+            <LinearLayout
+                android:id="@+id/cardSuccessReceipt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:padding="24dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mã hóa đơn"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvSuccessInvoiceId"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream"
+                        tools:text="HD-20261019-0412" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowSuccessTime"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Thời gian"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvSuccessTime"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream"
+                        tools:text="21:52 · 19/10/2026" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Phương thức"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvSuccessMethod"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream"
+                        tools:text="Chuyển khoản" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bàn &amp; chi nhánh"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
+
+                    <TextView
+                        android:id="@+id/tvSuccessBranch"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream"
+                        tools:text="Bàn B4 • Chi nhánh Quận 1" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginVertical="18dp"
+                    android:background="@color/pd_line" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tổng cộng"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_muted" />
 
                     <TextView
                         android:id="@+id/tvSuccessAmount"
-                        android:layout_width="wrap_content"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center"
-                        android:fontFamily="@font/bricolage_medium"
-                        android:text="610.200 đ"
-                        android:textColor="@color/colorPrimary"
-                        android:textSize="24sp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginVertical="16dp"
-                        android:background="@color/colorDivider" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Mã hóa đơn:"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvSuccessInvoiceId"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="@font/bricolage_medium"
-                            android:text="--"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Phương thức:"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvSuccessMethod"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="VietQR / Ngân hàng"
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Bàn &amp; Chi nhánh:"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/tvSuccessBranch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=""
-                            android:textColor="@color/colorTextPrimary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:gravity="end"
+                        android:textAppearance="@style/TextAppearance.VietTable.Price"
+                        android:textSize="22sp"
+                        tools:text="245.000đ" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <!-- Points earned by this payment: shown only once the server's real number arrives (owner, 26/10). -->
             <LinearLayout
                 android:id="@+id/layoutPointsEarned"
-                android:visibility="gone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_badge"
-                android:backgroundTint="@color/pd_yellow_soft"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/pd_card_plum_row"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="18dp"
+                android:visibility="gone"
+                tools:visibility="visible">
 
                 <ImageView
                     android:layout_width="28dp"
                     android:layout_height="28dp"
-                    android:src="@drawable/ic_loyalty"
-                    app:tint="@color/colorSecondary" />
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_gift" />
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
+                    android:layout_marginStart="14dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/tvPointsEarned"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="@font/bricolage_medium"
-                        android:text=""
-                        android:textColor="@color/colorSecondary"
-                        android:textSize="14sp" />
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_cream"
+                        tools:text="+245 điểm tích lũy mới!" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="Đã cộng vào ví thành viên của bạn"
-                        android:textColor="@color/pd_yellow"
-                        android:textSize="12sp" />
+                        android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                        android:textColor="@color/pd_muted" />
                 </LinearLayout>
             </LinearLayout>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Actions -->
+    <!-- Paper falls over the page once; it never takes touches. -->
+    <com.restaurant.viettable.ui.common.PdConfettiView
+        android:id="@+id/viewConfetti"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Bottom actions -->
     <LinearLayout
+        android:id="@+id/layoutSuccessActions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:tag="safe_bottom"
-        android:background="@color/colorSurface"
-        android:elevation="8dp"
+        android:background="@color/pd_bg"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnReviewMeal"
-            style="@style/Widget.VietTable.Button.Primary"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
             android:text="Đánh giá bữa ăn" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBackToHomeFromPayment"
-            style="@style/Widget.VietTable.Button.Secondary"
+            style="@style/Widget.VietTable.Button.Ghost"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
             android:text="Về trang chủ" />
     </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</FrameLayout>
