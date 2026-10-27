@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Ưu đãi" "Phố đêm" (docs/PROMO_PLAN.md): running promotions of the selected branch as plum cards; empty / error
+     state with a ghost retry (ListState). -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pd_bg">
+
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:tag="safe_top">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
+
+            <TextView
+                android:id="@+id/tvPromotionsBranch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow"
+                tools:text="ƯU ĐÃI · CHI NHÁNH QUẬN 1" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Khuyến mãi đang chạy"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Tự áp vào hóa đơn khi đủ điều kiện, không cần mã."
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPromotions"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:paddingTop="20dp"
+                android:paddingBottom="32dp"
+                android:tag="safe_bottom" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="32dp">
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progressPromotions"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    app:indicatorColor="@color/pd_yellow" />
+
+                <TextView
+                    android:id="@+id/tvPromotionsState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableTop="@drawable/ic_gift"
+                    android:drawablePadding="14dp"
+                    android:drawableTint="@color/pd_dim"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRetryPromotions"
+                    style="@style/Widget.VietTable.Button.Ghost"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/state_retry"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

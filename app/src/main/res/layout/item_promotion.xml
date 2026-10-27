@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One running promotion "Phố đêm": plum card, yellow discount sticker, name, summary, end time. -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardPromotion"
+    style="@style/Widget.VietTable.Card.Plum"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvPromoName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                tools:text="Giờ vàng cuối tuần" />
+
+            <TextView
+                android:id="@+id/tvPromoSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_cream"
+                tools:text="Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ" />
+
+            <TextView
+                android:id="@+id/tvPromoUntil"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:drawableStart="@drawable/ic_clock"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/pd_muted"
+                android:gravity="center_vertical"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_muted"
+                tools:text="Đến 23:59, 30/10/2026" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvPromoBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:background="@drawable/pd_price_sticker"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp"
+            android:rotation="-4"
+            android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+            android:textColor="@color/pd_on_color"
+            tools:text="−10%" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -1129,6 +1129,7 @@ public final class MobileRepository {
                 SafeText.json(row, "issuedAtUtc"), SafeText.json(row, "paymentCode"), SafeText.json(row, "paymentChannel"),
                 SafeText.json(row, "paymentMethod"), SafeText.json(row, "paymentLocation"), SafeText.json(row, "paymentStatus"), lines);
         invoice.setDepositApplied(Math.round(row.optDouble("depositApplied", 0)));
+        invoice.setPromotionDiscount(Math.round(row.optDouble("promotionDiscount", 0)));
         invoice.setTableLabel(tableLabel(String.valueOf(branchId), invoice.getTableId()));
         return invoice;
     }
@@ -1159,6 +1160,35 @@ public final class MobileRepository {
     }
 
     /** VietQR of a pending bank-transfer payment: bank, account, amount, transfer content and a PNG (base64). */
+    /** Promotions running now at a branch (public, like the menu); the server applies them to the bill. */
+    public void loadPromotions(String branchId, Callback<List<com.restaurant.viettable.model.Promotion>> callback) {
+        String query = branchId == null || branchId.isEmpty() ? "" : "?branchId=" + branchId;
+        api().get("/api/mobile/v1/promotions" + query, false, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONArray rows = body instanceof JSONObject ? ((JSONObject) body).optJSONArray("items") : null;
+                List<com.restaurant.viettable.model.Promotion> result = new ArrayList<>();
+                if (rows != null) for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.optJSONObject(i);
+                    if (row != null) result.add(parsePromotion(row));
+                }
+                callback.onSuccess(result);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    static com.restaurant.viettable.model.Promotion parsePromotion(JSONObject row) {
+        List<Integer> branches = new ArrayList<>();
+        JSONArray ids = row.optJSONArray("branchIds");
+        if (ids != null) for (int i = 0; i < ids.length(); i++) branches.add(ids.optInt(i));
+        return new com.restaurant.viettable.model.Promotion(row.optInt("promotionId"), SafeText.json(row, "name"),
+                row.isNull("description") ? null : SafeText.json(row, "description", null),
+                row.isNull("imageUrl") ? null : SafeText.json(row, "imageUrl", null),
+                SafeText.json(row, "discountType", "PERCENT"), row.optDouble("discountValue", 0),
+                row.isNull("maxDiscount") ? 0 : Math.round(row.optDouble("maxDiscount", 0)), Math.round(row.optDouble("minSubtotal", 0)),
+                branches, SafeText.json(row, "startsAtUtc"), SafeText.json(row, "endsAtUtc"), SafeText.json(row, "summary"));
+    }
+
     private volatile com.restaurant.viettable.model.DepositPolicy depositPolicy;
 
     /** Deposit rules from the server (cached once read); OFF until then, so nothing is ever assumed. */
@@ -1624,6 +1654,9 @@ public final class MobileRepository {
                 0, 0, voucher, points, Math.round(quote.optDouble("totalAmount")), "Chưa chọn", "", SafeText.json(quote, "expiresAtUtc"));
         invoice.setTableLabel(session == null ? "Chưa có thông tin bàn" : session.getTableLabel());
         invoice.setDepositApplied(Math.round(quote.optDouble("depositApplied", 0)));
+        invoice.setPromotion(quote.isNull("promotionName") ? null : SafeText.json(quote, "promotionName", null),
+                Math.round(quote.optDouble("promotionDiscount", 0)),
+                quote.isNull("discountNote") ? null : SafeText.json(quote, "discountNote", null));
         return invoice;
     }
 

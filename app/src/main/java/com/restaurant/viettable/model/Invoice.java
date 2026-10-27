@@ -56,6 +56,16 @@ public class Invoice implements Serializable {
     private long depositApplied;
     public long getDepositApplied() { return depositApplied; }
     public void setDepositApplied(long value) { depositApplied = Math.max(0, value); }
+    /** Promotion taken off the bill ("Khuyến mãi −X đ") and why it (or the voucher) was chosen. */
+    private String promotionName;
+    private long promotionDiscount;
+    private String discountNote;
+    public String getPromotionName() { return promotionName; }
+    public long getPromotionDiscount() { return promotionDiscount; }
+    public String getDiscountNote() { return discountNote; }
+    public void setPromotion(String name, long discount, String note) {
+        promotionName = name; promotionDiscount = Math.max(0, discount); discountNote = note;
+    }
     public long getFinalTotal() { return finalTotal; }
     public String getPaymentMethod() { return paymentMethod; }
     public String getPaymentLocation() { return paymentLocation; }

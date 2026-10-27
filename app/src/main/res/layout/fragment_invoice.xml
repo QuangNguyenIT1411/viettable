@@ -218,6 +218,45 @@
                         tools:text="-20.000đ" />
                 </LinearLayout>
 
+                <!-- Running promotion (docs/PROMO_PLAN.md): applied by itself, never together with a voucher. -->
+                <LinearLayout
+                    android:id="@+id/layoutPromotionDiscount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tvPromotionLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Khuyến mãi"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body"
+                        android:textColor="@color/pd_mint" />
+
+                    <TextView
+                        android:id="@+id/tvPromotionDiscountAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                        android:textColor="@color/pd_mint"
+                        tools:text="-50.000đ" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvDiscountNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                    android:textColor="@color/pd_muted"
+                    android:visibility="gone"
+                    tools:text="Áp dụng khuyến mãi &quot;Giờ vàng&quot; (−50.000đ) vì lợi hơn voucher (−30.000đ); không cộng dồn."
+                    tools:visibility="visible" />
+
                 <!-- Reservation deposit paid ahead (docs/DEPOSIT_PLAN.md). -->
                 <LinearLayout
                     android:id="@+id/layoutDepositApplied"

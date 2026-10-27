@@ -167,8 +167,8 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
         binding.btnQuickMenu.setOnClickListener(v -> navigateTo(new MenuFragment()));
         binding.btnQuickOrders.setOnClickListener(v -> switchTab(R.id.nav_orders));
         binding.btnSeeAllMenu.setOnClickListener(v -> navigateTo(new MenuFragment()));
-        // Promotions are hidden until they are supplied by a real backend source.
-        binding.bannerPromo.setVisibility(View.GONE);
+        // Promotion banner: the best running promotion of the selected branch (server data only).
+        bindPromotionBanner();
 
         // Session, reservation and profile updates must not discard 3 RecyclerView
         // adapters or rebuild every category chip. Only Catalog replacement changes
@@ -193,6 +193,46 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
                 + " categories=" + appStateManager.getCategories().size()
                 + " dishes=" + appStateManager.getFoodItems().size()
                 + " active=" + (appStateManager.getActiveDiningSession() != null));
+    }
+
+    private final List<com.restaurant.viettable.model.Promotion> promotions = new ArrayList<>();
+    private String promotionsBranchId;
+
+    /** Loads once per selected branch; hidden while loading, on error and when nothing runs. */
+    private void bindPromotionBanner() {
+        Branch branch = appStateManager.getSelectedBranch();
+        String branchId = branch == null ? "" : branch.getId();
+        if (!branchId.equals(promotionsBranchId)) {
+            promotionsBranchId = branchId;
+            promotions.clear();
+            com.restaurant.viettable.data.MobileRepository.getInstance().loadPromotions(branch == null ? null : branchId,
+                    new com.restaurant.viettable.data.MobileRepository.Callback<List<com.restaurant.viettable.model.Promotion>>() {
+                        @Override public void onSuccess(List<com.restaurant.viettable.model.Promotion> value) {
+                            if (binding == null || !branchId.equals(promotionsBranchId)) return;
+                            promotions.clear();
+                            promotions.addAll(value);
+                            renderPromotionBanner();
+                        }
+                        @Override public void onError(com.restaurant.viettable.network.ApiException error) {
+                            if (binding != null && branchId.equals(promotionsBranchId)) promotionsBranchId = null; // retry on the next render
+                        }
+                    });
+        }
+        renderPromotionBanner();
+    }
+
+    private void renderPromotionBanner() {
+        if (binding == null) return;
+        if (promotions.isEmpty()) { binding.bannerPromo.setVisibility(View.GONE); return; }
+        com.restaurant.viettable.model.Promotion best = promotions.get(0);
+        binding.bannerPromo.setVisibility(View.VISIBLE);
+        binding.tvPromoBannerLabel.setText(promotions.size() > 1 ? promotions.size() + " ƯU ĐÃI ĐANG CHẠY" : "ƯU ĐÃI ĐANG CHẠY");
+        binding.tvPromoBannerTitle.setText(best.getName());
+        binding.tvPromoBannerSummary.setText(best.getSummary());
+        binding.tvPromoBannerBadge.setText(com.restaurant.viettable.util.PromotionRules.badge(best));
+        View.OnClickListener open = v -> navigateTo(new PromotionsFragment());
+        binding.btnCollectVoucher.setOnClickListener(open);
+        binding.bannerPromo.setOnClickListener(open);
     }
 
     private void loadCatalog(boolean retry) {

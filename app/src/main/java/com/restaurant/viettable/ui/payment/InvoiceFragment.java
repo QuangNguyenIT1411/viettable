@@ -225,6 +225,12 @@ public class InvoiceFragment extends BaseFragment {
             binding.layoutLoyaltyDiscount.setVisibility(loyaltyDiscount > 0 ? View.VISIBLE : View.GONE);
             binding.tvVoucherDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", voucherDiscount));
             binding.tvLoyaltyDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", loyaltyDiscount));
+            binding.layoutPromotionDiscount.setVisibility(quote.getPromotionDiscount() > 0 ? View.VISIBLE : View.GONE);
+            binding.tvPromotionLabel.setText(quote.getPromotionName() == null ? "Khuyến mãi" : "Khuyến mãi: " + quote.getPromotionName());
+            binding.tvPromotionDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", quote.getPromotionDiscount()));
+            boolean hasNote = quote.getDiscountNote() != null && !quote.getDiscountNote().trim().isEmpty();
+            binding.tvDiscountNote.setVisibility(hasNote ? View.VISIBLE : View.GONE);
+            binding.tvDiscountNote.setText(hasNote ? quote.getDiscountNote() : "");
             binding.layoutDepositApplied.setVisibility(quote.getDepositApplied() > 0 ? View.VISIBLE : View.GONE);
             binding.tvDepositAppliedAmount.setText(String.format(Locale.GERMANY, "-%,dđ", quote.getDepositApplied()));
         } else {

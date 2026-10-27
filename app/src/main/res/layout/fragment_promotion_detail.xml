@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Promotion detail "Phố đêm": optional picture, big yellow discount sticker, name Display.XL, summary, conditions card
+     (minimum, cap, no stacking with vouchers), time and where it applies. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pd_bg">
+
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|start"
+        android:layout_marginStart="-200dp"
+        android:layout_marginTop="-180dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingTop="12dp"
+            android:paddingBottom="40dp"
+            android:tag="safe_all">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_cream" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPromoImage"
+                style="@style/Widget.VietTable.Card"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginTop="20dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:id="@+id/ivPromoImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@null"
+                    android:scaleType="centerCrop" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="KHUYẾN MÃI"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow" />
+
+            <TextView
+                android:id="@+id/tvPromoDetailName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
+                tools:text="Giờ vàng cuối tuần" />
+
+            <TextView
+                android:id="@+id/tvPromoDetailBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/pd_price_sticker"
+                android:paddingHorizontal="18dp"
+                android:paddingVertical="12dp"
+                android:rotation="-4"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.L"
+                android:textColor="@color/pd_on_color"
+                tools:text="−10%" />
+
+            <TextView
+                android:id="@+id/tvPromoDetailSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                tools:text="Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ" />
+
+            <TextView
+                android:id="@+id/tvPromoDetailDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted"
+                tools:text="Áp dụng cho bữa tối thứ Bảy và Chủ nhật." />
+
+            <TextView
+                android:id="@+id/tvPromoDetailCondition"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/pd_card_yellow_soft"
+                android:padding="18dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_cream"
+                tools:text="Hóa đơn từ 300.000đ · giảm tối đa 50.000đ. Tự áp vào hóa đơn khi đủ điều kiện." />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/pd_card_surface"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/tvPromoDetailUntil"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_clock"
+                    android:drawablePadding="10dp"
+                    android:drawableTint="@color/pd_yellow"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                    tools:text="Đến 23:59, 30/10/2026" />
+
+                <TextView
+                    android:id="@+id/tvPromoDetailWhere"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted"
+                    tools:text="Áp dụng: mọi chi nhánh" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</FrameLayout>

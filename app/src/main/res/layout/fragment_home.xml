@@ -221,7 +221,7 @@
                     android:textColor="@color/pd_dim" />
             </LinearLayout>
 
-            <!-- Promotion banner: hidden until a real promotions source exists (tab "Ưu đãi" comes later). -->
+            <!-- Promotion banner (docs/PROMO_PLAN.md): the best running promotion of the selected branch → "Ưu đãi". -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/bannerPromo"
                 style="@style/Widget.VietTable.Card.Plum"
@@ -238,17 +238,58 @@
                     android:orientation="horizontal"
                     android:padding="20dp">
 
-                    <View
+                    <LinearLayout
                         android:layout_width="0dp"
-                        android:layout_height="1dp"
-                        android:layout_weight="1" />
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnCollectVoucher"
-                        style="@style/Widget.VietTable.Button.Primary"
+                        <TextView
+                            android:id="@+id/tvPromoBannerLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="ƯU ĐÃI ĐANG CHẠY"
+                            android:textAppearance="@style/TextAppearance.VietTable.Label"
+                            android:textColor="@color/pd_yellow" />
+
+                        <TextView
+                            android:id="@+id/tvPromoBannerTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                            tools:text="Giờ vàng cuối tuần" />
+
+                        <TextView
+                            android:id="@+id/tvPromoBannerSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                            android:textColor="@color/pd_cream"
+                            tools:text="Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCollectVoucher"
+                            style="@style/Widget.VietTable.Button.Primary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="12dp"
+                            android:text="Xem ưu đãi" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvPromoBannerBadge"
                         android:layout_width="wrap_content"
-                        android:layout_height="48dp"
-                        android:text="Lấy mã" />
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:background="@drawable/pd_price_sticker"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp"
+                        android:rotation="-6"
+                        android:textAppearance="@style/TextAppearance.VietTable.Display.M"
+                        android:textColor="@color/pd_on_color"
+                        tools:text="−10%" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
