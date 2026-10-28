@@ -31,6 +31,25 @@ public sealed class PromotionAnnouncer(BillingClient billing, IdentityClient ide
         { logger.LogWarning("Promotion announcement deferred ({ErrorType}); the next read retries.", ex.GetType().Name); }
     }
 
+    /// <summary>
+    /// The customer opening the inbox gets "Ưu đãi mới" for every promotion running now that they do not have yet: an
+    /// account made after the announcement, or one the announcement missed (owner's test 28/10: no row in "Ưu đãi").
+    /// One row per customer and promotion, so this adds nothing the second time. Best effort: never fails the inbox.
+    /// </summary>
+    public async Task EnsureForCustomerAsync(int customerId, CancellationToken ct)
+    {
+        if (customerId <= 0) return;
+        await AnnounceDueAsync(ct);
+        try
+        {
+            foreach (var promotion in await billing.GetActivePromotionsAsync(null, ct))
+                await customers.BroadcastInboxAsync(new[] { customerId }, EventName,
+                    promotion.GetProperty("promotionId").GetInt32(), Message(promotion), ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        { logger.LogWarning("Promotion inbox catch-up skipped ({ErrorType}); the next read retries.", ex.GetType().Name); }
+    }
+
     /// <summary>"Ưu đãi mới: Giờ vàng — Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ. Áp dụng đến 30/10/2026."</summary>
     public static string Message(JsonElement promotion)
     {

@@ -41,8 +41,15 @@ public sealed class MobileEngagementGatewayController : ControllerBase
     { var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401); try { await _customers.RemoveMobileFavoriteAsync(actor.Value, dishId, ct); return NoContent(); } catch (ApiClientException ex) { return Downstream(ex); } }
 
     [HttpGet("notifications")]
-    public Task<ActionResult<object>> Notifications([FromQuery] string? cursor, [FromQuery] int limit = 20, CancellationToken ct = default)
-    { if (limit is < 1 or > 100) return Task.FromResult<ActionResult<object>>(Error("validation_failed", "limit phải từ 1 đến 100.", 400)); return Run(() => _customers.GetMobileNotificationsAsync(Actor()!.Value, cursor, limit, ct)); }
+    public async Task<ActionResult<object>> Notifications([FromServices] PromotionAnnouncer announcer, [FromQuery] string? cursor,
+        [FromQuery] int limit = 20, CancellationToken ct = default)
+    {
+        if (limit is < 1 or > 100) return Error("validation_failed", "limit phải từ 1 đến 100.", 400);
+        var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
+        // First page only: running promotions the customer was not told about yet land in "Ưu đãi" before the read.
+        if (string.IsNullOrEmpty(cursor)) await announcer.EnsureForCustomerAsync(actor.Value, ct);
+        return await Run(() => _customers.GetMobileNotificationsAsync(actor.Value, cursor, limit, ct));
+    }
 
     [HttpPost("notifications/read-all")]
     public Task<ActionResult<object>> ReadAllNotifications(CancellationToken ct) => Run(() => _customers.ReadAllMobileNotificationsAsync(Actor()!.Value, ct));

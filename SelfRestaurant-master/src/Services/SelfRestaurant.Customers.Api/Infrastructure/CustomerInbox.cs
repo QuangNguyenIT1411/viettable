@@ -102,6 +102,35 @@ public static class CustomerInbox
         return (row, true);
     }
 
+    /// <summary>
+    /// The same announcement for many customers (not for repeatable events): one query for who already has it, then
+    /// the missing rows in batches of 500. Returns how many rows were added.
+    /// </summary>
+    public static async Task<int> BroadcastAsync(CustomersDbContext db, IEnumerable<int> customerIds, string eventName,
+        int refId, string message, CancellationToken ct = default)
+    {
+        var targets = customerIds.Where(x => x > 0).Distinct().ToList();
+        if (targets.Count == 0) return 0;
+        var have = (await db.ReadyDishNotifications.AsNoTracking()
+            .Where(x => x.OrderId == 0 && x.OrderItemId == refId && x.EventName == eventName && x.CustomerId != null)
+            .Select(x => x.CustomerId!.Value).Distinct().ToListAsync(ct)).ToHashSet();
+        var text = message.Length > 500 ? message[..500] : message;
+        var created = 0;
+        foreach (var batch in targets.Where(x => !have.Contains(x)).Chunk(500))
+        {
+            var now = DateTime.UtcNow;
+            foreach (var customerId in batch)
+                db.ReadyDishNotifications.Add(new ReadyDishNotifications
+                {
+                    OrderId = 0, OrderItemId = refId, CustomerId = customerId, EventName = eventName,
+                    Message = text, Status = "OPEN", CreatedAtUtc = now
+                });
+            await db.SaveChangesAsync(ct);
+            created += batch.Length;
+        }
+        return created;
+    }
+
     // ---- Reservation messages (restaurant time, UTC+7) ----
 
     public static string ReservationMessage(string eventName, Reservation r) => eventName switch

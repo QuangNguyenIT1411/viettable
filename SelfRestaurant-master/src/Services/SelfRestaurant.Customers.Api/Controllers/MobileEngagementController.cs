@@ -97,21 +97,17 @@ public sealed class MobileEngagementController : ControllerBase
 
     /// <summary>
     /// One inbox row per customer for an announcement (e.g. "Ưu đãi mới"); a repeat adds nothing (one per customer and
-    /// item). Only events the inbox knows are accepted.
+    /// item). Only events the inbox knows are accepted. One read finds who already has it, then the rest are inserted in
+    /// batches: the old one-query-per-customer loop ran past the Gateway's 10 s timeout with many test accounts, so
+    /// nobody got the row and every retry started over (owner's test 28/10).
     /// </summary>
     [HttpPost("~/api/internal/inbox/broadcast")]
     public async Task<ActionResult<object>> Broadcast(BroadcastRequest request, CancellationToken ct)
     {
         if (!CustomerInbox.IsKnown(request.EventName) || request.RefId <= 0 || string.IsNullOrWhiteSpace(request.Message)
             || request.CustomerIds is null || request.CustomerIds.Count > 20000) return Validation();
-        var created = 0;
-        foreach (var batch in request.CustomerIds.Where(x => x > 0).Distinct().Chunk(500))
-        {
-            foreach (var customerId in batch)
-                if ((await CustomerInbox.AddAsync(_db, customerId, request.EventName!, request.RefId, request.Message.Trim(), 0, ct)).Created)
-                    created++;
-            await _db.SaveChangesAsync(ct);
-        }
+        var created = await CustomerInbox.BroadcastAsync(_db, request.CustomerIds, request.EventName!, request.RefId,
+            request.Message.Trim(), ct);
         return Ok(new { created });
     }
 
