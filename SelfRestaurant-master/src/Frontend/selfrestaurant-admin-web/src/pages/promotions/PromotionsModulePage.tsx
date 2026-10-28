@@ -2,7 +2,9 @@ import { userMessage } from "../../../../shared/apiError";
 import { formatViDateTime } from "../../../../shared/dateFormat";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { parseVnd } from "../../../../shared/money";
 import { AdminLayout } from "../../components/AdminLayout";
+import { MoneyInput } from "../../components/MoneyInput";
 import { adminApi, type AdminPromotionDto, type AdminPromotionRequest } from "../../lib/api";
 import type { BranchDto, StaffSessionUserDto } from "../../lib/types";
 import { useAutoDismissMessage } from "../../lib/useAutoDismissMessage";
@@ -40,8 +42,9 @@ function fromPromotion(p: AdminPromotionDto): Form {
 function toRequest(f: Form): AdminPromotionRequest {
   return {
     name: f.name.trim(), description: f.description.trim() || null, imageUrl: f.imageUrl.trim() || null, discountType: f.discountType,
-    discountValue: Number(f.discountValue || "0"), maxDiscount: f.discountType === "PERCENT" && f.maxDiscount ? Number(f.maxDiscount) : null,
-    minSubtotal: Number(f.minSubtotal || "0"), branchIds: f.branchIds,
+    discountValue: f.discountType === "FIXED" ? parseVnd(f.discountValue) : Number(f.discountValue || "0"),
+    maxDiscount: f.discountType === "PERCENT" && f.maxDiscount.trim() ? parseVnd(f.maxDiscount) : null,
+    minSubtotal: parseVnd(f.minSubtotal), branchIds: f.branchIds,
     startsAtUtc: new Date(f.startsAt).toISOString(), endsAtUtc: new Date(f.endsAt).toISOString(), isActive: f.isActive,
   };
 }
@@ -87,6 +90,8 @@ export function PromotionsModulePage({ mode, onLogout }: Props) {
     if (saving) return;
     if (!form.name.trim()) { setError("Vui lòng nhập tên khuyến mãi."); return; }
     if (!form.startsAt || !form.endsAt) { setError("Vui lòng chọn thời gian bắt đầu và kết thúc."); return; }
+    const money = toRequest(form);
+    if ([money.discountValue, money.maxDiscount ?? 0, money.minSubtotal].some(Number.isNaN)) { setError("Số tiền chỉ được nhập số, ví dụ 300000."); return; }
     setSaving(true);
     setError(null);
     try {
@@ -168,12 +173,13 @@ export function PromotionsModulePage({ mode, onLogout }: Props) {
                   <option value="FIXED">Số tiền cố định (đ)</option>
                 </select>
               </label>
-              <label>{form.discountType === "PERCENT" ? "Mức giảm (%)" : "Số tiền giảm (đ)"}
-                <input type="number" min={1} max={form.discountType === "PERCENT" ? 100 : undefined} value={form.discountValue}
+              {form.discountType === "PERCENT" ? <label>Mức giảm (%)
+                <input type="number" min={1} max={100} value={form.discountValue}
                   onChange={e => setForm({ ...form, discountValue: e.target.value })} /></label>
-              {form.discountType === "PERCENT" ? <label>Trần giảm (đ, để trống = không trần)
-                <input type="number" min={0} value={form.maxDiscount} onChange={e => setForm({ ...form, maxDiscount: e.target.value })} /></label> : null}
-              <label>Đơn tối thiểu (đ)<input type="number" min={0} value={form.minSubtotal} onChange={e => setForm({ ...form, minSubtotal: e.target.value })} /></label>
+                : <MoneyInput label="Số tiền giảm (đ)" value={form.discountValue} onChange={v => setForm({ ...form, discountValue: v })} />}
+              {form.discountType === "PERCENT" ? <MoneyInput label="Trần giảm (đ, để trống = không trần)" value={form.maxDiscount}
+                onChange={v => setForm({ ...form, maxDiscount: v })} /> : null}
+              <MoneyInput label="Đơn tối thiểu (đ)" value={form.minSubtotal} onChange={v => setForm({ ...form, minSubtotal: v })} />
               <label>Bắt đầu<input type="datetime-local" value={form.startsAt} onChange={e => setForm({ ...form, startsAt: e.target.value })} /></label>
               <label>Kết thúc<input type="datetime-local" value={form.endsAt} onChange={e => setForm({ ...form, endsAt: e.target.value })} /></label>
             </div>

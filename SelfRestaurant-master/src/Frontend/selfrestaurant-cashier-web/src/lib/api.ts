@@ -27,6 +27,29 @@ export type TransferQrDto = {
   autoConfirm?: boolean;
 };
 
+/**
+ * The bill priced by the server's one formula (CheckoutPricing), for what the cashier typed. The screen shows these
+ * numbers as they are and never computes a promotion, the better-of rule or the points cap itself.
+ */
+export type CashierCheckoutPreviewDto = {
+  subtotal: number;
+  promotionId?: number | null;
+  promotionName?: string | null;
+  /** What the running promotion would take; promotionDiscount is what it takes on this bill. */
+  promotionOffer: number;
+  promotionDiscount: number;
+  /** The cashier's discount actually applied (0 when the promotion is better). */
+  discount: number;
+  discountNote?: string | null;
+  pointsUsed: number;
+  pointsDiscount: number;
+  maxPoints: number;
+  depositApplied: number;
+  totalAmount: number;
+  /** An app session: discount and points are the guest's choice in the app. */
+  appSession: boolean;
+};
+
 export type OnsitePayment = {
   paymentId: number; paymentCode: string; amount: number; currency: string;
   method: string; location: string; status: string; diningSessionId: number;
@@ -109,6 +132,12 @@ export const cashierApi = {
     request<CashierReservationCheckInResultDto>(`/api/cashier/reservations/${reservationId}/check-in`, { method: "POST", body: JSON.stringify({ tableId: payload.tableId ?? null, tableIds: payload.tableIds ?? [] }) }),
   closeDiningSession: (sessionId: number) =>
     request<{ success: boolean; message: string }>(`/api/gateway/staff/cashier/dining-sessions/${sessionId}/close`, { method: "POST", body: "{}" }),
+  previewCheckout: (orderId: number, payload: { discount: number; pointsUsed: number }, signal?: AbortSignal) =>
+    request<CashierCheckoutPreviewDto>(`/api/gateway/staff/cashier/orders/${orderId}/checkout-preview`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+      signal,
+    }),
   checkout: (orderId: number, payload: { discount?: number; pointsUsed?: number; paymentMethod?: string; paymentAmount?: number; idempotencyKey: string }) =>
     request<CashierCheckoutResultDto>(`/api/gateway/staff/cashier/orders/${orderId}/checkout`, {
       method: "POST",

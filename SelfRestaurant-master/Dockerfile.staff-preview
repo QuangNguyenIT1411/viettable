@@ -6,7 +6,7 @@ COPY src/Frontend/selfrestaurant-chef-web/ chef/
 COPY src/Frontend/selfrestaurant-cashier-web/ cashier/
 COPY src/Frontend/selfrestaurant-admin-web/ admin/
 COPY src/Frontend/shared/ /staff/shared/
-RUN node --experimental-strip-types --test shared/controlledRead.test.mjs shared/staffRealtime.test.mjs shared/idlePause.test.mjs shared/paymentMethod.test.mjs shared/depositStatus.test.mjs
+RUN node --experimental-strip-types --test shared/controlledRead.test.mjs shared/staffRealtime.test.mjs shared/idlePause.test.mjs shared/paymentMethod.test.mjs shared/depositStatus.test.mjs shared/money.test.mjs
 RUN cd chef && npm ci && npm run build
 RUN cd cashier && npm ci && npm run build
 RUN cd admin && npm ci && npm run build

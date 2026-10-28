@@ -15,7 +15,7 @@ import { useStaffRealtime } from "../lib/useStaffRealtime";
 import { createTopicBus } from "../../../shared/staffRealtime";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import { TransferQrCard } from "../components/TransferQrCard";
-import type { TransferQrDto } from "../lib/api";
+import type { CashierCheckoutPreviewDto, TransferQrDto } from "../lib/api";
 import { paymentMethodLabel } from "../../../shared/paymentMethod";
 import type { CashierCheckoutResultDto, CashierDashboardDto, CashierReservationCheckInResultDto, ReservationDto } from "../lib/types";
 
@@ -291,50 +291,55 @@ export function DashboardPage({ onLogout }: Props) {
   const pointsStep = activeOrder?.pointsStep ?? 0;
   const maxPointsDiscountPercent = activeOrder?.maxPointsDiscountPercent ?? 0;
 
-  const promotionDiscount = activeOrder?.promotionDiscount ?? 0;
-  const promotionName = activeOrder?.promotionName ?? null;
+  // What the cashier typed; the server prices it (owner 29/10: one formula, CheckoutPricing, for app, cashier and counter).
+  const rawDiscount = Number(discountAmount || "0");
+  const requestedDiscount = Number.isFinite(rawDiscount) ? clamp(Math.floor(rawDiscount), 0, subtotal) : 0;
+  const canRedeem = pointValueVnd > 0 && pointsStep > 0 && maxPointsDiscountPercent > 0;
+  const rawPoints = Number(pointsUsedInput || "0");
+  const requestedPoints = canRedeem && Number.isFinite(rawPoints) ? Math.max(0, Math.floor(rawPoints)) : 0;
+  const priceKey = activeOrder ? `${activeOrder.orderId}:${subtotal}:${requestedDiscount}:${requestedPoints}` : "";
+  const [serverPrice, setServerPrice] = useState<{ key: string; data: CashierCheckoutPreviewDto | null; error: string | null }>(
+    { key: "", data: null, error: null });
+
+  useEffect(() => {
+    const orderId = activeOrder?.orderId;
+    if (!orderId) { setServerPrice({ key: "", data: null, error: null }); return; }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      cashierApi.previewCheckout(orderId, { discount: requestedDiscount, pointsUsed: requestedPoints }, controller.signal)
+        .then((data) => setServerPrice({ key: priceKey, data, error: null }))
+        .catch((err) => {
+          if (!controller.signal.aborted) setServerPrice({ key: priceKey, data: null, error: userMessage(err, "Không tính được số tiền cần thanh toán.") });
+        });
+    }, 250);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+    // dashboard: a refresh re-prices (a promotion may have started or ended).
+  }, [priceKey, dashboard]);
 
   const checkoutPreview = useMemo(() => {
-    const rawDiscount = Number(discountAmount || "0");
-    const manualDiscount = Number.isFinite(rawDiscount) ? clamp(rawDiscount, 0, subtotal) : 0;
-    // Same rule as the backend (CheckoutPricing): the running promotion OR the cashier's discount, the better one.
-    const promotionWins = promotionDiscount > 0 && promotionDiscount >= manualDiscount;
-    const promotionApplied = promotionWins ? Math.min(promotionDiscount, subtotal) : 0;
-    const safeDiscount = promotionWins ? 0 : manualDiscount;
-    const baseTotal = Math.max(0, subtotal - safeDiscount - promotionApplied);
-    const canRedeem = pointValueVnd > 0 && pointsStep > 0 && maxPointsDiscountPercent > 0;
-    // Capped by the balance and by the server's share of the bill (10%), in whole steps:
-    // mirrors LoyaltyRules.RedeemablePoints on the server.
-    const maxDiscount = Math.floor((baseTotal * maxPointsDiscountPercent) / 100);
-    const maxPointsAllowed = canRedeem
-      ? Math.floor(Math.min(pointsAvailable, Math.floor(maxDiscount / pointValueVnd)) / pointsStep) * pointsStep
-      : 0;
-    const rawPoints = Number(pointsUsedInput || "0");
-    const safePoints = canRedeem && Number.isFinite(rawPoints)
-      ? Math.floor(clamp(rawPoints, 0, maxPointsAllowed) / pointsStep) * pointsStep
-      : 0;
-    const pointsDiscount = safePoints * pointValueVnd;
-    const total = Math.max(0, subtotal - safeDiscount - promotionApplied - pointsDiscount);
+    const data = serverPrice.key === priceKey ? serverPrice.data : null;
+    const total = data?.totalAmount ?? 0;
     const rawPayment = Number(paymentAmount || "0");
     const safePayment = Number.isFinite(rawPayment) ? Math.max(0, rawPayment) : 0;
     const effectivePayment = paymentMethod === "TRANSFER" ? total : safePayment;
-    const changeAmount = Math.max(0, effectivePayment - total);
-
     return {
-      discount: safeDiscount,
-      promotionApplied,
-      promotionNote: promotionDiscount > 0 && manualDiscount > 0
-        ? (promotionWins ? `Áp dụng khuyến mãi "${promotionName}" vì lợi hơn giảm giá nhập tay; không cộng dồn.`
-          : `Áp dụng giảm giá nhập tay vì lợi hơn khuyến mãi "${promotionName}"; không cộng dồn.`)
-        : null,
-      maxPointsAllowed,
-      pointsUsed: safePoints,
-      pointsDiscount,
+      priced: data !== null,
+      error: serverPrice.key === priceKey ? serverPrice.error : null,
+      appSession: data?.appSession ?? false,
+      discount: data?.discount ?? 0,
+      promotionName: data?.promotionName ?? null,
+      promotionOffer: data?.promotionOffer ?? 0,
+      promotionApplied: data?.promotionDiscount ?? 0,
+      promotionNote: data?.discountNote ?? null,
+      maxPointsAllowed: data?.maxPoints ?? 0,
+      pointsUsed: data?.pointsUsed ?? 0,
+      pointsDiscount: data?.pointsDiscount ?? 0,
+      depositApplied: data?.depositApplied ?? 0,
       total,
       paymentAmount: effectivePayment,
-      changeAmount,
+      changeAmount: data ? Math.max(0, effectivePayment - total) : 0,
     };
-  }, [discountAmount, maxPointsDiscountPercent, paymentAmount, paymentMethod, pointValueVnd, pointsAvailable, pointsStep, pointsUsedInput, promotionDiscount, promotionName, subtotal]);
+  }, [paymentAmount, paymentMethod, priceKey, serverPrice]);
 
   useEffect(() => {
     if (!activeOrder) {
@@ -493,8 +498,9 @@ export function DashboardPage({ onLogout }: Props) {
         paymentMethod,
         paymentAmount: checkoutPreview.paymentAmount,
       };
+      // What the cashier asked for; the server prices it again and never trusts an amount from this screen.
       const result = await cashierApi.checkout(activeOrder.orderId, {
-        discount: checkoutPreview.discount,
+        discount: checkoutPreview.appSession ? 0 : requestedDiscount,
         pointsUsed: checkoutPreview.pointsUsed,
         paymentMethod,
         paymentAmount: checkoutPreview.paymentAmount,
@@ -566,7 +572,8 @@ export function DashboardPage({ onLogout }: Props) {
 
   const occupiedCount = dashboard.tables.filter((table) => table.status === "OCCUPIED").length;
   const selectedTableTitle = selectedTable ? selectedTable.number : "Chưa chọn bàn";
-  const canCheckout = !!activeOrder;
+  // Only once the server priced exactly what is on screen.
+  const canCheckout = !!activeOrder && checkoutPreview.priced;
 
   return (
     <>
@@ -740,6 +747,7 @@ export function DashboardPage({ onLogout }: Props) {
                   <input
                     type="number"
                     min="0"
+                    disabled={checkoutPreview.appSession}
                     value={discountAmount}
                     onChange={(event) => handleDiscountAmountChange(event.target.value)}
                     style={{ width: "120px" }}
@@ -755,6 +763,7 @@ export function DashboardPage({ onLogout }: Props) {
                     min="0"
                     max="100"
                     step="0.01"
+                    disabled={checkoutPreview.appSession}
                     value={discountPercent}
                     onChange={(event) => handleDiscountPercentChange(event.target.value)}
                     style={{ width: "120px" }}
@@ -762,11 +771,20 @@ export function DashboardPage({ onLogout }: Props) {
                   <span className="muted">%</span>
                 </div>
               </div>
-              {promotionDiscount > 0 ? (
+              {checkoutPreview.appSession ? (
+                <div className="muted small" role="note">Khách dùng ứng dụng: giảm giá, voucher và điểm do khách chọn trong ứng dụng.</div>
+              ) : null}
+              {checkoutPreview.promotionOffer > 0 ? (
                 <div className="total-row" data-promotion-row>
-                  <span>Khuyến mãi{promotionName ? ` (${promotionName})` : ""}:</span>
+                  <span>Khuyến mãi{checkoutPreview.promotionName ? ` (${checkoutPreview.promotionName})` : ""}:</span>
                   <strong>{checkoutPreview.promotionApplied > 0
                     ? `-${checkoutPreview.promotionApplied.toLocaleString("vi-VN")} đ` : "Không áp dụng"}</strong>
+                </div>
+              ) : null}
+              {checkoutPreview.appSession && checkoutPreview.discount > 0 ? (
+                <div className="total-row">
+                  <span>Voucher:</span>
+                  <strong>-{checkoutPreview.discount.toLocaleString("vi-VN")} đ</strong>
                 </div>
               ) : null}
               {checkoutPreview.promotionNote ? <div className="muted small" role="note">{checkoutPreview.promotionNote}</div> : null}
@@ -776,13 +794,20 @@ export function DashboardPage({ onLogout }: Props) {
                   <strong>-{checkoutPreview.pointsDiscount.toLocaleString("vi-VN")} đ</strong>
                 </div>
               ) : null}
+              {checkoutPreview.depositApplied > 0 ? (
+                <div className="total-row">
+                  <span>Đã đặt cọc:</span>
+                  <strong>-{checkoutPreview.depositApplied.toLocaleString("vi-VN")} đ</strong>
+                </div>
+              ) : null}
               <div className="total-row grand-total">
                 <span>TỔNG CỘNG:</span>
-                <span>{checkoutPreview.total.toLocaleString("vi-VN")} đ</span>
+                <span>{checkoutPreview.priced ? `${checkoutPreview.total.toLocaleString("vi-VN")} đ` : activeOrder ? "Đang tính…" : "0 đ"}</span>
               </div>
+              {checkoutPreview.error ? <div className="error-box small" role="alert">{checkoutPreview.error}</div> : null}
             </div>
 
-            {activeOrder?.customerId ? (
+            {activeOrder?.customerId && !checkoutPreview.appSession ? (
               <div className="credit-points-section">
                 <div className="credit-balance">
                   <span>Số dư hiện tại:</span>
