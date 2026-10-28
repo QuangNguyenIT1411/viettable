@@ -197,14 +197,21 @@ public class HomeFragment extends BaseFragment implements AppStateManager.StateC
 
     private final List<com.restaurant.viettable.model.Promotion> promotions = new ArrayList<>();
     private String promotionsBranchId;
+    private long promotionsLoadedAt;
 
-    /** Loads once per selected branch; hidden while loading, on error and when nothing runs. */
+    /**
+     * Loads per selected branch and again after a minute (a promotion the admin starts later shows without changing
+     * branch or restarting, owner's test 28/10); hidden while loading, on error and when nothing runs.
+     */
     private void bindPromotionBanner() {
         Branch branch = appStateManager.getSelectedBranch();
         String branchId = branch == null ? "" : branch.getId();
-        if (!branchId.equals(promotionsBranchId)) {
+        long now = android.os.SystemClock.elapsedRealtime();
+        boolean otherBranch = !branchId.equals(promotionsBranchId);
+        if (otherBranch || now - promotionsLoadedAt > 60_000L) {
             promotionsBranchId = branchId;
-            promotions.clear();
+            promotionsLoadedAt = now;
+            if (otherBranch) promotions.clear();
             com.restaurant.viettable.data.MobileRepository.getInstance().loadPromotions(branch == null ? null : branchId,
                     new com.restaurant.viettable.data.MobileRepository.Callback<List<com.restaurant.viettable.model.Promotion>>() {
                         @Override public void onSuccess(List<com.restaurant.viettable.model.Promotion> value) {

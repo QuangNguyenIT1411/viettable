@@ -20,6 +20,7 @@ import com.restaurant.viettable.model.OrderItem;
 import com.restaurant.viettable.model.Voucher;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.BillDiscountText;
 import com.restaurant.viettable.util.DisplayFormatters;
 
 import java.util.Locale;
@@ -128,6 +129,13 @@ public class InvoiceFragment extends BaseFragment {
             navigateTo(VoucherSelectFragment.newInstance(redeemedPoints));
         });
 
+        binding.btnRemoveVoucher.setOnClickListener(v -> adjust(MobileRepository.getInstance()::removeVoucher));
+        binding.btnTogglePromotion.setOnClickListener(v -> {
+            Invoice quote = MobileRepository.getInstance().currentCheckoutInvoice();
+            boolean useAgain = quote != null && quote.isPromotionDeclined();
+            adjust(callback -> MobileRepository.getInstance().choosePromotion(useAgain, callback));
+        });
+
         binding.btnSelectLoyalty.setOnClickListener(v -> {
             navigateTo(LoyaltySelectFragment.newInstance(selectedVoucher));
         });
@@ -183,6 +191,16 @@ public class InvoiceFragment extends BaseFragment {
 
     private void finishAdjustments() { applyingAdjustments = false; setCheckoutActionsEnabled(true); }
 
+    /** "Bỏ voucher" / "Không dùng khuyến mãi" / "Dùng lại khuyến mãi": the server re-prices, then the bill redraws. */
+    private void adjust(java.util.function.Consumer<MobileRepository.Callback<Invoice>> call) {
+        if (applyingAdjustments || lockingPayment) return;
+        applyingAdjustments = true; setCheckoutActionsEnabled(false);
+        call.accept(new MobileRepository.Callback<Invoice>() {
+            @Override public void onSuccess(Invoice value) { if (binding != null) { recalculateInvoice(); finishAdjustments(); } }
+            @Override public void onError(ApiException error) { if (binding != null) { finishAdjustments(); showToast(apiError(error)); } }
+        });
+    }
+
     /**
      * Coming back here (Back from the payment or VietQR screen) must not trust what this screen drew earlier: ask the
      * server for the session's waiting payment, which carries its quote with the real status and total (owner, 28/10).
@@ -204,6 +222,8 @@ public class InvoiceFragment extends BaseFragment {
                 MobileRepository.getInstance().currentCheckoutQuoteStatus());
         binding.btnSelectVoucher.setEnabled(!locked);
         binding.btnSelectLoyalty.setEnabled(!locked);
+        binding.btnRemoveVoucher.setVisibility(locked ? View.GONE : View.VISIBLE);
+        binding.btnTogglePromotion.setVisibility(locked ? View.GONE : View.VISIBLE);
         binding.tvAdjustLocked.setVisibility(locked ? View.VISIBLE : View.GONE);
         if (locked) binding.tvAdjustLocked.setText(com.restaurant.viettable.util.LoyaltyApplyRules.LOCKED_EXPLANATION);
     }
@@ -221,13 +241,18 @@ public class InvoiceFragment extends BaseFragment {
             voucherDiscount = quote.getVoucherDiscount(); loyaltyDiscount = quote.getLoyaltyDiscount();
             applyLockState();
             finalTotal = quote.getFinalTotal();
-            binding.layoutVoucherDiscount.setVisibility(voucherDiscount > 0 ? View.VISIBLE : View.GONE);
+            // Voucher row only when the guest picked one (never applied by itself); "Không áp" when the promotion is better.
+            binding.layoutVoucherDiscount.setVisibility(quote.getPickedVoucherId() > 0 ? View.VISIBLE : View.GONE);
+            binding.tvVoucherLabel.setText(BillDiscountText.voucherLabel(quote.getPickedVoucherCode()));
+            binding.tvVoucherDiscountAmount.setText(BillDiscountText.voucherAmount(voucherDiscount));
+            binding.btnRemoveVoucher.setText(BillDiscountText.REMOVE_VOUCHER);
             binding.layoutLoyaltyDiscount.setVisibility(loyaltyDiscount > 0 ? View.VISIBLE : View.GONE);
-            binding.tvVoucherDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", voucherDiscount));
             binding.tvLoyaltyDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", loyaltyDiscount));
-            binding.layoutPromotionDiscount.setVisibility(quote.getPromotionDiscount() > 0 ? View.VISIBLE : View.GONE);
-            binding.tvPromotionLabel.setText(quote.getPromotionName() == null ? "Khuyến mãi" : "Khuyến mãi: " + quote.getPromotionName());
-            binding.tvPromotionDiscountAmount.setText(String.format(Locale.GERMANY, "-%,dđ", quote.getPromotionDiscount()));
+            // "Khuyến mãi tự động: <tên>" whenever the bill has one, also when declined (to use it again).
+            binding.layoutPromotionDiscount.setVisibility(quote.getPromotionOffer() > 0 || quote.getPromotionDiscount() > 0 ? View.VISIBLE : View.GONE);
+            binding.tvPromotionLabel.setText(BillDiscountText.promotionLabel(quote.getPromotionName()));
+            binding.tvPromotionDiscountAmount.setText(BillDiscountText.promotionAmount(quote.getPromotionDiscount(), quote.isPromotionDeclined()));
+            binding.btnTogglePromotion.setText(BillDiscountText.promotionToggle(quote.isPromotionDeclined()));
             boolean hasNote = quote.getDiscountNote() != null && !quote.getDiscountNote().trim().isEmpty();
             binding.tvDiscountNote.setVisibility(hasNote ? View.VISIBLE : View.GONE);
             binding.tvDiscountNote.setText(hasNote ? quote.getDiscountNote() : "");

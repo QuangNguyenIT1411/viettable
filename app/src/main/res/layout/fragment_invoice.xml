@@ -164,31 +164,52 @@
                         tools:text="43.200đ" />
                 </LinearLayout>
 
+                <!-- The voucher the guest picked (never applied by itself, owner 28/10): amount, or "Không áp" when the
+                     promotion is better; "Bỏ voucher" removes it. -->
                 <LinearLayout
                     android:id="@+id/layoutVoucherDiscount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     android:visibility="gone"
                     tools:visibility="visible">
 
-                    <TextView
-                        android:id="@+id/tvVoucherLabel"
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Giảm giá Voucher"
-                        android:textAppearance="@style/TextAppearance.VietTable.Body"
-                        android:textColor="@color/pd_mint" />
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvVoucherLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Voucher"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body"
+                            android:textColor="@color/pd_mint"
+                            tools:text="Voucher CHAOBAN50" />
+
+                        <TextView
+                            android:id="@+id/tvVoucherDiscountAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                            android:textColor="@color/pd_mint"
+                            tools:text="-50.000đ" />
+                    </LinearLayout>
 
                     <TextView
-                        android:id="@+id/tvVoucherDiscountAmount"
+                        android:id="@+id/btnRemoveVoucher"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_mint"
-                        tools:text="-50.000đ" />
+                        android:background="?attr/selectableItemBackground"
+                        android:minHeight="40dp"
+                        android:gravity="center_vertical"
+                        android:paddingEnd="12dp"
+                        android:text="Bỏ voucher"
+                        android:textAppearance="@style/TextAppearance.VietTable.Label"
+                        android:textColor="@color/pd_yellow" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -218,32 +239,52 @@
                         tools:text="-20.000đ" />
                 </LinearLayout>
 
-                <!-- Running promotion (docs/PROMO_PLAN.md): applied by itself, never together with a voucher. -->
+                <!-- Running promotion (docs/PROMO_PLAN.md): applied by itself as "Khuyến mãi tự động: <tên>" so the guest
+                     does not take it for a voucher; "Không dùng khuyến mãi" / "Dùng lại khuyến mãi" (owner 28/10). -->
                 <LinearLayout
                     android:id="@+id/layoutPromotionDiscount"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     android:visibility="gone"
                     tools:visibility="visible">
 
-                    <TextView
-                        android:id="@+id/tvPromotionLabel"
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Khuyến mãi"
-                        android:textAppearance="@style/TextAppearance.VietTable.Body"
-                        android:textColor="@color/pd_mint" />
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvPromotionLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Khuyến mãi tự động"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body"
+                            android:textColor="@color/pd_mint"
+                            tools:text="Khuyến mãi tự động: Giờ vàng" />
+
+                        <TextView
+                            android:id="@+id/tvPromotionDiscountAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+                            android:textColor="@color/pd_mint"
+                            tools:text="-50.000đ" />
+                    </LinearLayout>
 
                     <TextView
-                        android:id="@+id/tvPromotionDiscountAmount"
+                        android:id="@+id/btnTogglePromotion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_mint"
-                        tools:text="-50.000đ" />
+                        android:background="?attr/selectableItemBackground"
+                        android:minHeight="40dp"
+                        android:gravity="center_vertical"
+                        android:paddingEnd="12dp"
+                        android:text="Không dùng khuyến mãi"
+                        android:textAppearance="@style/TextAppearance.VietTable.Label"
+                        android:textColor="@color/pd_yellow" />
                 </LinearLayout>
 
                 <TextView

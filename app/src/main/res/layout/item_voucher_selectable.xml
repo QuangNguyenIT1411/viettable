@@ -63,6 +63,18 @@
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
                 android:textColor="@color/pd_yellow"
                 tools:text="HSD: 30/09/2026" />
+
+            <!-- "Giảm 30.000đ cho hoá đơn này · Còn 2 lượt", or why it cannot be used (card greyed). -->
+            <TextView
+                android:id="@+id/tvVoucherStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Caption"
+                android:textColor="@color/pd_mint"
+                android:visibility="gone"
+                tools:text="Giảm 30.000đ cho hoá đơn này · Còn 2 lượt"
+                tools:visibility="visible" />
         </LinearLayout>
 
         <RadioButton

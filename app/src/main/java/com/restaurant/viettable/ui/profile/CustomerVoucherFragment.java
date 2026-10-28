@@ -80,11 +80,9 @@ public class CustomerVoucherFragment extends BaseFragment {
     private void filterVouchers(int tabIndex) {
         displayedVouchers.clear();
         for (Voucher v : appStateManager.getVouchers()) {
-            if (tabIndex == 0 && !v.isUsed()) {
-                displayedVouchers.add(v);
-            } else if (tabIndex == 1 && v.isUsed()) {
-                displayedVouchers.add(v);
-            }
+            // "Đã dùng / Hết hạn": used up by this guest, expired or out of uses (server reason, owner 28/10).
+            boolean finished = v.isUsed() || "voucher_expired".equals(v.getReasonCode()) || "voucher_sold_out".equals(v.getReasonCode());
+            if ((tabIndex == 0) != finished) displayedVouchers.add(v);
         }
         adapter.notifyDataSetChanged();
         renderState(false, null);

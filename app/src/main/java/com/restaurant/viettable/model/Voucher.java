@@ -46,6 +46,32 @@ public class Voucher implements Serializable {
     public int getBackendId() { return backendId; }
     public void setBackendId(int backendId) { this.backendId = backendId; }
 
+    /**
+     * What the server says for this guest (and this bill when one is open), owner 28/10: usable or greyed with the
+     * reason ("Đã dùng", "Đã hết hạn", "Chưa đủ đơn tối thiểu…"), "Còn X lượt", and the amount it takes off this bill.
+     */
+    private boolean usable = true;
+    private String reasonCode;
+    private String reason;
+    private String remainingLabel;
+    private long billDiscount = -1;
+    private boolean applied;
+    private int usedByMe;
+    public boolean isUsable() { return usable; }
+    public String getReasonCode() { return reasonCode; }
+    public String getReason() { return reason; }
+    public String getRemainingLabel() { return remainingLabel; }
+    /** -1 when listed without a bill. */
+    public long getBillDiscount() { return billDiscount; }
+    public boolean isApplied() { return applied; }
+    public int getUsedByMe() { return usedByMe; }
+    public void setAvailability(boolean usable, String reasonCode, String reason, String remainingLabel, long billDiscount,
+                                boolean applied, int usedByMe) {
+        this.usable = usable; this.reasonCode = reasonCode; this.reason = reason; this.remainingLabel = remainingLabel;
+        this.billDiscount = billDiscount; this.applied = applied; this.usedByMe = usedByMe;
+        this.isUsed = "voucher_used_up".equals(reasonCode);
+    }
+
     public long calculateDiscount(long orderSubtotal) {
         if (orderSubtotal < minOrderAmount) return 0;
         if (discountAmount > 0) return discountAmount;

@@ -1346,23 +1346,43 @@ public final class MobileRepository {
         api().get("/api/mobile/v1/me/settings", true, objectCallback(callback));
     }
 
-    public void loadVouchers(Callback<List<Voucher>> callback) {
-        api().get("/api/mobile/v1/me/vouchers", true, new ApiClient.Callback() {
+    /** Every voucher the guest may see (profile "Voucher của tôi"), greyed ones with the server's reason. */
+    public void loadVouchers(Callback<List<Voucher>> callback) { loadVouchers(0, callback); }
+
+    /** Vouchers for the open bill: usable first, each with what it takes off THIS bill, or why it cannot be used. */
+    public void loadVouchersForBill(Callback<List<Voucher>> callback) { loadVouchers(currentCheckoutQuoteId(), callback); }
+
+    private void loadVouchers(int quoteId, Callback<List<Voucher>> callback) {
+        api().get("/api/mobile/v1/me/vouchers" + (quoteId > 0 ? "?quoteId=" + quoteId : ""), true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
-                JSONArray rows = (JSONArray) body; List<Voucher> values = new ArrayList<>();
-                for (int i = 0; i < rows.length(); i++) {
-                    JSONObject row = rows.optJSONObject(i); String type = SafeText.json(row, "discountType");
-                    Voucher voucher = new Voucher(SafeText.json(row, "code"), SafeText.json(row, "name"),
-                            "FIXED".equals(type) ? Math.round(row.optDouble("discountValue")) : 0,
-                            "PERCENT".equals(type) ? row.optInt("discountValue") : 0,
-                            Math.round(row.optDouble("minSubtotal")), SafeText.json(row, "endsAtUtc"), true, null,
-                            SafeText.json(row, "name"), false);
-                    voucher.setBackendId(row.optInt("voucherId")); values.add(voucher);
-                }
+                List<Voucher> values = parseVouchers((JSONArray) body);
                 state.replaceVouchers(values); callback.onSuccess(values);
             }
             @Override public void onError(ApiException error) { callback.onError(error); }
         });
+    }
+
+    static List<Voucher> parseVouchers(JSONArray rows) {
+        List<Voucher> values = new ArrayList<>();
+        if (rows == null) return values;
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.optJSONObject(i); if (row == null) continue;
+            String type = SafeText.json(row, "discountType");
+            Voucher voucher = new Voucher(SafeText.json(row, "code"), SafeText.json(row, "name"),
+                    "FIXED".equals(type) ? Math.round(row.optDouble("discountValue")) : 0,
+                    "PERCENT".equals(type) ? row.optInt("discountValue") : 0,
+                    Math.round(row.optDouble("minSubtotal")), SafeText.json(row, "endsAtUtc"), true, null,
+                    SafeText.json(row, "name"), false);
+            voucher.setBackendId(row.optInt("voucherId"));
+            voucher.setAvailability(row.optBoolean("usable", true),
+                    row.isNull("reasonCode") ? null : SafeText.json(row, "reasonCode", null),
+                    row.isNull("reason") ? null : SafeText.json(row, "reason", null),
+                    row.isNull("remainingLabel") ? null : SafeText.json(row, "remainingLabel", null),
+                    row.isNull("discount") || !row.has("discount") ? -1 : Math.round(row.optDouble("discount")),
+                    row.optBoolean("applied", false), row.optInt("usedByMe", 0));
+            values.add(voucher);
+        }
+        return values;
     }
 
     public void applyVoucher(Voucher voucher, Callback<Invoice> callback) {
@@ -1372,6 +1392,26 @@ public final class MobileRepository {
         try {
             JSONObject body = new JSONObject().put("voucherId", voucher.getBackendId());
             api().post("/api/mobile/v1/checkout/quotes/" + currentQuote.optInt("checkoutQuoteId") + "/voucher", body, true, null,
+                    quoteCallback(callback));
+        } catch (JSONException e) { callback.onError(jsonError()); }
+    }
+
+    /** "Bỏ voucher": the bill goes back to the promotion (if any) or no discount. */
+    public void removeVoucher(Callback<Invoice> callback) {
+        if (currentQuote == null) { callback.onError(new ApiException(0, "quote_required", "Chưa có báo giá thanh toán.", null)); return; }
+        try {
+            JSONObject body = new JSONObject().put("voucherId", JSONObject.NULL);
+            api().post("/api/mobile/v1/checkout/quotes/" + currentQuote.optInt("checkoutQuoteId") + "/voucher", body, true, null,
+                    quoteCallback(callback));
+        } catch (JSONException e) { callback.onError(jsonError()); }
+    }
+
+    /** "Không dùng khuyến mãi" (use = false) and "Dùng lại khuyến mãi" (use = true). */
+    public void choosePromotion(boolean use, Callback<Invoice> callback) {
+        if (currentQuote == null) { callback.onError(new ApiException(0, "quote_required", "Chưa có báo giá thanh toán.", null)); return; }
+        try {
+            JSONObject body = new JSONObject().put("use", use);
+            api().post("/api/mobile/v1/checkout/quotes/" + currentQuote.optInt("checkoutQuoteId") + "/promotion", body, true, null,
                     quoteCallback(callback));
         } catch (JSONException e) { callback.onError(jsonError()); }
     }
@@ -1657,6 +1697,10 @@ public final class MobileRepository {
         invoice.setPromotion(quote.isNull("promotionName") ? null : SafeText.json(quote, "promotionName", null),
                 Math.round(quote.optDouble("promotionDiscount", 0)),
                 quote.isNull("discountNote") ? null : SafeText.json(quote, "discountNote", null));
+        invoice.setPromotionOffer(quote.isNull("promotionId") ? 0 : Math.round(quote.optDouble("promotionOfferDiscount", 0)),
+                quote.optBoolean("promotionDeclined", false));
+        invoice.setPickedVoucher(quote.isNull("voucherId") ? 0 : quote.optInt("voucherId"),
+                quote.isNull("voucherCode") ? null : SafeText.json(quote, "voucherCode", null));
         return invoice;
     }
 

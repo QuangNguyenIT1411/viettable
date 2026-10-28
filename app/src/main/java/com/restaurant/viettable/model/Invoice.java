@@ -66,6 +66,18 @@ public class Invoice implements Serializable {
     public void setPromotion(String name, long discount, String note) {
         promotionName = name; promotionDiscount = Math.max(0, discount); discountNote = note;
     }
+    /** Automatic promotion found for the bill (also when the guest declined it) and its full amount (owner 28/10). */
+    private long promotionOffer;
+    private boolean promotionDeclined;
+    public long getPromotionOffer() { return promotionOffer; }
+    public boolean isPromotionDeclined() { return promotionDeclined; }
+    public void setPromotionOffer(long offer, boolean declined) { promotionOffer = Math.max(0, offer); promotionDeclined = declined; }
+    /** The voucher the guest picked (null = none); getVoucherDiscount() is 0 when the promotion is better. */
+    private int pickedVoucherId;
+    private String pickedVoucherCode;
+    public int getPickedVoucherId() { return pickedVoucherId; }
+    public String getPickedVoucherCode() { return pickedVoucherCode; }
+    public void setPickedVoucher(int id, String code) { pickedVoucherId = Math.max(0, id); pickedVoucherCode = code; }
     public long getFinalTotal() { return finalTotal; }
     public String getPaymentMethod() { return paymentMethod; }
     public String getPaymentLocation() { return paymentLocation; }
