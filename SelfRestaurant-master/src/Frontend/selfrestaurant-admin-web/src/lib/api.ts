@@ -56,7 +56,26 @@ export type AdminPromotionRequest = {
   maxDiscount: number | null; minSubtotal: number; branchIds: number[]; startsAtUtc: string; endsAtUtc: string; isActive: boolean;
 };
 
+/** Voucher (owner 28/10/2026): applied only when the guest picks it; uses per customer (null = no limit) and in total. */
+export type AdminVoucherDto = {
+  voucherId: number; code: string; name: string; discountType: string; discountValue: number; maxDiscount?: number | null;
+  minSubtotal: number; startsAtUtc: string; endsAtUtc: string; isActive: boolean; maxUsesPerCustomer?: number | null;
+  maxTotalUses?: number | null; usedTotal: number; remainingTotal?: number | null; isRunning: boolean; summary: string;
+};
+export type AdminVoucherRequest = {
+  code: string; name: string; discountType: "PERCENT" | "FIXED"; discountValue: number; maxDiscount: number | null;
+  minSubtotal: number; startsAtUtc: string; endsAtUtc: string; maxUsesPerCustomer: number | null; maxTotalUses: number | null;
+  isActive: boolean;
+};
+
 export const adminApi = {
+  getVouchers: () => request<AdminVoucherDto[]>("/api/gateway/admin/vouchers"),
+  createVoucher: (body: AdminVoucherRequest) =>
+    request<AdminVoucherDto>("/api/gateway/admin/vouchers", { method: "POST", body: JSON.stringify(body) }),
+  updateVoucher: (id: number, body: AdminVoucherRequest) =>
+    request<AdminVoucherDto>(`/api/gateway/admin/vouchers/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  toggleVoucher: (id: number, isActive: boolean) =>
+    request<AdminVoucherDto>(`/api/gateway/admin/vouchers/${id}/toggle`, { method: "POST", body: JSON.stringify({ isActive }) }),
   getPromotions: () => request<AdminPromotionDto[]>("/api/gateway/admin/promotions"),
   createPromotion: (body: AdminPromotionRequest) =>
     request<AdminPromotionDto>("/api/gateway/admin/promotions", { method: "POST", body: JSON.stringify(body) }),
