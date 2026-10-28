@@ -615,6 +615,23 @@ public sealed class StaffCashierGatewayController : ControllerBase
         catch (ApiClientException ex) { return Error(ex.Code ?? "transfer_qr_failed", ex.Message, ex.StatusCode); }
     }
 
+    /// <summary>The amounts the counter screen shows, priced by Billing's CheckoutPricing (the screen computes nothing).</summary>
+    [HttpPost("orders/{orderId:int}/checkout-preview")]
+    public async Task<IActionResult> PreviewCheckout(int orderId, [FromBody] CashierCheckoutPreviewApiRequest request, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        if (orderId <= 0) return Error("invalid_order", "Đơn hàng không hợp lệ.", 400);
+        try
+        {
+            return Ok(await _billingClient.PreviewCheckoutAsync(orderId,
+                new { discount = Math.Max(0, request.Discount), pointsUsed = Math.Max(0, request.PointsUsed), branchId = staff.BranchId }, ct));
+        }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "checkout_preview_failed", ex.Message, ex.StatusCode); }
+    }
+
+    public sealed record CashierCheckoutPreviewApiRequest(decimal Discount = 0, int PointsUsed = 0);
+
     [StaffBranchEvent(StaffEventSource.Staff, StaffBranchEvents.Orders, StaffBranchEvents.OnsitePayments)]
     [HttpPost("orders/{orderId:int}/checkout")]
     public async Task<ActionResult<CashierCheckoutResultDto>> Checkout(int orderId, [FromBody] CashierCheckoutApiRequest request, CancellationToken cancellationToken)

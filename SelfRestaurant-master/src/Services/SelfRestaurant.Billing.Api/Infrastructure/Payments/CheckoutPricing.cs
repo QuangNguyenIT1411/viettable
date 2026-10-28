@@ -113,6 +113,19 @@ public static class CheckoutPricing
         quote.PromotionOfferDiscount = best?.Discount ?? 0;
     }
 
+    /// <summary>Smallest amount of money an admin may type (0 = none).</summary>
+    public const decimal MinMoney = 1_000m;
+
+    /// <summary>
+    /// Money typed on the admin forms (owner 29/10): 0 or whole đồng from 1.000đ. "300" is "300.000" typed into a number
+    /// box (the dot read as a decimal point), which made a 300.000đ minimum one of 300đ.
+    /// </summary>
+    public static string? MoneyError(string label, decimal? value) =>
+        value is null or 0 ? null
+        : value < MinMoney ? $"{label} phải từ {Money(MinMoney)} (đang là {value:0.##}đ). Nhập đủ số, ví dụ 300000 cho 300.000đ."
+        : value != Math.Floor(value.Value) ? $"{label} phải là số đồng chẵn."
+        : null;
+
     public static IReadOnlySet<int> ParseBranches(string? value) =>
         (value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(x => int.TryParse(x, out var id) ? id : 0).Where(x => x > 0).ToHashSet();

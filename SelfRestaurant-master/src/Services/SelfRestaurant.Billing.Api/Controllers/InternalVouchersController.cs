@@ -83,6 +83,9 @@ public sealed partial class InternalVouchersController(BillingDbContext db) : Co
         else if (r.DiscountValue <= 0) message = "Mức giảm phải lớn hơn 0.";
         else if (type == CheckoutPricing.Percent && r.DiscountValue > 100) message = "Giảm theo phần trăm tối đa 100%.";
         else if (r.MaxDiscount is < 0 || r.MinSubtotal < 0) message = "Trần giảm và đơn tối thiểu không được âm.";
+        else if (CheckoutPricing.MoneyError("Đơn tối thiểu", r.MinSubtotal) is { } min) message = min;
+        else if (type == CheckoutPricing.Percent && CheckoutPricing.MoneyError("Trần giảm", r.MaxDiscount) is { } cap) message = cap;
+        else if (type == CheckoutPricing.Fixed && CheckoutPricing.MoneyError("Số tiền giảm", r.DiscountValue) is { } amount) message = amount;
         else if (r.EndsAtUtc <= r.StartsAtUtc) message = "Thời gian kết thúc phải sau thời gian bắt đầu.";
         else if (r.MaxUsesPerCustomer is < 1 or > 1000) message = "Số lần mỗi khách được dùng phải từ 1 đến 1000 (bỏ trống = không giới hạn).";
         else if (r.MaxTotalUses is < 1 or > 1_000_000) message = "Tổng số lượt phải từ 1 trở lên (bỏ trống = không giới hạn).";

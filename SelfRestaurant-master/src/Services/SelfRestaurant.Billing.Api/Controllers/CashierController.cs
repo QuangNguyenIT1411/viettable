@@ -189,7 +189,6 @@ public sealed class CashierController : ControllerBase
         }
 
         var subtotal = order.Subtotal;
-        var manualDiscount = request.Discount < 0 ? 0 : Math.Min(request.Discount, subtotal);
         CustomersApiClient.CustomerSnapshotResponse? customerSnapshot = null;
         if (order.CustomerId is int customerId && customerId > 0)
         {
@@ -202,14 +201,9 @@ public sealed class CashierController : ControllerBase
         }
 
         var pointsBefore = customerSnapshot?.LoyaltyPoints ?? 0;
-        var requestedPoints = request.PointsUsed < 0 ? 0 : request.PointsUsed;
-        // The one formula shared with the app (CheckoutPricing): best promotion OR the cashier's discount (the better
-        // one), then points capped at 10% of what is left.
-        var promotion = CheckoutPricing.Best(await InternalPromotionsController.OffersAsync(_db, DateTime.UtcNow, cancellationToken),
-            order.BranchId ?? 0, subtotal, DateTime.UtcNow);
-        var pricing = CheckoutPricing.Compute(new PricingInput(subtotal, promotion?.Offer.PromotionId, promotion?.Offer.Name,
-            promotion?.Discount ?? 0, manualDiscount, customerSnapshot is null ? 0 : requestedPoints, customerSnapshot?.LoyaltyPoints ?? 0, 0,
-            "giảm giá của thu ngân"));
+        // Recomputed here from the order, never taken from the screen: only the cashier's discount and the points asked for.
+        var (_, pricing) = await PriceCounterOrderAsync(subtotal, order.BranchId ?? 0, request.Discount, request.PointsUsed,
+            customerSnapshot?.LoyaltyPoints, cancellationToken);
         var discount = pricing.VoucherDiscount;
         var usedPoints = pricing.PointsApplied;
         var pointsDiscount = pricing.PointsDiscount;
@@ -403,6 +397,74 @@ public sealed class CashierController : ControllerBase
             PromotionName: pricing.PromotionName,
             PromotionDiscount: pricing.PromotionDiscount,
             DiscountNote: pricing.DiscountNote));
+    }
+
+    /// <summary>
+    /// What the counter screen shows before "Thanh toán" (owner 29/10): the same CheckoutPricing the checkout uses, so the
+    /// screen never computes a promotion, the better-of rule or the points cap itself. An app session is priced like the
+    /// cashier settlement prices it (the guest's own quote if they asked to pay, else promotion + deposit, no counter discount).
+    /// </summary>
+    [HttpPost("api/orders/{orderId:int}/checkout/preview")]
+    public async Task<ActionResult<CheckoutPreviewResponse>> PreviewCheckout(int orderId, [FromBody] CheckoutPreviewRequest request,
+        CancellationToken cancellationToken)
+    {
+        var order = await _ordersApi.GetCheckoutContextAsync(orderId, cancellationToken);
+        if (order is null) return NotFound(new { message = "Không tìm thấy đơn hàng." });
+        if (request.BranchId is > 0 && order.BranchId is > 0 && request.BranchId != order.BranchId)
+            return StatusCode(StatusCodes.Status403Forbidden, new { code = "branch_mismatch", message = "Đơn hàng không thuộc chi nhánh của thu ngân hiện tại." });
+
+        if (order.DiningSessionId is > 0 && order.DiningSessionCustomerId is > 0)
+        {
+            var sessionId = order.DiningSessionId.Value;
+            var quote = await _db.CheckoutQuotes.AsNoTracking()
+                .Where(x => x.DiningSessionId == sessionId && x.Status == "PAYMENT_REQUESTED")
+                .OrderByDescending(x => x.CheckoutQuoteId).FirstOrDefaultAsync(cancellationToken);
+            if (quote is null)
+            {
+                OrdersApiClient.DiningSessionCheckoutContext? context;
+                try { context = await _ordersApi.GetDiningSessionCheckoutContextAsync(sessionId, order.DiningSessionCustomerId.Value, cancellationToken); }
+                catch (HttpRequestException ex)
+                { return StatusCode((int?)ex.StatusCode ?? 503, new { code = "checkout_context_failed", message = "Phiên không còn món chờ thanh toán hoặc đã kết thúc." }); }
+                if (context is null) return NotFound(new { message = "Không tìm thấy phiên phục vụ." });
+                var now = DateTime.UtcNow;
+                quote = new CheckoutQuote { Subtotal = context.Subtotal, BranchId = context.BranchId };
+                CheckoutPricing.AttachPromotion(quote, await InternalPromotionsController.OffersAsync(_db, now, cancellationToken), now);
+                ReservationDepositService.AttachToQuote(quote, await ReservationDepositService.PaidForReservationAsync(_db, context.ReservationId, cancellationToken));
+                CheckoutPricing.Apply(quote);
+            }
+            return Ok(new CheckoutPreviewResponse(quote.Subtotal, quote.PromotionId, quote.PromotionName,
+                quote.PromotionDeclined ? 0 : quote.PromotionOfferDiscount, quote.PromotionDiscount, quote.VoucherDiscount, quote.DiscountNote,
+                quote.PointsApplied, quote.PointsDiscount, 0, quote.DepositApplied, quote.TotalAmount, AppSession: true));
+        }
+
+        int? balance = null;
+        if (order.CustomerId is int customerId && customerId > 0)
+            balance = (await _customersApi.GetCustomerAsync(customerId, cancellationToken))?.LoyaltyPoints ?? 0;
+        var (offer, pricing) = await PriceCounterOrderAsync(order.Subtotal, order.BranchId ?? 0, request.Discount, request.PointsUsed,
+            balance, cancellationToken);
+        // The most points this bill takes once the discount is known (the same cap the checkout applies).
+        var maxPoints = balance is > 0
+            ? SelfRestaurant.Loyalty.LoyaltyRules.RedeemablePoints(int.MaxValue, balance.Value, pricing.AfterDiscount)
+            : 0;
+        return Ok(new CheckoutPreviewResponse(pricing.Subtotal, offer?.Offer.PromotionId, offer?.Offer.Name, offer?.Discount ?? 0,
+            pricing.PromotionDiscount, pricing.VoucherDiscount, pricing.DiscountNote, pricing.PointsApplied, pricing.PointsDiscount,
+            maxPoints, pricing.DepositApplied, pricing.Total, AppSession: false));
+    }
+
+    /// <summary>
+    /// The one formula shared with the app (CheckoutPricing): best promotion of the branch OR the cashier's discount (the
+    /// better one), then points capped at 10% of what is left. Without a customer no points are taken.
+    /// </summary>
+    private async Task<((PromotionOffer Offer, decimal Discount)? Offer, PricingResult Pricing)> PriceCounterOrderAsync(
+        decimal subtotal, int branchId, decimal requestedDiscount, int requestedPoints, int? pointsBalance, CancellationToken ct)
+    {
+        var now = DateTime.UtcNow;
+        var promotion = CheckoutPricing.Best(await InternalPromotionsController.OffersAsync(_db, now, ct), branchId, subtotal, now);
+        var manualDiscount = requestedDiscount < 0 ? 0 : Math.Min(requestedDiscount, subtotal);
+        var pricing = CheckoutPricing.Compute(new PricingInput(subtotal, promotion?.Offer.PromotionId, promotion?.Offer.Name,
+            promotion?.Discount ?? 0, manualDiscount, pointsBalance is null ? 0 : Math.Max(0, requestedPoints), pointsBalance ?? 0, 0,
+            "giảm giá của thu ngân"));
+        return (promotion, pricing);
     }
 
     [HttpGet("api/internal/audit-logs")]
@@ -900,4 +962,26 @@ public sealed class CashierController : ControllerBase
         string? PromotionName = null,
         decimal PromotionDiscount = 0,
         string? DiscountNote = null);
+
+    public sealed record CheckoutPreviewRequest(decimal Discount = 0, int PointsUsed = 0, int? BranchId = null);
+
+    /// <summary>
+    /// PromotionOffer: what the best running promotion would take; PromotionDiscount: what it takes on this bill (0 when
+    /// the cashier's discount is better). Discount: the cashier's discount actually applied. MaxPoints: the most points
+    /// this bill takes. AppSession: discount and points are the guest's choice in the app.
+    /// </summary>
+    public sealed record CheckoutPreviewResponse(
+        decimal Subtotal,
+        int? PromotionId,
+        string? PromotionName,
+        decimal PromotionOffer,
+        decimal PromotionDiscount,
+        decimal Discount,
+        string? DiscountNote,
+        int PointsUsed,
+        decimal PointsDiscount,
+        int MaxPoints,
+        decimal DepositApplied,
+        decimal TotalAmount,
+        bool AppSession);
 }

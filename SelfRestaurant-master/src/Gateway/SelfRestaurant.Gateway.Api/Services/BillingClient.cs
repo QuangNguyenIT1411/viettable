@@ -80,6 +80,9 @@ public sealed class BillingClient : ApiClientBase
         return list ?? Array.Empty<CashierOrderDto>();
     }
 
+    public Task<JsonElement> PreviewCheckoutAsync(int orderId, object request, CancellationToken cancellationToken) =>
+        PostForAsync<object, JsonElement>($"/api/orders/{orderId}/checkout/preview", request, cancellationToken);
+
     public Task<CashierCheckoutResponse?> CheckoutAsync(int orderId, CashierCheckoutRequest request, CancellationToken cancellationToken) =>
         PostForAsync<CashierCheckoutRequest, CashierCheckoutResponse>($"/api/orders/{orderId}/checkout", request, cancellationToken);
 
