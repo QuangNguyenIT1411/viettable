@@ -84,10 +84,14 @@ public static class CheckoutPricing
             promoApplied, voucherApplied, note, points, pointsDiscount, deposit, afterPoints - deposit);
     }
 
-    /// <summary>Re-prices a quote from what it holds: the promotion and voucher offers, the points chosen, the deposit.</summary>
+    /// <summary>
+    /// Re-prices a quote from what it holds: the promotion (unless the guest declined it) and voucher offers, the points
+    /// chosen, the deposit. A voucher counts only when the guest picked one (VoucherId), never by itself.
+    /// </summary>
     public static void Apply(CheckoutQuote quote, int? pointsBalance = null)
     {
-        var result = Compute(new PricingInput(quote.Subtotal, quote.PromotionId, quote.PromotionName, quote.PromotionOfferDiscount,
+        var result = Compute(new PricingInput(quote.Subtotal, quote.PromotionId, quote.PromotionName,
+            quote.PromotionDeclined ? 0 : quote.PromotionOfferDiscount,
             quote.VoucherId is null ? 0 : quote.VoucherOfferDiscount, quote.PointsApplied, pointsBalance ?? quote.PointsApplied,
             quote.DepositAmount));
         quote.PromotionDiscount = result.PromotionDiscount;

@@ -111,6 +111,12 @@ public static class BillingDbBootstrapper
                     IsActive BIT NOT NULL, NotifiedAtUtc DATETIME2 NULL, CreatedAtUtc DATETIME2 NOT NULL, UpdatedAtUtc DATETIME2 NOT NULL);
                 CREATE INDEX IX_Promotions_Running ON dbo.Promotions(IsActive, StartsAtUtc, EndsAtUtc);
             END;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'PromotionDeclined') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD PromotionDeclined BIT NOT NULL CONSTRAINT DF_CheckoutQuotes_PromotionDeclined DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Vouchers', 'MaxUsesPerCustomer') IS NULL ALTER TABLE dbo.Vouchers ADD MaxUsesPerCustomer INT NULL;
+            IF COL_LENGTH('dbo.Vouchers', 'MaxTotalUses') IS NULL ALTER TABLE dbo.Vouchers ADD MaxTotalUses INT NULL;
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.CheckoutQuotes') AND name = N'IX_CheckoutQuotes_Voucher_Status')
+                CREATE INDEX IX_CheckoutQuotes_Voucher_Status ON dbo.CheckoutQuotes(VoucherId, Status);
             """, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);
     }

@@ -184,6 +184,35 @@ public sealed class AdminGatewayController : ControllerBase
 
     public sealed record AdminPromotionToggleRequest(bool IsActive);
 
+    // ---- Vouchers (owner 28/10/2026): admin only; uses per customer and in total. ----
+
+    [HttpGet("vouchers")]
+    public async Task<ActionResult<object>> GetVouchers([FromServices] BillingClient billing, CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await billing.GetVouchersAsync(ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_vouchers_failed", ex); }
+    }
+
+    [HttpPost("vouchers")]
+    public Task<ActionResult<object>> CreateVoucher([FromBody] System.Text.Json.JsonElement request, [FromServices] BillingClient billing, CancellationToken ct) =>
+        SaveVoucher(() => billing.CreateVoucherAsync(request, ct), "create_voucher_failed");
+
+    [HttpPut("vouchers/{voucherId:int}")]
+    public Task<ActionResult<object>> UpdateVoucher(int voucherId, [FromBody] System.Text.Json.JsonElement request, [FromServices] BillingClient billing, CancellationToken ct) =>
+        SaveVoucher(() => billing.UpdateVoucherAsync(voucherId, request, ct), "update_voucher_failed");
+
+    [HttpPost("vouchers/{voucherId:int}/toggle")]
+    public Task<ActionResult<object>> ToggleVoucher(int voucherId, [FromBody] AdminPromotionToggleRequest request, [FromServices] BillingClient billing, CancellationToken ct) =>
+        SaveVoucher(() => billing.ToggleVoucherAsync(voucherId, request.IsActive, ct), "toggle_voucher_failed");
+
+    private async Task<ActionResult<object>> SaveVoucher(Func<Task<System.Text.Json.JsonElement>> save, string fallbackCode)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await save()); }
+        catch (ApiClientException ex) { return HandleApiClientException(fallbackCode, ex); }
+    }
+
     /// <summary>Reservation deposits (one branch, or every branch the admin sees) with their bookings.</summary>
     [HttpGet("/api/admin/deposits")]
     public async Task<ActionResult<IReadOnlyList<object>>> GetDeposits([FromQuery] int? branchId,

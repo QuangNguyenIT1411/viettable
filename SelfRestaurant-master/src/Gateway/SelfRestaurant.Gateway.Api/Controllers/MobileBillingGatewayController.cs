@@ -28,10 +28,14 @@ public sealed class MobileBillingGatewayController : ControllerBase
     public Task<ActionResult<object>> PaymentOptions(CancellationToken ct) => Get(() => _billing.GetMobilePaymentOptionsAsync(ct));
 
     [HttpGet("me/vouchers")]
-    public async Task<ActionResult<object>> Vouchers(CancellationToken ct) { var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401); try { return Ok(await _billing.GetMobileVouchersAsync(actor.Value, ct)); } catch (ApiClientException ex) { return Downstream(ex); } }
+    public async Task<ActionResult<object>> Vouchers([FromQuery] int? quoteId, CancellationToken ct) { var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401); try { return Ok(await _billing.GetMobileVouchersAsync(actor.Value, quoteId, ct)); } catch (ApiClientException ex) { return Downstream(ex); } }
 
     [HttpPost("checkout/quotes/{quoteId:int}/voucher")]
     public async Task<ActionResult<object>> Voucher(int quoteId, ApplyVoucherRequest request, CancellationToken ct) => await Simple(() => _billing.ApplyVoucherAsync(quoteId, new { customerId = Actor(), request.VoucherId }, ct));
+
+    /// <summary>"Không dùng khuyến mãi" ({ use: false }) and "Dùng khuyến mãi" ({ use: true }) on an open quote.</summary>
+    [HttpPost("checkout/quotes/{quoteId:int}/promotion")]
+    public async Task<ActionResult<object>> Promotion(int quoteId, PromotionChoiceRequest request, CancellationToken ct) => await Simple(() => _billing.ChoosePromotionAsync(quoteId, new { customerId = Actor(), request.Use }, ct));
 
     /// <summary>The stored quote (after Back the app reloads it instead of trusting its own copy).</summary>
     [HttpGet("checkout/quotes/{quoteId:int}")]

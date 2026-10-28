@@ -125,6 +125,7 @@ public sealed class BillingDbContext : DbContext
         {
             entity.HasKey(x => x.CheckoutQuoteId);
             entity.HasIndex(x => x.QuoteCode).IsUnique();
+            entity.HasIndex(x => new { x.VoucherId, x.Status }).HasDatabaseName("IX_CheckoutQuotes_Voucher_Status");
             entity.HasIndex(x => x.IdempotencyKey).IsUnique();
             entity.HasIndex(x => x.DiningSessionId);
             entity.Property(x => x.QuoteCode).HasMaxLength(50).IsUnicode(false);

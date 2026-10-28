@@ -30,6 +30,8 @@ public sealed class CheckoutQuote
     public decimal VoucherOfferDiscount { get; set; }
     /// <summary>Why the promotion or the voucher was used when the guest had both (never both).</summary>
     public string? DiscountNote { get; set; }
+    /// <summary>The guest pressed "Không dùng khuyến mãi": the promotion stays known (to use again) but is not taken off.</summary>
+    public bool PromotionDeclined { get; set; }
     public decimal TotalAmount { get; set; }
     public string IdempotencyKey { get; set; } = null!;
     public string RequestHash { get; set; } = null!;
@@ -51,6 +53,10 @@ public sealed class Voucher
     public bool IsActive { get; set; } = true;
     public DateTime StartsAtUtc { get; set; }
     public DateTime EndsAtUtc { get; set; }
+    /// <summary>Uses allowed per customer (1 = one-time); null = no limit. A use = a paid bill, or one waiting for money.</summary>
+    public int? MaxUsesPerCustomer { get; set; }
+    /// <summary>Uses allowed across all customers; null = no limit.</summary>
+    public int? MaxTotalUses { get; set; }
 }
 
 public sealed class Payment

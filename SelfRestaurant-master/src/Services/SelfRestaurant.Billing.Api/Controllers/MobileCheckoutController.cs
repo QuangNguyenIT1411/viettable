@@ -32,7 +32,7 @@ public sealed class MobileCheckoutController : ControllerBase
     {
         if (!ValidCommand(request.CustomerId, request.IdempotencyKey, request.RequestHash)) return Validation();
         var replay = await _db.CheckoutQuotes.AsNoTracking().FirstOrDefaultAsync(x => x.IdempotencyKey == request.IdempotencyKey, ct);
-        if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(MapQuote(replay)) : IdempotencyConflict();
+        if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(await QuoteBodyAsync(replay, ct)) : IdempotencyConflict();
         var blocking = await BlockingPaymentAsync(sessionId, null, ct);
         if (blocking is not null) return PaymentInProgress(blocking);
         OrdersApiClient.DiningSessionCheckoutContext context;
@@ -56,7 +56,7 @@ public sealed class MobileCheckoutController : ControllerBase
         _db.CheckoutQuotes.Add(quote);
         try { await _db.SaveChangesAsync(ct); }
         catch (DbUpdateException) { return Conflict(new { code = "command_in_progress", message = "Yêu cầu đang được xử lý." }); }
-        return Ok(MapQuote(quote));
+        return Ok(await QuoteBodyAsync(quote, ct));
     }
 
     // What the app may offer. Online gateways stay listed for later use, but the app currently shows only
@@ -99,13 +99,40 @@ public sealed class MobileCheckoutController : ControllerBase
         string.Equals(channel, "ONSITE", StringComparison.OrdinalIgnoreCase)
         && (string.Equals(method, "TRANSFER", StringComparison.OrdinalIgnoreCase) || string.Equals(method, "QR", StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// Vouchers the guest may see: running ones, plus those that ended or start within 30 days (shown greyed with the
+    /// reason). With quoteId, each row says whether it fits THIS bill and how much it takes off; usable ones come first.
+    /// </summary>
     [HttpGet("me/vouchers")]
-    public async Task<ActionResult<object>> Vouchers([FromQuery] int customerId, CancellationToken ct)
+    public async Task<ActionResult<object>> Vouchers([FromQuery] int customerId, [FromQuery] int? quoteId, CancellationToken ct)
     {
         if (customerId <= 0) return Validation();
+        CheckoutQuote? quote = null;
+        if (quoteId is > 0)
+        {
+            quote = await _db.CheckoutQuotes.AsNoTracking().FirstOrDefaultAsync(x => x.CheckoutQuoteId == quoteId, ct);
+            if (quote is null) return NotFound(new { code = "quote_not_found", message = "Không tìm thấy báo giá." });
+            if (quote.CustomerId != customerId) return ForbidResult();
+        }
         var now = DateTime.UtcNow;
-        var rows = await _db.Vouchers.AsNoTracking().Where(x => x.IsActive && x.StartsAtUtc <= now && x.EndsAtUtc >= now).OrderBy(x => x.VoucherId).ToListAsync(ct);
-        return Ok(rows.Select(x => new { x.VoucherId, x.Code, x.Name, x.DiscountType, discountValue = Money(x.DiscountValue), minSubtotal = Money(x.MinSubtotal), maxDiscount = x.MaxDiscount == null ? (long?)null : Money(x.MaxDiscount.Value), x.EndsAtUtc }));
+        var from = now.AddDays(-30); var until = now.AddDays(30);
+        var rows = await _db.Vouchers.AsNoTracking()
+            .Where(x => x.IsActive && x.StartsAtUtc <= until && x.EndsAtUtc >= from).OrderBy(x => x.VoucherId).Take(200).ToListAsync(ct);
+        var uses = await VoucherUsage.CountAsync(_db, rows.Select(x => x.VoucherId).ToArray(), customerId, quote?.CheckoutQuoteId, ct);
+        var items = rows.Select(x =>
+        {
+            var use = uses.TryGetValue(x.VoucherId, out var u) ? u : VoucherUse.None;
+            return new { Voucher = x, Check = VoucherRules.Check(x, now, quote?.Subtotal, use), Used = use.UsedByCustomer };
+        }).OrderByDescending(x => x.Check.Usable).ThenByDescending(x => x.Check.Discount).ThenBy(x => x.Voucher.EndsAtUtc).ToArray();
+        return Ok(items.Select(x => new
+        {
+            x.Voucher.VoucherId, x.Voucher.Code, x.Voucher.Name, x.Voucher.DiscountType, discountValue = Money(x.Voucher.DiscountValue),
+            minSubtotal = Money(x.Voucher.MinSubtotal), maxDiscount = x.Voucher.MaxDiscount == null ? (long?)null : Money(x.Voucher.MaxDiscount.Value),
+            x.Voucher.StartsAtUtc, x.Voucher.EndsAtUtc, x.Voucher.MaxUsesPerCustomer, x.Voucher.MaxTotalUses,
+            usedByMe = x.Used, remainingForMe = x.Check.RemainingForCustomer, remainingTotal = x.Check.RemainingTotal,
+            usable = x.Check.Usable, reasonCode = x.Check.Code, reason = x.Check.Reason, remainingLabel = VoucherRules.RemainingLabel(x.Check),
+            discount = quote is null ? (long?)null : Money(x.Check.Discount), applied = quote?.VoucherId == x.Voucher.VoucherId,
+        }));
     }
 
     /// <summary>The quote as stored (the app reloads it after Back instead of trusting its own copy).</summary>
@@ -115,9 +142,10 @@ public sealed class MobileCheckoutController : ControllerBase
         if (customerId <= 0) return Validation();
         var quote = await _db.CheckoutQuotes.AsNoTracking().FirstOrDefaultAsync(x => x.CheckoutQuoteId == quoteId, ct);
         if (quote is null) return NotFound(new { code = "quote_not_found", message = "Không tìm thấy báo giá." });
-        return quote.CustomerId == customerId ? Ok(MapQuote(quote)) : ForbidResult();
+        return quote.CustomerId == customerId ? Ok(await QuoteBodyAsync(quote, ct)) : ForbidResult();
     }
 
+    /// <summary>Picks a voucher for the bill (VoucherId null = "Bỏ voucher"). The better of voucher and promotion is used.</summary>
     [HttpPost("checkout/quotes/{quoteId:int}/voucher")]
     public async Task<ActionResult<object>> ApplyVoucher(int quoteId, VoucherRequest request, CancellationToken ct)
     {
@@ -126,17 +154,28 @@ public sealed class MobileCheckoutController : ControllerBase
         if (request.VoucherId is null) { entity.VoucherId = null; entity.VoucherOfferDiscount = 0; }
         else
         {
-            var now = DateTime.UtcNow;
-            var voucher = await _db.Vouchers.FirstOrDefaultAsync(x => x.VoucherId == request.VoucherId && x.IsActive && x.StartsAtUtc <= now && x.EndsAtUtc >= now, ct);
-            if (voucher is null) return NotFound(new { code = "voucher_not_found", message = "Voucher không tồn tại hoặc đã hết hạn." });
-            if (entity.Subtotal < voucher.MinSubtotal) return Conflict(new { code = "voucher_minimum_not_met", message = "Đơn chưa đạt giá trị tối thiểu của voucher." });
+            var voucher = await _db.Vouchers.AsNoTracking().FirstOrDefaultAsync(x => x.VoucherId == request.VoucherId, ct);
+            if (voucher is null) return NotFound(new { code = VoucherRules.NotFound, message = "Voucher không tồn tại." });
+            var check = VoucherRules.Check(voucher, DateTime.UtcNow, entity.Subtotal,
+                await VoucherUsage.CountAsync(_db, voucher.VoucherId, entity.CustomerId, entity.CheckoutQuoteId, ct));
+            if (!check.Usable) return VoucherUnavailable(check);
             entity.VoucherId = voucher.VoucherId;
-            var offer = voucher.DiscountType == "PERCENT" ? entity.Subtotal * voucher.DiscountValue / 100 : voucher.DiscountValue;
-            if (voucher.MaxDiscount is not null) offer = Math.Min(offer, voucher.MaxDiscount.Value);
             // Kept as an offer: CheckoutPricing uses it only when better than the promotion (never both).
-            entity.VoucherOfferDiscount = Math.Min(entity.Subtotal, Math.Floor(offer));
+            entity.VoucherOfferDiscount = check.Discount;
         }
-        Recalculate(entity); await _db.SaveChangesAsync(ct); return Ok(MapQuote(entity));
+        Recalculate(entity); await _db.SaveChangesAsync(ct); return Ok(await QuoteBodyAsync(entity, ct));
+    }
+
+    /// <summary>"Không dùng khuyến mãi" (Use = false) and back (Use = true). The promotion found for the quote stays known.</summary>
+    [HttpPost("checkout/quotes/{quoteId:int}/promotion")]
+    public async Task<ActionResult<object>> UsePromotion(int quoteId, PromotionChoiceRequest request, CancellationToken ct)
+    {
+        var quote = await OwnedOpenQuote(quoteId, request.CustomerId, ct); if (quote.Result is not null) return quote.Result;
+        var entity = quote.Value!;
+        if (entity.PromotionId is null || entity.PromotionOfferDiscount <= 0)
+            return Conflict(new { code = "promotion_not_available", message = "Hoá đơn này không có khuyến mãi tự động." });
+        entity.PromotionDeclined = !request.Use;
+        Recalculate(entity); await _db.SaveChangesAsync(ct); return Ok(await QuoteBodyAsync(entity, ct));
     }
 
     [HttpPost("checkout/quotes/{quoteId:int}/loyalty")]
@@ -152,7 +191,7 @@ public sealed class MobileCheckoutController : ControllerBase
         // bill after the promotion/voucher.
         entity.PointsApplied = request.Points;
         CheckoutPricing.Apply(entity, customer.LoyaltyPoints);
-        await _db.SaveChangesAsync(ct); return Ok(MapQuote(entity));
+        await _db.SaveChangesAsync(ct); return Ok(await QuoteBodyAsync(entity, ct));
     }
 
     [HttpPost("dining-sessions/{sessionId:int}/payment-request")]
@@ -162,15 +201,26 @@ public sealed class MobileCheckoutController : ControllerBase
         if (quote is null) return NotFound(new { code = "quote_not_found", message = "Không tìm thấy báo giá." });
         if (quote.CustomerId != request.CustomerId || quote.DiningSessionId != sessionId) return ForbidResult();
         if (quote.ExpiresAtUtc <= DateTime.UtcNow) { quote.Status = "EXPIRED"; await _db.SaveChangesAsync(ct); return Conflict(new { code = "quote_expired", message = "Báo giá đã hết hạn." }); }
-        if (quote.Status == "PAYMENT_REQUESTED") return Ok(MapQuote(quote));
+        if (quote.Status == "PAYMENT_REQUESTED") return Ok(await QuoteBodyAsync(quote, ct));
         if (quote.Status != "OPEN") return StateConflict();
         var blocking = await BlockingPaymentAsync(sessionId, quote.CheckoutQuoteId, ct);
         if (blocking is not null) return PaymentInProgress(blocking);
+        // A picked voucher takes one of its uses here. One guest at a time per voucher (lock held until commit), so two
+        // guests racing for the last use cannot both get it; the other one is told and can remove the voucher.
+        await using var voucherTx = quote.VoucherId is not null && quote.VoucherDiscount > 0
+            ? await _db.Database.BeginTransactionAsync(ct) : null;
+        if (voucherTx is not null)
+        {
+            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, VoucherUsage.LockName(quote.VoucherId!.Value), ct);
+            var check = await VoucherUsage.BlockingCheckAsync(_db, quote, DateTime.UtcNow, ct);
+            if (check is not null) return VoucherUnavailable(check, " Vui lòng bỏ voucher rồi thanh toán lại.");
+        }
         try { await _orders.RequestPaymentAsync(sessionId, request.CustomerId, quote.CheckoutQuoteId, ct); }
         catch (HttpRequestException ex) { return StatusCode((int?)ex.StatusCode ?? 503, new { code = "payment_lock_failed",
             message = "Phiên đang chờ thanh toán ở một yêu cầu khác hoặc đã kết thúc. Vui lòng mở lại màn thanh toán." }); }
         quote.Status = "PAYMENT_REQUESTED"; quote.UpdatedAtUtc = DateTime.UtcNow; await _db.SaveChangesAsync(ct);
-        return Ok(MapQuote(quote));
+        if (voucherTx is not null) await voucherTx.CommitAsync(ct);
+        return Ok(await QuoteBodyAsync(quote, ct));
     }
 
     [HttpPost("dining-sessions/{sessionId:int}/payment-request/cancel")]
@@ -225,7 +275,7 @@ public sealed class MobileCheckoutController : ControllerBase
         if (payment is null) return NotFound(new { code = "no_active_payment", message = "Phiên không có giao dịch đang chờ." });
         if (payment.CustomerId != customerId) return ForbidResult();
         var quote = await _db.CheckoutQuotes.AsNoTracking().FirstAsync(x => x.CheckoutQuoteId == payment.CheckoutQuoteId, ct);
-        return Ok(new { payment = MapPayment(payment), quote = MapQuote(quote) });
+        return Ok(new { payment = MapPayment(payment), quote = await QuoteBodyAsync(quote, ct) });
     }
 
     /// <summary>A payment waiting or done in the session (outside exceptQuoteId) that forbids new quotes/requests/payments.</summary>
@@ -496,7 +546,19 @@ public sealed class MobileCheckoutController : ControllerBase
         return new BadRequestObjectResult(new { code = "invalid_payment_method", message = "ONLINE chỉ hỗ trợ QR không kèm location; ONSITE cần TABLE/CASHIER và CASH/QR/TRANSFER." });
     }
     private static void Recalculate(CheckoutQuote q) => ReservationDepositService.Recalculate(q);
-    private static object MapQuote(CheckoutQuote q) => new { q.CheckoutQuoteId, q.QuoteCode, q.DiningSessionId, q.Status, subtotal = Money(q.Subtotal), voucherDiscount = Money(q.VoucherDiscount), q.PointsApplied, pointsDiscount = Money(q.PointsDiscount), depositApplied = Money(q.DepositApplied), q.PromotionId, q.PromotionName, promotionDiscount = Money(q.PromotionDiscount), q.DiscountNote, totalAmount = Money(q.TotalAmount), q.ExpiresAtUtc, items = JsonSerializer.Deserialize<JsonElement>(q.ItemsJson) };
+    private async Task<object> QuoteBodyAsync(CheckoutQuote q, CancellationToken ct) => MapQuote(q,
+        q.VoucherId is null ? null : await _db.Vouchers.AsNoTracking().FirstOrDefaultAsync(x => x.VoucherId == q.VoucherId, ct));
+    /// <summary>
+    /// promotionId/Name/OfferDiscount = the automatic promotion found for the bill (also when declined);
+    /// promotionDiscount = what it takes off now. voucher* = the voucher the guest picked (voucherDiscount 0 when the
+    /// promotion is better).
+    /// </summary>
+    internal static object MapQuote(CheckoutQuote q, Voucher? voucher) => new { q.CheckoutQuoteId, q.QuoteCode, q.DiningSessionId, q.Status,
+        subtotal = Money(q.Subtotal), q.VoucherId, voucherCode = voucher?.Code, voucherName = voucher?.Name,
+        voucherOfferDiscount = Money(q.VoucherOfferDiscount), voucherDiscount = Money(q.VoucherDiscount), q.PointsApplied,
+        pointsDiscount = Money(q.PointsDiscount), depositApplied = Money(q.DepositApplied), q.PromotionId, q.PromotionName,
+        promotionOfferDiscount = Money(q.PromotionOfferDiscount), q.PromotionDeclined, promotionDiscount = Money(q.PromotionDiscount),
+        q.DiscountNote, totalAmount = Money(q.TotalAmount), q.ExpiresAtUtc, items = JsonSerializer.Deserialize<JsonElement>(q.ItemsJson) };
     private static object MapPayment(Payment p) => new { p.PaymentId, p.PaymentCode, p.CheckoutQuoteId, p.DiningSessionId, amount = Money(p.Amount), p.Currency, p.Channel, p.Method, p.Location, p.Status, p.AttemptNumber, p.ProviderName, p.ProviderReference, p.ProviderTransactionId, paymentUrl = p.ProviderPaymentUrl, providerExpiresAtUtc = p.ProviderExpiresAtUtc, p.FailureCode, p.CreatedAtUtc, p.UpdatedAtUtc, p.CompletedAtUtc };
     private static object MapInvoice(Invoice x) => new { x.InvoiceId, x.InvoiceCode, x.CheckoutQuoteId, x.PaymentId, x.DiningSessionId, subtotal = Money(x.Subtotal), discount = Money(x.Discount), totalAmount = Money(x.TotalAmount), items = JsonSerializer.Deserialize<JsonElement>(x.ItemsJson), x.IssuedAtUtc };
     private async Task<object> MapCustomerInvoiceAsync(Invoice invoice, CancellationToken ct)
@@ -551,10 +613,21 @@ public sealed class MobileCheckoutController : ControllerBase
     private ActionResult StateConflict() => Conflict(new { code = "state_conflict", message = "Trạng thái hiện tại không cho phép thao tác này." });
     internal const string QuoteLockedCode = "quote_locked";
     private ActionResult QuoteLocked() => Conflict(new { code = QuoteLockedCode, message = "Đã yêu cầu thanh toán, không đổi được voucher/điểm." });
+    private ObjectResult VoucherUnavailable(VoucherCheck check, string suffix = "") => Conflict(new
+    {
+        code = check.Code ?? VoucherRules.NotFound,
+        message = check.Code switch
+        {
+            VoucherRules.UsedUp => "Bạn đã dùng hết lượt của voucher này.",
+            VoucherRules.SoldOut => "Voucher đã hết lượt sử dụng.",
+            _ => (check.Reason ?? "Voucher không dùng được") + ".",
+        } + suffix,
+    });
     private ActionResult ForbidResult() => StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu dữ liệu này." });
 
     public sealed record QuoteRequest(int CustomerId, string IdempotencyKey, string RequestHash);
     public sealed record VoucherRequest(int CustomerId, int? VoucherId);
+    public sealed record PromotionChoiceRequest(int CustomerId, bool Use);
     public sealed record LoyaltyRequest(int CustomerId, int Points);
     public sealed record PaymentRequestCommand(int CustomerId, int CheckoutQuoteId);
     public sealed record CustomerRequest(int CustomerId);

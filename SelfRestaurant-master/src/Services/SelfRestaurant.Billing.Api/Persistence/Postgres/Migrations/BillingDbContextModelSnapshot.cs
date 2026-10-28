@@ -466,6 +466,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<decimal>("PointsDiscount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<bool>("PromotionDeclined")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("PromotionDiscount")
                         .HasColumnType("decimal(18,2)");
 
@@ -530,6 +533,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.HasIndex("QuoteCode")
                         .IsUnique();
+
+                    b.HasIndex("VoucherId", "Status")
+                        .HasDatabaseName("IX_CheckoutQuotes_Voucher_Status");
 
                     b.ToTable("CheckoutQuotes", "billing");
                 });
@@ -1102,6 +1108,12 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.Property<decimal?>("MaxDiscount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("MaxTotalUses")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MaxUsesPerCustomer")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("MinSubtotal")
                         .HasColumnType("decimal(18,2)");

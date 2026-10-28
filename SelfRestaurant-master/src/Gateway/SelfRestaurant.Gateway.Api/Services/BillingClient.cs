@@ -112,7 +112,8 @@ public sealed class BillingClient : ApiClientBase
         PostAsync<object>("/api/dev/reset-test-state", new { }, cancellationToken);
 
     public Task<JsonElement> CreateMobileQuoteAsync(int sessionId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/dining-sessions/{sessionId}/checkout/quote", request, ct);
-    public async Task<IReadOnlyList<JsonElement>> GetMobileVouchersAsync(int customerId, CancellationToken ct) => await GetAsync<IReadOnlyList<JsonElement>>($"/api/internal/mobile/me/vouchers?customerId={customerId}", ct) ?? Array.Empty<JsonElement>();
+    public async Task<IReadOnlyList<JsonElement>> GetMobileVouchersAsync(int customerId, int? quoteId, CancellationToken ct) => await GetAsync<IReadOnlyList<JsonElement>>($"/api/internal/mobile/me/vouchers?customerId={customerId}" + (quoteId is > 0 ? $"&quoteId={quoteId}" : ""), ct) ?? Array.Empty<JsonElement>();
+    public Task<JsonElement> ChoosePromotionAsync(int quoteId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/checkout/quotes/{quoteId}/promotion", request, ct);
     public Task<JsonElement> ApplyVoucherAsync(int quoteId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/checkout/quotes/{quoteId}/voucher", request, ct);
     public Task<JsonElement> ApplyLoyaltyAsync(int quoteId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/checkout/quotes/{quoteId}/loyalty", request, ct);
     public Task<JsonElement> RequestMobilePaymentAsync(int sessionId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/dining-sessions/{sessionId}/payment-request", request, ct);
@@ -158,6 +159,19 @@ public sealed class BillingClient : ApiClientBase
 
     public Task<JsonElement> TogglePromotionAsync(int promotionId, bool isActive, CancellationToken ct) =>
         PostForAsync<object, JsonElement>($"/api/internal/promotions/{promotionId}/toggle", new { isActive }, ct);
+
+    // ---- Vouchers (admin, owner 28/10/2026) ----
+    public async Task<IReadOnlyList<JsonElement>> GetVouchersAsync(CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<JsonElement>>("/api/internal/vouchers", ct) ?? Array.Empty<JsonElement>();
+
+    public Task<JsonElement> CreateVoucherAsync(object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>("/api/internal/vouchers", request, ct);
+
+    public Task<JsonElement> UpdateVoucherAsync(int voucherId, object request, CancellationToken ct) =>
+        PutForAsync<object, JsonElement>($"/api/internal/vouchers/{voucherId}", request, ct);
+
+    public Task<JsonElement> ToggleVoucherAsync(int voucherId, bool isActive, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/vouchers/{voucherId}/toggle", new { isActive }, ct);
 
     public async Task<IReadOnlyList<JsonElement>> GetDuePromotionAnnouncementsAsync(CancellationToken ct) =>
         await GetAsync<IReadOnlyList<JsonElement>>("/api/internal/promotions/due-announcements", ct) ?? Array.Empty<JsonElement>();
