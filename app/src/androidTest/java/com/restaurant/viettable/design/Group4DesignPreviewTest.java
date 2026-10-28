@@ -176,6 +176,29 @@ public class Group4DesignPreviewTest {
             case "invoice-promo":
                 state.getActiveDiningSession().getOrders().add(order(state.getActiveDiningSession()));
                 return InvoiceFragment.newInstance();
+            // Voucher/promotion bill (owner 28/10): a made-up server quote, drawn by the real InvoiceFragment code.
+            case "invoice-auto":
+            case "invoice-declined":
+            case "invoice-voucher":
+                state.getActiveDiningSession().getOrders().add(order(state.getActiveDiningSession()));
+                setQuote(sampleQuote(screen));
+                return InvoiceFragment.newInstance();
+            case "voucher-bill":
+                setQuote(sampleQuote("invoice-auto"));
+                return VoucherSelectFragment.newInstance(0);
+            case "myvouchers":
+                return com.restaurant.viettable.ui.profile.CustomerVoucherFragment.newInstance();
+            case "notif-offer": {
+                NotificationItem promo = new NotificationItem("9", NotificationItem.Type.PROMOTION, "Ưu đãi mới",
+                        "Giờ vàng cuối tuần: Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ. Áp dụng đến 31/10/2026. Tự áp vào hóa đơn khi đủ điều kiện.",
+                        "2026-10-28T02:10:00Z", false);
+                NotificationItem points = new NotificationItem("8", NotificationItem.Type.PROMOTION, "Cộng điểm thưởng",
+                        "Bạn được cộng 272 điểm thưởng. Tổng điểm hiện có: 3.250.", "2026-10-26T14:52:00Z", true);
+                NotificationItem order = new NotificationItem("7", NotificationItem.Type.ORDER, "Bếp đã nhận đơn",
+                        "Bún chả Hà Nội đang được chế biến.", "2026-10-26T12:20:00Z", true);
+                state.replaceNotifications(new ArrayList<>(Arrays.asList(promo, points, order)));
+                return new NotificationFragment();
+            }
             case "deposit": {
                 Reservation r = reservation("901", Reservation.Status.PENDING_DEPOSIT);
                 r.setGuestCount(6);
@@ -269,6 +292,20 @@ public class Group4DesignPreviewTest {
             case "home-promo":
                 fillHomeBanner(a);
                 break;
+            case "voucher-bill":
+                fillVoucherList(a);
+                break;
+            case "myvouchers":
+                fillMyVouchers(a);
+                break;
+            case "notif-offer": {
+                com.google.android.material.tabs.TabLayout tabs = a.findViewById(R.id.tabLayoutNotif);
+                if (tabs != null) for (int i = 0; i < tabs.getTabCount(); i++) {
+                    CharSequence label = tabs.getTabAt(i).getText();
+                    if (label != null && label.toString().equals("Ưu đãi")) tabs.selectTab(tabs.getTabAt(i));
+                }
+                break;
+            }
             case "invoice-promo": {
                 fill("invoice", a);
                 show(a, R.id.layoutPromotionDiscount);
@@ -365,6 +402,84 @@ public class Group4DesignPreviewTest {
                 render.invoke(f);
             }
         } catch (Exception ignored) { }
+    }
+
+    /** A server quote as GET/POST checkout returns it (owner 28/10 voucher/promotion rows). */
+    private static String sampleQuote(String screen) {
+        boolean declined = screen.equals("invoice-declined") || screen.equals("invoice-voucher");
+        boolean voucher = screen.equals("invoice-voucher");
+        long promo = declined ? 0 : 25_000, voucherOff = voucher ? 30_000 : 0;
+        return "{\"checkoutQuoteId\":41,\"diningSessionId\":20,\"status\":\"OPEN\",\"subtotal\":250000,"
+                + "\"voucherId\":" + (voucher ? "7" : "null") + ",\"voucherCode\":" + (voucher ? "\"CHAOBAN30\"" : "null")
+                + ",\"voucherOfferDiscount\":" + voucherOff + ",\"voucherDiscount\":" + voucherOff
+                + ",\"pointsApplied\":0,\"pointsDiscount\":0,\"depositApplied\":0,\"promotionId\":12,"
+                + "\"promotionName\":\"Giờ vàng cuối tuần\",\"promotionOfferDiscount\":25000,\"promotionDeclined\":" + declined
+                + ",\"promotionDiscount\":" + promo + ",\"discountNote\":null,\"totalAmount\":" + (250_000 - promo - voucherOff)
+                + ",\"expiresAtUtc\":\"2026-10-28T03:00:00Z\",\"items\":[]}";
+    }
+
+    private static void setQuote(String json) {
+        try {
+            java.lang.reflect.Field field = com.restaurant.viettable.data.MobileRepository.class.getDeclaredField("currentQuote");
+            field.setAccessible(true);
+            field.set(com.restaurant.viettable.data.MobileRepository.getInstance(), new org.json.JSONObject(json));
+        } catch (Exception error) { throw new IllegalStateException(error); }
+    }
+
+    /** What GET /me/vouchers?quoteId= answers for a 250.000đ bill: usable first, greyed ones with the reason. */
+    private static List<Voucher> sampleVouchers(boolean forBill) {
+        Voucher good = new Voucher("CHAOBAN30", "Giảm 30.000đ cho bạn mới", 30_000, 0, 0, "2026-11-30T16:59:00Z", true, null, "", false);
+        good.setAvailability(true, null, null, "Còn 1 lượt", forBill ? 30_000 : -1, false, 0);
+        Voucher many = new Voucher("THUBA10", "Giảm 10% thứ Ba", 0, 10, 100_000, "2026-11-30T16:59:00Z", true, null, "", false);
+        many.setAvailability(true, null, null, "Còn 2 lượt", forBill ? 25_000 : -1, false, 1);
+        Voucher big = new Voucher("PHODEM50", "Giảm 50.000đ", 50_000, 0, 400_000, "2026-11-30T16:59:00Z", true, null, "", false);
+        big.setAvailability(false, "voucher_minimum_not_met", "Chưa đủ đơn tối thiểu 400.000đ (còn thiếu 150.000đ)", null, forBill ? 50_000 : -1, false, 0);
+        Voucher used = new Voucher("SINHNHAT", "Quà sinh nhật", 40_000, 0, 0, "2026-11-10T16:59:00Z", true, null, "", false);
+        used.setAvailability(false, "voucher_used_up", "Đã dùng", null, forBill ? 40_000 : -1, false, 1);
+        Voucher expired = new Voucher("THANG9", "Ưu đãi tháng 9", 20_000, 0, 0, "2026-10-20T16:59:00Z", true, null, "", false);
+        expired.setAvailability(false, "voucher_expired", "Đã hết hạn", null, forBill ? 20_000 : -1, false, 0);
+        return new ArrayList<>(Arrays.asList(good, many, big, used, expired));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void fillVoucherList(MainActivity a) {
+        try {
+            for (Fragment f : a.getSupportFragmentManager().getFragments()) {
+                if (!(f instanceof VoucherSelectFragment)) continue;
+                java.lang.reflect.Field items = VoucherSelectFragment.class.getDeclaredField("vouchers");
+                items.setAccessible(true);
+                List<Voucher> list = (List<Voucher>) items.get(f);
+                list.clear();
+                list.addAll(sampleVouchers(true));
+                for (String name : new String[] {"loading", "applying"}) {
+                    java.lang.reflect.Field flag = VoucherSelectFragment.class.getDeclaredField(name);
+                    flag.setAccessible(true);
+                    flag.setBoolean(f, false);
+                }
+                java.lang.reflect.Field error = VoucherSelectFragment.class.getDeclaredField("loadError");
+                error.setAccessible(true);
+                error.set(f, null);
+                java.lang.reflect.Field adapter = VoucherSelectFragment.class.getDeclaredField("adapter");
+                adapter.setAccessible(true);
+                ((VoucherSelectAdapter) adapter.get(f)).notifyDataSetChanged();
+                java.lang.reflect.Method render = VoucherSelectFragment.class.getDeclaredMethod("render");
+                render.setAccessible(true);
+                render.invoke(f);
+                ((VoucherSelectAdapter) adapter.get(f)).select(list.get(0));
+            }
+        } catch (Exception error) { throw new IllegalStateException(error); }
+    }
+
+    private static void fillMyVouchers(MainActivity a) {
+        try {
+            AppStateManager.getInstance().replaceVouchers(sampleVouchers(false));
+            for (Fragment f : a.getSupportFragmentManager().getFragments()) {
+                if (!(f instanceof com.restaurant.viettable.ui.profile.CustomerVoucherFragment)) continue;
+                java.lang.reflect.Method filter = f.getClass().getDeclaredMethod("filterVouchers", int.class);
+                filter.setAccessible(true);
+                filter.invoke(f, 0);
+            }
+        } catch (Exception error) { throw new IllegalStateException(error); }
     }
 
     /** The server's deposit policy as it would answer with the feature on (offline preview). */
