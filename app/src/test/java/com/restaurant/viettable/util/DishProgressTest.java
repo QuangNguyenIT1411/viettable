@@ -24,6 +24,24 @@ public class DishProgressTest {
     }
 
     @Test
+    public void kitchenReadyWithEveryDishOutShowsDone() {
+        assertEquals(com.restaurant.viettable.model.Order.Status.COMPLETED, DishProgress.trackingStatus(
+                com.restaurant.viettable.model.Order.Status.IN_PROGRESS,
+                Arrays.asList(dish(OrderItem.Status.READY), dish(OrderItem.Status.SERVED), dish(OrderItem.Status.CANCELLED))));
+    }
+
+    @Test
+    public void stillCookingOrNoDishKeepsTheOrderStatus() {
+        assertEquals(com.restaurant.viettable.model.Order.Status.IN_PROGRESS, DishProgress.trackingStatus(
+                com.restaurant.viettable.model.Order.Status.IN_PROGRESS,
+                Arrays.asList(dish(OrderItem.Status.READY), dish(OrderItem.Status.PREPARING))));
+        assertEquals(com.restaurant.viettable.model.Order.Status.IN_PROGRESS, DishProgress.trackingStatus(
+                com.restaurant.viettable.model.Order.Status.IN_PROGRESS, Collections.emptyList()));
+        assertEquals(com.restaurant.viettable.model.Order.Status.PLACED, DishProgress.trackingStatus(
+                com.restaurant.viettable.model.Order.Status.PLACED, Arrays.asList(dish(OrderItem.Status.READY))));
+    }
+
+    @Test
     public void noDishes() {
         DishProgress p = DishProgress.of(Collections.emptyList());
         assertEquals(0, p.total);

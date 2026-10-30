@@ -24,6 +24,15 @@ public final class DishProgress {
         return new DishProgress(done, total);
     }
 
+    /** The kitchen's READY maps to IN_PROGRESS; once every dish of that round is out, Tiến độ món shows it as done. */
+    public static com.restaurant.viettable.model.Order.Status trackingStatus(
+            com.restaurant.viettable.model.Order.Status status, List<OrderItem> items) {
+        DishProgress progress = of(items);
+        boolean allOut = progress.total > 0 && progress.done == progress.total;
+        return status == com.restaurant.viettable.model.Order.Status.IN_PROGRESS && allOut
+                ? com.restaurant.viettable.model.Order.Status.COMPLETED : status;
+    }
+
     public int percent() {
         return total == 0 ? 0 : Math.round(done * 100f / total);
     }

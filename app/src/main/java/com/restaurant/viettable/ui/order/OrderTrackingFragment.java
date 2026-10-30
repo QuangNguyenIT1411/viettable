@@ -82,8 +82,10 @@ public class OrderTrackingFragment extends BaseFragment implements AppStateManag
             if (!orders.isEmpty()) {
                 Order latest = orders.get(orders.size() - 1);
                 String table = session.getTableLabel() == null || session.getTableLabel().trim().isEmpty() ? "" : DisplayFormatters.tableTitle(session.getTableLabel()) + " · ";
-                binding.tvTrackingOrderId.setText((table + "Đơn #" + latest.getId() + " · " + latest.getStatusDisplayText()).toUpperCase(new java.util.Locale("vi", "VN")));
-                updateStepperState(latest.getStatus());
+                Order.Status shown = com.restaurant.viettable.util.DishProgress.trackingStatus(latest.getStatus(), latest.getItems());
+                String statusText = shown == latest.getStatus() ? latest.getStatusDisplayText() : "Hoàn thành";
+                binding.tvTrackingOrderId.setText((table + "Đơn #" + latest.getId() + " · " + statusText).toUpperCase(new java.util.Locale("vi", "VN")));
+                updateStepperState(shown);
             }
 
             for (Order o : orders) {
