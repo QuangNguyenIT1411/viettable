@@ -1,5 +1,7 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 30/10/2026 16:40:** deploy Production `dpl_6G2EtwU7y2UChgeyoNcEDcpAfRdw` (code `fdcac45`: web thu ngân chia 5 tab; không backend, không migration), `[syd1]`, Ready; gọi 1 lần: `/healthz` 200 0,9 s, `/readyz` 200 1,2 s, `/` 200, `/app/cashier/` 200, `/app/chef/` 200, `/app/admin/` 200, `/branches` 200. Image `222f01c449c5` (shared 30/30 + bundle 3/3). Đã xoá `.env.local`. Bản quay lui: `dpl_Au5pSzmrbi3dskk59tvHRTRZQX3y`.
+
 > **Cập nhật 30/10/2026 10:35:** deploy Production `dpl_Au5pSzmrbi3dskk59tvHRTRZQX3y` (code `8c9572b`: voucher + sửa khuyến mãi đơn tối thiểu; migration `VOUCHER_MIGRATION_20261028.sql` chủ dự án đã chạy trước), `[syd1]`, Ready; gọi 1 lần: `/healthz` 200 2,5 s, `/readyz` 200 1,1 s, `/` 200, `/app/cashier/` 200, `/app/chef/` 200, `/app/admin/` 200, `/branches` 200, `/promotions?branchId=1` 200, `/support/faqs` 200. Đã xoá `.env.local`. Bản quay lui: `dpl_8gWKNXTD7sF4Z2CVnB1qycXn29uG`.
 
 > **Cập nhật 28/10/2026 00:45:** deploy Production `dpl_8gWKNXTD7sF4Z2CVnB1qycXn29uG` (backend `6ed1ee2`: khuyến mãi; migration `PROMO_MIGRATION_20261027.sql` chủ dự án đã chạy trước), `[syd1]`, Ready, cờ đặt cọc BẬT (từ `dpl_G7bByQjX…` 27/10 23:02); gọi 1 lần: `/healthz` 200 8,2 s, `/readyz` 200, `/` 200, `/app/cashier/` 200, `/app/chef/` 200, `/app/admin/` 200, `/branches` 200, `/promotions?branchId=1` 200. Đã xoá `.env.local`. Bản quay lui: `dpl_G7bByQjXXKniKgR7cKb8UsrGTSmw`. APK `cloudProd` `498201f` cài 00:42:19.
