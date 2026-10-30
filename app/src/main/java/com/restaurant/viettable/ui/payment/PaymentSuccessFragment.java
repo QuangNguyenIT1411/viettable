@@ -73,7 +73,7 @@ public class PaymentSuccessFragment extends BaseFragment implements com.restaura
         if (invoice != null) {
             binding.tvSuccessAmount.setText(invoice.getFormattedFinalTotal());
             binding.tvSuccessInvoiceId.setText(com.restaurant.viettable.util.StatusLabels.invoiceTitle(invoice.getBackendInvoiceId(), invoice.getId()));
-            binding.tvSuccessMethod.setText(invoice.getPaymentMethod());
+            binding.tvSuccessMethod.setText(SafeText.isBlank(invoice.getPaymentMethod()) ? "Đã thanh toán" : invoice.getPaymentMethod());
             binding.tvSuccessBranch.setText(SafeText.join(" • ", invoice.getTableLabel(), invoice.getBranchName()));
             boolean hasTime = !SafeText.isBlank(invoice.getTimestamp());
             binding.rowSuccessTime.setVisibility(hasTime ? View.VISIBLE : View.GONE);

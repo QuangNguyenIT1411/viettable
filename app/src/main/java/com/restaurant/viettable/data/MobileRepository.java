@@ -1706,16 +1706,25 @@ public final class MobileRepository {
 
     private Invoice invoiceFromIssued(JSONObject value) {
         DiningSession session = state.getActiveDiningSession();
+        Branch branch = value.isNull("branchId") ? null : state.findBranch(String.valueOf(value.optInt("branchId")));
         Invoice invoice = new Invoice(SafeText.json(value, "invoiceCode", String.valueOf(value.optInt("invoiceId"))),
-                String.valueOf(value.optInt("diningSessionId")), session == null ? "VietTable" : session.getBranchName(),
+                String.valueOf(value.optInt("diningSessionId")),
+                issuedBranchName(branch == null ? null : branch.getName(), session == null ? null : session.getBranchName()),
                 session == null ? String.valueOf(value.optInt("tableId")) : session.getTableId(), Math.round(value.optDouble("subtotal")), 0, 0,
                 Math.round(value.optDouble("discount")), 0, Math.round(value.optDouble("totalAmount")),
-                "Đã thanh toán", "", SafeText.json(value, "issuedAtUtc"));
+                StatusLabels.paymentMethod(value.isNull("paymentMethod") ? "" : SafeText.json(value, "paymentMethod", "")),
+                "", SafeText.json(value, "issuedAtUtc"));
         invoice.setBackendInvoiceId(value.optInt("invoiceId"));
         invoice.setBackendPaymentId(value.optInt("paymentId"));
         invoice.setDepositApplied(Math.round(value.optDouble("depositApplied", 0)));
         invoice.setTableLabel(session == null ? tableLabel(String.valueOf(value.optInt("branchId")), String.valueOf(value.optInt("tableId"))) : session.getTableLabel());
         return invoice;
+    }
+
+    // The session is usually closed by the time the invoice is issued, so the branch list comes first.
+    static String issuedBranchName(String fromBranchList, String fromSession) {
+        if (!SafeText.isBlank(fromBranchList)) return fromBranchList;
+        return SafeText.isBlank(fromSession) ? "" : fromSession;
     }
 
     private ApiClient.Callback splitCallback(Callback<SplitBill> callback) {
