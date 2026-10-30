@@ -17,6 +17,7 @@ import { parseApiUtcTimestamp } from "../lib/dateTime";
 import { TransferQrCard } from "../components/TransferQrCard";
 import type { CashierCheckoutPreviewDto, TransferQrDto } from "../lib/api";
 import { paymentMethodLabel } from "../../../shared/paymentMethod";
+import { CASHIER_TABS, badgeText, tabAccessibleName, tabFromHash, type CashierTabKey } from "../../../shared/cashierTabs";
 import type { CashierCheckoutResultDto, CashierDashboardDto, CashierReservationCheckInResultDto, ReservationDto } from "../lib/types";
 
 type Props = {
@@ -154,6 +155,24 @@ export function DashboardPage({ onLogout }: Props) {
   const [checkoutResult, setCheckoutResult] = useState<CheckoutResultView | null>(null);
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
   const [pendingOnsiteCount, setPendingOnsiteCount] = useState(0);
+  const [pendingReservationCount, setPendingReservationCount] = useState(0);
+  const [depositTodoCount, setDepositTodoCount] = useState(0);
+  const [serviceRequestCount, setServiceRequestCount] = useState(0);
+  const [transferAlertCount, setTransferAlertCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<CashierTabKey>(() => tabFromHash(window.location.hash));
+  const tabCounts: Record<CashierTabKey, number> = {
+    "quay": 0,
+    "cho-thu-tien": pendingOnsiteCount,
+    "dat-ban": pendingReservationCount + depositTodoCount,
+    "phuc-vu": serviceRequestCount,
+    "chuyen-khoan": transferAlertCount,
+  };
+  function openTab(key: CashierTabKey) {
+    setActiveTab(key);
+    // replaceState: switching tabs must not fill the Back history.
+    window.history.replaceState(window.history.state, "", key === "quay" ? window.location.pathname + window.location.search : `#${key}`);
+    window.scrollTo({ top: 0 });
+  }
 
   function getCheckoutStorageKey(orderId: number) {
     return `${CHECKOUT_KEY_PREFIX}${orderId}`;
@@ -601,16 +620,44 @@ export function DashboardPage({ onLogout }: Props) {
         <button
           type="button"
           className={`vt-stat ${pendingOnsiteCount > 0 ? "is-alert" : ""}`}
-          onClick={() => document.getElementById("onsite-payments")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          onClick={() => openTab("cho-thu-tien")}
         >
           <span>Chờ xác nhận thu tiền</span>
           <b>{pendingOnsiteCount} giao dịch</b>
         </button>
       </section>
 
+      <nav className="cashier-tabs" role="tablist" aria-label="Khu vực làm việc của thu ngân">
+        {CASHIER_TABS.map((tab) => {
+          const count = tabCounts[tab.key];
+          const selected = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              id={`cashier-tab-${tab.key}`}
+              aria-controls={`cashier-panel-${tab.key}`}
+              aria-selected={selected}
+              aria-label={tabAccessibleName(tab, count)}
+              className={`cashier-tab${selected ? " is-active" : ""}${count > 0 ? " has-count" : ""}`}
+              onClick={() => openTab(tab.key)}
+            >
+              <i className={`bi ${tab.icon}`} aria-hidden="true" />
+              <span className="cashier-tab-label">{tab.label}</span>
+              {count > 0 ? <span className="cashier-tab-badge" aria-hidden="true">{badgeText(count)}</span> : null}
+            </button>
+          );
+        })}
+      </nav>
+      <p className="visually-hidden" role="status" aria-atomic="true">
+        {pendingOnsiteCount > 0 ? `${pendingOnsiteCount} giao dịch chờ thu tiền` : ""}
+      </p>
+
       {message ? <div className="success-box">{message}</div> : null}
       {cleanText(error) ? <div className="error-box">{cleanText(error)}</div> : null}
 
+      <div role="tabpanel" id="cashier-panel-quay" aria-labelledby="cashier-tab-quay" hidden={activeTab !== "quay"}>
       <section className="cashier-pos-grid">
         <div className="panel cashier-panel-card cashier-pos-panel cashier-table-panel">
           <div className="cashier-panel-header">
@@ -909,17 +956,36 @@ export function DashboardPage({ onLogout }: Props) {
           </div>
         </div>
       </section>
+      </div>
 
-      <section className="cashier-secondary-grid">
-        <BankTransferAlertsPanel events={staffEvents} live={realtimeLive} />
-        <DepositsPanel events={staffEvents} live={realtimeLive} />
+      {/* Hidden tabs stay mounted: their realtime reads keep the counts on the tab buttons current. */}
+      <div role="tabpanel" id="cashier-panel-cho-thu-tien" aria-labelledby="cashier-tab-cho-thu-tien" hidden={activeTab !== "cho-thu-tien"}>
         <OnsitePaymentsPanel onPendingCountChange={setPendingOnsiteCount} events={staffEvents} live={realtimeLive} />
-        <ServiceRequestsPanel tables={dashboard.tables} events={staffEvents} live={realtimeLive} />
+      </div>
+
+      <div role="tabpanel" id="cashier-panel-phuc-vu" aria-labelledby="cashier-tab-phuc-vu" hidden={activeTab !== "phuc-vu"}>
+        <ServiceRequestsPanel tables={dashboard.tables} events={staffEvents} live={realtimeLive} onCountChange={setServiceRequestCount} />
+      </div>
+
+      <div role="tabpanel" id="cashier-panel-chuyen-khoan" aria-labelledby="cashier-tab-chuyen-khoan" hidden={activeTab !== "chuyen-khoan"}>
+        <BankTransferAlertsPanel events={staffEvents} live={realtimeLive} onCountChange={setTransferAlertCount} />
+        {transferAlertCount === 0 ? (
+          <div className="panel cashier-panel-card cashier-empty-state">
+            <i className="bi bi-bank" aria-hidden="true" />
+            <p>Không có khoản chuyển nào cần xử lý. Tiền chuyển khoản khớp nội dung được hệ thống tự xác nhận.</p>
+          </div>
+        ) : null}
+      </div>
+
+      <div role="tabpanel" id="cashier-panel-dat-ban" aria-labelledby="cashier-tab-dat-ban" hidden={activeTab !== "dat-ban"}>
+      <div className="cashier-secondary-grid">
         <PendingReservationsPanel events={staffEvents} live={realtimeLive}
           tableLabel={(reservation) => reservationTableText(reservation, dashboard.tables)}
           onChanged={() => void loadReservations(dashboard.staff.branchId)}
-          onCheckIn={(reservation) => setCheckInTarget(reservation)} />
-      </section>
+          onCheckIn={(reservation) => setCheckInTarget(reservation)}
+          onCountChange={setPendingReservationCount} />
+        <DepositsPanel events={staffEvents} live={realtimeLive} onCountChange={setDepositTodoCount} />
+      </div>
 
       <section className="panel cashier-panel-card cashier-reservation-panel">
         <div className="cashier-panel-header">
@@ -1053,6 +1119,7 @@ export function DashboardPage({ onLogout }: Props) {
           ) : null}
         </div>
       </section>
+      </div>
 
       {checkInTarget ? (
         <div className="modal-backdrop">

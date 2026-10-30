@@ -11,7 +11,7 @@ import type { CashierDashboardDto } from "../lib/types";
 
 const labels: Record<string, string> = { CALL_STAFF: "Gọi nhân viên", WATER: "Xin nước", UTENSILS: "Xin dụng cụ", OTHER: "Yêu cầu khác", KITCHEN_RUSH: "Khách giục bếp", KITCHEN_CANCEL: "Khách xin hủy món" };
 
-export function ServiceRequestsPanel({ tables = [], events, live = false }: { tables?: CashierDashboardDto["tables"]; events?: TopicBus; live?: boolean }) {
+export function ServiceRequestsPanel({ tables = [], events, live = false, onCountChange }: { tables?: CashierDashboardDto["tables"]; events?: TopicBus; live?: boolean; onCountChange?: (count: number) => void }) {
   const [requests, setRequests] = useState<StaffServiceRequestDto[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
@@ -22,6 +22,7 @@ export function ServiceRequestsPanel({ tables = [], events, live = false }: { ta
     interval: live ? CASHIER_FALLBACK_POLL_MS : CASHIER_OFFLINE_POLL_MS,
   });
   useEffect(() => events?.on("serviceRequests", () => void load()), [events, load]);
+  useEffect(() => { onCountChange?.(requests.length); }, [requests.length, onCountChange]);
 
   async function act(item: StaffServiceRequestDto, action: "acknowledge" | "complete") {
     setBusy(item.serviceRequestId);

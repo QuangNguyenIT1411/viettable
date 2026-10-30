@@ -12,7 +12,7 @@ import type { TopicBus } from "../../../shared/staffRealtime";
  * "Đặt cọc": deposits of the branch's bookings (docs/DEPOSIT_PLAN.md). Display only, plus "Đã hoàn cọc" once the
  * cashier refunded a guest by hand. Hidden when there is none (feature off).
  */
-export function DepositsPanel({ events, live = false }: { events?: TopicBus; live?: boolean }) {
+export function DepositsPanel({ events, live = false, onCountChange }: { events?: TopicBus; live?: boolean; onCountChange?: (count: number) => void }) {
   const [items, setItems] = useState<DepositListItem[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
@@ -26,6 +26,8 @@ export function DepositsPanel({ events, live = false }: { events?: TopicBus; liv
   useEffect(() => events?.on("reservations", () => void refresh()), [events, refresh]);
   useEffect(() => events?.on("onsitePayments", () => void refresh()), [events, refresh]);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const todoCount = items.filter(x => canMarkRefunded(x.deposit.status)).length;
+  useEffect(() => { onCountChange?.(todoCount); }, [todoCount, onCountChange]);
 
   const markRefunded = async (item: DepositListItem) => {
     if (busy !== null) return;

@@ -21,7 +21,7 @@ export const bankTransferReasons: Record<string, string> = {
  * "Chuyển khoản cần xử lý": money arrived (SePay) but the system did not confirm it. The cashier checks the bank app,
  * confirms by hand in "Thanh toán ứng dụng tại chỗ" if right, then marks the warning as handled. Hidden when empty.
  */
-export function BankTransferAlertsPanel({ events, live = false }: { events?: TopicBus; live?: boolean }) {
+export function BankTransferAlertsPanel({ events, live = false, onCountChange }: { events?: TopicBus; live?: boolean; onCountChange?: (count: number) => void }) {
   const [alerts, setAlerts] = useState<BankTransferAlert[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
@@ -34,6 +34,7 @@ export function BankTransferAlertsPanel({ events, live = false }: { events?: Top
   });
   useEffect(() => events?.on("onsitePayments", () => void refresh()), [events, refresh]);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useEffect(() => { onCountChange?.(alerts.length); }, [alerts.length, onCountChange]);
 
   const resolve = async (alert: BankTransferAlert) => {
     if (busy !== null) return;

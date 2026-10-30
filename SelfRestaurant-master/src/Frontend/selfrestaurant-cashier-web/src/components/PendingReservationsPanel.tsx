@@ -88,9 +88,10 @@ export function ReservationActions({ reservation, onChanged }: { reservation: Re
  * "Đặt bàn chờ xác nhận": every pending booking of the branch, today and the coming days, soonest first.
  * A booking whose time has come is highlighted (the guest may already be at the door). Hidden when empty.
  */
-export function PendingReservationsPanel({ events, live = false, tableLabel, onChanged, onCheckIn }: {
+export function PendingReservationsPanel({ events, live = false, tableLabel, onChanged, onCheckIn, onCountChange }: {
   events?: TopicBus;
   live?: boolean;
+  onCountChange?: (count: number) => void;
   tableLabel: (reservation: ReservationDto) => string;
   onChanged: () => void;
   onCheckIn: (reservation: ReservationDto) => void;
@@ -104,6 +105,7 @@ export function PendingReservationsPanel({ events, live = false, tableLabel, onC
     interval: live ? CASHIER_FALLBACK_POLL_MS : CASHIER_OFFLINE_POLL_MS,
   });
   useEffect(() => events?.on("reservations", () => void refresh()), [events, refresh]);
+  useEffect(() => { onCountChange?.(items.length); }, [items.length, onCountChange]);
 
   if (items.length === 0 && !cleanText(error)) return null;
   const changed = () => { void refresh(); onChanged(); };
