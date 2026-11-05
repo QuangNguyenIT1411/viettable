@@ -270,7 +270,8 @@ public sealed record CashierCheckoutRequest(
     string PaymentMethod = "CASH",
     decimal PaymentAmount = 0,
     string? IdempotencyKey = null,
-    int? BranchId = null);
+    int? BranchId = null,
+    string? EmployeeName = null);
 
 public sealed record CashierCheckoutResponse(
     string BillCode,

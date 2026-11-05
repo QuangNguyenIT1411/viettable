@@ -37,6 +37,14 @@ public sealed class Bills
 
     public int? PointsUsed { get; set; }
 
+    /// <summary>Service fee and VAT frozen at checkout (owner 05/11); 0 on bills from before.</summary>
+    public decimal ServiceFeePercent { get; set; }
+    public decimal ServiceFeeAmount { get; set; }
+    public decimal VatPercent { get; set; }
+    public decimal VatAmount { get; set; }
+    /// <summary>Dishes as sold (name, unit price, quantity, line total) at checkout; null on bills from before.</summary>
+    public string? ItemsJson { get; set; }
+    public string? EmployeeNameSnapshot { get; set; }
     public decimal TotalAmount { get; set; }
 
     public string PaymentMethod { get; set; } = null!;

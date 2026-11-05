@@ -248,6 +248,19 @@ public sealed class CashierController : ControllerBase
             afterState: new { status = "CHECKOUT_IN_PROGRESS", totalAmount, paymentMethod, employeeId });
 
         var billCode = await GenerateBillCodeAsync(cancellationToken);
+        // Dishes as sold, frozen on the bill (owner 05/11): a later price change never alters it. Best effort.
+        string? itemsJson = null;
+        try
+        {
+            var sold = (await _ordersApi.GetCashierOrdersAsync(order.BranchId ?? 0, cancellationToken))
+                .FirstOrDefault(o => o.OrderId == order.OrderId);
+            if (sold is not null)
+                itemsJson = System.Text.Json.JsonSerializer.Serialize(sold.Items.Select(i => new
+                {
+                    i.ItemId, i.OrderId, i.DishId, i.DishName, i.Quantity, i.UnitPrice, i.LineTotal
+                }));
+        }
+        catch (HttpRequestException) { }
 
         var bill = new Bills
         {
@@ -267,6 +280,12 @@ public sealed class CashierController : ControllerBase
             PromotionDiscount = pricing.PromotionDiscount,
             PointsDiscount = pointsDiscount,
             PointsUsed = usedPoints > 0 ? (int?)usedPoints : null,
+            ServiceFeePercent = pricing.ServiceFeePercent,
+            ServiceFeeAmount = pricing.ServiceFee,
+            VatPercent = pricing.VatPercent,
+            VatAmount = pricing.Vat,
+            ItemsJson = itemsJson,
+            EmployeeNameSnapshot = string.IsNullOrWhiteSpace(request.EmployeeName) ? null : request.EmployeeName.Trim(),
             TotalAmount = totalAmount,
             PaymentMethod = paymentMethod,
             PaymentAmount = paymentAmount,
@@ -428,13 +447,15 @@ public sealed class CashierController : ControllerBase
                 if (context is null) return NotFound(new { message = "Không tìm thấy phiên phục vụ." });
                 var now = DateTime.UtcNow;
                 quote = new CheckoutQuote { Subtotal = context.Subtotal, BranchId = context.BranchId };
+                BranchCharges.Stamp(quote, await BranchCharges.ForBranchAsync(_db, context.BranchId, cancellationToken), context);
                 CheckoutPricing.AttachPromotion(quote, await InternalPromotionsController.OffersAsync(_db, now, cancellationToken), now);
                 ReservationDepositService.AttachToQuote(quote, await ReservationDepositService.PaidForReservationAsync(_db, context.ReservationId, cancellationToken));
                 CheckoutPricing.Apply(quote);
             }
             return Ok(new CheckoutPreviewResponse(quote.Subtotal, quote.PromotionId, quote.PromotionName,
                 quote.PromotionDeclined ? 0 : quote.PromotionOfferDiscount, quote.PromotionDiscount, quote.VoucherDiscount, quote.DiscountNote,
-                quote.PointsApplied, quote.PointsDiscount, 0, quote.DepositApplied, quote.TotalAmount, AppSession: true));
+                quote.PointsApplied, quote.PointsDiscount, 0, quote.DepositApplied, quote.TotalAmount, AppSession: true,
+                quote.ServiceFeePercent, quote.ServiceFeeAmount, quote.VatPercent, quote.VatAmount));
         }
 
         int? balance = null;
@@ -448,7 +469,8 @@ public sealed class CashierController : ControllerBase
             : 0;
         return Ok(new CheckoutPreviewResponse(pricing.Subtotal, offer?.Offer.PromotionId, offer?.Offer.Name, offer?.Discount ?? 0,
             pricing.PromotionDiscount, pricing.VoucherDiscount, pricing.DiscountNote, pricing.PointsApplied, pricing.PointsDiscount,
-            maxPoints, pricing.DepositApplied, pricing.Total, AppSession: false));
+            maxPoints, pricing.DepositApplied, pricing.Total, AppSession: false,
+            pricing.ServiceFeePercent, pricing.ServiceFee, pricing.VatPercent, pricing.Vat));
     }
 
     /// <summary>
@@ -461,9 +483,10 @@ public sealed class CashierController : ControllerBase
         var now = DateTime.UtcNow;
         var promotion = CheckoutPricing.Best(await InternalPromotionsController.OffersAsync(_db, now, ct), branchId, subtotal, now);
         var manualDiscount = requestedDiscount < 0 ? 0 : Math.Min(requestedDiscount, subtotal);
+        var (feePercent, vatPercent) = await BranchCharges.ForBranchAsync(_db, branchId, ct);
         var pricing = CheckoutPricing.Compute(new PricingInput(subtotal, promotion?.Offer.PromotionId, promotion?.Offer.Name,
             promotion?.Discount ?? 0, manualDiscount, pointsBalance is null ? 0 : Math.Max(0, requestedPoints), pointsBalance ?? 0, 0,
-            "giảm giá của thu ngân"));
+            "giảm giá của thu ngân", feePercent, vatPercent));
         return (promotion, pricing);
     }
 
@@ -660,7 +683,7 @@ public sealed class CashierController : ControllerBase
         try
         {
             result = await _mobileSettlement.SettleAsync(order.DiningSessionId!.Value, order.DiningSessionCustomerId!.Value, branchId,
-                request.EmployeeId, method, request.PaymentAmount, command.IdempotencyKey, cancellationToken);
+                request.EmployeeId, method, request.PaymentAmount, command.IdempotencyKey, cancellationToken, request.EmployeeName);
         }
         catch (PaymentDomainException ex) { return await Fail(ex.Status, ex.Code, ex.Message); }
 
@@ -945,7 +968,8 @@ public sealed class CashierController : ControllerBase
         string PaymentMethod = "CASH",
         decimal PaymentAmount = 0,
         string? IdempotencyKey = null,
-        int? BranchId = null);
+        int? BranchId = null,
+        string? EmployeeName = null);
 
     public sealed record CheckoutResponse(
         string BillCode,
@@ -983,5 +1007,9 @@ public sealed class CashierController : ControllerBase
         int MaxPoints,
         decimal DepositApplied,
         decimal TotalAmount,
-        bool AppSession);
+        bool AppSession,
+        decimal ServiceFeePercent = 0,
+        decimal ServiceFeeAmount = 0,
+        decimal VatPercent = 0,
+        decimal VatAmount = 0);
 }

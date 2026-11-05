@@ -158,10 +158,17 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int?>("EmployeeID")
                         .HasColumnType("integer");
 
+                    b.Property<string>("EmployeeNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
+
+                    b.Property<string>("ItemsJson")
+                        .HasColumnType("text");
 
                     b.Property<string>("OrderCodeSnapshot")
                         .HasMaxLength(50)
@@ -190,6 +197,12 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int?>("PromotionId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("ServiceFeeAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("ServiceFeePercent")
+                        .HasColumnType("decimal(5, 2)");
+
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("decimal(18, 2)");
 
@@ -202,6 +215,12 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("VatPercent")
+                        .HasColumnType("decimal(5, 2)");
 
                     b.HasKey("BillID");
 
@@ -219,6 +238,32 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                         .HasFilter("\"IsActive\" = TRUE");
 
                     b.ToTable("Bills", "billing");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.BranchChargeSetting", b =>
+                {
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ServiceFeePercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UpdatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UpdatedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("VatPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("BranchId");
+
+                    b.ToTable("BranchChargeSettings", "billing");
                 });
 
             modelBuilder.Entity("SelfRestaurant.Billing.Api.Persistence.Entities.BusinessAuditLogs", b =>
@@ -419,8 +464,16 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CheckoutQuoteId"));
 
+                    b.Property<string>("BranchAddressSnapshot")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<int>("BranchId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("BranchNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -497,6 +550,15 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int?>("ReservationDepositId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal>("ServiceFeeAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ServiceFeePercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("SessionStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -509,11 +571,21 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<int>("TableId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("TableNameSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("VatPercent")
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<decimal>("VoucherDiscount")
                         .HasColumnType("decimal(18,2)");
@@ -548,6 +620,28 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InvoiceId"));
 
+                    b.Property<string>("BankTransactionRef")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("BranchAddressSnapshot")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BranchNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("CashierEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CashierNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("CheckoutQuoteId")
                         .HasColumnType("integer");
 
@@ -576,7 +670,24 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("PaidAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentMethodSnapshot")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("PointsDiscount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("PointsEarned")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsUsed")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("PromotionDiscount")
@@ -588,13 +699,38 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
                     b.Property<DateTime?>("RecoveryLastAttemptAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal>("ServiceFeeAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ServiceFeePercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("SessionStartedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("SettlementCompletedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("SnapshotVersion")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("TableNameSnapshot")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("VatAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("VatPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal>("VoucherDiscount")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("InvoiceId");
@@ -607,6 +743,9 @@ namespace SelfRestaurant.Billing.Api.Persistence.Postgres.Migrations
 
                     b.HasIndex("InvoiceCode")
                         .IsUnique();
+
+                    b.HasIndex("CustomerId", "IssuedAtUtc", "InvoiceId")
+                        .HasDatabaseName("IX_Invoices_Customer_Issued");
 
                     b.HasIndex("SettlementCompletedAtUtc", "RecoveryLastAttemptAtUtc", "InvoiceId")
                         .HasDatabaseName("IX_Invoices_RecoveryPending");

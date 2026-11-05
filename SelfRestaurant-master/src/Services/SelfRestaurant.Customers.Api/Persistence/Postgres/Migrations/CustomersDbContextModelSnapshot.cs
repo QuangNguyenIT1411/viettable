@@ -61,6 +61,13 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CustomerReviewId"));
 
+                    b.Property<string>("AuthorNameSnapshot")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Comment")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
@@ -83,6 +90,20 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                     b.Property<int>("FoodRating")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("HiddenAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("HiddenByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("HiddenByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("HiddenReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<string>("ImageUrlsJson")
                         .IsRequired()
                         .HasColumnType("text");
@@ -90,8 +111,28 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                     b.Property<int>("InvoiceId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsAnonymous")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("OverallRating")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RepliedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RepliedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RepliedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ReplyText")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("RequestHash")
                         .IsRequired()
@@ -104,6 +145,13 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
 
                     b.Property<int>("SpaceRating")
                         .HasColumnType("integer");
+
+                    b.Property<string>("TagsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasDefaultValue("[]");
 
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
@@ -118,7 +166,44 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                     b.HasIndex("InvoiceId")
                         .IsUnique();
 
+                    b.HasIndex("BranchId", "IsHidden", "CreatedAtUtc")
+                        .HasDatabaseName("IX_CustomerReviews_Branch_Hidden_Created");
+
                     b.ToTable("CustomerReviews", "customers");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.CustomerReviewDishRating", b =>
+                {
+                    b.Property<int>("CustomerReviewDishRatingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CustomerReviewDishRatingId"));
+
+                    b.Property<int>("CustomerReviewId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DishId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DishNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CustomerReviewDishRatingId");
+
+                    b.HasIndex("DishId")
+                        .HasDatabaseName("IX_CustomerReviewDishRatings_DishId");
+
+                    b.HasIndex("CustomerReviewId", "DishId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CustomerReviewDishRatings_Review_Dish");
+
+                    b.ToTable("CustomerReviewDishRatings", "customers");
                 });
 
             modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.InboxEvents", b =>
@@ -571,6 +656,17 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                     b.ToTable("SupportRequests", "customers");
                 });
 
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.CustomerReviewDishRating", b =>
+                {
+                    b.HasOne("SelfRestaurant.Customers.Api.Persistence.Entities.CustomerReview", "Review")
+                        .WithMany("DishRatings")
+                        .HasForeignKey("CustomerReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Review");
+                });
+
             modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.ReservationPreOrderItem", b =>
                 {
                     b.HasOne("SelfRestaurant.Customers.Api.Persistence.Entities.Reservation", "Reservation")
@@ -591,6 +687,11 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                         .IsRequired();
 
                     b.Navigation("Reservation");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.CustomerReview", b =>
+                {
+                    b.Navigation("DishRatings");
                 });
 
             modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.Reservation", b =>

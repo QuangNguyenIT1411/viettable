@@ -32,6 +32,16 @@ public sealed class CheckoutQuote
     public string? DiscountNote { get; set; }
     /// <summary>The guest pressed "Không dùng khuyến mãi": the promotion stays known (to use again) but is not taken off.</summary>
     public bool PromotionDeclined { get; set; }
+    /// <summary>Branch percentages frozen when the quote was made (owner 05/11), and the amounts they give.</summary>
+    public decimal ServiceFeePercent { get; set; }
+    public decimal ServiceFeeAmount { get; set; }
+    public decimal VatPercent { get; set; }
+    public decimal VatAmount { get; set; }
+    /// <summary>Where and when, as it was when the quote was made (copied onto the invoice).</summary>
+    public string? BranchNameSnapshot { get; set; }
+    public string? BranchAddressSnapshot { get; set; }
+    public string? TableNameSnapshot { get; set; }
+    public DateTime? SessionStartedAtUtc { get; set; }
     public decimal TotalAmount { get; set; }
     public string IdempotencyKey { get; set; } = null!;
     public string RequestHash { get; set; } = null!;
@@ -101,6 +111,29 @@ public sealed class Invoice
     public decimal DepositApplied { get; set; }
     /// <summary>Promotion taken off this invoice ("Khuyến mãi −X đ"); also counted in Discount.</summary>
     public decimal PromotionDiscount { get; set; }
+    /// <summary>
+    /// Snapshot of the whole bill at payment (owner 05/11): every amount, the percentages, where/when/who. 0 = an invoice
+    /// from before 05/11 (only Subtotal/Discount/DepositApplied/PromotionDiscount/TotalAmount/ItemsJson are known).
+    /// </summary>
+    public int SnapshotVersion { get; set; }
+    public decimal VoucherDiscount { get; set; }
+    public int PointsUsed { get; set; }
+    public decimal PointsDiscount { get; set; }
+    public decimal ServiceFeePercent { get; set; }
+    public decimal ServiceFeeAmount { get; set; }
+    public decimal VatPercent { get; set; }
+    public decimal VatAmount { get; set; }
+    public int? PointsEarned { get; set; }
+    public int? BranchId { get; set; }
+    public string? BranchNameSnapshot { get; set; }
+    public string? BranchAddressSnapshot { get; set; }
+    public string? TableNameSnapshot { get; set; }
+    public DateTime? SessionStartedAtUtc { get; set; }
+    public DateTime? PaidAtUtc { get; set; }
+    public string? PaymentMethodSnapshot { get; set; }
+    public string? BankTransactionRef { get; set; }
+    public int? CashierEmployeeId { get; set; }
+    public string? CashierNameSnapshot { get; set; }
     public decimal TotalAmount { get; set; }
     public string ItemsJson { get; set; } = "[]";
     public DateTime IssuedAtUtc { get; set; }

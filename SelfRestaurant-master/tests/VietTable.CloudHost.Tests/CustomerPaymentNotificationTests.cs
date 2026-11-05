@@ -20,7 +20,10 @@ public sealed class CustomerPaymentNotificationTests
         await controller.PaymentSucceeded(7, request, CancellationToken.None);
         await controller.PaymentSucceeded(7, request, CancellationToken.None);
 
-        var row = Assert.Single(db.ReadyDishNotifications);
+        // One "Thanh toán thành công" and one "Đánh giá bữa ăn" reminder (owner 05/11), each once.
+        Assert.Equal(2, db.ReadyDishNotifications.Count());
+        Assert.Single(db.ReadyDishNotifications, x => x.EventName == SelfRestaurant.Customers.Api.Infrastructure.CustomerInbox.ReviewReminder);
+        var row = Assert.Single(db.ReadyDishNotifications, x => x.EventName == MobileEngagementController.PaymentSucceededEvent);
         Assert.Equal(MobileEngagementController.PaymentSucceededEvent, row.EventName);
         Assert.Equal(7, row.CustomerId);
         Assert.Null(row.TableId);

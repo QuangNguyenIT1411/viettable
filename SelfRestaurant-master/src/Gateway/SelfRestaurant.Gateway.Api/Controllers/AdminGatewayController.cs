@@ -144,6 +144,79 @@ public sealed class AdminGatewayController : ControllerBase
         }
     }
 
+    // ---- Service fee / VAT per branch (owner 05/11): 0 = off; copied onto every new bill. ----
+
+    [HttpGet("branch-charges")]
+    public async Task<ActionResult<object>> GetBranchCharges(CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _billingClient.GetBranchChargesAsync(ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_branch_charges_failed", ex); }
+    }
+
+    public sealed record AdminBranchChargesRequest(decimal ServiceFeePercent, decimal VatPercent);
+
+    [HttpPut("branch-charges/{branchId:int}")]
+    public async Task<ActionResult<object>> SaveBranchCharges(int branchId, AdminBranchChargesRequest request, CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try
+        {
+            return Ok(await _billingClient.SaveBranchChargesAsync(branchId, new { request.ServiceFeePercent, request.VatPercent,
+                employeeId = admin.EmployeeId, employeeName = admin.Name }, ct));
+        }
+        catch (ApiClientException ex) { return HandleApiClientException("save_branch_charges_failed", ex); }
+    }
+
+    // ---- Reviews (owner 05/11): list, reply (the guest sees it), hide with a reason, averages. ----
+
+    [HttpGet("reviews")]
+    public async Task<ActionResult<object>> GetReviews([FromQuery] int? branchId, [FromQuery] int? stars, [FromQuery] string? visibility,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 30, CancellationToken ct = default)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        var query = $"?page={Math.Max(1, page)}&pageSize={Math.Clamp(pageSize, 1, 100)}";
+        if (branchId is > 0) query += $"&branchId={branchId}";
+        if (stars is >= 1 and <= 5) query += $"&stars={stars}";
+        if (visibility is "hidden" or "visible" or "unanswered") query += $"&visibility={visibility}";
+        try { return Ok(await _customersClient.GetAdminReviewsAsync(query, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_reviews_failed", ex); }
+    }
+
+    [HttpGet("reviews/stats")]
+    public async Task<ActionResult<object>> GetReviewStats(CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _customersClient.GetAdminReviewStatsAsync(ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_review_stats_failed", ex); }
+    }
+
+    public sealed record AdminReviewReplyRequest(string? Text);
+    public sealed record AdminReviewVisibilityRequest(bool Hidden, string? Reason);
+
+    [HttpPost("reviews/{reviewId:int}/reply")]
+    public async Task<ActionResult<object>> ReplyReview(int reviewId, AdminReviewReplyRequest request, CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _customersClient.ReplyAdminReviewAsync(reviewId, new { request.Text, employeeId = admin.EmployeeId, employeeName = admin.Name }, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("reply_review_failed", ex); }
+    }
+
+    [HttpPost("reviews/{reviewId:int}/visibility")]
+    public async Task<ActionResult<object>> SetReviewVisibility(int reviewId, AdminReviewVisibilityRequest request, CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try
+        {
+            return Ok(await _customersClient.SetAdminReviewVisibilityAsync(reviewId, new { request.Hidden, request.Reason,
+                employeeId = admin.EmployeeId, employeeName = admin.Name }, ct));
+        }
+        catch (ApiClientException ex) { return HandleApiClientException("review_visibility_failed", ex); }
+    }
+
     // ---- Promotions (docs/PROMO_PLAN.md): admin only; a promotion that is running now is announced at once. ----
 
     [HttpGet("promotions")]

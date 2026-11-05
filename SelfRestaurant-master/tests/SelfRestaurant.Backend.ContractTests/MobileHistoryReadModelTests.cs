@@ -7,12 +7,15 @@ public sealed class MobileHistoryReadModelTests
     {
         var gateway = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileBillingGatewayController.cs");
         var billing = Read("src/Services/SelfRestaurant.Billing.Api/Controllers/MobileCheckoutController.cs");
+        // 05/11: filters + paging; one mapper (InvoiceViews) for history, detail and receipts.
+        var views = Read("src/Services/SelfRestaurant.Billing.Api/Infrastructure/Payments/InvoiceViews.cs");
         Assert.Contains("[Authorize(Roles = \"customer\")]", gateway, StringComparison.Ordinal);
-        Assert.Contains("_billing.GetCustomerInvoicesAsync(actor.Value, limit, ct)", gateway, StringComparison.Ordinal);
+        Assert.Contains("_billing.GetCustomerInvoicesAsync(actor.Value, limit, ct, cursor, month, branchId, method, q)", gateway, StringComparison.Ordinal);
         Assert.Contains("[HttpGet(\"invoices\")]", billing, StringComparison.Ordinal);
         Assert.Contains("Where(x => x.CustomerId == customerId)", billing, StringComparison.Ordinal);
-        Assert.Contains("branchId = quote?.BranchId, tableId = quote?.TableId", billing, StringComparison.Ordinal);
-        Assert.Contains("paymentStatus = payment?.Status", billing, StringComparison.Ordinal);
+        Assert.Contains("branchId = invoice.BranchId ?? quote?.BranchId", views, StringComparison.Ordinal);
+        Assert.Contains("tableId = quote?.TableId", views, StringComparison.Ordinal);
+        Assert.Contains("paymentStatus = payment?.Status", views, StringComparison.Ordinal);
     }
 
     [Fact]

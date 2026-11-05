@@ -117,6 +117,63 @@ public static class BillingDbBootstrapper
             IF COL_LENGTH('dbo.Vouchers', 'MaxTotalUses') IS NULL ALTER TABLE dbo.Vouchers ADD MaxTotalUses INT NULL;
             IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.CheckoutQuotes') AND name = N'IX_CheckoutQuotes_Voucher_Status')
                 CREATE INDEX IX_CheckoutQuotes_Voucher_Status ON dbo.CheckoutQuotes(VoucherId, Status);
+            -- Service fee + VAT per branch and the bill snapshot (owner 05/11); PostgreSQL gets them from migration BillSnapshots.
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'ServiceFeePercent') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD ServiceFeePercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_ServiceFeePercent DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'ServiceFeeAmount') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD ServiceFeeAmount DECIMAL(18,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_ServiceFeeAmount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'VatPercent') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD VatPercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_VatPercent DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'VatAmount') IS NULL
+                ALTER TABLE dbo.CheckoutQuotes ADD VatAmount DECIMAL(18,2) NOT NULL CONSTRAINT DF_CheckoutQuotes_VatAmount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Bills', 'ServiceFeePercent') IS NULL
+                ALTER TABLE dbo.Bills ADD ServiceFeePercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_Bills_ServiceFeePercent DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Bills', 'ServiceFeeAmount') IS NULL
+                ALTER TABLE dbo.Bills ADD ServiceFeeAmount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Bills_ServiceFeeAmount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Bills', 'VatPercent') IS NULL
+                ALTER TABLE dbo.Bills ADD VatPercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_Bills_VatPercent DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Bills', 'VatAmount') IS NULL
+                ALTER TABLE dbo.Bills ADD VatAmount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Bills_VatAmount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'ServiceFeePercent') IS NULL
+                ALTER TABLE dbo.Invoices ADD ServiceFeePercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_Invoices_ServiceFeePercent DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'ServiceFeeAmount') IS NULL
+                ALTER TABLE dbo.Invoices ADD ServiceFeeAmount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Invoices_ServiceFeeAmount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'VatPercent') IS NULL
+                ALTER TABLE dbo.Invoices ADD VatPercent DECIMAL(5,2) NOT NULL CONSTRAINT DF_Invoices_VatPercent DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'VatAmount') IS NULL
+                ALTER TABLE dbo.Invoices ADD VatAmount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Invoices_VatAmount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'BranchNameSnapshot') IS NULL ALTER TABLE dbo.CheckoutQuotes ADD BranchNameSnapshot NVARCHAR(200) NULL;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'BranchAddressSnapshot') IS NULL ALTER TABLE dbo.CheckoutQuotes ADD BranchAddressSnapshot NVARCHAR(500) NULL;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'TableNameSnapshot') IS NULL ALTER TABLE dbo.CheckoutQuotes ADD TableNameSnapshot NVARCHAR(100) NULL;
+            IF COL_LENGTH('dbo.CheckoutQuotes', 'SessionStartedAtUtc') IS NULL ALTER TABLE dbo.CheckoutQuotes ADD SessionStartedAtUtc DATETIME2 NULL;
+            IF COL_LENGTH('dbo.Bills', 'ItemsJson') IS NULL ALTER TABLE dbo.Bills ADD ItemsJson NVARCHAR(MAX) NULL;
+            IF COL_LENGTH('dbo.Bills', 'EmployeeNameSnapshot') IS NULL ALTER TABLE dbo.Bills ADD EmployeeNameSnapshot NVARCHAR(200) NULL;
+            IF COL_LENGTH('dbo.Invoices', 'SnapshotVersion') IS NULL
+                ALTER TABLE dbo.Invoices ADD SnapshotVersion INT NOT NULL CONSTRAINT DF_Invoices_SnapshotVersion DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'VoucherDiscount') IS NULL
+                ALTER TABLE dbo.Invoices ADD VoucherDiscount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Invoices_VoucherDiscount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'PointsUsed') IS NULL
+                ALTER TABLE dbo.Invoices ADD PointsUsed INT NOT NULL CONSTRAINT DF_Invoices_PointsUsed DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'PointsDiscount') IS NULL
+                ALTER TABLE dbo.Invoices ADD PointsDiscount DECIMAL(18,2) NOT NULL CONSTRAINT DF_Invoices_PointsDiscount DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.Invoices', 'PointsEarned') IS NULL ALTER TABLE dbo.Invoices ADD PointsEarned INT NULL;
+            IF COL_LENGTH('dbo.Invoices', 'BranchId') IS NULL ALTER TABLE dbo.Invoices ADD BranchId INT NULL;
+            IF COL_LENGTH('dbo.Invoices', 'BranchNameSnapshot') IS NULL ALTER TABLE dbo.Invoices ADD BranchNameSnapshot NVARCHAR(200) NULL;
+            IF COL_LENGTH('dbo.Invoices', 'BranchAddressSnapshot') IS NULL ALTER TABLE dbo.Invoices ADD BranchAddressSnapshot NVARCHAR(500) NULL;
+            IF COL_LENGTH('dbo.Invoices', 'TableNameSnapshot') IS NULL ALTER TABLE dbo.Invoices ADD TableNameSnapshot NVARCHAR(100) NULL;
+            IF COL_LENGTH('dbo.Invoices', 'SessionStartedAtUtc') IS NULL ALTER TABLE dbo.Invoices ADD SessionStartedAtUtc DATETIME2 NULL;
+            IF COL_LENGTH('dbo.Invoices', 'PaidAtUtc') IS NULL ALTER TABLE dbo.Invoices ADD PaidAtUtc DATETIME2 NULL;
+            IF COL_LENGTH('dbo.Invoices', 'PaymentMethodSnapshot') IS NULL ALTER TABLE dbo.Invoices ADD PaymentMethodSnapshot VARCHAR(20) NULL;
+            IF COL_LENGTH('dbo.Invoices', 'BankTransactionRef') IS NULL ALTER TABLE dbo.Invoices ADD BankTransactionRef NVARCHAR(100) NULL;
+            IF COL_LENGTH('dbo.Invoices', 'CashierEmployeeId') IS NULL ALTER TABLE dbo.Invoices ADD CashierEmployeeId INT NULL;
+            IF COL_LENGTH('dbo.Invoices', 'CashierNameSnapshot') IS NULL ALTER TABLE dbo.Invoices ADD CashierNameSnapshot NVARCHAR(200) NULL;
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.Invoices') AND name = N'IX_Invoices_Customer_Issued')
+                CREATE INDEX IX_Invoices_Customer_Issued ON dbo.Invoices(CustomerId, IssuedAtUtc, InvoiceId);
+            IF OBJECT_ID(N'dbo.BranchChargeSettings', N'U') IS NULL
+                CREATE TABLE dbo.BranchChargeSettings(
+                    BranchId INT NOT NULL CONSTRAINT PK_BranchChargeSettings PRIMARY KEY,
+                    ServiceFeePercent DECIMAL(5,2) NOT NULL, VatPercent DECIMAL(5,2) NOT NULL, UpdatedAtUtc DATETIME2 NOT NULL,
+                    UpdatedByEmployeeId INT NULL, UpdatedByName NVARCHAR(200) NULL);
             """, cancellationToken);
         await SeedReferenceDataAsync(db, logger, cancellationToken);
     }

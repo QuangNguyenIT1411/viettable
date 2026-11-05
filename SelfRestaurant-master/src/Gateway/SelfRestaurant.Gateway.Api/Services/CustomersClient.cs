@@ -27,6 +27,12 @@ public sealed class CustomersClient : ApiClientBase
     public Task<JsonElement> GetMobileReviewsAsync(int customerId, CancellationToken ct) => GetAsync<JsonElement>($"/api/internal/mobile/customers/{customerId}/reviews", ct);
     public Task<JsonElement> UpdateMobileReviewAsync(int customerId, int reviewId, object request, CancellationToken ct) => PutForAsync<object, JsonElement>($"/api/internal/mobile/customers/{customerId}/reviews/{reviewId}", request, ct);
     public Task DeleteMobileReviewAsync(int customerId, int reviewId, CancellationToken ct) => DeleteAsync($"/api/internal/mobile/customers/{customerId}/reviews/{reviewId}", ct);
+    // ---- Reviews (owner 05/11) ----
+    public Task<JsonElement> GetDishReviewSummaryAsync(int dishId, CancellationToken ct) => GetAsync<JsonElement>($"/api/internal/mobile/dishes/{dishId}/review-summary", ct);
+    public Task<JsonElement> GetAdminReviewsAsync(string query, CancellationToken ct) => GetAsync<JsonElement>($"/api/internal/admin/reviews{query}", ct);
+    public Task<JsonElement> GetAdminReviewStatsAsync(CancellationToken ct) => GetAsync<JsonElement>("/api/internal/admin/reviews/stats", ct);
+    public Task<JsonElement> ReplyAdminReviewAsync(int reviewId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/admin/reviews/{reviewId}/reply", request, ct);
+    public Task<JsonElement> SetAdminReviewVisibilityAsync(int reviewId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/admin/reviews/{reviewId}/visibility", request, ct);
     public Task<JsonElement> GetSupportFaqsAsync(CancellationToken ct) => GetAsync<JsonElement>("/api/internal/mobile/support/faqs", ct);
     public Task<JsonElement> CreateSupportRequestAsync(int customerId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/customers/{customerId}/support/requests", request, ct);
 

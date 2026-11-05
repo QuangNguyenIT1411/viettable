@@ -15,7 +15,8 @@ public sealed class PaymentDomainException(string code, string message, int stat
 // payment/part/invoice commit. Both receivers must be idempotent on their persisted key.
 public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiClient orders,
     CustomersApiClient customers, ILogger<PaymentFinalizationService> logger,
-    IConfiguration? configuration = null, IHostEnvironment? environment = null, CustomerInboxClient? inbox = null)
+    IConfiguration? configuration = null, IHostEnvironment? environment = null, CustomerInboxClient? inbox = null,
+    IHttpContextAccessor? http = null)
 {
     public static Task LockQuoteAsync(BillingDbContext db, int quoteId, CancellationToken ct) =>
         SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(db, "mobile-settlement:" + quoteId, ct);
@@ -124,7 +125,7 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
     /// payment can be created and confirmed atomically (cashier checkout) — any failure rolls both back.
     /// </summary>
     public async Task ApplySuccessAsync(Payment payment, CheckoutQuote quote, int? employeeId,
-        string? providerTransactionId, string? providerName, CancellationToken ct)
+        string? providerTransactionId, string? providerName, CancellationToken ct, string? cashierName = null)
     {
         var split = await db.SplitBills.Include(x => x.Parts).SingleOrDefaultAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct);
         var part = ValidatePendingTransition(payment, quote, split);
@@ -141,11 +142,9 @@ public sealed class PaymentFinalizationService(BillingDbContext db, OrdersApiCli
             if (await db.Invoices.AnyAsync(x => x.DiningSessionId == quote.DiningSessionId && x.CheckoutQuoteId != quote.CheckoutQuoteId, ct))
                 throw new PaymentDomainException("session_already_invoiced", "Phiên này đã có hóa đơn từ một lần thanh toán khác. Không thu thêm.");
             if (!await db.Invoices.AnyAsync(x => x.CheckoutQuoteId == quote.CheckoutQuoteId, ct))
-                db.Invoices.Add(new Invoice { InvoiceCode = $"INV-{Guid.NewGuid():N}", CheckoutQuoteId = quote.CheckoutQuoteId,
-                    PaymentId = payment.PaymentId, DiningSessionId = quote.DiningSessionId, CustomerId = quote.CustomerId,
-                    Subtotal = quote.Subtotal, Discount = quote.PromotionDiscount + quote.VoucherDiscount + quote.PointsDiscount,
-                    PromotionDiscount = quote.PromotionDiscount, DepositApplied = quote.DepositApplied,
-                    TotalAmount = quote.TotalAmount, ItemsJson = quote.ItemsJson, IssuedAtUtc = DateTime.UtcNow });
+                // The whole bill as paid (owner 05/11): amounts, percentages, dishes, where/when/who; never recomputed later.
+                db.Invoices.Add(InvoiceSnapshot.Create(quote, payment, employeeId,
+                    employeeId.HasValue ? cashierName ?? http?.HttpContext?.User.FindFirst("name")?.Value : null, DateTime.UtcNow));
             await ReservationDepositService.MarkAppliedAsync(db, quote, ct);
         }
         await db.SaveChangesAsync(ct);

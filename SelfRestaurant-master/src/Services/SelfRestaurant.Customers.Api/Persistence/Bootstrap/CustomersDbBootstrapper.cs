@@ -55,6 +55,34 @@ public static class CustomersDbBootstrapper
                 CREATE UNIQUE INDEX UX_CustomerReviews_CreateIdempotencyKey ON dbo.CustomerReviews(CreateIdempotencyKey);
                 CREATE INDEX IX_CustomerReviews_CustomerId ON dbo.CustomerReviews(CustomerId);
             END;
+            -- Reviews upgrade (owner 05/11); PostgreSQL gets it from migration ReviewUpgrade.
+            IF COL_LENGTH('dbo.CustomerReviews', 'TagsJson') IS NULL
+                ALTER TABLE dbo.CustomerReviews ADD TagsJson NVARCHAR(500) NOT NULL CONSTRAINT DF_CustomerReviews_TagsJson DEFAULT (N'[]') WITH VALUES;
+            IF COL_LENGTH('dbo.CustomerReviews', 'IsAnonymous') IS NULL
+                ALTER TABLE dbo.CustomerReviews ADD IsAnonymous BIT NOT NULL CONSTRAINT DF_CustomerReviews_IsAnonymous DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CustomerReviews', 'BranchId') IS NULL ALTER TABLE dbo.CustomerReviews ADD BranchId INT NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'AuthorNameSnapshot') IS NULL ALTER TABLE dbo.CustomerReviews ADD AuthorNameSnapshot NVARCHAR(200) NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'ReplyText') IS NULL ALTER TABLE dbo.CustomerReviews ADD ReplyText NVARCHAR(1000) NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'RepliedAtUtc') IS NULL ALTER TABLE dbo.CustomerReviews ADD RepliedAtUtc DATETIME2 NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'RepliedByEmployeeId') IS NULL ALTER TABLE dbo.CustomerReviews ADD RepliedByEmployeeId INT NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'RepliedByName') IS NULL ALTER TABLE dbo.CustomerReviews ADD RepliedByName NVARCHAR(200) NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'IsHidden') IS NULL
+                ALTER TABLE dbo.CustomerReviews ADD IsHidden BIT NOT NULL CONSTRAINT DF_CustomerReviews_IsHidden DEFAULT (0) WITH VALUES;
+            IF COL_LENGTH('dbo.CustomerReviews', 'HiddenReason') IS NULL ALTER TABLE dbo.CustomerReviews ADD HiddenReason NVARCHAR(300) NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'HiddenAtUtc') IS NULL ALTER TABLE dbo.CustomerReviews ADD HiddenAtUtc DATETIME2 NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'HiddenByEmployeeId') IS NULL ALTER TABLE dbo.CustomerReviews ADD HiddenByEmployeeId INT NULL;
+            IF COL_LENGTH('dbo.CustomerReviews', 'HiddenByName') IS NULL ALTER TABLE dbo.CustomerReviews ADD HiddenByName NVARCHAR(200) NULL;
+            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.CustomerReviews') AND name = N'IX_CustomerReviews_Branch_Hidden_Created')
+                CREATE INDEX IX_CustomerReviews_Branch_Hidden_Created ON dbo.CustomerReviews(BranchId, IsHidden, CreatedAtUtc);
+            IF OBJECT_ID(N'dbo.CustomerReviewDishRatings', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.CustomerReviewDishRatings(
+                    CustomerReviewDishRatingId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CustomerReviewDishRatings PRIMARY KEY,
+                    CustomerReviewId INT NOT NULL CONSTRAINT FK_CustomerReviewDishRatings_Review REFERENCES dbo.CustomerReviews(CustomerReviewId) ON DELETE CASCADE,
+                    DishId INT NOT NULL, DishNameSnapshot NVARCHAR(200) NOT NULL, Rating INT NOT NULL);
+                CREATE UNIQUE INDEX UX_CustomerReviewDishRatings_Review_Dish ON dbo.CustomerReviewDishRatings(CustomerReviewId, DishId);
+                CREATE INDEX IX_CustomerReviewDishRatings_DishId ON dbo.CustomerReviewDishRatings(DishId);
+            END;
             IF OBJECT_ID(N'dbo.SupportRequests', N'U') IS NULL
             BEGIN
                 CREATE TABLE dbo.SupportRequests(SupportRequestId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SupportRequests PRIMARY KEY,

@@ -336,9 +336,20 @@ public sealed class DiningSessionsController : ControllerBase
         var names = dishes.ToDictionary(x => x.DishId, x => x.Name);
         var rows = items.Select(x => new CheckoutItem(x.ItemID, x.OrderID, x.DishID,
             names.GetValueOrDefault(x.DishID) ?? $"Món #{x.DishID}", x.Quantity, x.UnitPrice, x.LineTotal)).ToArray();
+        // Where and when, for the bill's snapshot (owner 05/11). Best effort: a Catalog hiccup must not block paying.
+        string? branchName = null, branchAddress = null, tableName = null;
+        try
+        {
+            var branch = (await _catalog.GetBranchesAsync(new[] { session.BranchId }, ct))?.FirstOrDefault();
+            branchName = branch?.Name; branchAddress = branch?.Location;
+            var table = await _catalog.GetTableAsync(session.TableId, ct);
+            if (table is not null) tableName = $"Bàn {table.TableNumber}";
+        }
+        catch (HttpRequestException) { }
         return Ok(new DiningSessionCheckoutContext(session.DiningSessionId, session.SessionCode, session.CustomerId,
             session.BranchId, session.TableId, session.Status, orders.Select(x => x.OrderID).ToArray(), rows.Sum(x => x.LineTotal), rows,
-            session.ReservationId)); // Billing takes the booking's paid deposit off the bill
+            session.ReservationId, // Billing takes the booking's paid deposit off the bill
+            branchName, branchAddress, tableName, session.StartedAtUtc));
     }
 
     [HttpPost("{sessionId:int}/payment-request")]
@@ -654,7 +665,8 @@ public sealed class DiningSessionsController : ControllerBase
     public sealed record CheckoutItem(int ItemId, int OrderId, int DishId, string DishName, int Quantity, decimal UnitPrice, decimal LineTotal);
     public sealed record DiningSessionCheckoutContext(int DiningSessionId, string DiningSessionCode, int CustomerId,
         int BranchId, int TableId, string Status, IReadOnlyList<int> OrderIds, decimal Subtotal, IReadOnlyList<CheckoutItem> Items,
-        int? ReservationId = null);
+        int? ReservationId = null, string? BranchName = null, string? BranchAddress = null, string? TableName = null,
+        DateTime? StartedAtUtc = null);
     public sealed record DiningSessionResponse(int DiningSessionId, string SessionCode, int CustomerId, int BranchId,
         int TableId, int? ReservationId, string Status, int? ConvertedOrderId, DateTime StartedAtUtc,
         DateTime? PaymentRequestedAtUtc, DateTime? EndedAtUtc, bool AlreadyCheckedIn);

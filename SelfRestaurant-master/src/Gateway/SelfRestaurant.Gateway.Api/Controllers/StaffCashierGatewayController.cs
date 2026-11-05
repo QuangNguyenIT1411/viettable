@@ -551,6 +551,16 @@ public sealed class StaffCashierGatewayController : ControllerBase
         return Ok(new CashierHistoryDto(staff, bills.Select(MapBill).ToArray(), BuildAccountDto(staff)));
     }
 
+    /// <summary>"PHIẾU THANH TOÁN" of a paid bill in the history (owner 05/11), same template as the app's PDF.</summary>
+    [HttpGet("receipts/{billId:int}")]
+    public async Task<ActionResult<object>> GetReceipt(int billId, CancellationToken cancellationToken)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try { return Ok(await _billingClient.CashierReceiptAsync(staff, billId, cancellationToken)); }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "receipt_failed", ex.Message, ex.StatusCode); }
+    }
+
     [HttpGet("report")]
     public async Task<ActionResult<CashierReportScreenDto>> GetReport([FromQuery] DateOnly? date, CancellationToken cancellationToken)
     {
@@ -649,7 +659,8 @@ public sealed class StaffCashierGatewayController : ControllerBase
                 PaymentMethod: string.IsNullOrWhiteSpace(request.PaymentMethod) ? "CASH" : request.PaymentMethod.Trim().ToUpperInvariant(),
                 PaymentAmount: Math.Max(0, request.PaymentAmount),
                 IdempotencyKey: request.IdempotencyKey,
-                BranchId: staff.BranchId), cancellationToken);
+                BranchId: staff.BranchId,
+                EmployeeName: staff.Name), cancellationToken);
 
             if (response is null)
             {

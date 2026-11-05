@@ -84,12 +84,14 @@ public sealed class MobileBillingGatewayController : ControllerBase
     [HttpGet("invoices/{invoiceId:int}")]
     public Task<ActionResult<object>> Invoice(int invoiceId, CancellationToken ct) => Get(() => _billing.GetInvoiceAsync(invoiceId, Actor()!.Value, ct));
     [HttpGet("invoices")]
-    public async Task<ActionResult<object>> Invoices([FromQuery] int limit = 50, CancellationToken ct = default)
+    public async Task<ActionResult<object>> Invoices([FromQuery] int limit = 50, [FromQuery] string? cursor = null,
+        [FromQuery] string? month = null, [FromQuery] int? branchId = null, [FromQuery] string? method = null, [FromQuery] string? q = null,
+        CancellationToken ct = default)
     {
         var actor = Actor();
         if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
         if (limit is < 1 or > 100) return Error("validation_failed", "limit phải từ 1 đến 100.", 400);
-        try { return Ok(await _billing.GetCustomerInvoicesAsync(actor.Value, limit, ct)); }
+        try { return Ok(await _billing.GetCustomerInvoicesAsync(actor.Value, limit, ct, cursor, month, branchId, method, q)); }
         catch (ApiClientException ex) { return Downstream(ex); }
     }
 

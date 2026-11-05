@@ -12,18 +12,28 @@ public sealed record PromotionOffer(int PromotionId, string Name, string Discoun
 }
 
 public sealed record PricingInput(decimal Subtotal, int? PromotionId, string? PromotionName, decimal PromotionOffer,
-    decimal VoucherOffer, int PointsRequested, int PointsBalance, decimal DepositAmount, string VoucherLabel = "voucher");
+    decimal VoucherOffer, int PointsRequested, int PointsBalance, decimal DepositAmount, string VoucherLabel = "voucher",
+    decimal ServiceFeePercent = 0, decimal VatPercent = 0);
 
 public sealed record PricingResult(decimal Subtotal, int? PromotionId, string? PromotionName, decimal PromotionDiscount,
-    decimal VoucherDiscount, string? DiscountNote, int PointsApplied, decimal PointsDiscount, decimal DepositApplied, decimal Total)
+    decimal VoucherDiscount, string? DiscountNote, int PointsApplied, decimal PointsDiscount, decimal DepositApplied, decimal Total,
+    decimal ServiceFeePercent = 0, decimal ServiceFee = 0, decimal VatPercent = 0, decimal Vat = 0)
 {
     public decimal AfterDiscount => Subtotal - PromotionDiscount - VoucherDiscount;
+    /// <summary>What the bill costs before the deposit comes off: after discount and points, plus service fee and VAT.</summary>
+    public decimal GrossTotal => Total + DepositApplied;
 }
 
 /// <summary>
-/// The ONE checkout formula (owner 27/10, docs/PROMO_PLAN.md), used by the app quote, the cashier settling an app
-/// session and the cashier checking out an order: subtotal → best promotion OR voucher (the better one, never both) →
-/// points (10% cap on the amount after the discount) → reservation deposit. Pure, so every rule is unit tested.
+/// The ONE checkout formula (owner 27/10 + 05/11, docs/CHECKOUT_FORMULA.md), used by the app quote, the cashier settling
+/// an app session and the cashier checking out an order:
+///   subtotal → best promotion OR voucher OR the cashier's discount (the better one, never both)
+///   → points (10% cap on the amount after the discount)
+///   → service fee = round(after points × fee%)
+///   → VAT = round((after points + service fee) × VAT%)
+///   → reservation deposit comes off what is left to pay.
+/// The two percentages are per branch (billing."BranchChargeSettings", 0 = off) and frozen on the quote/bill.
+/// Pure, so every rule is unit tested.
 /// </summary>
 public static class CheckoutPricing
 {
@@ -79,9 +89,37 @@ public static class CheckoutPricing
             : 0;
         var pointsDiscount = SelfRestaurant.Loyalty.LoyaltyRules.Discount(points);
         var afterPoints = Math.Max(0, afterDiscount - pointsDiscount);
-        var deposit = SelfRestaurant.Deposits.DepositRules.Applicable(input.DepositAmount, afterPoints);
+        var feePercent = ClampPercent(input.ServiceFeePercent);
+        var vatPercent = ClampPercent(input.VatPercent);
+        var serviceFee = Charge(afterPoints, feePercent);
+        var vat = Charge(afterPoints + serviceFee, vatPercent);
+        var gross = afterPoints + serviceFee + vat;
+        var deposit = SelfRestaurant.Deposits.DepositRules.Applicable(input.DepositAmount, gross);
         return new PricingResult(subtotal, promoApplied > 0 ? input.PromotionId : null, promoApplied > 0 ? input.PromotionName : null,
-            promoApplied, voucherApplied, note, points, pointsDiscount, deposit, afterPoints - deposit);
+            promoApplied, voucherApplied, note, points, pointsDiscount, deposit, gross - deposit,
+            feePercent, serviceFee, vatPercent, vat);
+    }
+
+    /// <summary>Highest percentages an admin may set (owner 05/11: 0 = off).</summary>
+    public const decimal MaxServiceFeePercent = 30m;
+    public const decimal MaxVatPercent = 20m;
+
+    /// <summary>An amount × percent, rounded to the nearest đồng (half up). 0% or nothing to charge on → 0.</summary>
+    public static decimal Charge(decimal amount, decimal percent) =>
+        amount <= 0 || percent <= 0 ? 0 : Math.Round(amount * percent / 100m, 0, MidpointRounding.AwayFromZero);
+
+    private static decimal ClampPercent(decimal percent) => percent <= 0 ? 0 : Math.Min(percent, 100m);
+
+    /// <summary>Admin form check for one branch's percentages; null = valid.</summary>
+    public static string? ChargeSettingsError(decimal serviceFeePercent, decimal vatPercent)
+    {
+        if (serviceFeePercent < 0 || serviceFeePercent > MaxServiceFeePercent)
+            return $"Phí phục vụ phải từ 0 đến {MaxServiceFeePercent:0.##}% (0 = tắt).";
+        if (vatPercent < 0 || vatPercent > MaxVatPercent)
+            return $"VAT phải từ 0 đến {MaxVatPercent:0.##}% (0 = tắt).";
+        if (serviceFeePercent != Math.Round(serviceFeePercent, 2) || vatPercent != Math.Round(vatPercent, 2))
+            return "Phần trăm chỉ lấy tối đa 2 chữ số thập phân.";
+        return null;
     }
 
     /// <summary>
@@ -93,13 +131,15 @@ public static class CheckoutPricing
         var result = Compute(new PricingInput(quote.Subtotal, quote.PromotionId, quote.PromotionName,
             quote.PromotionDeclined ? 0 : quote.PromotionOfferDiscount,
             quote.VoucherId is null ? 0 : quote.VoucherOfferDiscount, quote.PointsApplied, pointsBalance ?? quote.PointsApplied,
-            quote.DepositAmount));
+            quote.DepositAmount, ServiceFeePercent: quote.ServiceFeePercent, VatPercent: quote.VatPercent));
         quote.PromotionDiscount = result.PromotionDiscount;
         quote.VoucherDiscount = result.VoucherDiscount;
         quote.DiscountNote = result.DiscountNote;
         quote.PointsApplied = result.PointsApplied;
         quote.PointsDiscount = result.PointsDiscount;
         quote.DepositApplied = result.DepositApplied;
+        quote.ServiceFeeAmount = result.ServiceFee;
+        quote.VatAmount = result.Vat;
         quote.TotalAmount = result.Total;
         quote.UpdatedAtUtc = DateTime.UtcNow;
     }

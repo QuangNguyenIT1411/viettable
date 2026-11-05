@@ -17,8 +17,9 @@ public sealed class MobileEngagementGatewayController : ControllerBase
     private readonly CustomersClient _customers;
     private readonly CatalogClient _catalog;
     private readonly BillingClient _billing;
-    public MobileEngagementGatewayController(CustomersClient customers, CatalogClient catalog, BillingClient billing)
-    { _customers = customers; _catalog = catalog; _billing = billing; }
+    private readonly IdentityClient? Identity;
+    public MobileEngagementGatewayController(CustomersClient customers, CatalogClient catalog, BillingClient billing, IdentityClient? identity = null)
+    { _customers = customers; _catalog = catalog; _billing = billing; Identity = identity; }
 
     [HttpGet("me/favorites")]
     public Task<ActionResult<object>> Favorites(CancellationToken ct) => Run(() => _customers.GetMobileFavoritesAsync(Actor()!.Value, ct));
@@ -67,10 +68,15 @@ public sealed class MobileEngagementGatewayController : ControllerBase
             var invoice = await _billing.GetInvoiceAsync(request.InvoiceId, actor.Value, ct);
             if (invoice.ValueKind != JsonValueKind.Object || !invoice.TryGetProperty("diningSessionId", out var sessionValue))
                 return Error("review_not_eligible", "Chỉ có thể đánh giá sau khi giao dịch hoàn tất.", 409);
-            var hash = Hash(new { request.InvoiceId, request.OverallRating, request.FoodRating, request.ServiceRating, request.SpaceRating, Comment = request.Comment?.Trim(), request.ImageUrls });
+            var hash = Hash(new { request.InvoiceId, request.OverallRating, request.FoodRating, request.ServiceRating, request.SpaceRating, Comment = request.Comment?.Trim(), request.ImageUrls, request.Tags, request.IsAnonymous, request.DishRatings });
+            // Branch, dishes and the author's name come from the server (invoice + profile), never from the app (owner 05/11).
+            string? authorName = null;
+            try { authorName = Identity is null ? null : (await Identity.GetMobileProfileAsync(ct))?.Name; } catch (ApiClientException) { }
             var value = await _customers.CreateMobileReviewAsync(actor.Value, new { customerId = actor.Value, request.InvoiceId,
                 diningSessionId = sessionValue.GetInt32(), request.OverallRating, request.FoodRating, request.ServiceRating,
-                request.SpaceRating, request.Comment, request.ImageUrls, idempotencyKey = $"c{actor}:review:{key.Value}", requestHash = hash }, ct);
+                request.SpaceRating, request.Comment, request.ImageUrls, idempotencyKey = $"c{actor}:review:{key.Value}", requestHash = hash,
+                request.Tags, request.IsAnonymous, request.DishRatings, branchId = IntProperty(invoice, "branchId"), authorName,
+                invoiceDishes = InvoiceDishes(invoice) }, ct);
             return Ok(value);
         }
         catch (ApiClientException ex) when (ex.StatusCode == 404) { return Error("review_not_eligible", "Chỉ có thể đánh giá sau khi giao dịch hoàn tất.", 409); }
@@ -81,8 +87,38 @@ public sealed class MobileEngagementGatewayController : ControllerBase
     public Task<ActionResult<object>> Reviews(CancellationToken ct) => Run(() => _customers.GetMobileReviewsAsync(Actor()!.Value, ct));
 
     [HttpPut("reviews/{reviewId:int}")]
-    public Task<ActionResult<object>> UpdateReview(int reviewId, UpdateReviewBody request, CancellationToken ct) =>
-        Run(() => _customers.UpdateMobileReviewAsync(Actor()!.Value, reviewId, request, ct));
+    public async Task<ActionResult<object>> UpdateReview(int reviewId, UpdateReviewBody request, CancellationToken ct)
+    {
+        var actor = Actor(); if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
+        try
+        {
+            // Dishes of the invoice (from Billing) so newly rated dishes get their real names.
+            object[] dishes = Array.Empty<object>();
+            if (request.InvoiceId is > 0)
+                dishes = InvoiceDishes(await _billing.GetInvoiceAsync(request.InvoiceId.Value, actor.Value, ct));
+            return Ok(await _customers.UpdateMobileReviewAsync(actor.Value, reviewId, new { request.OverallRating, request.FoodRating,
+                request.ServiceRating, request.SpaceRating, request.Comment, request.ImageUrls, request.Tags, request.IsAnonymous,
+                request.DishRatings, invoiceDishes = dishes }, ct));
+        }
+        catch (ApiClientException ex) { return Downstream(ex); }
+    }
+
+    /// <summary>"Chi tiết món": average stars, count and the latest comments of a dish, from real reviews (owner 05/11).</summary>
+    [AllowAnonymous]
+    [HttpGet("dishes/{dishId:int}/reviews/summary")]
+    public Task<ActionResult<object>> DishReviewSummary(int dishId, CancellationToken ct) => Run(() => _customers.GetDishReviewSummaryAsync(dishId, ct));
+
+    private static int? IntProperty(JsonElement value, string name) =>
+        value.ValueKind == JsonValueKind.Object && value.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i) ? i : null;
+
+    private static object[] InvoiceDishes(JsonElement invoice) =>
+        invoice.ValueKind == JsonValueKind.Object && invoice.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array
+            ? items.EnumerateArray().Select(x => (object)new
+            {
+                dishId = IntProperty(x, "dishId") ?? 0,
+                dishName = x.TryGetProperty("dishName", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() : null
+            }).ToArray()
+            : Array.Empty<object>();
 
     [HttpDelete("reviews/{reviewId:int}")]
     public async Task<ActionResult> DeleteReview(int reviewId, CancellationToken ct)

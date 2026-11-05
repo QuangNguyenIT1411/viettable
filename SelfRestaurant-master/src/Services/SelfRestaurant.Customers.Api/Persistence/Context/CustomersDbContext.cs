@@ -17,6 +17,7 @@ public sealed class CustomersDbContext : DbContext
     public DbSet<ReservationTable> ReservationTables => Set<ReservationTable>();
     public DbSet<CustomerFavorite> CustomerFavorites => Set<CustomerFavorite>();
     public DbSet<CustomerReview> CustomerReviews => Set<CustomerReview>();
+    public DbSet<CustomerReviewDishRating> CustomerReviewDishRatings => Set<CustomerReviewDishRating>();
     public DbSet<SupportRequest> SupportRequests => Set<SupportRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -120,6 +121,13 @@ public sealed class CustomersDbContext : DbContext
             entity.HasIndex(x => new { x.CustomerId, x.DishId }).IsUnique();
             entity.Property(x => x.DishNameSnapshot).HasMaxLength(200);
         });
+        modelBuilder.Entity<CustomerReviewDishRating>(entity =>
+        {
+            entity.HasKey(x => x.CustomerReviewDishRatingId);
+            entity.HasIndex(x => new { x.CustomerReviewId, x.DishId }).IsUnique().HasDatabaseName("UX_CustomerReviewDishRatings_Review_Dish");
+            entity.HasIndex(x => x.DishId).HasDatabaseName("IX_CustomerReviewDishRatings_DishId");
+            entity.Property(x => x.DishNameSnapshot).HasMaxLength(200);
+        });
         modelBuilder.Entity<CustomerReview>(entity =>
         {
             entity.HasKey(x => x.CustomerReviewId);
@@ -128,6 +136,14 @@ public sealed class CustomersDbContext : DbContext
             entity.HasIndex(x => x.CreateIdempotencyKey).IsUnique();
             entity.Property(x => x.Comment).HasMaxLength(2000);
             entity.Property(x => x.ImageUrlsJson).HasColumnType("nvarchar(max)");
+            entity.Property(x => x.TagsJson).HasMaxLength(500).HasDefaultValue("[]");
+            entity.Property(x => x.ReplyText).HasMaxLength(1000);
+            entity.Property(x => x.AuthorNameSnapshot).HasMaxLength(200);
+            entity.Property(x => x.RepliedByName).HasMaxLength(200);
+            entity.Property(x => x.HiddenReason).HasMaxLength(300);
+            entity.Property(x => x.HiddenByName).HasMaxLength(200);
+            entity.HasIndex(x => new { x.BranchId, x.IsHidden, x.CreatedAtUtc }).HasDatabaseName("IX_CustomerReviews_Branch_Hidden_Created");
+            entity.HasMany(x => x.DishRatings).WithOne(x => x.Review).HasForeignKey(x => x.CustomerReviewId).OnDelete(DeleteBehavior.Cascade);
             entity.Property(x => x.CreateIdempotencyKey).HasMaxLength(140).IsUnicode(false);
             entity.Property(x => x.RequestHash).HasMaxLength(64).IsUnicode(false);
         });

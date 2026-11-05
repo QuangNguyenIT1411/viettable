@@ -40,7 +40,7 @@ public sealed class CashierMobileSettlementService(BillingDbContext db, OrdersAp
     }
 
     public async Task<MobileSettlementResult> SettleAsync(int sessionId, int customerId, int branchId, int employeeId,
-        string method, decimal tendered, string commandKey, CancellationToken ct)
+        string method, decimal tendered, string commandKey, CancellationToken ct, string? cashierName = null)
     {
         var quote = await db.CheckoutQuotes
             .Where(x => x.DiningSessionId == sessionId && (x.Status == "PAYMENT_REQUESTED" || x.Status == "PAID"))
@@ -84,7 +84,7 @@ public sealed class CashierMobileSettlementService(BillingDbContext db, OrdersAp
                     var payment = MobileCheckoutController.NewPayment(quote, "ONSITE", method, "CASHIER", key, Hash(key), 1, quote.TotalAmount);
                     db.Payments.Add(payment);
                     await db.SaveChangesAsync(ct);
-                    await finalization.ApplySuccessAsync(payment, quote, employeeId, null, null, ct);
+                    await finalization.ApplySuccessAsync(payment, quote, employeeId, null, null, ct, cashierName);
                     paymentId = payment.PaymentId;
                     createdAndConfirmed = true;
                     break;
@@ -130,6 +130,7 @@ public sealed class CashierMobileSettlementService(BillingDbContext db, OrdersAp
                 IdempotencyKey = key, RequestHash = Hash(key), ItemsJson = JsonSerializer.Serialize(context.Items),
                 ExpiresAtUtc = now.AddMinutes(15), CreatedAtUtc = now, UpdatedAtUtc = now
             };
+            BranchCharges.Stamp(quote, await BranchCharges.ForBranchAsync(db, context.BranchId, ct), context);
             CheckoutPricing.AttachPromotion(quote, await Controllers.InternalPromotionsController.OffersAsync(db, now, ct), now);
             CheckoutPricing.Apply(quote);
             ReservationDepositService.AttachToQuote(quote, await ReservationDepositService.PaidForReservationAsync(db, context.ReservationId, ct));

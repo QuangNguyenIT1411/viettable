@@ -29,6 +29,8 @@ public static class CustomerInbox
     public const string ServiceCompleted = "service.request-completed.v1";
     public const string PaymentSucceeded = "billing.payment-succeeded.v1";
     public const string PaymentCancelled = "billing.payment-cancelled.v1";
+    /// <summary>"Đánh giá bữa ăn" after a payment (owner 05/11); same "Thanh toán" tab as the payment itself.</summary>
+    public const string ReviewReminder = "billing.review-reminder.v1";
     public const string PointsEarned = "loyalty.points-earned.v1";
     public const string TierUp = "loyalty.tier-up.v1";
     /// <summary>A promotion started running (category "offer" = the app's "Ưu đãi" tab).</summary>
@@ -53,6 +55,7 @@ public static class CustomerInbox
         [ServiceCompleted] = "Yêu cầu đã xong",
         [PaymentSucceeded] = "Thanh toán thành công",
         [PaymentCancelled] = "Giao dịch đã hủy",
+        [ReviewReminder] = "Đánh giá bữa ăn",
         [PointsEarned] = "Cộng điểm thưởng",
         [TierUp] = "Lên hạng thành viên",
         [PromotionCreated] = "Ưu đãi mới",

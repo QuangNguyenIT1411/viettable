@@ -24,6 +24,7 @@ public sealed class BillingDbContext : DbContext
     public DbSet<BankTransferEvent> BankTransferEvents => Set<BankTransferEvent>();
     public DbSet<ReservationDeposit> ReservationDeposits => Set<ReservationDeposit>();
     public DbSet<Promotion> Promotions => Set<Promotion>();
+    public DbSet<BranchChargeSetting> BranchChargeSettings => Set<BranchChargeSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,6 +52,12 @@ public sealed class BillingDbContext : DbContext
             entity.Property(e => e.PointsDiscount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Subtotal).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.TotalAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ServiceFeePercent).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.ServiceFeeAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.VatPercent).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.VatAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ItemsJson).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.EmployeeNameSnapshot).HasMaxLength(200);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
         });
 
@@ -138,8 +145,14 @@ public sealed class BillingDbContext : DbContext
             entity.Property(x => x.DiscountNote).HasMaxLength(300);
             foreach (var p in new[] { nameof(CheckoutQuote.Subtotal), nameof(CheckoutQuote.VoucherDiscount), nameof(CheckoutQuote.PointsDiscount), nameof(CheckoutQuote.TotalAmount),
                          nameof(CheckoutQuote.DepositAmount), nameof(CheckoutQuote.DepositApplied),
-                         nameof(CheckoutQuote.PromotionOfferDiscount), nameof(CheckoutQuote.PromotionDiscount), nameof(CheckoutQuote.VoucherOfferDiscount) })
+                         nameof(CheckoutQuote.PromotionOfferDiscount), nameof(CheckoutQuote.PromotionDiscount), nameof(CheckoutQuote.VoucherOfferDiscount),
+                         nameof(CheckoutQuote.ServiceFeeAmount), nameof(CheckoutQuote.VatAmount) })
                 entity.Property(p).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.ServiceFeePercent).HasColumnType("decimal(5,2)");
+            entity.Property(x => x.VatPercent).HasColumnType("decimal(5,2)");
+            entity.Property(x => x.BranchNameSnapshot).HasMaxLength(200);
+            entity.Property(x => x.BranchAddressSnapshot).HasMaxLength(500);
+            entity.Property(x => x.TableNameSnapshot).HasMaxLength(100);
         });
         modelBuilder.Entity<Voucher>(entity =>
         {
@@ -168,6 +181,26 @@ public sealed class BillingDbContext : DbContext
             entity.Property(x => x.Subtotal).HasColumnType("decimal(18,2)"); entity.Property(x => x.Discount).HasColumnType("decimal(18,2)"); entity.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
             entity.Property(x => x.DepositApplied).HasColumnType("decimal(18,2)");
             entity.Property(x => x.PromotionDiscount).HasColumnType("decimal(18,2)");
+            entity.HasIndex(x => new { x.CustomerId, x.IssuedAtUtc, x.InvoiceId }).HasDatabaseName("IX_Invoices_Customer_Issued");
+            foreach (var p in new[] { nameof(Invoice.VoucherDiscount), nameof(Invoice.PointsDiscount), nameof(Invoice.ServiceFeeAmount), nameof(Invoice.VatAmount) })
+                entity.Property(p).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.ServiceFeePercent).HasColumnType("decimal(5,2)");
+            entity.Property(x => x.VatPercent).HasColumnType("decimal(5,2)");
+            entity.Property(x => x.BranchNameSnapshot).HasMaxLength(200);
+            entity.Property(x => x.BranchAddressSnapshot).HasMaxLength(500);
+            entity.Property(x => x.TableNameSnapshot).HasMaxLength(100);
+            entity.Property(x => x.PaymentMethodSnapshot).HasMaxLength(20).IsUnicode(false);
+            entity.Property(x => x.BankTransactionRef).HasMaxLength(100);
+            entity.Property(x => x.CashierNameSnapshot).HasMaxLength(200);
+        });
+        modelBuilder.Entity<BranchChargeSetting>(entity =>
+        {
+            entity.ToTable("BranchChargeSettings");
+            entity.HasKey(x => x.BranchId);
+            entity.Property(x => x.BranchId).ValueGeneratedNever();
+            entity.Property(x => x.ServiceFeePercent).HasColumnType("decimal(5,2)");
+            entity.Property(x => x.VatPercent).HasColumnType("decimal(5,2)");
+            entity.Property(x => x.UpdatedByName).HasMaxLength(200);
         });
         modelBuilder.Entity<SplitBill>(entity =>
         {

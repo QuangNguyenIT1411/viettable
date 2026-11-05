@@ -143,6 +143,13 @@ public sealed class MobileEngagementController : ControllerBase
             Status = "OPEN", CreatedAtUtc = DateTime.UtcNow
         };
         _db.ReadyDishNotifications.Add(entity);
+        // Ask for a review once per payment (owner 05/11), in the same "Thanh toán" tab; idempotent on the same key.
+        _db.ReadyDishNotifications.Add(new ReadyDishNotifications
+        {
+            OrderId = 0, OrderItemId = request.PaymentId, CustomerId = customerId, EventName = CustomerInbox.ReviewReminder,
+            Message = "Bữa ăn thế nào? Chạm để đánh giá trong mục Hóa đơn — nhà hàng đọc từng đánh giá.",
+            Status = "OPEN", CreatedAtUtc = DateTime.UtcNow
+        });
         await _db.SaveChangesAsync(ct);
         return Ok(new { notificationId = entity.ReadyDishNotificationId, created = true });
     }
@@ -164,39 +171,63 @@ public sealed class MobileEngagementController : ControllerBase
         return Ok(new { notificationId, isRead = true, readAtUtc = entity.ResolvedAtUtc });
     }
 
+    // Reviews (owner 05/11): one per paid invoice, editable for 24 hours, 3 criteria + optional stars per dish of that
+    // invoice, quick tags, anonymous name. The Gateway checks the invoice belongs to the guest and passes its branch,
+    // its dishes and the guest's name; nothing here trusts dish names or branch from the app.
     [HttpPost("customers/{customerId:int}/reviews")]
     public async Task<ActionResult<object>> CreateReview(int customerId, CreateReviewRequest request, CancellationToken ct)
     {
         if (!ValidReview(request.OverallRating, request.FoodRating, request.ServiceRating, request.SpaceRating, request.Comment, request.ImageUrls)
             || request.InvoiceId <= 0 || request.DiningSessionId <= 0 || !ValidCommand(request.IdempotencyKey, request.RequestHash)) return Validation();
-        var replay = await _db.CustomerReviews.FirstOrDefaultAsync(x => x.CreateIdempotencyKey == request.IdempotencyKey, ct);
-        if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(MapReview(replay)) : IdempotencyConflict();
+        var tags = ReviewRules.NormalizeTags(request.Tags);
+        var dishes = ReviewRules.NormalizeDishRatings(request.DishRatings?.Select(x => (x.DishId, x.Rating)), InvoiceDishes(request.InvoiceDishes));
+        if (tags is null || dishes is null) return Validation();
+        var replay = await _db.CustomerReviews.Include(x => x.DishRatings).FirstOrDefaultAsync(x => x.CreateIdempotencyKey == request.IdempotencyKey, ct);
+        if (replay is not null) return replay.RequestHash == request.RequestHash ? Ok(MapReview(replay, DateTime.UtcNow)) : IdempotencyConflict();
         if (await _db.CustomerReviews.AnyAsync(x => x.InvoiceId == request.InvoiceId, ct)) return Conflict(new { code = "review_already_exists", message = "Hóa đơn này đã được đánh giá." });
         var now = DateTime.UtcNow;
         var entity = new CustomerReview { CustomerId = customerId, InvoiceId = request.InvoiceId, DiningSessionId = request.DiningSessionId,
             OverallRating = request.OverallRating, FoodRating = request.FoodRating, ServiceRating = request.ServiceRating,
             SpaceRating = request.SpaceRating, Comment = Clean(request.Comment), ImageUrlsJson = JsonSerializer.Serialize(request.ImageUrls ?? Array.Empty<string>()),
+            TagsJson = JsonSerializer.Serialize(tags), IsAnonymous = request.IsAnonymous, BranchId = request.BranchId is > 0 ? request.BranchId : null,
+            AuthorNameSnapshot = Trim(request.AuthorName, 200),
             CreateIdempotencyKey = request.IdempotencyKey.Trim(), RequestHash = request.RequestHash, CreatedAtUtc = now, UpdatedAtUtc = now };
-        _db.CustomerReviews.Add(entity); await _db.SaveChangesAsync(ct); return Ok(MapReview(entity));
+        foreach (var d in dishes) entity.DishRatings.Add(new CustomerReviewDishRating { DishId = d.DishId, DishNameSnapshot = Trim(d.DishName, 200) ?? $"Món #{d.DishId}", Rating = d.Rating });
+        _db.CustomerReviews.Add(entity); await _db.SaveChangesAsync(ct); return Ok(MapReview(entity, now));
     }
 
     [HttpGet("customers/{customerId:int}/reviews")]
     public async Task<ActionResult<object>> Reviews(int customerId, CancellationToken ct)
     {
-        var rows = await _db.CustomerReviews.AsNoTracking().Where(x => x.CustomerId == customerId).OrderByDescending(x => x.CreatedAtUtc).ToListAsync(ct);
-        return Ok(new { items = rows.Select(MapReview), nextCursor = (string?)null });
+        var rows = await _db.CustomerReviews.AsNoTracking().Include(x => x.DishRatings).Where(x => x.CustomerId == customerId)
+            .OrderByDescending(x => x.CreatedAtUtc).ToListAsync(ct);
+        var now = DateTime.UtcNow;
+        return Ok(new { items = rows.Select(x => MapReview(x, now)), nextCursor = (string?)null, tags = ReviewRules.Tags });
     }
 
     [HttpPut("customers/{customerId:int}/reviews/{reviewId:int}")]
     public async Task<ActionResult<object>> UpdateReview(int customerId, int reviewId, UpdateReviewRequest request, CancellationToken ct)
     {
-        var entity = await _db.CustomerReviews.FirstOrDefaultAsync(x => x.CustomerReviewId == reviewId, ct);
+        var entity = await _db.CustomerReviews.Include(x => x.DishRatings).FirstOrDefaultAsync(x => x.CustomerReviewId == reviewId, ct);
         if (entity is null) return NotFound(new { code = "review_not_found", message = "Không tìm thấy đánh giá." });
         if (entity.CustomerId != customerId) return StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu đánh giá này." });
+        var now = DateTime.UtcNow;
+        if (!ReviewRules.CanEdit(entity.CreatedAtUtc, now))
+            return Conflict(new { code = "review_edit_window_closed", message = "Chỉ sửa được đánh giá trong 24 giờ sau khi gửi." });
         if (!ValidReview(request.OverallRating, request.FoodRating, request.ServiceRating, request.SpaceRating, request.Comment, request.ImageUrls)) return Validation();
+        var tags = ReviewRules.NormalizeTags(request.Tags);
+        // Dish names come from the stored ratings or the invoice the Gateway sends; the app can only re-rate those dishes.
+        var known = entity.DishRatings.ToDictionary(x => x.DishId, x => x.DishNameSnapshot);
+        foreach (var d in InvoiceDishes(request.InvoiceDishes)) known.TryAdd(d.Key, d.Value);
+        var dishes = ReviewRules.NormalizeDishRatings(request.DishRatings?.Select(x => (x.DishId, x.Rating)), known);
+        if (tags is null || dishes is null) return Validation();
         entity.OverallRating = request.OverallRating; entity.FoodRating = request.FoodRating; entity.ServiceRating = request.ServiceRating;
-        entity.SpaceRating = request.SpaceRating; entity.Comment = Clean(request.Comment); entity.ImageUrlsJson = JsonSerializer.Serialize(request.ImageUrls ?? Array.Empty<string>()); entity.UpdatedAtUtc = DateTime.UtcNow;
-        await _db.SaveChangesAsync(ct); return Ok(MapReview(entity));
+        entity.SpaceRating = request.SpaceRating; entity.Comment = Clean(request.Comment); entity.ImageUrlsJson = JsonSerializer.Serialize(request.ImageUrls ?? Array.Empty<string>());
+        entity.TagsJson = JsonSerializer.Serialize(tags); entity.IsAnonymous = request.IsAnonymous; entity.UpdatedAtUtc = now;
+        _db.CustomerReviewDishRatings.RemoveRange(entity.DishRatings);
+        entity.DishRatings.Clear();
+        foreach (var d in dishes) entity.DishRatings.Add(new CustomerReviewDishRating { DishId = d.DishId, DishNameSnapshot = Trim(d.DishName, 200) ?? $"Món #{d.DishId}", Rating = d.Rating });
+        await _db.SaveChangesAsync(ct); return Ok(MapReview(entity, now));
     }
 
     [HttpDelete("customers/{customerId:int}/reviews/{reviewId:int}")]
@@ -205,7 +236,31 @@ public sealed class MobileEngagementController : ControllerBase
         var entity = await _db.CustomerReviews.FirstOrDefaultAsync(x => x.CustomerReviewId == reviewId, ct);
         if (entity is null) return NotFound(new { code = "review_not_found", message = "Không tìm thấy đánh giá." });
         if (entity.CustomerId != customerId) return StatusCode(403, new { code = "forbidden", message = "Bạn không sở hữu đánh giá này." });
+        if (!ReviewRules.CanEdit(entity.CreatedAtUtc, DateTime.UtcNow))
+            return Conflict(new { code = "review_edit_window_closed", message = "Chỉ xóa được đánh giá trong 24 giờ sau khi gửi." });
         _db.CustomerReviews.Remove(entity); await _db.SaveChangesAsync(ct); return NoContent();
+    }
+
+    /// <summary>
+    /// "Chi tiết món": average, count and the latest comments of one dish, from the stars guests gave that dish
+    /// (hidden reviews never count). Nothing yet = count 0 and average null ("Chưa có đánh giá").
+    /// </summary>
+    [HttpGet("dishes/{dishId:int}/review-summary")]
+    public async Task<ActionResult<object>> DishReviewSummary(int dishId, [FromQuery] int latest = 3, CancellationToken ct = default)
+    {
+        if (dishId <= 0) return Validation();
+        latest = Math.Clamp(latest, 0, 10);
+        var visible = _db.CustomerReviewDishRatings.AsNoTracking().Where(x => x.DishId == dishId && !x.Review.IsHidden);
+        var stars = await visible.Select(x => x.Rating).ToListAsync(ct);
+        var recent = await visible.OrderByDescending(x => x.Review.CreatedAtUtc)
+            .Select(x => new { x.Rating, x.Review.Comment, x.Review.IsAnonymous, x.Review.AuthorNameSnapshot, x.Review.CreatedAtUtc, x.Review.ReplyText, x.Review.TagsJson })
+            .Take(latest * 3).ToListAsync(ct);
+        var latestRows = recent.Where(x => Clean(x.Comment) is not null).Take(latest).Select(x => new
+        {
+            authorName = ReviewRules.PublicName(x.AuthorNameSnapshot, x.IsAnonymous), rating = x.Rating, comment = Clean(x.Comment),
+            tags = JsonSerializer.Deserialize<string[]>(x.TagsJson ?? "[]") ?? Array.Empty<string>(), x.CreatedAtUtc, replyText = Clean(x.ReplyText)
+        });
+        return Ok(new { dishId, count = stars.Count, average = ReviewRules.Average(stars), latest = latestRows });
     }
 
     [HttpGet("support/faqs")]
@@ -233,7 +288,24 @@ public sealed class MobileEngagementController : ControllerBase
     }
 
     private static object MapFavorite(CustomerFavorite x) => new { favoriteId = x.CustomerFavoriteId, x.DishId, dishName = x.DishNameSnapshot, x.CreatedAtUtc };
-    private static object MapReview(CustomerReview x) => new { reviewId = x.CustomerReviewId, x.InvoiceId, x.DiningSessionId, x.OverallRating, x.FoodRating, x.ServiceRating, x.SpaceRating, Comment = Clean(x.Comment), imageUrls = JsonSerializer.Deserialize<string[]>(x.ImageUrlsJson) ?? Array.Empty<string>(), x.CreatedAtUtc, x.UpdatedAtUtc };
+    private static object MapReview(CustomerReview x, DateTime nowUtc) => new
+    {
+        reviewId = x.CustomerReviewId, x.InvoiceId, x.DiningSessionId, x.BranchId, x.OverallRating, x.FoodRating, x.ServiceRating,
+        x.SpaceRating, Comment = Clean(x.Comment), imageUrls = JsonSerializer.Deserialize<string[]>(x.ImageUrlsJson) ?? Array.Empty<string>(),
+        tags = JsonSerializer.Deserialize<string[]>(x.TagsJson ?? "[]") ?? Array.Empty<string>(), x.IsAnonymous,
+        dishRatings = x.DishRatings.OrderBy(d => d.DishNameSnapshot).Select(d => new { d.DishId, dishName = d.DishNameSnapshot, d.Rating }),
+        canEdit = ReviewRules.CanEdit(x.CreatedAtUtc, nowUtc), editableUntilUtc = ReviewRules.EditableUntil(x.CreatedAtUtc),
+        replyText = Clean(x.ReplyText), x.RepliedAtUtc, x.IsHidden, hiddenReason = x.IsHidden ? x.HiddenReason : null,
+        x.CreatedAtUtc, x.UpdatedAtUtc
+    };
+    private static IReadOnlyDictionary<int, string> InvoiceDishes(IReadOnlyList<InvoiceDish>? dishes) =>
+        (dishes ?? Array.Empty<InvoiceDish>()).Where(x => x.DishId > 0).GroupBy(x => x.DishId)
+            .ToDictionary(g => g.Key, g => string.IsNullOrWhiteSpace(g.First().DishName) ? $"Món #{g.Key}" : g.First().DishName!.Trim());
+    private static string? Trim(string? value, int max)
+    {
+        var text = value?.Trim();
+        return string.IsNullOrEmpty(text) ? null : text.Length <= max ? text : text[..max];
+    }
     private static object MapSupport(SupportRequest x) => new { x.SupportRequestId, x.RequestCode, x.Category, x.Subject, x.Message, x.OrderId, x.ReservationId, x.PaymentId, x.Status, x.CreatedAtUtc, x.UpdatedAtUtc };
     private static bool ValidCommand(string? key, string? hash) => !string.IsNullOrWhiteSpace(key) && key.Length <= 140 && !string.IsNullOrWhiteSpace(hash) && hash.Length == 64;
     private static bool ValidReview(int overall, int food, int service, int space, string? comment, IReadOnlyList<string>? images) =>
@@ -253,7 +325,13 @@ public sealed class MobileEngagementController : ControllerBase
     public sealed record PaymentSucceededRequest(int PaymentId, int DiningSessionId, decimal Amount);
     public sealed record AddNotificationRequest(string EventName, int RefId, string Message, int? OrderId = null);
     public sealed record LoyaltyNotificationRequest(int PaymentId, int PointsBefore, int PointsEarned, int PointsAfter);
-    public sealed record CreateReviewRequest(int InvoiceId, int DiningSessionId, int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls, string IdempotencyKey, string RequestHash);
-    public sealed record UpdateReviewRequest(int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls);
+    public sealed record DishRatingInput(int DishId, int Rating);
+    public sealed record InvoiceDish(int DishId, string? DishName);
+    public sealed record CreateReviewRequest(int InvoiceId, int DiningSessionId, int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls, string IdempotencyKey, string RequestHash,
+        IReadOnlyList<string>? Tags = null, bool IsAnonymous = false, IReadOnlyList<DishRatingInput>? DishRatings = null,
+        int? BranchId = null, string? AuthorName = null, IReadOnlyList<InvoiceDish>? InvoiceDishes = null);
+    public sealed record UpdateReviewRequest(int OverallRating, int FoodRating, int ServiceRating, int SpaceRating, string? Comment, IReadOnlyList<string>? ImageUrls,
+        IReadOnlyList<string>? Tags = null, bool IsAnonymous = false, IReadOnlyList<DishRatingInput>? DishRatings = null,
+        IReadOnlyList<InvoiceDish>? InvoiceDishes = null);
     public sealed record CreateSupportRequest(string? Category, string? Subject, string? Message, int? OrderId, int? ReservationId, int? PaymentId, string IdempotencyKey, string RequestHash);
 }

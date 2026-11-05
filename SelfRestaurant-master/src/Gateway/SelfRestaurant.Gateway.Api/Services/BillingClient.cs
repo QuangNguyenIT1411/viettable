@@ -42,7 +42,8 @@ public sealed class BillingClient : ApiClientBase
         var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken("SelfRestaurant.Gateway", "SelfRestaurant.Billing.Cashier",
             new[] { new System.Security.Claims.Claim("employeeId", staff.EmployeeId.ToString()),
                 new System.Security.Claims.Claim("branchId", staff.BranchId.ToString()),
-                new System.Security.Claims.Claim("role", staff.RoleCode.ToUpperInvariant()) },
+                new System.Security.Claims.Claim("role", staff.RoleCode.ToUpperInvariant()),
+                new System.Security.Claims.Claim("name", staff.Name ?? string.Empty) },
             expires: DateTime.UtcNow.AddSeconds(30), signingCredentials: new Microsoft.IdentityModel.Tokens.SigningCredentials(
                 new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(key)), Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256));
         using var request = new HttpRequestMessage(method, path);
@@ -130,8 +131,27 @@ public sealed class BillingClient : ApiClientBase
     public Task<JsonElement> RetryMobilePaymentAsync(int paymentId, object request, CancellationToken ct) => PostForAsync<object, JsonElement>($"/api/internal/mobile/payments/{paymentId}/retry", request, ct);
     public Task<JsonElement> GetSessionInvoiceAsync(int sessionId, int customerId, CancellationToken ct) => GetRequiredAsync($"/api/internal/mobile/dining-sessions/{sessionId}/invoice?customerId={customerId}", "invoice_not_found", ct);
     public Task<JsonElement> GetInvoiceAsync(int invoiceId, int customerId, CancellationToken ct) => GetRequiredAsync($"/api/internal/mobile/invoices/{invoiceId}?customerId={customerId}", "invoice_not_found", ct);
-    public Task<JsonElement> GetCustomerInvoicesAsync(int customerId, int limit, CancellationToken ct) =>
-        GetRequiredAsync($"/api/internal/mobile/invoices?customerId={customerId}&limit={limit}", "invoice_history_unavailable", ct);
+    public Task<JsonElement> GetCustomerInvoicesAsync(int customerId, int limit, CancellationToken ct,
+        string? cursor = null, string? month = null, int? branchId = null, string? method = null, string? q = null)
+    {
+        var query = $"customerId={customerId}&limit={limit}";
+        if (!string.IsNullOrWhiteSpace(cursor)) query += "&cursor=" + Uri.EscapeDataString(cursor);
+        if (!string.IsNullOrWhiteSpace(month)) query += "&month=" + Uri.EscapeDataString(month);
+        if (branchId is > 0) query += "&branchId=" + branchId;
+        if (!string.IsNullOrWhiteSpace(method)) query += "&method=" + Uri.EscapeDataString(method);
+        if (!string.IsNullOrWhiteSpace(q)) query += "&q=" + Uri.EscapeDataString(q);
+        return GetRequiredAsync($"/api/internal/mobile/invoices?{query}", "invoice_history_unavailable", ct);
+    }
+
+    // ---- Service fee / VAT per branch (owner 05/11) ----
+    public Task<JsonElement> GetBranchChargesAsync(CancellationToken ct) =>
+        GetRequiredAsync("/api/internal/branch-charges", "branch_charges_unavailable", ct);
+    public async Task<JsonElement> SaveBranchChargesAsync(int branchId, object request, CancellationToken ct) =>
+        await PutForAsync<object, JsonElement>($"/api/internal/branch-charges/{branchId}", request, ct);
+
+    /// <summary>"PHIẾU THANH TOÁN" of one paid bill of the cashier's branch (positive = counter bill, negative = app invoice).</summary>
+    public Task<JsonElement> CashierReceiptAsync(StaffSessionUserDto staff, int billId, CancellationToken ct) =>
+        CashierRequestAsync(staff, HttpMethod.Get, $"/api/internal/cashier/receipts/{billId}", "Không tải được phiếu thanh toán.", ct);
 
     private async Task<JsonElement> GetRequiredAsync(string path, string code, CancellationToken ct)
     {

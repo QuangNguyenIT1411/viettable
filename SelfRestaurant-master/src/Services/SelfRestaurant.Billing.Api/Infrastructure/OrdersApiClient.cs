@@ -202,5 +202,6 @@ public sealed class OrdersApiClient
         int Quantity, decimal UnitPrice, decimal LineTotal);
     public sealed record DiningSessionCheckoutContext(int DiningSessionId, string DiningSessionCode, int CustomerId,
         int BranchId, int TableId, string Status, IReadOnlyList<int> OrderIds, decimal Subtotal,
-        IReadOnlyList<DiningSessionCheckoutItem> Items, int? ReservationId = null);
+        IReadOnlyList<DiningSessionCheckoutItem> Items, int? ReservationId = null, string? BranchName = null,
+        string? BranchAddress = null, string? TableName = null, DateTime? StartedAtUtc = null);
 }
