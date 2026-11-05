@@ -442,7 +442,7 @@
         <item name="tabIndicatorFullWidth">true</item>
         <item name="tabIndicatorAnimationMode">elastic</item>
         <item name="tabTextColor">@color/pd_tab_text</item>
-        <item name="tabSelectedTextColor">@color/pd_on_color</item>
+        <item name="tabSelectedTextColor">@color/pd_on_inverse</item>
         <item name="tabIconTint">@color/pd_tab_text</item>
         <item name="tabRippleColor">@color/transparent</item>
         <item name="tabTextAppearance">@style/TextAppearance.VietTable.Tab</item>
@@ -645,7 +645,7 @@
 
     <style name="Widget.VietTable.HomeChip.Selected">
         <item name="android:background">@drawable/pd_chip_selected</item>
-        <item name="android:textColor">@color/pd_on_color</item>
+        <item name="android:textColor">@color/pd_on_inverse</item>
     </style>
 
     <!-- Trang chủ quick action: small surface_2 tile with a label underneath. -->

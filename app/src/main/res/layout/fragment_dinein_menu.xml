@@ -137,7 +137,7 @@
                     android:importantForAccessibility="no"
                     android:padding="11dp"
                     android:src="@drawable/ic_cutlery"
-                    app:tint="@color/pd_yellow_text" />
+                    app:tint="@color/pd_yellow" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -172,7 +172,7 @@
                     android:paddingHorizontal="18dp"
                     android:text="@string/pd_dinein_cart_open"
                     android:backgroundTint="@color/pd_on_color"
-                    android:textColor="@color/pd_yellow_text"
+                    android:textColor="@color/pd_yellow"
                     app:backgroundTint="@color/pd_on_color" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

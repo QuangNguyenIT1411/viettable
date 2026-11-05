@@ -171,7 +171,7 @@
                             android:padding="13dp"
                             android:scaleType="fitCenter"
                             android:src="@drawable/ic_copy"
-                            app:tint="@color/pd_yellow_text" />
+                            app:tint="@color/pd_yellow" />
                     </LinearLayout>
 
                     <!-- QR on a white box with the scan bar running over it. -->
@@ -287,7 +287,7 @@
                             android:padding="13dp"
                             android:scaleType="fitCenter"
                             android:src="@drawable/ic_copy"
-                            app:tint="@color/pd_yellow_text" />
+                            app:tint="@color/pd_yellow" />
                     </LinearLayout>
                 </LinearLayout>
 

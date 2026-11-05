@@ -63,6 +63,7 @@
             android:paddingHorizontal="18dp"
             android:paddingVertical="10dp"
             android:text="Đưa mã QR vào giữa khung"
+            android:textColor="@color/pd_cream"
             android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
 
         <com.google.android.material.progressindicator.CircularProgressIndicator

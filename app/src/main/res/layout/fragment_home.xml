@@ -616,7 +616,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="@string/pd_home_chef_order"
                                     android:textAppearance="@style/TextAppearance.VietTable.Button"
-                                    android:textColor="@color/pd_text" />
+                                    android:textColor="@color/pd_cream" />
 
                                 <ImageView
                                     android:layout_width="44dp"
