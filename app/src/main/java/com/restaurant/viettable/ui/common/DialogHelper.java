@@ -24,7 +24,7 @@ public class DialogHelper {
         Context context = dialog.getContext();
         int positiveColor = isDestructive
                 ? ContextCompat.getColor(context, R.color.semantic_error)
-                : ContextCompat.getColor(context, R.color.primary);
+                : ContextCompat.getColor(context, R.color.pd_yellow_text);
         int secondaryColor = ContextCompat.getColor(context, R.color.text_secondary);
 
         Button positiveBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE);

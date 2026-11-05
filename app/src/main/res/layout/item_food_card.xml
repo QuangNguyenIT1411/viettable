@@ -68,7 +68,7 @@
                     android:layout_height="11dp"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_star"
-                    app:tint="@color/accent_gold" />
+                    app:tint="@color/pd_yellow_text" />
 
                 <TextView
                     android:id="@+id/tvFoodRating"
@@ -106,7 +106,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:fontFamily="@font/unbounded_bold"
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="15sp"
                 tools:text="89.000đ" />
 

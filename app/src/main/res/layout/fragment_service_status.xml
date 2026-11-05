@@ -50,7 +50,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_service_staff"
-                    app:tint="@color/colorInfo" />
+                    app:tint="@color/pd_mint_text" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -58,7 +58,7 @@
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
                     android:text="Nhân viên đã nhận thông báo và đang đến bàn hỗ trợ."
-                    android:textColor="@color/colorInfo"
+                    android:textColor="@color/pd_mint_text"
                     android:textSize="13sp" />
             </LinearLayout>
 

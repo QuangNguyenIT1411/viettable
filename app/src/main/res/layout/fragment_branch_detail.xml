@@ -45,7 +45,7 @@
                     android:background="@drawable/bg_round_floating_btn"
                     android:contentDescription="@string/a11y_back"
                     android:src="@drawable/ic_back"
-                    app:tint="@color/primary_dark" />
+                    app:tint="@color/pd_yellow_text" />
             </LinearLayout>
 
             <TextView
@@ -59,7 +59,7 @@
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="6dp"
                 tools:text="Đang mở cửa"
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </FrameLayout>
@@ -77,7 +77,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 tools:text="VietTable Hoàn Kiếm"
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
@@ -128,7 +128,7 @@
                 android:layout_height="wrap_content"
                 android:drawableStart="@drawable/ic_location"
                 android:drawablePadding="10dp"
-                android:drawableTint="@color/primary"
+                android:drawableTint="@color/pd_yellow_text"
                 tools:text="34 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
@@ -140,7 +140,7 @@
                 android:layout_marginTop="12dp"
                 android:drawableStart="@drawable/ic_phone"
                 android:drawablePadding="10dp"
-                android:drawableTint="@color/primary"
+                android:drawableTint="@color/pd_yellow_text"
                 tools:text="024 3938 1234"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
@@ -152,7 +152,7 @@
                 android:layout_marginTop="12dp"
                 android:drawableStart="@drawable/ic_clock"
                 android:drawablePadding="10dp"
-                android:drawableTint="@color/primary"
+                android:drawableTint="@color/pd_yellow_text"
                 tools:text="Giờ mở cửa: 10:00 - 22:30 (Thứ 2 - Chủ Nhật)"
                 android:textColor="@color/text_primary"
                 android:textSize="14sp" />
@@ -169,7 +169,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Giới thiệu không gian"
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -190,7 +190,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Tiện ích &amp; Dịch vụ"
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 

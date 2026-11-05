@@ -45,7 +45,7 @@
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="4dp"
                 tools:text="Đang mở cửa"
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="11sp" />
 
             <TextView
@@ -99,7 +99,7 @@
                         android:layout_height="16dp"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_star"
-                        app:tint="@color/accent_gold" />
+                        app:tint="@color/pd_yellow_text" />
 
                     <TextView
                         android:id="@+id/tvRating"

@@ -64,7 +64,7 @@
             android:shadowDy="2"
             android:shadowRadius="4"
             android:text="@string/app_name"
-            android:textColor="@color/primary"
+            android:textColor="@color/pd_yellow_text"
             android:textSize="36sp"
             android:textStyle="bold" />
 
@@ -83,7 +83,7 @@
             android:layout_marginTop="12dp"
             android:letterSpacing="0.05"
             android:text="@string/app_tagline"
-            android:textColor="@color/accent_gold_dark"
+            android:textColor="@color/pd_yellow_text"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -106,7 +106,7 @@
             android:id="@+id/pbSplashLoading"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:indeterminateTint="@color/primary" />
+            android:indeterminateTint="@color/pd_yellow_text" />
 
         <TextView
             android:id="@+id/tvSplashStatus"

@@ -28,7 +28,7 @@
                 android:layout_marginEnd="16dp"
                 android:fontFamily="@font/bricolage_medium"
                 android:text="Lịch sử yêu cầu"
-                android:textColor="@color/colorPrimary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="13sp" />
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
@@ -59,7 +59,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_service_staff"
-                    app:tint="@color/colorPrimary" />
+                    app:tint="@color/pd_yellow_text" />
 
                 <TextView
                     android:id="@+id/tvStaffTableInfo"
@@ -68,7 +68,7 @@
                     android:layout_marginStart="10dp"
                     android:fontFamily="@font/bricolage_medium"
                     android:text=""
-                    android:textColor="@color/colorPrimary"
+                    android:textColor="@color/pd_yellow_text"
                     android:textSize="14sp" />
             </LinearLayout>
 

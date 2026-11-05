@@ -70,7 +70,7 @@
                             android:layout_width="36dp"
                             android:layout_height="36dp"
                             android:src="@drawable/ic_qr_scan"
-                            app:tint="@color/colorPrimary" />
+                            app:tint="@color/pd_yellow_text" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -241,7 +241,7 @@
                             android:layout_width="36dp"
                             android:layout_height="36dp"
                             android:src="@drawable/ic_card"
-                            app:tint="@color/colorSecondary" />
+                            app:tint="@color/pd_yellow_text" />
 
                         <LinearLayout
                             android:layout_width="0dp"

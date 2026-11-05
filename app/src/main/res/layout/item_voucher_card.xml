@@ -29,7 +29,7 @@
                 android:backgroundTint="@color/pd_yellow_soft"
                 android:padding="8dp"
                 android:src="@drawable/ic_voucher"
-                app:tint="@color/colorSecondary" />
+                app:tint="@color/pd_yellow_text" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -86,7 +86,7 @@
                 android:layout_weight="1"
                 android:fontFamily="@font/bricolage_medium"
                 android:text=""
-                android:textColor="@color/colorPrimary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="12sp" />
 
             <TextView

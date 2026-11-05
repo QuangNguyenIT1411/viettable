@@ -46,7 +46,7 @@
                             android:id="@+id/tvInvoiceDetailCode"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textColor="@color/primary"
+                            android:textColor="@color/pd_yellow_text"
                             android:textSize="20sp"
                             android:textStyle="bold" />
                         <TextView
@@ -80,7 +80,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
                             android:gravity="end"
-                            android:textColor="@color/primary"
+                            android:textColor="@color/pd_yellow_text"
                             android:textSize="19sp"
                             android:textStyle="bold" />
                         <TextView

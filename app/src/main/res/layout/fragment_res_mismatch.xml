@@ -26,7 +26,7 @@
                 android:backgroundTint="@color/pd_red_soft"
                 android:padding="16dp"
                 android:src="@drawable/ic_warning"
-                app:tint="@color/colorError" />
+                app:tint="@color/pd_red_text" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -89,7 +89,7 @@
                                 android:layout_marginTop="4dp"
                                 android:fontFamily="@font/bricolage_medium"
                                 android:text=""
-                                android:textColor="@color/colorError"
+                                android:textColor="@color/pd_red_text"
                                 android:textSize="18sp" />
                         </LinearLayout>
 
@@ -121,7 +121,7 @@
                                 android:layout_marginTop="4dp"
                                 android:fontFamily="@font/bricolage_medium"
                                 android:text=""
-                                android:textColor="@color/colorPrimary"
+                                android:textColor="@color/pd_yellow_text"
                                 android:textSize="18sp" />
                         </LinearLayout>
                     </LinearLayout>

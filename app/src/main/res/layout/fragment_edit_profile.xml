@@ -48,7 +48,7 @@
                     android:backgroundTint="@color/pd_surface_2"
                     android:padding="16dp"
                     android:src="@drawable/ic_profile"
-                    app:tint="@color/colorPrimary" />
+                    app:tint="@color/pd_yellow_text" />
 
                 <TextView
                     android:id="@+id/btnChangeAvatar"
@@ -57,7 +57,7 @@
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/bricolage_medium"
                     android:text="Đổi ảnh đại diện"
-                    android:textColor="@color/colorPrimary"
+                    android:textColor="@color/pd_yellow_text"
                     android:textSize="13sp" />
             </LinearLayout>
 

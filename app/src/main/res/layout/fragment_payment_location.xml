@@ -67,7 +67,7 @@
                         android:backgroundTint="@color/pd_mint_soft"
                         android:padding="10dp"
                         android:src="@drawable/ic_table"
-                        app:tint="@color/colorPrimary" />
+                        app:tint="@color/pd_yellow_text" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -128,7 +128,7 @@
                         android:backgroundTint="@color/pd_yellow_soft"
                         android:padding="10dp"
                         android:src="@drawable/ic_card"
-                        app:tint="@color/colorSecondary" />
+                        app:tint="@color/pd_yellow_text" />
 
                     <LinearLayout
                         android:layout_width="0dp"

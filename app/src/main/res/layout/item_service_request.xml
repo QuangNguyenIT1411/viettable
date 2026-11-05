@@ -42,7 +42,7 @@
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="3dp"
                 android:text="ĐÃ HOÀN THÀNH"
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="11sp" />
         </LinearLayout>
 
@@ -72,7 +72,7 @@
             android:layout_gravity="end"
             android:layout_marginTop="4dp"
             android:text="Hủy yêu cầu"
-            android:textColor="@color/colorError"
+            android:textColor="@color/pd_red_text"
             android:visibility="gone" />
 
     </LinearLayout>

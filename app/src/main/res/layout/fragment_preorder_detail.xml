@@ -47,7 +47,7 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/ic_clock"
-                    app:tint="@color/colorInfo" />
+                    app:tint="@color/pd_mint_text" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -61,7 +61,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/bricolage_medium"
                         android:text="Trạng thái: Chờ Check-in"
-                        android:textColor="@color/colorInfo"
+                        android:textColor="@color/pd_mint_text"
                         android:textSize="14sp" />
 
                     <TextView
@@ -163,7 +163,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
                             android:text="340.000 đ"
-                            android:textColor="@color/colorSecondary"
+                            android:textColor="@color/pd_yellow_text"
                             android:textSize="17sp" />
                     </LinearLayout>
                 </LinearLayout>

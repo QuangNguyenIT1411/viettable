@@ -26,7 +26,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/a11y_back"
             android:src="@drawable/ic_back"
-            app:tint="@color/primary" />
+            app:tint="@color/pd_yellow_text" />
 
         <TextView
             android:layout_width="0dp"
@@ -34,7 +34,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="@string/branch_title"
-            android:textColor="@color/primary"
+            android:textColor="@color/pd_yellow_text"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -46,7 +46,7 @@
             android:contentDescription="Xem bản đồ chi nhánh"
             android:src="@drawable/ic_location"
             android:visibility="gone"
-            app:tint="@color/accent_gold" />
+            app:tint="@color/pd_yellow_text" />
     </LinearLayout>
 
     <!-- Search Box -->

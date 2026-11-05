@@ -51,7 +51,7 @@
         android:paddingHorizontal="16dp"
         android:paddingVertical="8dp"
         android:text=""
-        android:textColor="@color/colorPrimary"
+        android:textColor="@color/pd_yellow_text"
         android:textSize="14sp" />
 
 </LinearLayout>

@@ -31,7 +31,7 @@
             android:contentDescription="@string/a11y_back"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_back"
-                app:tint="@color/primary" />
+                app:tint="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="0dp"
@@ -101,7 +101,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Mã đặt bàn: #RES-8899"
-                        android:textColor="@color/primary"
+                        android:textColor="@color/pd_yellow_text"
                         android:textSize="15sp"
                         android:textStyle="bold" />
 

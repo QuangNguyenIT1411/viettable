@@ -58,7 +58,7 @@
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
                 android:text="Vị trí của bạn"
-                android:textColor="@color/primary_dark"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="10sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -77,7 +77,7 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:src="@drawable/ic_location"
-                app:tint="@color/primary" />
+                app:tint="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -86,7 +86,7 @@
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
                 android:text=""
-                android:textColor="@color/primary_dark"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -105,7 +105,7 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:src="@drawable/ic_location"
-                app:tint="@color/primary" />
+                app:tint="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -114,7 +114,7 @@
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="2dp"
                 android:text=""
-                android:textColor="@color/primary_dark"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="10sp" />
         </LinearLayout>
     </FrameLayout>
@@ -139,7 +139,7 @@
             android:background="@drawable/bg_badge"
             android:contentDescription="@string/a11y_back"
             android:src="@drawable/ic_back"
-            app:tint="@color/primary_dark" />
+            app:tint="@color/pd_yellow_text" />
 
         <View
             android:layout_width="0dp"
@@ -153,7 +153,7 @@
             android:paddingHorizontal="14dp"
             android:paddingVertical="8dp"
             android:text="Bản đồ chi nhánh gần bạn"
-            android:textColor="@color/primary_dark"
+            android:textColor="@color/pd_yellow_text"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -183,7 +183,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text=""
-                android:textColor="@color/primary"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 

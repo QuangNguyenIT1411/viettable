@@ -31,7 +31,7 @@
                     android:backgroundTint="@color/pd_yellow_soft"
                     android:padding="16dp"
                     android:src="@drawable/ic_table"
-                    app:tint="@color/colorSecondary" />
+                    app:tint="@color/pd_yellow_text" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -82,7 +82,7 @@
                             android:layout_weight="1"
                             android:fontFamily="@font/bricolage_medium"
                             android:text=""
-                            android:textColor="@color/colorPrimary"
+                            android:textColor="@color/pd_yellow_text"
                             android:textSize="18sp" />
 
                         <TextView
@@ -94,7 +94,7 @@
                             android:paddingHorizontal="10dp"
                             android:paddingVertical="4dp"
                             android:text="Bàn trống"
-                            android:textColor="@color/colorSuccess"
+                            android:textColor="@color/pd_mint_text"
                             android:textSize="12sp" />
                     </LinearLayout>
 

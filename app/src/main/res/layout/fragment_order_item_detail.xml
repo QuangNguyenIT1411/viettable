@@ -57,7 +57,7 @@
                         android:backgroundTint="@color/pd_surface_2"
                         android:padding="16dp"
                         android:src="@drawable/ic_cutlery"
-                        app:tint="@color/colorPrimary" />
+                        app:tint="@color/pd_yellow_text" />
 
                     <TextView
                         android:id="@+id/tvItemDetailName"
@@ -76,7 +76,7 @@
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/bricolage_medium"
                         android:text="129.000 đ"
-                        android:textColor="@color/colorSecondary"
+                        android:textColor="@color/pd_yellow_text"
                         android:textSize="17sp" />
 
                     <TextView
@@ -90,7 +90,7 @@
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="5dp"
                         android:text="TRẠNG THÁI: SẴN SÀNG LÊN MÓN"
-                        android:textColor="@color/colorSuccess"
+                        android:textColor="@color/pd_mint_text"
                         android:textSize="12sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

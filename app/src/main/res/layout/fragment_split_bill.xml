@@ -64,7 +64,7 @@
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/bricolage_medium"
                         android:text="--"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/pd_yellow_text"
                         android:textSize="24sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -181,7 +181,7 @@
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/bricolage_medium"
                         android:text="203.400 đ / người"
-                        android:textColor="@color/colorSecondary"
+                        android:textColor="@color/pd_yellow_text"
                         android:textSize="22sp" />
 
                     <!-- Preview only. Payment is created from the server-confirmed part below. -->
