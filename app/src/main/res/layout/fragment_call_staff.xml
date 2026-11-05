@@ -27,7 +27,7 @@
                 android:layout_gravity="end"
                 android:layout_marginEnd="16dp"
                 android:fontFamily="@font/bricolage_medium"
-                android:text="Lịch sử yêu cầu"
+                android:text="Lịch sử"
                 android:textColor="@color/pd_yellow_text"
                 android:textSize="13sp" />
         </com.google.android.material.appbar.MaterialToolbar>

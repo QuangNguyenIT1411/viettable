@@ -135,7 +135,13 @@
                             style="@style/Widget.VietTable.Button.Secondary"
                             android:layout_width="44dp"
                             android:layout_height="44dp"
-                            android:padding="0dp"
+                            android:paddingTop="0dp"
+                            android:paddingBottom="0dp"
+                            android:paddingStart="0dp"
+                            android:paddingEnd="0dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
                             android:text="-"
                             android:textSize="18sp" />
 
@@ -154,7 +160,13 @@
                             style="@style/Widget.VietTable.Button.Secondary"
                             android:layout_width="44dp"
                             android:layout_height="44dp"
-                            android:padding="0dp"
+                            android:paddingTop="0dp"
+                            android:paddingBottom="0dp"
+                            android:paddingStart="0dp"
+                            android:paddingEnd="0dp"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:minWidth="0dp"
                             android:text="+"
                             android:textSize="18sp" />
                     </LinearLayout>
@@ -214,7 +226,8 @@
             android:id="@+id/btnCancelWalkin"
             style="@style/Widget.VietTable.Button.Text"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
             android:layout_marginTop="4dp"
             android:text="Hủy / Quét lại" />
     </LinearLayout>

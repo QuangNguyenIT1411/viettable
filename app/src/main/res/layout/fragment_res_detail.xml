@@ -255,7 +255,8 @@
                     android:id="@+id/btnChangeRes"
                     style="@style/Widget.VietTable.Button.Ghost"
                     android:layout_width="0dp"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="56dp"
                     android:layout_marginEnd="6dp"
                     android:layout_weight="1"
                     android:text="@string/res_change_cta" />
@@ -264,7 +265,8 @@
                     android:id="@+id/btnCancelRes"
                     style="@style/Widget.VietTable.Button.Red"
                     android:layout_width="0dp"
-                    android:layout_height="56dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="56dp"
                     android:layout_marginStart="6dp"
                     android:layout_weight="1"
                     android:text="@string/res_cancel_cta" />

@@ -13,8 +13,8 @@
         android:layout_height="wrap_content"
         android:minHeight="56dp"
         android:tag="safe_top"
-        android:background="@color/surface"
-        android:elevation="2dp"
+        android:background="@color/pd_bg"
+        android:elevation="0dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp">
@@ -26,7 +26,7 @@
             android:contentDescription="@string/a11y_back"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_back"
-            app:tint="@color/pd_yellow_text" />
+            app:tint="@color/pd_text" />
 
         <TextView
             android:layout_width="0dp"
@@ -34,7 +34,7 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="@string/branch_change"
-            android:textColor="@color/pd_yellow_text"
+            android:textColor="@color/pd_text"
             android:textSize="18sp"
             android:textStyle="bold" />
     </LinearLayout>

@@ -17,7 +17,7 @@
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_back"
             app:navigationIconTint="@color/colorTextPrimary"
-            app:title="Phương thức tại nhà hàng"
+            app:title="Cách thanh toán"
             app:titleTextColor="@color/colorTextPrimary" />
     </com.google.android.material.appbar.AppBarLayout>
 

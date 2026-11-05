@@ -18,7 +18,7 @@
             app:navigationIcon="@drawable/ic_back"
             app:navigationContentDescription="@string/a11y_back"
             app:navigationIconTint="@color/colorTextPrimary"
-            app:title="Trạng thái hỗ trợ tại bàn"
+            app:title="Yêu cầu hỗ trợ"
             app:titleTextColor="@color/colorTextPrimary" />
     </com.google.android.material.appbar.AppBarLayout>
 

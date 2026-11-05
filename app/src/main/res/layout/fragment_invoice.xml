@@ -426,7 +426,8 @@
             android:id="@+id/btnProceedToPaymentType"
             style="@style/Widget.VietTable.Button.Primary.Arrow"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="wrap_content"
+            android:minHeight="60dp"
             android:text="Chọn phương thức thanh toán" />
 
         <com.google.android.material.button.MaterialButton

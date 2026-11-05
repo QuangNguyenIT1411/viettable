@@ -116,7 +116,7 @@ public class ReceiptHistoryAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         String meta = ReceiptText.cardMeta(r);
         b.tvHistoryInvoiceMeta.setText(meta.isEmpty() ? when : when + "\n" + meta);
         b.tvHistoryInvoicePayment.setVisibility(View.GONE);
-        b.tvHistoryInvoiceTotal.setText("Tổng thanh toán  " + ReceiptText.money(r.totalAmount));
+        b.tvHistoryInvoiceTotal.setText("Tổng cộng  " + ReceiptText.money(r.totalAmount));
         b.cardInvoiceHistory.setContentDescription(StatusLabels.invoiceTitle(r.invoiceId, r.invoiceCode) + ", " + when + ", "
                 + ReceiptText.money(r.totalAmount));
         b.cardInvoiceHistory.setOnClickListener(v -> { if (listener != null) listener.onReceiptClick(r); });
