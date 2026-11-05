@@ -15,6 +15,7 @@ import com.restaurant.viettable.model.Reservation;
 import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 
+import com.restaurant.viettable.util.ReservationChangeRules;
 import com.restaurant.viettable.util.ReservationSchedule;
 
 import java.time.LocalDate;
@@ -78,6 +79,7 @@ public class ResChangeFragment extends BaseFragment {
             selectedTime = reservation.getTimeSlot();
             guests = reservation.getGuestCount();
             binding.tvChangeGuestCount.setText(String.valueOf(guests));
+            binding.etChangeNote.setText(ReservationChangeRules.prefilledNote(reservation.getNote()));
 
             // Same days and slots as a new booking; the reservation's own day and time stay selected (it used to
             // offer only 18:30–20:00, forcing a lunch booking into the evening).
@@ -123,7 +125,7 @@ public class ResChangeFragment extends BaseFragment {
 
             binding.btnSubmitChange.setOnClickListener(v -> {
                 if (selectedTime == null) { showToast("Ngày này đã hết giờ nhận đặt bàn. Vui lòng chọn ngày khác."); return; }
-                String note = binding.etChangeNote.getText() != null ? binding.etChangeNote.getText().toString().trim() : "";
+                String note = ReservationChangeRules.noteToSend(binding.etChangeNote.getText());
                 // The table is confirmed on the map (item 5); the current one stays selected while it is free.
                 navigateTo(ResTableLayoutFragment.forChange(reservation, selectedDate, selectedTime, guests, note));
             });
