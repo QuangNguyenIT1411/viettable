@@ -1,5 +1,6 @@
 package com.restaurant.viettable.data;
 
+import androidx.annotation.Nullable;
 import com.restaurant.viettable.BuildConfig;
 import com.restaurant.viettable.network.ApiClient;
 import com.restaurant.viettable.network.ApiException;
@@ -440,9 +441,17 @@ public final class MobileRepository {
         });
     }
 
-    public void updateProfile(String name, String phone, String email, Callback<User> callback) {
+    /**
+     * The server replaces the whole profile with the request, so the birthday, gender and address the profile already
+     * has are always sent back (a null birthday clears it on purpose only when the guest removed it).
+     */
+    public void updateProfile(String name, String phone, String email, @Nullable String dateOfBirth, Callback<User> callback) {
         try {
-            JSONObject body = new JSONObject().put("name", name).put("phoneNumber", phone).put("email", email);
+            User current = state.getCurrentUser();
+            JSONObject body = new JSONObject().put("name", name).put("phoneNumber", phone).put("email", email)
+                    .put("dateOfBirth", dateOfBirth == null ? JSONObject.NULL : dateOfBirth)
+                    .put("gender", current == null || current.getGender() == null ? JSONObject.NULL : current.getGender())
+                    .put("address", current == null || current.getAddress() == null ? JSONObject.NULL : current.getAddress());
             api().put("/api/mobile/v1/me", body, true, null, new ApiClient.Callback() {
                 @Override public void onSuccess(Object value) {
                     User user = parseProfile((JSONObject) value);
@@ -1096,6 +1105,69 @@ public final class MobileRepository {
         }));
     }
 
+    /** One page of "Hoá đơn của tôi" (owner 05/11): newest first, filtered on the server; nextCursor null = last page. */
+    public static final class InvoicePage {
+        public final List<com.restaurant.viettable.model.Receipt> items;
+        public final String nextCursor;
+        InvoicePage(List<com.restaurant.viettable.model.Receipt> items, String nextCursor) { this.items = items; this.nextCursor = nextCursor; }
+    }
+
+    public void loadInvoicePage(@Nullable String month, int branchId, @Nullable String method, @Nullable String query,
+                                @Nullable String cursor, int limit, Callback<InvoicePage> callback) {
+        StringBuilder path = new StringBuilder("/api/mobile/v1/invoices?limit=").append(Math.max(1, Math.min(100, limit)));
+        if (month != null && !month.isEmpty()) path.append("&month=").append(encode(month));
+        if (branchId > 0) path.append("&branchId=").append(branchId);
+        if (method != null && !method.isEmpty()) path.append("&method=").append(encode(method));
+        if (query != null && !query.trim().isEmpty()) path.append("&q=").append(encode(query.trim()));
+        if (cursor != null && !cursor.isEmpty()) path.append("&cursor=").append(encode(cursor));
+        api().get(path.toString(), true, tableAware(new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject page = (JSONObject) body;
+                JSONArray rows = page.optJSONArray("items");
+                List<com.restaurant.viettable.model.Receipt> items = new ArrayList<>();
+                if (rows != null) for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.optJSONObject(i);
+                    if (row != null) items.add(withBranchFallback(com.restaurant.viettable.model.Receipt.fromJson(row)));
+                }
+                callback.onSuccess(new InvoicePage(items, SafeText.json(page, "nextCursor", null)));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        }));
+    }
+
+    public void loadReceipt(int invoiceId, Callback<com.restaurant.viettable.model.Receipt> callback) {
+        api().get("/api/mobile/v1/invoices/" + invoiceId, true, tableAware(new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                callback.onSuccess(withBranchFallback(com.restaurant.viettable.model.Receipt.fromJson((JSONObject) body)));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        }));
+    }
+
+    /** Old invoices (before 05/11) have no branch snapshot: show the branch's current name and address from the server's list. */
+    private com.restaurant.viettable.model.Receipt withBranchFallback(com.restaurant.viettable.model.Receipt receipt) {
+        if (receipt.branchName == null && receipt.branchId > 0) {
+            Branch branch = state.findBranch(String.valueOf(receipt.branchId));
+            if (branch != null) {
+                receipt.branchName = SafeText.clean(branch.getName()).isEmpty() ? null : branch.getName();
+                if (receipt.branchAddress == null && !SafeText.clean(branch.getAddress()).isEmpty()) receipt.branchAddress = branch.getAddress();
+            }
+        }
+        return receipt;
+    }
+
+    private static String encode(String value) {
+        try { return java.net.URLEncoder.encode(value, "UTF-8"); } catch (java.io.UnsupportedEncodingException e) { return value; }
+    }
+
+    /** "Chi tiết món": average, count and latest comments of a dish from real reviews (owner 05/11). */
+    public void loadDishReviewSummary(String dishId, Callback<JSONObject> callback) {
+        api().get("/api/mobile/v1/dishes/" + encode(dishId) + "/reviews/summary", false, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) { callback.onSuccess((JSONObject) body); }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void loadInvoiceHistoryItem(int invoiceId, Callback<InvoiceHistoryItem> callback) {
         api().get("/api/mobile/v1/invoices/" + invoiceId, true, tableAware(new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
@@ -1284,9 +1356,15 @@ public final class MobileRepository {
         });
     }
 
+    /** Quick tags the server allows on a review ("Ngon", "Nhanh"…), as last sent with the guest's reviews. */
+    private final List<String> reviewTags = new ArrayList<>();
+    public List<String> reviewTags() { return new ArrayList<>(reviewTags); }
+
     public void loadReviews(Callback<List<Review>> callback) {
         api().get("/api/mobile/v1/me/reviews", true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
+                JSONArray tags = ((JSONObject) body).optJSONArray("tags");
+                if (tags != null) { reviewTags.clear(); for (int i = 0; i < tags.length(); i++) { String tag = SafeText.json(tags, i); if (!tag.isEmpty()) reviewTags.add(tag); } }
                 JSONArray rows = ((JSONObject) body).optJSONArray("items"); List<Review> result = new ArrayList<>();
                 if (rows != null) for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i); if (row != null) result.add(parseReview(row));
@@ -1297,12 +1375,10 @@ public final class MobileRepository {
         });
     }
 
-    public void createReview(int invoiceId, int rating, String comment, Callback<Review> callback) {
+    public void createReview(int invoiceId, com.restaurant.viettable.model.ReviewDraft draft, Callback<Review> callback) {
         if (invoiceId <= 0) { callback.onError(new ApiException(0, "invoice_required", "Chưa có hóa đơn hoàn tất để đánh giá.", null)); return; }
         try {
-            JSONObject body = new JSONObject().put("invoiceId", invoiceId).put("overallRating", rating)
-                    .put("foodRating", rating).put("serviceRating", rating).put("spaceRating", rating)
-                    .put("comment", ReviewInputPolicy.commentPayload(comment)).put("imageUrls", new JSONArray());
+            JSONObject body = reviewBody(draft).put("invoiceId", invoiceId).put("imageUrls", new JSONArray());
             api().post("/api/mobile/v1/reviews", body, true, stableKey("reviewcreate", String.valueOf(invoiceId)), new ApiClient.Callback() {
                 @Override public void onSuccess(Object body) { callback.onSuccess(parseReview((JSONObject) body)); }
                 @Override public void onError(ApiException error) { callback.onError(error); }
@@ -1310,18 +1386,28 @@ public final class MobileRepository {
         } catch (JSONException e) { callback.onError(jsonError()); }
     }
 
-    public void updateReview(Review review, int rating, String comment, Callback<Review> callback) {
+    public void updateReview(Review review, com.restaurant.viettable.model.ReviewDraft draft, Callback<Review> callback) {
         if (review == null || review.getReviewId() <= 0) { callback.onError(new ApiException(0, "review_required", "Không tìm thấy đánh giá cần sửa.", null)); return; }
         try {
-            JSONObject body = new JSONObject().put("overallRating", rating)
-                    .put("foodRating", review.getFoodRating()).put("serviceRating", review.getServiceRating())
-                    .put("spaceRating", review.getSpaceRating()).put("comment", ReviewInputPolicy.commentPayload(comment))
+            JSONObject body = reviewBody(draft).put("invoiceId", review.getInvoiceId())
                     .put("imageUrls", new JSONArray(review.getImageUrls()));
             api().put("/api/mobile/v1/reviews/" + review.getReviewId(), body, true, null, new ApiClient.Callback() {
                 @Override public void onSuccess(Object body) { callback.onSuccess(parseReview((JSONObject) body)); }
                 @Override public void onError(ApiException error) { callback.onError(error); }
             });
         } catch (JSONException error) { callback.onError(jsonError()); }
+    }
+
+    /** The guest's own choices only: each criterion as picked, dish stars, tags, anonymous (owner 05/11). */
+    static JSONObject reviewBody(com.restaurant.viettable.model.ReviewDraft draft) throws JSONException {
+        JSONArray dishes = new JSONArray();
+        for (java.util.Map.Entry<Integer, Integer> entry : draft.dishRatings.entrySet())
+            if (entry.getValue() != null && entry.getValue() >= 1 && entry.getValue() <= 5)
+                dishes.put(new JSONObject().put("dishId", entry.getKey()).put("rating", entry.getValue()));
+        return new JSONObject().put("overallRating", draft.overall).put("foodRating", draft.food)
+                .put("serviceRating", draft.service).put("spaceRating", draft.space)
+                .put("comment", ReviewInputPolicy.commentPayload(draft.comment))
+                .put("tags", new JSONArray(draft.tags)).put("isAnonymous", draft.anonymous).put("dishRatings", dishes);
     }
 
     public void deleteReview(int reviewId, Callback<Void> callback) {
@@ -1586,9 +1672,13 @@ public final class MobileRepository {
     }
 
     private User parseProfile(JSONObject row) {
-        return new User(String.valueOf(row.optInt("customerId")), SafeText.json(row, "name"),
+        User user = new User(String.valueOf(row.optInt("customerId")), SafeText.json(row, "name"),
                 SafeText.json(row, "email"), SafeText.json(row, "phoneNumber"), SafeText.json(row, "membershipTier", "Thành viên"),
                 row.optInt("loyaltyPoints"), null);
+        user.setDateOfBirth(SafeText.json(row, "dateOfBirth", null));
+        user.setGender(SafeText.json(row, "gender", null));
+        user.setAddress(SafeText.json(row, "address", null));
+        return user;
     }
 
     private Reservation parseReservation(JSONObject row) {
@@ -1694,6 +1784,8 @@ public final class MobileRepository {
                 0, 0, voucher, points, Math.round(quote.optDouble("totalAmount")), "Chưa chọn", "", SafeText.json(quote, "expiresAtUtc"));
         invoice.setTableLabel(session == null ? "Chưa có thông tin bàn" : session.getTableLabel());
         invoice.setDepositApplied(Math.round(quote.optDouble("depositApplied", 0)));
+        invoice.setCharges(quote.optDouble("serviceFeePercent", 0), Math.round(quote.optDouble("serviceFeeAmount", 0)),
+                quote.optDouble("vatPercent", 0), Math.round(quote.optDouble("vatAmount", 0)));
         invoice.setPromotion(quote.isNull("promotionName") ? null : SafeText.json(quote, "promotionName", null),
                 Math.round(quote.optDouble("promotionDiscount", 0)),
                 quote.isNull("discountNote") ? null : SafeText.json(quote, "discountNote", null));
@@ -1761,13 +1853,26 @@ public final class MobileRepository {
                 SafeText.json(row, "paymentUrl", null), SafeText.json(row, "providerExpiresAtUtc", null));
     }
 
-    private static Review parseReview(JSONObject row) {
+    static Review parseReview(JSONObject row) {
         JSONArray images = row.optJSONArray("imageUrls"); List<String> imageUrls = new ArrayList<>();
         if (images != null) for (int i = 0; i < images.length(); i++) imageUrls.add(SafeText.json(images, i));
-        return new Review(row.optInt("reviewId"), row.optInt("invoiceId"), row.optInt("diningSessionId"),
+        Review review = new Review(row.optInt("reviewId"), row.optInt("invoiceId"), row.optInt("diningSessionId"),
                 row.optInt("overallRating"), row.optInt("foodRating"), row.optInt("serviceRating"),
                 row.optInt("spaceRating"), SafeText.json(row, "comment", null), imageUrls,
                 SafeText.json(row, "createdAtUtc", null), SafeText.json(row, "updatedAtUtc", null));
+        List<String> tags = new ArrayList<>();
+        JSONArray tagRows = row.optJSONArray("tags");
+        if (tagRows != null) for (int i = 0; i < tagRows.length(); i++) { String tag = SafeText.json(tagRows, i); if (!tag.isEmpty()) tags.add(tag); }
+        List<Review.DishRating> dishes = new ArrayList<>();
+        JSONArray dishRows = row.optJSONArray("dishRatings");
+        if (dishRows != null) for (int i = 0; i < dishRows.length(); i++) {
+            JSONObject dish = dishRows.optJSONObject(i);
+            if (dish != null) dishes.add(new Review.DishRating(dish.optInt("dishId"), SafeText.json(dish, "dishName"), dish.optInt("rating")));
+        }
+        review.setDetails(tags, dishes, row.optBoolean("isAnonymous"), row.optBoolean("canEdit"),
+                SafeText.json(row, "editableUntilUtc", null), SafeText.json(row, "replyText", null),
+                SafeText.json(row, "repliedAtUtc", null), row.optBoolean("isHidden"), SafeText.json(row, "hiddenReason", null));
+        return review;
     }
 
     public static Reservation.Status reservationStatus(String value) {

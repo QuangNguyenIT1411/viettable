@@ -43,11 +43,14 @@ public class EditProfileFragment extends BaseFragment {
             binding.etEditName.setText(SafeText.clean(user.getFullName()));
             binding.etEditPhone.setText(SafeText.clean(user.getPhone()));
             binding.etEditEmail.setText(SafeText.clean(user.getEmail()));
+            birthday = user.getDateOfBirth();
         }
-
-        binding.btnChangeAvatar.setOnClickListener(v -> {
-            showToast("Chọn ảnh đại diện mới từ thiết bị");
-        });
+        // Birthday from the server's profile (no made-up date); empty until the guest picks one.
+        showBirthday();
+        binding.etEditBirthday.setOnClickListener(v -> pickBirthday());
+        // No server field for food preferences / allergies and no avatar upload yet: hidden instead of pretending.
+        binding.tilEditDietary.setVisibility(View.GONE);
+        binding.btnChangeAvatar.setVisibility(View.GONE);
 
         binding.btnSaveProfile.setOnClickListener(v -> {
             String name = binding.etEditName.getText() != null ? binding.etEditName.getText().toString().trim() : "";
@@ -60,7 +63,7 @@ public class EditProfileFragment extends BaseFragment {
             }
 
             binding.btnSaveProfile.setEnabled(false);
-            MobileRepository.getInstance().updateProfile(name, phone, email, new MobileRepository.Callback<User>() {
+            MobileRepository.getInstance().updateProfile(name, phone, email, birthday, new MobileRepository.Callback<User>() {
                 @Override public void onSuccess(User value) {
                     if (binding == null) return;
                     binding.btnSaveProfile.setEnabled(true);
@@ -74,6 +77,30 @@ public class EditProfileFragment extends BaseFragment {
                 }
             });
         });
+    }
+
+    /** yyyy-MM-dd as the server keeps it; null = none. */
+    private String birthday;
+
+    private void showBirthday() {
+        binding.etEditBirthday.setText(birthday == null ? "" : com.restaurant.viettable.util.DisplayFormatters.date(birthday));
+    }
+
+    private void pickBirthday() {
+        long selection = com.google.android.material.datepicker.MaterialDatePicker.todayInUtcMilliseconds();
+        try {
+            if (birthday != null) selection = java.time.LocalDate.parse(birthday).atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli();
+        } catch (Exception ignored) { }
+        com.google.android.material.datepicker.MaterialDatePicker<Long> picker = com.google.android.material.datepicker.MaterialDatePicker.Builder
+                .datePicker().setTitleText("Ngày sinh").setSelection(selection)
+                .setCalendarConstraints(new com.google.android.material.datepicker.CalendarConstraints.Builder()
+                        .setValidator(com.google.android.material.datepicker.DateValidatorPointBackward.now()).build())
+                .build();
+        picker.addOnPositiveButtonClickListener(value -> {
+            birthday = java.time.Instant.ofEpochMilli(value).atZone(java.time.ZoneOffset.UTC).toLocalDate().toString();
+            if (binding != null) showBirthday();
+        });
+        picker.show(getChildFragmentManager(), "birthday");
     }
 
     @Override

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -75,7 +76,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/bricolage_medium"
-                        android:text="129.000 đ"
+                        tools:text="129.000 đ"
                         android:textColor="@color/pd_yellow_text"
                         android:textSize="17sp" />
 
@@ -139,7 +140,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
-                            android:text="1 phần"
+                            tools:text="1 phần"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="13sp" />
                     </LinearLayout>
@@ -185,7 +186,7 @@
                             android:id="@+id/tvItemDetailCreatedAt"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="19:15"
+                            tools:text="19:15"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="13sp" />
                     </LinearLayout>

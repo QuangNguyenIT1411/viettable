@@ -216,6 +216,39 @@
                         tools:text="Dinh dưỡng: 520 kcal." />
                 </LinearLayout>
 
+                <!-- Reviews of this dish from real guests (owner 05/11): average, count, latest comments; filled by
+                     FoodDetailFragment from the server ("Chưa có đánh giá" when there are none). -->
+                <TextView
+                    android:id="@+id/tvDishReviewHeading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:text="Đánh giá của khách"
+                    android:textAppearance="@style/TextAppearance.VietTable.Label" />
+
+                <LinearLayout
+                    android:id="@+id/layoutDishReviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/pd_card_surface_row"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/tvDishReviewSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Đang tải đánh giá…"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutDishReviewList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
+
                 <!-- Options: headings are small uppercase labels; chips come from the dish's own data. -->
                 <TextView
                     android:id="@+id/tvSizeHeading"

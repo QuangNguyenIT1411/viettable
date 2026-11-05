@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files other apps may open through FileProvider: only the generated "PHIẾU THANH TOÁN" PDFs (owner 05/11). -->
+<paths>
+    <cache-path name="receipts" path="receipts/" />
+    <external-files-path name="downloads" path="Download/" />
+</paths>

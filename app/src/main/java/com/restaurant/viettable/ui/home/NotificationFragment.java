@@ -64,7 +64,7 @@ public class NotificationFragment extends BaseFragment {
             } else if (item.getType() == NotificationItem.Type.ORDER) {
                 navigateTo(new CurrentOrdersFragment());
             } else if (item.getType() == NotificationItem.Type.PAYMENT) {
-                navigateTo(OrderHistoryFragment.newInstance(OrderHistoryFragment.TAB_INVOICES));
+                navigateTo(com.restaurant.viettable.ui.payment.InvoiceHistoryFragment.newInstance());
             } else if (item.getType() == NotificationItem.Type.PROMOTION) {
                 navigateTo(new CustomerVoucherFragment());
             }

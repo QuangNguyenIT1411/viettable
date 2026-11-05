@@ -36,6 +36,8 @@ public class InvoiceFragment extends BaseFragment {
 
     private long subtotal = 0;
     private long serviceFee = 0;
+    private double serviceFeePercent = 0;
+    private double vatPercent = 0;
     private long tax = 0;
     private long voucherDiscount = 0;
     private long loyaltyDiscount = 0;
@@ -93,6 +95,8 @@ public class InvoiceFragment extends BaseFragment {
 
         subtotal = serverQuote.getSubtotal();
         serviceFee = serverQuote.getServiceFee();
+        serviceFeePercent = serverQuote.getServiceFeePercent();
+        vatPercent = serverQuote.getVatPercent();
         tax = serverQuote.getTax();
 
         binding.layoutInvoiceItems.removeAllViews();
@@ -265,7 +269,13 @@ public class InvoiceFragment extends BaseFragment {
         }
 
         binding.tvInvoiceSubtotal.setText(String.format(Locale.GERMANY, "%,dđ", subtotal));
+        // Rows only when the branch charges them; the percentage is the quote's (owner 05/11).
+        double feePercent = serviceFeePercent;
+        binding.layoutInvoiceServiceFee.setVisibility(serviceFee > 0 || feePercent > 0 ? View.VISIBLE : View.GONE);
+        binding.tvInvoiceServiceFeeLabel.setText("Phí phục vụ (" + com.restaurant.viettable.util.ReceiptText.percent(feePercent) + ")");
         binding.tvInvoiceServiceFee.setText(String.format(Locale.GERMANY, "%,dđ", serviceFee));
+        binding.layoutInvoiceVat.setVisibility(tax > 0 || vatPercent > 0 ? View.VISIBLE : View.GONE);
+        binding.tvInvoiceVatLabel.setText("VAT (" + com.restaurant.viettable.util.ReceiptText.percent(vatPercent) + ")");
         binding.tvInvoiceVat.setText(String.format(Locale.GERMANY, "%,dđ", tax));
         binding.tvInvoiceGrandTotal.setText(String.format(Locale.GERMANY, "%,dđ", finalTotal));
     }

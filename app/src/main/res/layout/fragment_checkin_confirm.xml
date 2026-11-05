@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -101,7 +102,7 @@
                                 android:id="@+id/tvTableSubtitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Tầng 1 • Khu Trong nhà • 4 người"
+                                tools:text="Tầng 1 • Khu Trong nhà • 4 người"
                                 android:textColor="@color/colorTextSecondary"
                                 android:textSize="13sp" />
                         </LinearLayout>
@@ -144,7 +145,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
-                            android:text="#RES-8821"
+                            tools:text="#RES-8821"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -167,7 +168,7 @@
                             android:id="@+id/tvCheckinTime"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="19:00 - Hôm nay"
+                            tools:text="19:00 - Hôm nay"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -242,7 +243,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:lineSpacingExtra="2dp"
-                            android:text="3 món ăn đặt trước sẽ tự động được gửi tới bộ phận Bếp sau khi quý khách xác nhận vào bàn."
+                            tools:text="3 món ăn đặt trước sẽ tự động được gửi tới bộ phận Bếp sau khi quý khách xác nhận vào bàn."
                             android:textColor="@color/pd_yellow_text"
                             android:textSize="12sp" />
                     </LinearLayout>

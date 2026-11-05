@@ -118,7 +118,8 @@ public class LoyaltySelectFragment extends BaseFragment {
                         applying = false;
                         if (binding == null) return;
                         com.restaurant.viettable.util.LoyaltyApplyRules.Outcome outcome =
-                                com.restaurant.viettable.util.LoyaltyApplyRules.ofServerQuote(quote.getLoyaltyDiscount());
+                                com.restaurant.viettable.util.LoyaltyApplyRules.ofServerQuote(quote.getLoyaltyDiscount(),
+                                        conversion == null ? 0 : conversion.maxPercent);
                         if (outcome.applied()) {
                             showToast(outcome.message);
                             navigateTo(InvoiceFragment.newInstance());

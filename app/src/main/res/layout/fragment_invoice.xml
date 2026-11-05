@@ -120,17 +120,20 @@
                         tools:text="540.000đ" />
                 </LinearLayout>
 
+                <!-- Service fee / VAT rows (owner 05/11): label with the quote's percentage, hidden at 0%. -->
                 <LinearLayout
+                    android:id="@+id/layoutInvoiceServiceFee"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:visibility="gone">
 
                     <TextView
+                        android:id="@+id/tvInvoiceServiceFeeLabel"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Phí phục vụ"
                         android:textAppearance="@style/TextAppearance.VietTable.Body"
                         android:textColor="@color/pd_muted" />
 
@@ -143,16 +146,18 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/layoutInvoiceVat"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:visibility="gone">
 
                     <TextView
+                        android:id="@+id/tvInvoiceVatLabel"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Thuế VAT"
                         android:textAppearance="@style/TextAppearance.VietTable.Body"
                         android:textColor="@color/pd_muted" />
 

@@ -29,14 +29,16 @@ public final class DepositRules {
     }
 
     public static String policyNote(DepositPolicy policy) {
-        int hours = policy == null || policy.getRefundCutoffHours() <= 0 ? 2 : policy.getRefundCutoffHours();
-        return "Tiền cọc được trừ vào hóa đơn khi dùng bữa. Hủy trước giờ đến từ " + hours
-                + " giờ được hoàn cọc (nhà hàng hoàn thủ công); hủy sát giờ hoặc không đến sẽ mất cọc.";
+        int hours = policy == null ? 0 : policy.getRefundCutoffHours();
+        String cutoff = hours > 0 ? "Hủy trước giờ đến từ " + hours + " giờ" : "Hủy đủ sớm theo quy định của nhà hàng";
+        return "Tiền cọc được trừ vào hóa đơn khi dùng bữa. " + cutoff
+                + " được hoàn cọc (nhà hàng hoàn thủ công); hủy sát giờ hoặc không đến sẽ mất cọc.";
     }
 
     /** "Điều khoản dịch vụ": the deposit sentence only while the server asks for one. */
     public static String termsText(DepositPolicy policy) {
-        String hold = "VietTable giữ bàn trong vòng 15 phút sau giờ đặt. ";
+        // The hold time belongs to each booking (server: arrival window), so the terms do not state a number.
+        String hold = "VietTable giữ bàn cho quý khách trong khung giờ đến của lịch đặt. ";
         String change = "Quý khách có thể hủy hoặc đổi lịch đặt bàn ngay trong ứng dụng.";
         if (policy == null || !policy.isEnabled() || policy.getMinGuests() <= 0 || policy.getPerGuestVnd() <= 0)
             return hold + "Đặt bàn hiện không cần đặt cọc; " + Character.toLowerCase(change.charAt(0)) + change.substring(1);

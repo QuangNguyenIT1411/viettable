@@ -37,7 +37,7 @@ import java.util.List;
 public class OrderHistoryFragment extends BaseFragment implements AppStateManager.StateChangeListener {
 
     private FragmentOrderHistoryBinding binding;
-    private final List<InvoiceHistoryItem> invoiceHistory = new ArrayList<>();
+    private final List<com.restaurant.viettable.model.Receipt> invoiceHistory = new ArrayList<>();
     private boolean invoiceHistoryLoading;
     private boolean invoiceHistoryLoaded;
     private String invoiceHistoryError;
@@ -180,8 +180,11 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
                 binding.rvPastOrders.setVisibility(View.VISIBLE);
                 binding.layoutEmptyPast.setVisibility(View.GONE);
                 binding.rvPastOrders.setLayoutManager(new LinearLayoutManager(requireContext()));
-                binding.rvPastOrders.setAdapter(new InvoiceHistoryAdapter(invoiceHistory,
-                        invoice -> navigateTo(InvoiceHistoryDetailFragment.newInstance(invoice.getInvoiceId()))));
+                com.restaurant.viettable.adapter.ReceiptHistoryAdapter receipts = new com.restaurant.viettable.adapter.ReceiptHistoryAdapter(
+                        receipt -> navigateTo(InvoiceHistoryDetailFragment.newInstance(receipt.invoiceId)));
+                receipts.setAction("Tìm & lọc hoá đơn", () -> navigateTo(com.restaurant.viettable.ui.payment.InvoiceHistoryFragment.newInstance()));
+                receipts.submit(invoiceHistory, false);
+                binding.rvPastOrders.setAdapter(receipts);
             } else {
                 binding.rvPastOrders.setVisibility(View.GONE);
                 binding.layoutEmptyPast.setVisibility(View.VISIBLE);
@@ -219,12 +222,12 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
         invoiceHistoryLoading = true;
         invoiceHistoryError = null;
         renderCurrentTab();
-        MobileRepository.getInstance().loadInvoiceHistory(new MobileRepository.Callback<List<InvoiceHistoryItem>>() {
-            @Override public void onSuccess(List<InvoiceHistoryItem> value) {
+        MobileRepository.getInstance().loadInvoicePage(null, 0, null, null, null, 20, new MobileRepository.Callback<MobileRepository.InvoicePage>() {
+            @Override public void onSuccess(MobileRepository.InvoicePage value) {
                 invoiceHistoryLoading = false;
                 invoiceHistoryLoaded = true;
                 invoiceHistoryError = null;
-                invoiceHistory.clear(); invoiceHistory.addAll(value);
+                invoiceHistory.clear(); invoiceHistory.addAll(value.items);
                 if (binding != null) renderCurrentTab();
             }
             @Override public void onError(ApiException error) {

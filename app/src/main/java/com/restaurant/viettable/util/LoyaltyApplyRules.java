@@ -45,12 +45,18 @@ public final class LoyaltyApplyRules {
 
     /** The server accepted the request: success only when it really took money off. */
     public static Outcome ofServerQuote(long loyaltyDiscountVnd) {
+        return ofServerQuote(loyaltyDiscountVnd, 0);
+    }
+
+    /** {@code maxPercent} is the server's cap ("maxPointsDiscountPercent"); 0 = not told, so no number is shown. */
+    public static Outcome ofServerQuote(long loyaltyDiscountVnd, int maxPercent) {
         if (loyaltyDiscountVnd > 0) {
             return new Outcome(Kind.APPLIED, loyaltyDiscountVnd, null,
                     String.format(Locale.GERMANY, "Đã áp dụng −%,dđ", loyaltyDiscountVnd));
         }
+        String cap = maxPercent > 0 ? " và tối đa " + maxPercent + "% hóa đơn" : " và có giới hạn theo hóa đơn";
         return new Outcome(Kind.ZERO, 0, "Chưa dùng được điểm",
-                "Hóa đơn này chưa trừ được điểm: điểm chỉ đổi theo từng bước tròn và tối đa 10% hóa đơn. "
+                "Hóa đơn này chưa trừ được điểm: điểm chỉ đổi theo từng bước tròn" + cap + ". "
                         + "Hóa đơn chưa thay đổi.");
     }
 

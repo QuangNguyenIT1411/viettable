@@ -49,6 +49,18 @@ public class Invoice implements Serializable {
     public void setTableLabel(String label) { tableLabel = label; }
     public long getSubtotal() { return subtotal; }
     public long getServiceFee() { return serviceFee; }
+
+    // Service fee / VAT as the server priced this quote (owner 05/11); percentages from the quote, never written in the app.
+    private double serviceFeePercent;
+    private double vatPercent;
+    public double getServiceFeePercent() { return serviceFeePercent; }
+    public double getVatPercent() { return vatPercent; }
+    public void setCharges(double serviceFeePercent, long serviceFee, double vatPercent, long tax) {
+        this.serviceFeePercent = serviceFeePercent;
+        this.serviceFee = serviceFee;
+        this.vatPercent = vatPercent;
+        this.tax = tax;
+    }
     public long getTax() { return tax; }
     public long getVoucherDiscount() { return voucherDiscount; }
     public long getLoyaltyDiscount() { return loyaltyDiscount; }

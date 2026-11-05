@@ -45,4 +45,54 @@ public final class Review implements Serializable {
     public List<String> getImageUrls() { return Collections.unmodifiableList(imageUrls); }
     public String getCreatedAtUtc() { return createdAtUtc; }
     public String getUpdatedAtUtc() { return updatedAtUtc; }
+
+    /** Stars one dish of the invoice got in this review (owner 05/11). */
+    public static final class DishRating implements Serializable {
+        public final int dishId;
+        public final String dishName;
+        public final int rating;
+
+        public DishRating(int dishId, String dishName, int rating) {
+            this.dishId = dishId;
+            this.dishName = dishName;
+            this.rating = rating;
+        }
+    }
+
+    // Filled from the server's review (owner 05/11); defaults describe a review from before the upgrade.
+    private final ArrayList<String> tags = new ArrayList<>();
+    private final ArrayList<DishRating> dishRatings = new ArrayList<>();
+    private boolean anonymous;
+    private boolean canEdit;
+    private String editableUntilUtc;
+    private String replyText;
+    private String repliedAtUtc;
+    private boolean hidden;
+    private String hiddenReason;
+
+    public List<String> getTags() { return Collections.unmodifiableList(tags); }
+    public List<DishRating> getDishRatings() { return Collections.unmodifiableList(dishRatings); }
+    public boolean isAnonymous() { return anonymous; }
+    /** True for 24 hours after the review was sent (server's clock). */
+    public boolean canEdit() { return canEdit; }
+    public String getEditableUntilUtc() { return editableUntilUtc; }
+    public String getReplyText() { return replyText; }
+    public String getRepliedAtUtc() { return repliedAtUtc; }
+    public boolean isHidden() { return hidden; }
+    public String getHiddenReason() { return hiddenReason; }
+
+    public void setDetails(List<String> tags, List<DishRating> dishRatings, boolean anonymous, boolean canEdit,
+                           String editableUntilUtc, String replyText, String repliedAtUtc, boolean hidden, String hiddenReason) {
+        this.tags.clear();
+        if (tags != null) this.tags.addAll(tags);
+        this.dishRatings.clear();
+        if (dishRatings != null) this.dishRatings.addAll(dishRatings);
+        this.anonymous = anonymous;
+        this.canEdit = canEdit;
+        this.editableUntilUtc = editableUntilUtc;
+        this.replyText = replyText;
+        this.repliedAtUtc = repliedAtUtc;
+        this.hidden = hidden;
+        this.hiddenReason = hiddenReason;
+    }
 }

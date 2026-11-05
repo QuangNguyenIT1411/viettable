@@ -100,8 +100,9 @@ public class FoodDetailFragment extends BaseFragment {
             binding.tvFoodName.setText(foodItem.getName());
             binding.tvFoodPrice.setText(HomeDisplayRules.exactShortPrice(foodItem.getPrice()));
             binding.tvFoodPrice.setContentDescription(foodItem.getFormattedPrice());
-            binding.tvFoodRating.setText(foodItem.getRating() + " (" + foodItem.getSoldCount() + " đã bán)");
-            binding.layoutFoodRating.setVisibility(foodItem.getRating() > 0 ? View.VISIBLE : View.GONE);
+            // Stars come from real reviews of this dish (owner 05/11), filled by loadReviewSummary(); hidden until then.
+            binding.layoutFoodRating.setVisibility(View.GONE);
+            loadReviewSummary(foodItem.getId());
             binding.tvDescription.setText(SafeText.clean(foodItem.getDescription()));
             binding.tvDescription.setVisibility(SafeText.isBlank(foodItem.getDescription()) ? View.GONE : View.VISIBLE);
             binding.tvIngredients.setText("Thành phần: " + SafeText.clean(foodItem.getIngredients()));
@@ -247,6 +248,48 @@ public class FoodDetailFragment extends BaseFragment {
                 & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
         androidx.core.view.WindowCompat.getInsetsController(getActivity().getWindow(), getActivity().getWindow().getDecorView())
                 .setAppearanceLightStatusBars(dark || !night);
+    }
+
+    /** Average, count and the newest comments of this dish from the server; "Chưa có đánh giá" when there are none. */
+    private void loadReviewSummary(String dishId) {
+        com.restaurant.viettable.data.MobileRepository.getInstance().loadDishReviewSummary(dishId,
+                new com.restaurant.viettable.data.MobileRepository.Callback<org.json.JSONObject>() {
+            @Override public void onSuccess(org.json.JSONObject summary) {
+                if (binding == null) return;
+                int count = summary.optInt("count");
+                double average = summary.isNull("average") ? 0 : summary.optDouble("average", 0);
+                binding.layoutDishReviewList.removeAllViews();
+                if (count <= 0 || average <= 0) {
+                    binding.tvDishReviewSummary.setText("Chưa có đánh giá");
+                    binding.layoutFoodRating.setVisibility(View.GONE);
+                    return;
+                }
+                String avg = String.valueOf(average).replace('.', ',');
+                binding.tvDishReviewSummary.setText("★ " + avg + " / 5 · " + count + " lượt đánh giá");
+                binding.tvFoodRating.setText(avg + " (" + count + ")");
+                binding.layoutFoodRating.setVisibility(View.VISIBLE);
+                org.json.JSONArray latest = summary.optJSONArray("latest");
+                if (latest != null) for (int i = 0; i < latest.length(); i++) {
+                    org.json.JSONObject row = latest.optJSONObject(i);
+                    if (row == null) continue;
+                    android.widget.TextView view = new android.widget.TextView(requireContext());
+                    androidx.core.widget.TextViewCompat.setTextAppearance(view, R.style.TextAppearance_VietTable_Body);
+                    String author = SafeText.json(row, "authorName", "Khách hàng");
+                    String text = "★" + row.optInt("rating") + " · " + author + "\n" + SafeText.json(row, "comment");
+                    String reply = SafeText.json(row, "replyText", null);
+                    if (reply != null) text += "\nNhà hàng: " + reply;
+                    view.setText(text);
+                    int pad = Math.round(10 * getResources().getDisplayMetrics().density);
+                    view.setPadding(0, pad, 0, 0);
+                    binding.layoutDishReviewList.addView(view);
+                }
+            }
+            @Override public void onError(com.restaurant.viettable.network.ApiException error) {
+                if (binding == null) return;
+                binding.tvDishReviewHeading.setVisibility(View.GONE);
+                binding.layoutDishReviews.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void updateFavoriteIcon() {

@@ -224,7 +224,7 @@
                         android:maxLines="1"
                         android:minHeight="52dp"
                         android:paddingHorizontal="8dp"
-                        android:text="1.000 điểm" />
+                        tools:text="1.000 điểm" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnQuick2000"
@@ -236,7 +236,7 @@
                         android:maxLines="1"
                         android:minHeight="52dp"
                         android:paddingHorizontal="8dp"
-                        android:text="2.000 điểm" />
+                        tools:text="2.000 điểm" />
                 </LinearLayout>
 
                 <com.google.android.material.button.MaterialButton

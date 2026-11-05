@@ -11,6 +11,19 @@ public class User implements Serializable {
     private int loyaltyPoints;
     private String defaultBranchId;
 
+    // From the server's profile (owner 05/11): sent back unchanged on "Lưu" so saving the name never wipes them
+    // (the server replaces every field of the profile with what the request carries).
+    private String dateOfBirth; // yyyy-MM-dd or null
+    private String gender;
+    private String address;
+
+    public String getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
     public User() {}
 
     public User(String id, String fullName, String email, String phone, String memberTier, int loyaltyPoints, String defaultBranchId) {

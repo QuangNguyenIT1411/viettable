@@ -173,8 +173,6 @@
     <string name="payment_btn_force_checkout">Vẫn yêu cầu thanh toán</string>
     <string name="payment_invoice_title">Hóa đơn bàn</string>
     <string name="payment_subtotal">Tạm tính</string>
-    <string name="payment_service_fee">Phí phục vụ (5%)</string>
-    <string name="payment_vat">Thuế VAT (8%)</string>
     <string name="payment_voucher_discount">Giảm giá voucher</string>
     <string name="payment_loyalty_discount">Trừ điểm Loyalty</string>
     <string name="payment_total">Tổng thanh toán</string>

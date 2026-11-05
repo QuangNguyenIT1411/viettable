@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -147,7 +148,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
                             android:gravity="center"
-                            android:text="3"
+                            tools:text="3"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="22sp" />
 
@@ -180,7 +181,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/bricolage_medium"
-                        android:text="203.400 đ / người"
+                        tools:text="203.400 đ / người"
                         android:textColor="@color/pd_yellow_text"
                         android:textSize="22sp" />
 
