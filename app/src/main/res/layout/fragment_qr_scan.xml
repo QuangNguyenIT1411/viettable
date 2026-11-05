@@ -32,11 +32,18 @@
             app:implementationMode="performance"
             app:scaleType="fillCenter" />
 
+        <!-- The viewfinder and its hint live in the room left under the header (QrScanFragment.fitViewfinder), never behind it. -->
+        <LinearLayout
+            android:id="@+id/scanArea"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical">
+
         <FrameLayout
             android:id="@+id/viewfinderBorder"
             android:layout_width="260dp"
             android:layout_height="260dp"
-            android:layout_centerInParent="true"
             android:background="@drawable/pd_qr_corners">
 
             <View
@@ -48,16 +55,23 @@
                 android:background="@drawable/pd_scan_line"
                 android:importantForAccessibility="no"
                 android:visibility="gone" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressCamera"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="@color/pd_yellow" />
         </FrameLayout>
 
         <TextView
             android:id="@+id/tvScanHint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/viewfinderBorder"
-            android:layout_centerHorizontal="true"
             android:layout_marginHorizontal="24dp"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/pd_pill_dark"
             android:gravity="center"
             android:paddingHorizontal="18dp"
@@ -65,15 +79,7 @@
             android:text="Đưa mã QR vào giữa khung"
             android:textColor="@color/pd_cream"
             android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
-
-        <com.google.android.material.progressindicator.CircularProgressIndicator
-            android:id="@+id/progressCamera"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_centerInParent="true"
-            android:indeterminate="true"
-            android:visibility="gone"
-            app:indicatorColor="@color/pd_yellow" />
+        </LinearLayout>
     </RelativeLayout>
 
     <!-- Title, camera state and permission controls. -->
@@ -84,8 +90,8 @@
         android:background="@drawable/pd_fade_top"
         android:orientation="vertical"
         android:paddingHorizontal="@dimen/pd_screen_margin"
-        android:paddingTop="20dp"
-        android:paddingBottom="36dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="28dp"
         android:tag="safe_top">
 
         <TextView
@@ -102,21 +108,21 @@
             android:layout_marginTop="8dp"
             android:accessibilityHeading="true"
             android:text="Quét mã QR tại bàn"
-            android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+            android:textAppearance="@style/TextAppearance.VietTable.Display.L" />
 
         <TextView
             android:id="@+id/tvCameraStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:text="Đang kiểm tra quyền camera..."
             android:textAppearance="@style/TextAppearance.VietTable.Body"
-            android:textColor="@color/pd_muted" />
+            android:textColor="@color/pd_text" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="12dp"
             android:orientation="vertical">
 
             <com.google.android.material.button.MaterialButton

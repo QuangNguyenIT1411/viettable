@@ -57,6 +57,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
     private boolean cameraStarted;
     private boolean cameraStartRequested;
     private boolean manualEntryMode;
+    private boolean keyboardUp;
     private int manualPanelBaseBottomMargin;
     private final AtomicBoolean frameInFlight = new AtomicBoolean(false);
     private final AtomicBoolean qrConsumed = new AtomicBoolean(false);
@@ -117,10 +118,10 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
             int navigationBottom = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
             int extraBottom = Math.max(0, imeBottom - navigationBottom);
             // With the keyboard up the code card rises over the header: keep only the title above it.
-            int headerExtras = imeBottom > 0 ? View.GONE : View.VISIBLE;
+            keyboardUp = imeBottom > 0;
             if (binding != null) {
-                binding.tvCameraStatus.setVisibility(headerExtras);
-                binding.btnToggleManualEntry.setVisibility(headerExtras);
+                showStatus();
+                binding.btnToggleManualEntry.setVisibility(keyboardUp ? View.GONE : View.VISIBLE);
             }
             ViewGroup.LayoutParams raw = panel.getLayoutParams();
             if (raw instanceof CoordinatorLayout.LayoutParams) {
@@ -130,13 +131,49 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
             }
             return windowInsets;
         });
+        // The header can change height (a status line, a bigger system font): the viewfinder always fits below it.
+        binding.qrHeader.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> v.post(this::fitViewfinder));
+        binding.cameraContainer.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> v.post(this::fitViewfinder));
         ensureCameraPermission();
+    }
+
+    /** Sizes the viewfinder (260 dp, smaller only when there is no room) in the space under the header. */
+    private void fitViewfinder() {
+        if (binding == null) return;
+        int top = binding.qrHeader.getBottom();
+        int containerHeight = binding.cameraContainer.getHeight();
+        if (containerHeight <= 0 || top <= 0) return;
+        float density = getResources().getDisplayMetrics().density;
+        int hint = binding.tvScanHint.getHeight() + (int) (16 * density);
+        int room = containerHeight - top - hint - (int) (16 * density);
+        int size = Math.max((int) (140 * density), Math.min((int) (260 * density),
+                Math.min(room, binding.cameraContainer.getWidth() - (int) (48 * density))));
+        if (binding.scanArea.getPaddingTop() != top) binding.scanArea.setPadding(0, top, 0, 0);
+        ViewGroup.LayoutParams params = binding.viewfinderBorder.getLayoutParams();
+        if (params.height != size) {
+            params.width = size;
+            params.height = size;
+            binding.viewfinderBorder.setLayoutParams(params);
+            if (scanMotion != null) { stopScanMotion(); startScanMotion(); }
+        }
+    }
+
+    /** The status line is only there when it says something the hint on the viewfinder does not. */
+    private void showStatus() {
+        if (binding == null) return;
+        boolean empty = android.text.TextUtils.isEmpty(binding.tvCameraStatus.getText());
+        binding.tvCameraStatus.setVisibility(empty || keyboardUp ? View.GONE : View.VISIBLE);
+    }
+
+    private void setStatus(CharSequence text) {
+        if (binding == null) return;
+        binding.tvCameraStatus.setText(text);
+        showStatus();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        setStatusBarLightIcons(true);
         if (binding == null) return;
 
         // Returning from validation (including a real API rejection) must make the scanner
@@ -161,7 +198,6 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
     @Override
     public void onPause() {
         stopCamera();
-        setStatusBarLightIcons(false);
         super.onPause();
     }
 
@@ -218,7 +254,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
 
     private void showCameraPermissionUnavailable(boolean permanentlyDenied) {
         if (binding == null) return;
-        binding.tvCameraStatus.setText(permanentlyDenied
+        setStatus(permanentlyDenied
                 ? "Quyền camera đang bị tắt. Bạn vẫn có thể nhập mã bàn thủ công."
                 : "Cần quyền camera để quét QR. Bạn vẫn có thể nhập mã bàn thủ công.");
         binding.tvScanHint.setText("Camera chưa được cấp quyền");
@@ -309,7 +345,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
         hideKeyboard();
         stopScanMotion();
         binding.progressCamera.setVisibility(View.VISIBLE);
-        binding.tvCameraStatus.setText("Đã đọc QR. Đang xác thực mã bàn...");
+        setStatus("Đã đọc QR. Đang xác thực mã bàn...");
         binding.tvScanHint.setText("Đang xác thực");
         binding.btnSubmitTableCode.setEnabled(false);
         navigateTo(QrValidationFragment.newInstance(code));
@@ -319,7 +355,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
         if (binding == null) return;
         binding.progressCamera.setVisibility(View.VISIBLE);
         binding.btnCameraPermission.setVisibility(View.GONE);
-        binding.tvCameraStatus.setText("Đang khởi tạo camera...");
+        setStatus("Đang khởi tạo camera...");
         binding.tvScanHint.setText("Vui lòng chờ");
     }
 
@@ -327,7 +363,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
         if (binding == null) return;
         binding.progressCamera.setVisibility(View.GONE);
         binding.btnCameraPermission.setVisibility(View.GONE);
-        binding.tvCameraStatus.setText("Camera đang hoạt động. Đưa QR trên bàn vào giữa khung.");
+        setStatus(null); // the hint on the viewfinder says it
         binding.tvScanHint.setText("Đưa mã QR vào giữa khung");
         startScanMotion();
     }
@@ -337,7 +373,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
         if (binding == null || scanMotion != null) return;
         if (!com.restaurant.viettable.util.PdMotion.enabled(requireContext())) return;
         binding.viewQrScanLine.setVisibility(View.VISIBLE);
-        float travel = (260 - 56 - 24) * getResources().getDisplayMetrics().density;
+        float travel = binding.viewfinderBorder.getLayoutParams().height - (56 + 24) * getResources().getDisplayMetrics().density;
         scanMotion = android.animation.ObjectAnimator.ofFloat(binding.viewQrScanLine, View.TRANSLATION_Y, 0f, travel);
         scanMotion.setDuration(1800);
         scanMotion.setRepeatMode(android.animation.ValueAnimator.REVERSE);
@@ -355,8 +391,8 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
         if (binding == null) return;
         binding.cameraContainer.setVisibility(View.VISIBLE);
         binding.progressCamera.setVisibility(View.GONE);
-        binding.tvCameraStatus.setText(message);
-        binding.tvScanHint.setText("Có thể nhập mã bàn bên dưới");
+        setStatus(message);
+        binding.tvScanHint.setText("Có thể nhập mã bàn thủ công");
     }
 
     private void showManualMode(boolean focusInput) {
@@ -367,7 +403,7 @@ public class QrScanFragment extends BaseFragment implements com.restaurant.viett
         binding.btnToggleManualEntry.setText("Quét mã QR");
         binding.cameraContainer.setVisibility(View.GONE);
         binding.manualEntryCard.setVisibility(View.VISIBLE);
-        binding.tvCameraStatus.setText(hasCameraPermission()
+        setStatus(hasCameraPermission()
                 ? "Nhập mã bàn được in bên dưới QR để tiếp tục."
                 : "Camera không khả dụng; bạn vẫn có thể nhập mã bàn.");
         if (focusInput) {
