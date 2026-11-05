@@ -443,8 +443,10 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     @Override
     public void setStatusBarLightIcons(boolean isLightIcons) {
         if (insetsController != null) {
-            // Every screen sits on the page colour, so the icons follow the look (dark icons on Sáng, light on Tối).
-            applySystemBarIcons();
+            // true = a dark screen (camera): light icons whatever the look; false = the page colour's own choice
+            // (dark icons on Sáng, light on Tối).
+            if (isLightIcons) insetsController.setAppearanceLightStatusBars(false);
+            else applySystemBarIcons();
         }
     }
 

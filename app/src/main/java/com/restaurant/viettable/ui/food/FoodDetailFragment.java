@@ -237,11 +237,16 @@ public class FoodDetailFragment extends BaseFragment {
                 });
     }
 
-    /** MainActivity keeps the system icons light on purpose; this one screen is yellow on top, so it asks for dark ones itself and gives them back on leaving. */
+    /**
+     * The page colour decides the system icons (light on Tối, dark on Sáng); this screen is yellow on top in both, so it
+     * asks for dark ones itself and gives the page's own choice back on leaving.
+     */
     private void darkStatusIcons(boolean dark) {
         if (getActivity() == null) return;
+        boolean night = (getResources().getConfiguration().uiMode
+                & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
         androidx.core.view.WindowCompat.getInsetsController(getActivity().getWindow(), getActivity().getWindow().getDecorView())
-                .setAppearanceLightStatusBars(dark);
+                .setAppearanceLightStatusBars(dark || !night);
     }
 
     private void updateFavoriteIcon() {
