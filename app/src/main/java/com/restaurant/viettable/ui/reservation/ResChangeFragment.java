@@ -74,7 +74,7 @@ public class ResChangeFragment extends BaseFragment {
         }
 
         if (reservation != null) {
-            binding.tvResChangeId.setText("Mã đặt bàn: #" + reservation.getId());
+            binding.tvResChangeId.setText("Mã đặt bàn #" + reservation.getId());
             selectedDate = reservation.getDate();
             selectedTime = reservation.getTimeSlot();
             guests = reservation.getGuestCount();

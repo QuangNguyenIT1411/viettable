@@ -1,166 +1,193 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<!-- "Thay đổi đặt bàn" in the "Phố đêm" style (05/11): back circle, label + big title, Label section headings,
+     day/time chips (built in ResChangeFragment), guest stepper like Chi tiết món, note input, yellow arrow button
+     pinned at the bottom. Colours come from pd_* tokens, so Sáng and Tối both follow. View IDs are kept. -->
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_cream"
-    android:fillViewport="true">
+    android:background="@color/pd_bg">
 
-    <LinearLayout
+    <View
+        android:layout_width="440dp"
+        android:layout_height="440dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-200dp"
+        android:layout_marginEnd="-200dp"
+        android:background="@drawable/pd_glow_yellow"
+        android:importantForAccessibility="no" />
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <!-- Top Bar -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="56dp"
-            android:tag="safe_top"
-            android:background="@color/surface"
-            android:elevation="2dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp">
-
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/a11y_back"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_back"
-                app:tint="@color/pd_yellow_text" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="Thay đổi đặt bàn"
-                android:textColor="@color/pd_yellow_text"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:tag="safe_top">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:paddingTop="12dp"
+            android:paddingBottom="140dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="@dimen/pd_screen_margin"
+                android:background="@drawable/pd_circle_surface2"
+                android:contentDescription="@string/a11y_back"
+                android:padding="12dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back"
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvResChangeId"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Mã đặt bàn: #RES-8899"
-                android:textColor="@color/pd_yellow_text"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow_text" />
 
-            <!-- Change Date -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Đổi ngày dùng bữa"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="8dp"
+                android:accessibilityHeading="true"
+                android:text="Thay đổi đặt bàn"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:text="Ngày dùng bữa"
+                android:textAppearance="@style/TextAppearance.VietTable.Label" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupChangeDate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="10dp"
+                app:chipSpacingHorizontal="8dp"
                 app:singleSelection="true" />
 
-            <!-- Change Time -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Đổi khung giờ"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:text="Khung giờ"
+                android:textAppearance="@style/TextAppearance.VietTable.Label" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupChangeTime"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="10dp"
+                app:chipSpacingHorizontal="8dp"
                 app:singleSelection="true" />
 
-            <!-- Change Guests -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
                 android:text="Số lượng khách"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.VietTable.Label" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_height="60dp"
+                android:layout_marginStart="@dimen/pd_screen_margin"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/pd_stepper_bg"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp">
 
                 <ImageButton
                     android:id="@+id/btnChangeMinusGuest"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/pd_circle_surface"
                     android:contentDescription="@string/a11y_decrease"
-                    android:background="@drawable/bg_badge"
+                    android:padding="11dp"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/ic_remove"
-                    app:tint="@color/pd_yellow_text" />
+                    app:tint="@color/pd_text" />
 
                 <TextView
                     android:id="@+id/tvChangeGuestCount"
-                    android:layout_width="44dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center"
+                    android:minWidth="48dp"
                     android:text="4"
-                    android:textColor="@color/text_primary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.VietTable.Price"
+                    android:textColor="@color/pd_text" />
 
                 <ImageButton
                     android:id="@+id/btnChangePlusGuest"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/pd_circle_cream"
                     android:contentDescription="@string/a11y_increase"
-                    android:background="@drawable/bg_badge"
+                    android:padding="11dp"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/ic_add"
-                    app:tint="@color/pd_yellow_text" />
+                    app:tint="@color/pd_on_inverse" />
             </LinearLayout>
 
-            <!-- Change Note -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="28dp"
+                android:text="Ghi chú cho nhà hàng"
+                android:textAppearance="@style/TextAppearance.VietTable.Label" />
+
             <com.google.android.material.textfield.TextInputLayout
                 style="@style/Widget.VietTable.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="10dp"
                 android:hint="Cập nhật ghi chú">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/etChangeNote"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="4" />
             </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSubmitChange"
-                style="@style/Widget.VietTable.Button.Primary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="Tiếp tục: chọn bàn" />
-
         </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/pd_fade_bottom"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="28dp"
+        android:paddingBottom="24dp"
+        android:tag="safe_bottom">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubmitChange"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Tiếp tục: chọn bàn" />
     </LinearLayout>
-</ScrollView>
+</FrameLayout>
