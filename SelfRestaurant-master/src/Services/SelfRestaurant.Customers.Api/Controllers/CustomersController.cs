@@ -377,7 +377,9 @@ public sealed class CustomersController : ControllerBase
         reservation.TableId = request.TableId;
         reservation.PartySize = request.PartySize;
         reservation.ReservedAt = request.ReservedAt;
-        reservation.Note = NormalizeOptional(request.Note, 1000);
+        // Thiếu trường note (null) = giữ ghi chú cũ; chuỗi rỗng = xoá ghi chú có chủ ý.
+        if (request.Note is not null)
+            reservation.Note = NormalizeOptional(request.Note, 1000);
         reservation.LastMutationKey = NormalizeOptional(request.MutationKey, 140);
         reservation.LastMutationHash = NormalizeOptional(request.MutationHash, 64);
         reservation.UpdatedAtUtc = DateTime.UtcNow;
