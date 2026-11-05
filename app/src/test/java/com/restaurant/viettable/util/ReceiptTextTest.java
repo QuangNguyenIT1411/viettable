@@ -82,6 +82,8 @@ public class ReceiptTextTest {
         assertEquals("Tháng 11/2026", ReceiptText.monthTitle("2026-11"));
         assertEquals("19:02 – 20:15, 05/11/2026", ReceiptText.timeRange("2026-11-05T12:02:00Z", "2026-11-05T13:15:00Z"));
         assertEquals("20:15, 05/11/2026", ReceiptText.timeRange(null, "2026-11-05T13:15:00Z"));
+        assertEquals("Giờ vào – thanh toán", ReceiptText.timeLabel("2026-11-05T12:02:00Z"));
+        assertEquals("Thanh toán lúc", ReceiptText.timeLabel(null));
     }
 
     @Test

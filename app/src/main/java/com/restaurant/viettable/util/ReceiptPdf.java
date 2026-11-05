@@ -123,7 +123,7 @@ public final class ReceiptPdf {
         y = pair(canvas, "Mã hoá đơn", r.invoiceId > 0 ? "#" + r.invoiceId : (r.invoiceCode == null ? "" : r.invoiceCode), body, strong, y);
         if (r.tableName != null) y = pair(canvas, "Bàn", r.tableName, body, body, y);
         String time = ReceiptText.timeRange(r.sessionStartedAtUtc, r.paidAtUtc != null ? r.paidAtUtc : r.issuedAtUtc);
-        if (!time.isEmpty()) y = pair(canvas, "Giờ vào – thanh toán", time, body, body, y);
+        if (!time.isEmpty()) y = pair(canvas, ReceiptText.timeLabel(r.sessionStartedAtUtc), time, body, body, y);
         if (r.cashierName != null) y = pair(canvas, "Thu ngân", r.cashierName, body, body, y);
         y = rule(canvas, y + 2);
 

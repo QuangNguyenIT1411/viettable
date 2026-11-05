@@ -95,7 +95,7 @@ export function receiptHtml(r: Receipt): string {
   const info: ReceiptRow[] = [{ label: "Mã hoá đơn", value: r.invoiceId > 0 ? `#${r.invoiceId}` : r.invoiceCode ?? "", kind: "normal" }];
   if (r.tableName) info.push({ label: "Bàn", value: r.tableName, kind: "normal" });
   const time = timeRange(r.sessionStartedAtUtc, r.paidAtUtc ?? r.issuedAtUtc);
-  if (time) info.push({ label: "Giờ vào – thanh toán", value: time, kind: "normal" });
+  if (time) info.push({ label: vnTime(r.sessionStartedAtUtc) ? "Giờ vào – thanh toán" : "Thanh toán lúc", value: time, kind: "normal" });
   if (r.cashierName) info.push({ label: "Thu ngân", value: r.cashierName, kind: "normal" });
   const items = r.items.length === 0
     ? `<div class="muted">Hoá đơn này không lưu danh sách món.</div>`

@@ -116,7 +116,7 @@ public class InvoiceHistoryDetailFragment extends BaseFragment {
         binding.layoutInvoiceInfo.removeAllViews();
         if (r.tableName != null) row(binding.layoutInvoiceInfo, "Bàn", r.tableName, ReceiptText.Kind.NORMAL);
         String time = ReceiptText.timeRange(r.sessionStartedAtUtc, r.paidAtUtc != null ? r.paidAtUtc : r.issuedAtUtc);
-        if (!time.isEmpty()) row(binding.layoutInvoiceInfo, r.sessionStartedAtUtc != null ? "Giờ vào – thanh toán" : "Thanh toán lúc", time, ReceiptText.Kind.NORMAL);
+        if (!time.isEmpty()) row(binding.layoutInvoiceInfo, ReceiptText.timeLabel(r.sessionStartedAtUtc), time, ReceiptText.Kind.NORMAL);
         if (r.cashierName != null) row(binding.layoutInvoiceInfo, "Thu ngân", r.cashierName, ReceiptText.Kind.NORMAL);
         binding.layoutInvoiceInfo.setVisibility(binding.layoutInvoiceInfo.getChildCount() == 0 ? View.GONE : View.VISIBLE);
 

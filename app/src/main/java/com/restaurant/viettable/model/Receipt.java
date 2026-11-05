@@ -41,6 +41,7 @@ public final class Receipt implements Serializable {
     public int branchId;
     @Nullable public String branchName;
     @Nullable public String branchAddress;
+    public int tableId;
     @Nullable public String tableName;
     @Nullable public String sessionStartedAtUtc;
     @Nullable public String paidAtUtc;
@@ -81,6 +82,7 @@ public final class Receipt implements Serializable {
         r.branchId = row.optInt("branchId");
         r.branchName = text(row, "branchName");
         r.branchAddress = text(row, "branchAddress");
+        r.tableId = row.optInt("tableId");
         r.tableName = text(row, "tableName");
         r.sessionStartedAtUtc = text(row, "sessionStartedAtUtc");
         r.paidAtUtc = text(row, "paidAtUtc");

@@ -108,6 +108,10 @@ public final class ReceiptText {
     }
 
     /** "19:02 – 20:15, 05/11/2026" (or only the payment time when the start is unknown). */
+    public static String timeLabel(@Nullable String startedAtUtc) {
+        return parse(startedAtUtc) != null ? "Giờ vào – thanh toán" : "Thanh toán lúc";
+    }
+
     public static String timeRange(@Nullable String startedAtUtc, @Nullable String paidAtUtc) {
         ZonedDateTime paid = parse(paidAtUtc);
         if (paid == null) return "";

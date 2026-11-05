@@ -37,4 +37,6 @@ test("money, percent and Vietnam time", () => {
   assert.equal(money(1234567), "1.234.567đ");
   assert.equal(percent(7.5), "7,5%");
   assert.equal(timeRange("2026-11-05T12:02:00Z", "2026-11-05T13:15:00Z"), "19:02 – 20:15, 05/11/2026");
+  const paidOnly = receiptHtml({ ...snapshot, sessionStartedAtUtc: null, paidAtUtc: "2026-11-05T13:15:00Z" });
+  assert.ok(paidOnly.includes("Thanh toán lúc") && !paidOnly.includes("Giờ vào"));
 });

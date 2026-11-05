@@ -1144,7 +1144,7 @@ public final class MobileRepository {
         }));
     }
 
-    /** Old invoices (before 05/11) have no branch snapshot: show the branch's current name and address from the server's list. */
+    /** Old invoices (before 05/11) have no branch or table snapshot: show the current name, address and table number from the server's lists. */
     private com.restaurant.viettable.model.Receipt withBranchFallback(com.restaurant.viettable.model.Receipt receipt) {
         if (receipt.branchName == null && receipt.branchId > 0) {
             Branch branch = state.findBranch(String.valueOf(receipt.branchId));
@@ -1152,6 +1152,10 @@ public final class MobileRepository {
                 receipt.branchName = SafeText.clean(branch.getName()).isEmpty() ? null : branch.getName();
                 if (receipt.branchAddress == null && !SafeText.clean(branch.getAddress()).isEmpty()) receipt.branchAddress = branch.getAddress();
             }
+        }
+        if (receipt.tableName == null && receipt.tableId > 0) {
+            String label = tableLabel(String.valueOf(receipt.branchId), String.valueOf(receipt.tableId));
+            if (label.startsWith("Bàn ")) receipt.tableName = label; // unknown table: the row stays hidden
         }
         return receipt;
     }
