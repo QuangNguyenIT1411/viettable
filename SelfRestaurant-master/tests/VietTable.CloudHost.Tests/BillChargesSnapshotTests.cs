@@ -206,7 +206,7 @@ public sealed class BillChargesSnapshotTests
                 IdempotencyKey = $"k{i}", RequestHash = "h", CustomerId = 21 });
             db.Payments.Add(new Payment { PaymentId = i, PaymentCode = $"P{i}", CheckoutQuoteId = i, CustomerId = 21, Channel = "ONSITE",
                 Method = i == 3 ? "TRANSFER" : "CASH", Status = "SUCCEEDED", IdempotencyKey = $"pk{i}", RequestHash = "h" });
-            db.Invoices.Add(new Invoice { InvoiceId = i, InvoiceCode = $"INV-{i:D3}", CheckoutQuoteId = i, PaymentId = i, DiningSessionId = i,
+            db.Invoices.Add(new Invoice { InvoiceId = i, InvoiceCode = i == 2 ? "INV-A5F" : $"INV-{i:D3}", CheckoutQuoteId = i, PaymentId = i, DiningSessionId = i,
                 CustomerId = 21, Subtotal = 100_000m, TotalAmount = 100_000m, IssuedAtUtc = new DateTime(2026, i <= 2 ? 10 : 11, 10 + i, 5, 0, 0, DateTimeKind.Utc),
                 BranchId = i % 2 == 0 ? 2 : 1, PaymentMethodSnapshot = i == 3 ? "TRANSFER" : "CASH", SnapshotVersion = 1 });
         }
@@ -224,6 +224,10 @@ public sealed class BillChargesSnapshotTests
         Assert.Equal(new[] { 4, 2 }, Ids(await Page(branch: 2)));
         Assert.Equal(new[] { 3 }, Ids(await Page(method: "TRANSFER")));
         Assert.Equal(new[] { 4 }, Ids(await Page(q: "inv-004")));
+        Assert.Equal(new[] { 2 }, Ids(await Page(q: "a5f")));
+        Assert.Equal(new[] { 5 }, Ids(await Page(q: "5")));                       // not invoice 2, whose code contains a 5
+        Assert.Equal(new[] { 5 }, Ids(await Page(q: "#5")));
+        Assert.Empty(Ids(await Page(q: "99")));                                   // another customer's
         var first = await Page(limit: 2);
         Assert.Equal(new[] { 5, 4 }, Ids(first));
         var second = await Page(limit: 2, cursor: first.GetProperty("nextCursor").GetString());

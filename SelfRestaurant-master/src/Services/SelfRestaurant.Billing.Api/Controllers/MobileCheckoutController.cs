@@ -453,8 +453,12 @@ public sealed class MobileCheckoutController : ControllerBase
         }
         if (!string.IsNullOrWhiteSpace(q))
         {
+            // "44" or "#44" is invoice 44 only: codes carry a GUID, so looking for the digits in them matches unrelated invoices.
             var code = q.Trim().ToUpperInvariant();
-            rows = rows.Where(r => r.invoice.InvoiceCode.ToUpper().Contains(code) || r.invoice.InvoiceId.ToString() == code.TrimStart('#'));
+            var digits = code.TrimStart('#');
+            rows = digits.Length > 0 && digits.All(char.IsAsciiDigit) && int.TryParse(digits, out var invoiceId)
+                ? rows.Where(r => r.invoice.InvoiceId == invoiceId)
+                : rows.Where(r => r.invoice.InvoiceCode.ToUpper().Contains(code));
         }
         var page = await rows.OrderByDescending(r => r.invoice.IssuedAtUtc).ThenByDescending(r => r.invoice.InvoiceId)
             .Take(limit + 1).ToArrayAsync(ct);
