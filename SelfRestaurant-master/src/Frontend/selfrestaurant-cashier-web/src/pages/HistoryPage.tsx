@@ -5,6 +5,7 @@ import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useState } from "react";
 import { CashierTopbar } from "../components/CashierTopbar";
 import { cashierApi } from "../lib/api";
+import { receiptHtml } from "../../../shared/receipt";
 import { parseApiUtcTimestamp } from "../lib/dateTime";
 import type { CashierAccountDto, CashierHistoryDto } from "../lib/types";
 
@@ -21,6 +22,34 @@ export function HistoryPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [printingId, setPrintingId] = useState<number | null>(null);
+
+  /** "PHIẾU THANH TOÁN" from the server's stored bill, printed (or saved as PDF from the print dialog). */
+  async function printReceipt(billId: number) {
+    setPrintingId(billId);
+    setError(null);
+    try {
+      const { receipt } = await cashierApi.getReceipt(billId);
+      const frame = document.createElement("iframe");
+      frame.style.position = "fixed";
+      frame.style.width = "0";
+      frame.style.height = "0";
+      frame.style.border = "0";
+      document.body.appendChild(frame);
+      const doc = frame.contentDocument;
+      if (!doc || !frame.contentWindow) throw new Error("Trình duyệt không cho in.");
+      doc.open();
+      doc.write(receiptHtml(receipt));
+      doc.close();
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+      setTimeout(() => frame.remove(), 60_000);
+    } catch (err) {
+      setError(userMessage(err, "Không tải được phiếu thanh toán."));
+    } finally {
+      setPrintingId(null);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -214,6 +243,7 @@ export function HistoryPage() {
                         <th>{"B\u00e0n"}</th>
                         <th className="text-end">{"Th\u00e0nh ti\u1ec1n"}</th>
                         <th>PTTT</th>
+                        <th>Phiếu</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -227,6 +257,12 @@ export function HistoryPage() {
                           <td>
                             {paymentMethodLabel(bill.paymentMethod)}
                             {bill.autoConfirmed ? <><br /><span className="soft-badge success">Đã thanh toán tự động</span></> : null}
+                          </td>
+                          <td>
+                            <button type="button" className="ghost small" disabled={printingId === bill.billId}
+                              onClick={() => void printReceipt(bill.billId)} aria-label={`In phiếu thanh toán ${bill.billCode}`}>
+                              {printingId === bill.billId ? "Đang tải…" : "In / Xuất"}
+                            </button>
                           </td>
                         </tr>
                       ))}

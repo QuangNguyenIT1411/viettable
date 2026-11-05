@@ -29,6 +29,8 @@ const navSections = [
       { label: "Kh\u00e1ch h\u00e0ng", icon: "bi-person-badge-fill", path: "/Admin/Customers/Index", match: "/admin/customers" },
       { label: "Khuy\u1ebfn m\u00e3i", icon: "bi-megaphone-fill", path: "/Admin/Promotions/Index", match: "/admin/promotions" },
       { label: "Voucher", icon: "bi-ticket-perforated-fill", path: "/Admin/Vouchers/Index", match: "/admin/vouchers" },
+      { label: "Phí & VAT", icon: "bi-percent", path: "/Admin/Charges/Index", match: "/admin/charges" },
+      { label: "Đánh giá", icon: "bi-star-fill", path: "/Admin/Reviews/Index", match: "/admin/reviews" },
     ],
   },
   {

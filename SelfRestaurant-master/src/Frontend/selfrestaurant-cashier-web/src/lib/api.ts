@@ -48,6 +48,11 @@ export type CashierCheckoutPreviewDto = {
   totalAmount: number;
   /** An app session: discount and points are the guest's choice in the app. */
   appSession: boolean;
+  /** Branch service fee / VAT (owner 05/11/2026), computed by the server; 0 = the branch does not charge it. */
+  serviceFeePercent?: number;
+  serviceFeeAmount?: number;
+  vatPercent?: number;
+  vatAmount?: number;
 };
 
 export type OnsitePayment = {
@@ -111,6 +116,8 @@ export const cashierApi = {
   acknowledgeServiceRequest: (id: number) => request<StaffServiceRequestDto>(`/api/gateway/staff/cashier/service-requests/${id}/acknowledge`, { method: "POST", body: "{}" }),
   completeServiceRequest: (id: number) => request<StaffServiceRequestDto>(`/api/gateway/staff/cashier/service-requests/${id}/complete`, { method: "POST", body: "{}" }),
   getHistory: () => request<CashierHistoryDto>("/api/gateway/staff/cashier/history"),
+  /** "PHIẾU THANH TOÁN" of a paid bill in the history (positive = counter bill, negative = app invoice). */
+  getReceipt: (billId: number) => request<{ source: string; receipt: import("../../../shared/receipt").Receipt }>(`/api/gateway/staff/cashier/receipts/${billId}`),
   getReport: (date?: string) => request<CashierReportScreenDto>(`/api/gateway/staff/cashier/report${date ? `?date=${date}` : ""}`),
   /** date: yyyy-MM-dd in restaurant time; omitted = today. */
   getTodayReservations: (branchId?: number | null, status?: string, date?: string) => {

@@ -56,6 +56,25 @@ export type AdminPromotionRequest = {
   maxDiscount: number | null; minSubtotal: number; branchIds: number[]; startsAtUtc: string; endsAtUtc: string; isActive: boolean;
 };
 
+/** Service fee / VAT of one branch (owner 05/11/2026); 0 = off. */
+export type BranchChargeDto = { branchId: number; serviceFeePercent: number; vatPercent: number; updatedAtUtc: string; updatedByName?: string | null };
+export type BranchChargesDto = { items: BranchChargeDto[]; maxServiceFeePercent: number; maxVatPercent: number };
+
+/** One guest review for Admin → Đánh giá (owner 05/11/2026). */
+export type AdminReviewDto = {
+  reviewId: number; customerId: number; invoiceId: number; branchId?: number | null; authorName?: string | null; publicName: string;
+  isAnonymous: boolean; overallRating: number; foodRating: number; serviceRating: number; spaceRating: number; comment?: string | null;
+  tags: string[]; dishRatings: { dishId: number; dishName: string; rating: number }[]; replyText?: string | null; repliedAtUtc?: string | null;
+  repliedByName?: string | null; isHidden: boolean; hiddenReason?: string | null; hiddenAtUtc?: string | null; hiddenByName?: string | null;
+  createdAtUtc: string; updatedAtUtc: string;
+};
+export type AdminReviewPageDto = { page: number; pageSize: number; total: number; totalPages: number; items: AdminReviewDto[] };
+export type AdminReviewStatsDto = {
+  total: number; overall?: number | null;
+  branches: { branchId?: number | null; count: number; overall?: number | null; food?: number | null; service?: number | null; space?: number | null }[];
+  dishes: { dishId: number; dishName: string; count: number; average?: number | null }[];
+};
+
 /** Voucher (owner 28/10/2026): applied only when the guest picks it; uses per customer (null = no limit) and in total. */
 export type AdminVoucherDto = {
   voucherId: number; code: string; name: string; discountType: string; discountValue: number; maxDiscount?: number | null;
@@ -69,6 +88,21 @@ export type AdminVoucherRequest = {
 };
 
 export const adminApi = {
+  getBranchCharges: () => request<BranchChargesDto>("/api/gateway/admin/branch-charges"),
+  saveBranchCharges: (branchId: number, body: { serviceFeePercent: number; vatPercent: number }) =>
+    request<BranchChargeDto>(`/api/gateway/admin/branch-charges/${branchId}`, { method: "PUT", body: JSON.stringify(body) }),
+  getReviews: (q: { branchId?: number; stars?: number; visibility?: string; page?: number }) => {
+    const p = new URLSearchParams({ page: String(q.page ?? 1), pageSize: "20" });
+    if (q.branchId) p.set("branchId", String(q.branchId));
+    if (q.stars) p.set("stars", String(q.stars));
+    if (q.visibility) p.set("visibility", q.visibility);
+    return request<AdminReviewPageDto>(`/api/gateway/admin/reviews?${p.toString()}`);
+  },
+  getReviewStats: () => request<AdminReviewStatsDto>("/api/gateway/admin/reviews/stats"),
+  replyReview: (reviewId: number, text: string) =>
+    request<unknown>(`/api/gateway/admin/reviews/${reviewId}/reply`, { method: "POST", body: JSON.stringify({ text }) }),
+  setReviewVisibility: (reviewId: number, hidden: boolean, reason: string | null) =>
+    request<unknown>(`/api/gateway/admin/reviews/${reviewId}/visibility`, { method: "POST", body: JSON.stringify({ hidden, reason }) }),
   getVouchers: () => request<AdminVoucherDto[]>("/api/gateway/admin/vouchers"),
   createVoucher: (body: AdminVoucherRequest) =>
     request<AdminVoucherDto>("/api/gateway/admin/vouchers", { method: "POST", body: JSON.stringify(body) }),

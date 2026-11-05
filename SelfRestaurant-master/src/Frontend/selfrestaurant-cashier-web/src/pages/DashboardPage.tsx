@@ -354,6 +354,10 @@ export function DashboardPage({ onLogout }: Props) {
       pointsUsed: data?.pointsUsed ?? 0,
       pointsDiscount: data?.pointsDiscount ?? 0,
       depositApplied: data?.depositApplied ?? 0,
+      serviceFeePercent: data?.serviceFeePercent ?? 0,
+      serviceFeeAmount: data?.serviceFeeAmount ?? 0,
+      vatPercent: data?.vatPercent ?? 0,
+      vatAmount: data?.vatAmount ?? 0,
       total,
       paymentAmount: effectivePayment,
       changeAmount: data ? Math.max(0, effectivePayment - total) : 0,
@@ -839,6 +843,18 @@ export function DashboardPage({ onLogout }: Props) {
                 <div className="total-row">
                   <span>Giảm bằng điểm:</span>
                   <strong>-{checkoutPreview.pointsDiscount.toLocaleString("vi-VN")} đ</strong>
+                </div>
+              ) : null}
+              {checkoutPreview.serviceFeeAmount > 0 || checkoutPreview.serviceFeePercent > 0 ? (
+                <div className="total-row">
+                  <span>Phí phục vụ ({String(checkoutPreview.serviceFeePercent).replace(".", ",")}%):</span>
+                  <strong>{checkoutPreview.serviceFeeAmount.toLocaleString("vi-VN")} đ</strong>
+                </div>
+              ) : null}
+              {checkoutPreview.vatAmount > 0 || checkoutPreview.vatPercent > 0 ? (
+                <div className="total-row">
+                  <span>VAT ({String(checkoutPreview.vatPercent).replace(".", ",")}%):</span>
+                  <strong>{checkoutPreview.vatAmount.toLocaleString("vi-VN")} đ</strong>
                 </div>
               ) : null}
               {checkoutPreview.depositApplied > 0 ? (
