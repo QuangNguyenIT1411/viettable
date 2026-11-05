@@ -108,7 +108,7 @@ public sealed class MobileEngagementGatewayController : ControllerBase
     [HttpGet("dishes/{dishId:int}/reviews/summary")]
     public async Task<ActionResult<object>> DishReviewSummary(int dishId, CancellationToken ct)
     {
-        // Public like the menu: not through Run(), which requires a signed-in guest.
+        // Public like the menu: the shared helper above requires a signed-in guest, so it is not used here.
         try { return Ok(await _customers.GetDishReviewSummaryAsync(dishId, ct)); }
         catch (ApiClientException ex) { return Downstream(ex); }
     }
