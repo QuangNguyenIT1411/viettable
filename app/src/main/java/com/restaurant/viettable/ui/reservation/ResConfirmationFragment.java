@@ -91,10 +91,13 @@ public class ResConfirmationFragment extends BaseFragment implements AppStateMan
             setBottomNavVisible(true);
             switchTab(R.id.nav_reservation);
         });
-        binding.btnGoHome.setOnClickListener(v -> {
-            setBottomNavVisible(true);
-            switchTab(R.id.nav_home);
-        });
+        binding.btnGoHome.setOnClickListener(v -> goHome());
+        // Back = "Về trang chủ" in every state: switchTab clears the back stack, so the booking form's steps never
+        // open again under this screen (owner, 05/11).
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(),
+                new androidx.activity.OnBackPressedCallback(true) {
+                    @Override public void handleOnBackPressed() { goHome(); }
+                });
         binding.btnConfirmRetry.setOnClickListener(v -> reload());
 
         loading = staleUntilLoaded;
@@ -106,6 +109,11 @@ public class ResConfirmationFragment extends BaseFragment implements AppStateMan
     public void onResume() {
         super.onResume();
         if (reservation != null) reload();
+    }
+
+    private void goHome() {
+        setBottomNavVisible(true);
+        switchTab(R.id.nav_home);
     }
 
     /** Right after booking the screen already holds the server's answer, so that read stays silent; a return waits for it. */

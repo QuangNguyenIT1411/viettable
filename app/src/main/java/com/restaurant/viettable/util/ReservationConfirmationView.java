@@ -37,7 +37,7 @@ public final class ReservationConfirmationView {
             case CANCELLED:
                 return new ReservationConfirmationView("Đã huỷ đặt bàn", "Đặt bàn này không còn hiệu lực. Bạn có thể đặt bàn mới khi cần.", false);
             case NO_SHOW:
-                return new ReservationConfirmationView("Đặt bàn đã quá giờ", "Đặt bàn này không còn hiệu lực. Bạn có thể đặt bàn mới khi cần.", false);
+                return new ReservationConfirmationView("Đặt bàn đã quá giờ", "Bạn chưa đến trong thời gian giữ bàn. Bạn có thể đặt bàn mới khi cần.", false);
             case REJECTED:
                 return new ReservationConfirmationView("Nhà hàng đã từ chối", ReservationSchedule.statusInfo(status, reason), false);
             case PENDING:

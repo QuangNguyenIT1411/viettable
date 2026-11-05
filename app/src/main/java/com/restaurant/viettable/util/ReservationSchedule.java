@@ -136,7 +136,9 @@ public final class ReservationSchedule {
             case PENDING: return "Nhà hàng sẽ xác nhận sớm. Bàn đã được giữ cho bạn; bạn sẽ nhận thông báo khi có kết quả.";
             case PENDING_DEPOSIT: return "Bàn được giữ trong thời gian đặt cọc. Chuyển khoản đặt cọc để hoàn tất; quá hạn đặt bàn sẽ tự hủy.";
             case REJECTED: {
-                String text = hasReason ? reason.trim() : "Nhà hàng không thể nhận đặt bàn này";
+                // No reason from the restaurant: no "Lý do từ chối" part at all (owner, 05/11).
+                if (!hasReason) return "Bạn có thể đặt giờ khác.";
+                String text = reason.trim();
                 if (!text.endsWith(".") && !text.endsWith("!") && !text.endsWith("?")) text += ".";
                 return "Lý do từ chối: " + text + " Bạn có thể đặt giờ khác.";
             }

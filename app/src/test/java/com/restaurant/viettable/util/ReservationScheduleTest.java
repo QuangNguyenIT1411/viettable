@@ -138,7 +138,8 @@ public class ReservationScheduleTest {
                 ReservationSchedule.statusInfo(Reservation.Status.REJECTED, " Hết bàn "));
         assertEquals("Lý do từ chối: Bếp bảo trì. Bạn có thể đặt giờ khác.",
                 ReservationSchedule.statusInfo(Reservation.Status.REJECTED, "Bếp bảo trì."));
-        assertTrue(ReservationSchedule.statusInfo(Reservation.Status.REJECTED, "  ").contains("không thể nhận"));
+        assertEquals("Bạn có thể đặt giờ khác.", ReservationSchedule.statusInfo(Reservation.Status.REJECTED, "  "));
+        assertEquals("Bạn có thể đặt giờ khác.", ReservationSchedule.statusInfo(Reservation.Status.REJECTED, null));
         assertNull(ReservationSchedule.statusInfo(Reservation.Status.CONFIRMED, "Tự xác nhận khi check-in"));
         Reservation reservation = new Reservation();
         reservation.setStatus(Reservation.Status.PENDING);

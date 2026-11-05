@@ -55,6 +55,10 @@ public class ReservationConfirmationViewTest {
         ReservationConfirmationView rejected = ReservationConfirmationView.of(Reservation.Status.REJECTED, "Hết bàn");
         assertFalse(rejected.standing);
         assertTrue(rejected.subtitle.contains("Hết bàn"));
+        // Owner 05/11: no reason, no "Lý do từ chối"; a missed booking says why it lapsed.
+        assertEquals("Bạn có thể đặt giờ khác.", ReservationConfirmationView.of(Reservation.Status.REJECTED, null).subtitle);
+        assertEquals("Bạn chưa đến trong thời gian giữ bàn. Bạn có thể đặt bàn mới khi cần.",
+                ReservationConfirmationView.of(Reservation.Status.NO_SHOW, null).subtitle);
     }
 
     @Test
