@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- "Phố đêm": always dark, whatever the system light/dark setting (DESIGN_PHO_DEM.md section 8). -->
-    <style name="Base.Theme.VietTable" parent="Theme.Material3.Dark.NoActionBar">
+    <!-- Hai bộ màu: "Phố ngày" (values/) và "Phố đêm" (values-night/). Chế độ do Cài đặt → Giao diện chọn (mặc định Tối). Icon thanh hệ thống do MainActivity đặt theo chế độ. -->
+    <style name="Base.Theme.VietTable" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/pd_yellow</item>
         <item name="colorPrimaryDark">@color/pd_bg</item>
         <item name="colorOnPrimary">@color/pd_on_color</item>
@@ -35,11 +35,11 @@
         <item name="colorError">@color/pd_red</item>
         <item name="colorOnError">@color/pd_on_color</item>
 
-        <item name="android:textColorPrimary">@color/pd_cream</item>
+        <item name="android:textColorPrimary">@color/pd_text</item>
         <item name="android:textColorSecondary">@color/pd_muted</item>
         <item name="android:textColorHint">@color/pd_dim</item>
-        <item name="android:textColorLink">@color/pd_yellow</item>
-        <item name="android:textColorHighlight">#66FFC53D</item>
+        <item name="android:textColorLink">@color/pd_yellow_text</item>
+        <item name="android:textColorHighlight">@color/pd_selection</item>
         <item name="colorControlNormal">@color/pd_muted</item>
         <item name="colorControlActivated">@color/pd_yellow</item>
         <item name="colorControlHighlight">@color/pd_ripple</item>
@@ -63,7 +63,6 @@
         <!-- System bars: page colour behind them, light icons. -->
         <item name="android:windowBackground">@color/pd_bg</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
 
         <!-- Material Components default style overrides -->

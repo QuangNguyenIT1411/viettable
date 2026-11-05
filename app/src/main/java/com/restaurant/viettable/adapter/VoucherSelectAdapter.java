@@ -80,7 +80,7 @@ public class VoucherSelectAdapter extends RecyclerView.Adapter<VoucherSelectAdap
             binding.tvVoucherStatus.setVisibility(status == null ? android.view.View.GONE : android.view.View.VISIBLE);
             binding.tvVoucherStatus.setText(status == null ? "" : status);
             binding.tvVoucherStatus.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(),
-                    voucher.isUsable() ? R.color.pd_mint : R.color.pd_muted));
+                    voucher.isUsable() ? R.color.pd_mint_text : R.color.pd_muted));
             // A voucher that cannot be used stays listed, greyed, with its reason (owner 28/10); it cannot be picked.
             itemView.setAlpha(voucher.isUsable() ? 1f : 0.5f);
             binding.rbVoucherSelect.setVisibility(voucher.isUsable() ? android.view.View.VISIBLE : android.view.View.INVISIBLE);

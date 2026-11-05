@@ -92,7 +92,7 @@
             android:layout_height="wrap_content"
             android:text="VÀO BÀN"
             android:textAppearance="@style/TextAppearance.VietTable.Label"
-            android:textColor="@color/pd_yellow" />
+            android:textColor="@color/pd_yellow_text" />
 
         <TextView
             android:id="@+id/tvQrTitle"
@@ -165,7 +165,7 @@
                 android:layout_height="wrap_content"
                 android:text="NHẬP THỦ CÔNG"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="match_parent"

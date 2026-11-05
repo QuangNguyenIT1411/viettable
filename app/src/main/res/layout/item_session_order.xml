@@ -69,7 +69,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Price"
-                android:textColor="@color/pd_yellow"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="16sp"
                 tools:text="256.000đ" />
         </LinearLayout>

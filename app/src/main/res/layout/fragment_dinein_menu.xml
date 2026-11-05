@@ -41,7 +41,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -64,7 +64,7 @@
                     android:layout_weight="1"
                     android:textAllCaps="true"
                     android:textAppearance="@style/TextAppearance.VietTable.Label"
-                    android:textColor="@color/pd_mint"
+                    android:textColor="@color/pd_mint_text"
                     tools:text="Bàn B4 • Chi nhánh Quận 1" />
             </LinearLayout>
 
@@ -137,7 +137,7 @@
                     android:importantForAccessibility="no"
                     android:padding="11dp"
                     android:src="@drawable/ic_cutlery"
-                    app:tint="@color/pd_yellow" />
+                    app:tint="@color/pd_yellow_text" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -172,7 +172,7 @@
                     android:paddingHorizontal="18dp"
                     android:text="@string/pd_dinein_cart_open"
                     android:backgroundTint="@color/pd_on_color"
-                    android:textColor="@color/pd_yellow"
+                    android:textColor="@color/pd_yellow_text"
                     app:backgroundTint="@color/pd_on_color" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

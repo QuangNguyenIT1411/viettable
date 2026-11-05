@@ -121,7 +121,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:textAppearance="@style/TextAppearance.VietTable.Display.L"
-                            android:textColor="@color/pd_yellow"
+                            android:textColor="@color/pd_yellow_text"
                             tools:text="#8899" />
                     </LinearLayout>
 

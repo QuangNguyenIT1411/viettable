@@ -1,25 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- "Phố đêm" tokens (SelfRestaurant-master/docs/DESIGN_PHO_DEM.md section 2). New code uses these. -->
-    <color name="pd_bg">#15100D</color>
-    <color name="pd_surface">#211915</color>
-    <color name="pd_surface_2">#2E241F</color>
-    <color name="pd_line">#3D322B</color>
+    <!-- ===== "Phố ngày" (Sáng) — values/. "Phố đêm" (Tối) nằm ở values-night/colors.xml, giữ nguyên giá trị cũ. =====
+         Token theo VAI TRÒ: pd_text = chữ chính; pd_inverse/pd_on_inverse = nền đảo (chip chọn, nút +/-) và chữ trên đó;
+         pd_plate_rim = viền đĩa món luôn sáng; pd_paper = vé VietQR; pd_*_text = màu nhấn khi dùng làm CHỮ trên nền trang. -->
+    <color name="pd_bg">#FBF3E8</color>
+    <color name="pd_surface">#FFFFFF</color>
+    <color name="pd_surface_2">#F3E6D6</color>
+    <color name="pd_line">#E5D5C2</color>
+    <color name="pd_text">#1F1611</color>
     <color name="pd_cream">#FBF0E2</color>
-    <color name="pd_muted">#B9AA9A</color>
-    <color name="pd_dim">#7F7166</color>
-    <color name="pd_yellow">#FFC53D</color>
-    <color name="pd_red">#FF5B3A</color>
-    <color name="pd_mint">#7FD3AA</color>
-    <color name="pd_plum">#3B2331</color>
+    <color name="pd_muted">#6F6156</color>
+    <color name="pd_dim">#9C8D80</color>
+    <color name="pd_yellow">#F2B21B</color>
+    <color name="pd_red">#E8492A</color>
+    <color name="pd_mint">#2F9E6E</color>
+    <color name="pd_plum">#F1E1EA</color>
     <color name="pd_on_color">#1A120C</color>
-    <!-- Pressed states and soft backgrounds behind a status colour (rejection reason, deposit card, icon circles). -->
-    <color name="pd_yellow_pressed">#E6AC2A</color>
-    <color name="pd_red_pressed">#E04A2C</color>
-    <color name="pd_yellow_soft">#3A2C14</color>
-    <color name="pd_red_soft">#3D1F17</color>
-    <color name="pd_mint_soft">#1A3328</color>
-    <color name="pd_ripple">#1FFBF0E2</color>
+    <color name="pd_inverse">#1F1611</color>
+    <color name="pd_on_inverse">#FBF3E8</color>
+    <color name="pd_plate_rim">#FFF8EE</color>
+    <color name="pd_paper">#FFFFFF</color>
+    <color name="pd_yellow_text">#7A5200</color>
+    <color name="pd_red_text">#B8321A</color>
+    <color name="pd_mint_text">#1A6E48</color>
+    <color name="pd_yellow_pressed">#D99B0E</color>
+    <color name="pd_red_pressed">#CF3A1D</color>
+    <color name="pd_yellow_soft">#FBEBC4</color>
+    <color name="pd_red_soft">#FBDDD4</color>
+    <color name="pd_mint_soft">#D8F0E4</color>
+    <color name="pd_ripple">#1F1F1611</color>
+    <color name="pd_selection">#66F2B21B</color>
+    <color name="pd_switch_thumb_off">#FFFFFF</color>
+    <color name="pd_overlay_surface">#E6FFFFFF</color>
+    <color name="pd_bg_fade">#E6FBF3E8</color>
+    <color name="pd_bg_clear">#00FBF3E8</color>
+    <color name="pd_bg_scrim_a">#99FBF3E8</color>
+    <color name="pd_glow_yellow_s">#40F2B21B</color>
+    <color name="pd_glow_yellow_c">#20F2B21B</color>
+    <color name="pd_glow_yellow_e">#00F2B21B</color>
+    <color name="pd_glow_red_s">#50E8492A</color>
+    <color name="pd_glow_red_c">#28E8492A</color>
+    <color name="pd_glow_red_e">#00E8492A</color>
+    <color name="pd_glow_mint_s">#402F9E6E</color>
+    <color name="pd_glow_mint_c">#202F9E6E</color>
+    <color name="pd_glow_mint_e">#002F9E6E</color>
 
     <!-- Older names, still used by layouts and Java: each points at a Phố đêm token. -->
     <color name="primary">@color/pd_yellow</color>
@@ -44,40 +69,40 @@
     <color name="surface_card">@color/pd_surface</color>
     <color name="divider">@color/pd_line</color>
 
-    <color name="text_primary">@color/pd_cream</color>
+    <color name="text_primary">@color/pd_text</color>
     <color name="text_secondary">@color/pd_muted</color>
     <color name="text_tertiary">@color/pd_muted</color>
     <color name="text_hint">@color/pd_dim</color>
-    <color name="text_white">@color/pd_cream</color>
+    <color name="text_white">@color/pd_text</color>
 
-    <color name="semantic_success">@color/pd_mint</color>
+    <color name="semantic_success">@color/pd_mint_text</color>
     <color name="semantic_success_bg">@color/pd_mint_soft</color>
-    <color name="semantic_warning">@color/pd_yellow</color>
+    <color name="semantic_warning">@color/pd_yellow_text</color>
     <color name="semantic_warning_bg">@color/pd_yellow_soft</color>
-    <color name="semantic_error">@color/pd_red</color>
+    <color name="semantic_error">@color/pd_red_text</color>
     <color name="semantic_error_bg">@color/pd_red_soft</color>
-    <color name="semantic_info">@color/pd_mint</color>
+    <color name="semantic_info">@color/pd_mint_text</color>
     <color name="semantic_info_bg">@color/pd_mint_soft</color>
 
     <!-- Status pills: mint = done/confirmed, yellow = waiting/cooking, red = cancelled, surface_2 = sent/draft. -->
     <color name="status_placed">@color/pd_muted</color>
     <color name="status_placed_bg">@color/pd_surface_2</color>
-    <color name="status_confirmed">@color/pd_mint</color>
+    <color name="status_confirmed">@color/pd_mint_text</color>
     <color name="status_confirmed_bg">@color/pd_mint_soft</color>
-    <color name="status_in_progress">@color/pd_yellow</color>
+    <color name="status_in_progress">@color/pd_yellow_text</color>
     <color name="status_in_progress_bg">@color/pd_yellow_soft</color>
-    <color name="status_completed">@color/pd_mint</color>
+    <color name="status_completed">@color/pd_mint_text</color>
     <color name="status_completed_bg">@color/pd_mint_soft</color>
-    <color name="status_cancelled">@color/pd_red</color>
+    <color name="status_cancelled">@color/pd_red_text</color>
     <color name="status_cancelled_bg">@color/pd_red_soft</color>
 
     <color name="item_pending">@color/pd_muted</color>
     <color name="item_pending_bg">@color/pd_surface_2</color>
-    <color name="item_preparing">@color/pd_yellow</color>
+    <color name="item_preparing">@color/pd_yellow_text</color>
     <color name="item_preparing_bg">@color/pd_yellow_soft</color>
-    <color name="item_ready">@color/pd_mint</color>
+    <color name="item_ready">@color/pd_mint_text</color>
     <color name="item_ready_bg">@color/pd_mint_soft</color>
-    <color name="item_served">@color/pd_mint</color>
+    <color name="item_served">@color/pd_mint_text</color>
     <color name="item_served_bg">@color/pd_mint_soft</color>
 
     <!-- Basic -->
@@ -94,10 +119,10 @@
     <color name="colorBackground">@color/pd_bg</color>
     <color name="colorSurface">@color/pd_surface</color>
     <color name="colorSurfaceVariant">@color/pd_surface_2</color>
-    <color name="colorTextPrimary">@color/pd_cream</color>
+    <color name="colorTextPrimary">@color/pd_text</color>
     <color name="colorTextSecondary">@color/pd_muted</color>
     <color name="colorDivider">@color/pd_line</color>
-    <color name="colorSuccess">@color/pd_mint</color>
+    <color name="colorSuccess">@color/pd_mint_text</color>
     <color name="colorError">@color/pd_red</color>
     <color name="colorWarning">@color/pd_yellow</color>
     <color name="colorInfo">@color/pd_mint</color>
@@ -108,13 +133,13 @@
     <color name="color_secondary">@color/pd_yellow</color>
     <color name="color_on_secondary">@color/pd_on_color</color>
     <color name="color_background">@color/pd_bg</color>
-    <color name="color_on_background">@color/pd_cream</color>
+    <color name="color_on_background">@color/pd_text</color>
     <color name="color_surface">@color/pd_surface</color>
-    <color name="color_on_surface">@color/pd_cream</color>
+    <color name="color_on_surface">@color/pd_text</color>
     <color name="color_success">@color/pd_mint</color>
     <color name="color_warning">@color/pd_yellow</color>
     <color name="color_error">@color/pd_red</color>
-    <color name="color_text_primary">@color/pd_cream</color>
+    <color name="color_text_primary">@color/pd_text</color>
     <color name="color_text_secondary">@color/pd_muted</color>
     <color name="color_disabled">@color/pd_dim</color>
     <color name="btn_disabled_bg">@color/pd_surface_2</color>

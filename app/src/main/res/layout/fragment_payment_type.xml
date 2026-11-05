@@ -44,7 +44,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvPaymentTypeTable"
@@ -84,7 +84,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
-                    android:textColor="@color/pd_yellow"
+                    android:textColor="@color/pd_yellow_text"
                     tools:text="610.200đ" />
             </LinearLayout>
 
@@ -119,7 +119,7 @@
                         android:importantForAccessibility="no"
                         android:padding="15dp"
                         android:src="@drawable/ic_card"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <LinearLayout
                         android:layout_width="0dp"

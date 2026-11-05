@@ -2,5 +2,5 @@
 <!-- Soft yellow glow behind the plates (DESIGN_PHO_DEM.md section 2). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
     <gradient android:type="radial" android:gradientRadius="50%"
-        android:centerColor="#40FFC53D" android:startColor="#80FFC53D" android:endColor="#00FFC53D" />
+        android:centerColor="@color/pd_glow_yellow_c" android:startColor="@color/pd_glow_yellow_s" android:endColor="@color/pd_glow_yellow_e" />
 </shape>

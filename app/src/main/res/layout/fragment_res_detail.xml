@@ -43,7 +43,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvDetailResId"
@@ -51,7 +51,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow"
+                android:textColor="@color/pd_yellow_text"
                 tools:text="#8899" />
 
             <TextView
@@ -99,7 +99,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:textAppearance="@style/TextAppearance.VietTable.Price"
-                    android:textColor="@color/pd_yellow"
+                    android:textColor="@color/pd_yellow_text"
                     tools:text="19:00 • 27/10/2026" />
 
                 <TextView
@@ -132,7 +132,7 @@
                     android:background="@drawable/pd_card_yellow_soft"
                     android:padding="14dp"
                     android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                    android:textColor="@color/pd_cream"
+                    android:textColor="@color/pd_text"
                     android:visibility="gone" />
             </LinearLayout>
 
@@ -155,7 +155,7 @@
                         android:layout_height="wrap_content"
                         android:drawableStart="@drawable/ic_cutlery"
                         android:drawablePadding="10dp"
-                        android:drawableTint="@color/pd_yellow"
+                        android:drawableTint="@color/pd_yellow_text"
                         android:gravity="center_vertical"
                         android:text="Món ăn đặt trước (Pre-order)"
                         android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
@@ -203,7 +203,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textAppearance="@style/TextAppearance.VietTable.Body"
-                    android:textColor="@color/pd_cream"
+                    android:textColor="@color/pd_text"
                     tools:text="Tiền cọc 300.000đ: đã nhận, trừ vào hóa đơn khi dùng bữa" />
 
                 <com.google.android.material.button.MaterialButton
@@ -231,7 +231,7 @@
                     android:layout_height="wrap_content"
                     android:drawableStart="@drawable/ic_qr_scan"
                     android:drawablePadding="10dp"
-                    android:drawableTint="@color/pd_mint"
+                    android:drawableTint="@color/pd_mint_text"
                     android:gravity="center_vertical"
                     android:text="Khi đến nhà hàng"
                     android:textAppearance="@style/TextAppearance.VietTable.Display.M" />

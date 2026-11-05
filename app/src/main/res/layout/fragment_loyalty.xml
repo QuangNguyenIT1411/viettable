@@ -42,7 +42,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -50,7 +50,7 @@
                 android:layout_marginTop="28dp"
                 android:text="VIETTABLE CLUB"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -135,7 +135,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
-                            android:textColor="@color/pd_yellow"
+                            android:textColor="@color/pd_yellow_text"
                             tools:text="3.250 pts" />
 
                         <LinearLayout
@@ -198,7 +198,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="10dp"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_yellow"
+                        android:textColor="@color/pd_yellow_text"
                         tools:text="3.250 / 5.000" />
                 </LinearLayout>
 

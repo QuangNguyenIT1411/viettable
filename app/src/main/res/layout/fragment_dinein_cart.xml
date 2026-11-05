@@ -50,7 +50,7 @@
                     android:padding="12dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_back"
-                    app:tint="@color/pd_cream" />
+                    app:tint="@color/pd_text" />
 
                 <View
                     android:layout_width="0dp"
@@ -67,7 +67,7 @@
                     android:paddingHorizontal="18dp"
                     android:text="Xóa giỏ"
                     android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                    android:textColor="@color/pd_red" />
+                    android:textColor="@color/pd_red_text" />
             </LinearLayout>
 
             <TextView
@@ -77,7 +77,7 @@
                 android:layout_marginTop="28dp"
                 android:textAllCaps="true"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_mint"
+                android:textColor="@color/pd_mint_text"
                 tools:text="Gửi tới: Bàn B4 • Chi nhánh Quận 1" />
 
             <TextView
@@ -148,7 +148,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:textAppearance="@style/TextAppearance.VietTable.Price"
-                    android:textColor="@color/pd_yellow"
+                    android:textColor="@color/pd_yellow_text"
                     android:textSize="22sp"
                     tools:text="130.000đ" />
             </LinearLayout>

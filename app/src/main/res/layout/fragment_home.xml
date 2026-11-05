@@ -84,7 +84,7 @@
                             android:layout_marginStart="10dp"
                             android:fontFamily="@font/bricolage_semibold"
                             android:maxLines="1"
-                            android:textColor="@color/pd_cream"
+                            android:textColor="@color/pd_text"
                             android:textSize="15sp"
                             android:visibility="gone"
                             tools:text="Bàn B4 · "
@@ -100,7 +100,7 @@
                             android:ellipsize="end"
                             android:fontFamily="@font/bricolage_semibold"
                             android:maxLines="1"
-                            android:textColor="@color/pd_cream"
+                            android:textColor="@color/pd_text"
                             android:textSize="15sp"
                             tools:text="Chi nhánh Quận 1" />
 
@@ -124,7 +124,7 @@
                     android:padding="13dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_search"
-                    app:tint="@color/pd_cream" />
+                    app:tint="@color/pd_text" />
 
                 <FrameLayout
                     android:id="@+id/btnHeaderNotification"
@@ -142,7 +142,7 @@
                         android:layout_gravity="center"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_notification"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <!-- Unread count; hidden at 0. -->
                     <TextView
@@ -250,7 +250,7 @@
                             android:layout_height="wrap_content"
                             android:text="ƯU ĐÃI ĐANG CHẠY"
                             android:textAppearance="@style/TextAppearance.VietTable.Label"
-                            android:textColor="@color/pd_yellow" />
+                            android:textColor="@color/pd_yellow_text" />
 
                         <TextView
                             android:id="@+id/tvPromoBannerTitle"
@@ -266,7 +266,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                            android:textColor="@color/pd_cream"
+                            android:textColor="@color/pd_text"
                             tools:text="Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ" />
 
                         <com.google.android.material.button.MaterialButton
@@ -331,7 +331,7 @@
                             android:layout_weight="1"
                             android:text="@string/home_upcoming_res"
                             android:textAppearance="@style/TextAppearance.VietTable.Label"
-                            android:textColor="@color/pd_yellow" />
+                            android:textColor="@color/pd_yellow_text" />
 
                         <TextView
                             android:id="@+id/tvResStatus"
@@ -616,7 +616,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="@string/pd_home_chef_order"
                                     android:textAppearance="@style/TextAppearance.VietTable.Button"
-                                    android:textColor="@color/pd_cream" />
+                                    android:textColor="@color/pd_text" />
 
                                 <ImageView
                                     android:layout_width="44dp"

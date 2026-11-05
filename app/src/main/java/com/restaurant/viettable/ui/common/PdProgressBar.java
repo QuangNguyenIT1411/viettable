@@ -39,7 +39,7 @@ public class PdProgressBar extends View {
         barHeight = 14 * density;
         knobRadius = 12 * density;
         track.setColor(ContextCompat.getColor(context, R.color.pd_surface_2));
-        knob.setColor(ContextCompat.getColor(context, R.color.pd_cream));
+        knob.setColor(ContextCompat.getColor(context, R.color.pd_inverse));
         setMinimumHeight((int) (knobRadius * 2));
     }
 

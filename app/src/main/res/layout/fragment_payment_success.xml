@@ -116,7 +116,7 @@
                         android:layout_weight="1"
                         android:gravity="end"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         tools:text="HD-20261019-0412" />
                 </LinearLayout>
 
@@ -142,7 +142,7 @@
                         android:layout_weight="1"
                         android:gravity="end"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         tools:text="21:52 · 19/10/2026" />
                 </LinearLayout>
 
@@ -167,7 +167,7 @@
                         android:layout_weight="1"
                         android:gravity="end"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         tools:text="Chuyển khoản" />
                 </LinearLayout>
 
@@ -192,7 +192,7 @@
                         android:layout_weight="1"
                         android:gravity="end"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         tools:text="Bàn B4 • Chi nhánh Quận 1" />
                 </LinearLayout>
 
@@ -259,7 +259,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         tools:text="+245 điểm tích lũy mới!" />
 
                     <TextView

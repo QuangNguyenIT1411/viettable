@@ -41,7 +41,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPromoImage"
@@ -66,7 +66,7 @@
                 android:layout_marginTop="28dp"
                 android:text="KHUYẾN MÃI"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
 
             <TextView
                 android:id="@+id/tvPromoDetailName"
@@ -115,7 +115,7 @@
                 android:background="@drawable/pd_card_yellow_soft"
                 android:padding="18dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Body"
-                android:textColor="@color/pd_cream"
+                android:textColor="@color/pd_text"
                 tools:text="Hóa đơn từ 300.000đ · giảm tối đa 50.000đ. Tự áp vào hóa đơn khi đủ điều kiện." />
 
             <LinearLayout
@@ -132,7 +132,7 @@
                     android:layout_height="wrap_content"
                     android:drawableStart="@drawable/ic_clock"
                     android:drawablePadding="10dp"
-                    android:drawableTint="@color/pd_yellow"
+                    android:drawableTint="@color/pd_yellow_text"
                     android:gravity="center_vertical"
                     android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
                     tools:text="Đến 23:59, 30/10/2026" />

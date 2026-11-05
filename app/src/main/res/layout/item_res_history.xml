@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Price"
-                android:textColor="@color/pd_yellow"
+                android:textColor="@color/pd_yellow_text"
                 android:textSize="16sp"
                 tools:text="19:00 • 27/10/2026" />
 

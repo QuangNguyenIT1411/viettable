@@ -24,7 +24,7 @@
             android:layout_weight="1"
             android:textAllCaps="true"
             android:textAppearance="@style/TextAppearance.VietTable.Label"
-            android:textColor="@color/pd_yellow"
+            android:textColor="@color/pd_yellow_text"
             tools:text="Bước 1: Chọn ngày" />
 
         <TextView

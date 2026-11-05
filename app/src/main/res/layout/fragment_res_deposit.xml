@@ -42,7 +42,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -50,7 +50,7 @@
                 android:layout_marginTop="28dp"
                 android:text="ĐẶT CỌC GIỮ BÀN"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -84,7 +84,7 @@
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_copy"
                     android:visibility="gone"
-                    app:tint="@color/pd_yellow"
+                    app:tint="@color/pd_yellow_text"
                     tools:visibility="visible" />
             </LinearLayout>
 
@@ -106,7 +106,7 @@
                 android:background="@drawable/pd_pill_surface2"
                 android:drawableStart="@drawable/ic_clock"
                 android:drawablePadding="8dp"
-                android:drawableTint="@color/pd_yellow"
+                android:drawableTint="@color/pd_yellow_text"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="14dp"
                 android:paddingVertical="8dp"
@@ -171,7 +171,7 @@
                             android:padding="13dp"
                             android:scaleType="fitCenter"
                             android:src="@drawable/ic_copy"
-                            app:tint="@color/pd_yellow" />
+                            app:tint="@color/pd_yellow_text" />
                     </LinearLayout>
 
                     <!-- QR on a white box with the scan bar running over it. -->
@@ -287,7 +287,7 @@
                             android:padding="13dp"
                             android:scaleType="fitCenter"
                             android:src="@drawable/ic_copy"
-                            app:tint="@color/pd_yellow" />
+                            app:tint="@color/pd_yellow_text" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -337,7 +337,7 @@
                             android:layout_height="wrap_content"
                             android:text="Đang chờ tiền cọc…"
                             android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                            android:textColor="@color/pd_cream" />
+                            android:textColor="@color/pd_text" />
 
                         <TextView
                             android:id="@+id/tvDepositStatusDesc"
@@ -378,7 +378,7 @@
                 android:background="@drawable/pd_card_red_soft"
                 android:padding="20dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Body"
-                android:textColor="@color/pd_cream"
+                android:textColor="@color/pd_text"
                 android:visibility="gone"
                 tools:text="Đã quá thời gian đặt cọc nên đặt bàn đã được hủy." />
 
@@ -390,7 +390,7 @@
                 android:background="@drawable/pd_card_yellow_soft"
                 android:padding="18dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                android:textColor="@color/pd_cream"
+                android:textColor="@color/pd_text"
                 tools:text="Tiền cọc được trừ vào hóa đơn khi dùng bữa. Hủy trước giờ đến từ 2 giờ được hoàn cọc; hủy sát giờ hoặc không đến sẽ mất cọc." />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

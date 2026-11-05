@@ -41,7 +41,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvDateSelectedDisplay"

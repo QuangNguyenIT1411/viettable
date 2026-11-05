@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- "Phố đêm" (Tối): giá trị hiện tại của bản demo, KHÔNG đổi. Bộ Sáng nằm ở values/colors.xml. -->
+    <color name="pd_bg">#15100D</color>
+    <color name="pd_surface">#211915</color>
+    <color name="pd_surface_2">#2E241F</color>
+    <color name="pd_line">#3D322B</color>
+    <color name="pd_text">#FBF0E2</color>
+    <color name="pd_cream">#FBF0E2</color>
+    <color name="pd_muted">#B9AA9A</color>
+    <color name="pd_dim">#7F7166</color>
+    <color name="pd_yellow">#FFC53D</color>
+    <color name="pd_red">#FF5B3A</color>
+    <color name="pd_mint">#7FD3AA</color>
+    <color name="pd_plum">#3B2331</color>
+    <color name="pd_on_color">#1A120C</color>
+    <color name="pd_inverse">#FBF0E2</color>
+    <color name="pd_on_inverse">#1A120C</color>
+    <color name="pd_plate_rim">#FBF0E2</color>
+    <color name="pd_paper">#FBF0E2</color>
+    <color name="pd_yellow_text">#FFC53D</color>
+    <color name="pd_red_text">#FF5B3A</color>
+    <color name="pd_mint_text">#7FD3AA</color>
+    <color name="pd_yellow_pressed">#E6AC2A</color>
+    <color name="pd_red_pressed">#E04A2C</color>
+    <color name="pd_yellow_soft">#3A2C14</color>
+    <color name="pd_red_soft">#3D1F17</color>
+    <color name="pd_mint_soft">#1A3328</color>
+    <color name="pd_ripple">#1FFBF0E2</color>
+    <color name="pd_selection">#66FFC53D</color>
+    <color name="pd_switch_thumb_off">#7F7166</color>
+    <color name="pd_overlay_surface">#CC18211C</color>
+    <color name="pd_bg_fade">#E615100D</color>
+    <color name="pd_bg_clear">#0015100D</color>
+    <color name="pd_bg_scrim_a">#9915100D</color>
+    <color name="pd_glow_yellow_s">#80FFC53D</color>
+    <color name="pd_glow_yellow_c">#40FFC53D</color>
+    <color name="pd_glow_yellow_e">#00FFC53D</color>
+    <color name="pd_glow_red_s">#B3FF5B3A</color>
+    <color name="pd_glow_red_c">#47FF5B3A</color>
+    <color name="pd_glow_red_e">#00FF5B3A</color>
+    <color name="pd_glow_mint_s">#667FD3AA</color>
+    <color name="pd_glow_mint_c">#337FD3AA</color>
+    <color name="pd_glow_mint_e">#007FD3AA</color>
+</resources>

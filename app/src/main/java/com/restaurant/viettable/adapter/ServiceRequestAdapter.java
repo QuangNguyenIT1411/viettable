@@ -66,30 +66,30 @@ public class ServiceRequestAdapter extends RecyclerView.Adapter<ServiceRequestAd
                 case REQUESTED:
                     binding.tvRequestStatusBadge.setText("CHỜ TIẾP NHẬN");
                     binding.tvRequestStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFE1F5FE)
+                            android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_surface_2))
                     );
-                    binding.tvRequestStatusBadge.setTextColor(0xFF01579B);
+                    binding.tvRequestStatusBadge.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_muted));
                     break;
                 case ACCEPTED:
                     binding.tvRequestStatusBadge.setText("ĐANG XỬ LÝ");
                     binding.tvRequestStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFFFF3E0)
+                            android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_yellow_soft))
                     );
-                    binding.tvRequestStatusBadge.setTextColor(0xFFD84315);
+                    binding.tvRequestStatusBadge.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_yellow_text));
                     break;
                 case COMPLETED:
                     binding.tvRequestStatusBadge.setText("ĐÃ HOÀN TẤT");
                     binding.tvRequestStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFE8F5E9)
+                            android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_mint_soft))
                     );
-                    binding.tvRequestStatusBadge.setTextColor(0xFF1B5E20);
+                    binding.tvRequestStatusBadge.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_mint_text));
                     break;
                 case CANCELLED:
                     binding.tvRequestStatusBadge.setText("ĐÃ HỦY");
                     binding.tvRequestStatusBadge.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFFFFEBEE)
+                            android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_red_soft))
                     );
-                    binding.tvRequestStatusBadge.setTextColor(0xFFB71C1C);
+                    binding.tvRequestStatusBadge.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_red_text));
                     break;
             }
             boolean cancellable = req.getStatus() == ServiceRequest.Status.REQUESTED;

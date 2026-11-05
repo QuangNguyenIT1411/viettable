@@ -41,7 +41,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
         </FrameLayout>
 
         <FrameLayout
@@ -69,7 +69,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.VietTable.Label"
-                        android:textColor="@color/pd_yellow"
+                        android:textColor="@color/pd_yellow_text"
                         tools:text="Bàn B4 • Chi nhánh Quận 1" />
 
                     <TextView
@@ -131,7 +131,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
                                 android:textAppearance="@style/TextAppearance.VietTable.Price"
-                                android:textColor="@color/pd_yellow"
+                                android:textColor="@color/pd_yellow_text"
                                 tools:text="272.500đ" />
                         </LinearLayout>
                     </LinearLayout>

@@ -95,7 +95,7 @@ public class InvoiceHistoryDetailFragment extends BaseFragment {
         if (invoice.getPromotionDiscount() > 0) {
             TextView row = new TextView(requireContext());
             row.setText("Khuyến mãi     " + String.format(Locale.GERMANY, "-%,dđ", invoice.getPromotionDiscount()));
-            row.setTextColor(requireContext().getColor(R.color.pd_mint));
+            row.setTextColor(requireContext().getColor(R.color.pd_mint_text));
             row.setTextSize(14);
             row.setPadding(0, 7, 0, 7);
             binding.layoutInvoiceDetailItems.addView(row);
@@ -103,7 +103,7 @@ public class InvoiceHistoryDetailFragment extends BaseFragment {
         if (invoice.getDepositApplied() > 0) {
             TextView row = new TextView(requireContext());
             row.setText("Đã đặt cọc     " + String.format(Locale.GERMANY, "-%,dđ", invoice.getDepositApplied()));
-            row.setTextColor(requireContext().getColor(R.color.pd_yellow));
+            row.setTextColor(requireContext().getColor(R.color.pd_yellow_text));
             row.setTextSize(14);
             row.setPadding(0, 7, 0, 7);
             binding.layoutInvoiceDetailItems.addView(row);

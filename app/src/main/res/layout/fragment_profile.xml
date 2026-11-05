@@ -53,7 +53,7 @@
                         android:importantForAccessibility="no"
                         android:padding="14dp"
                         android:src="@drawable/ic_profile"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
                 </FrameLayout>
 
                 <LinearLayout
@@ -68,7 +68,7 @@
                         android:layout_height="wrap_content"
                         android:text="TÀI KHOẢN"
                         android:textAppearance="@style/TextAppearance.VietTable.Label"
-                        android:textColor="@color/pd_yellow" />
+                        android:textColor="@color/pd_yellow_text" />
 
                     <TextView
                         android:id="@+id/tvProfileName"
@@ -100,7 +100,7 @@
                     android:focusable="true"
                     android:padding="13dp"
                     android:src="@drawable/ic_arrow_forward"
-                    app:tint="@color/pd_cream" />
+                    app:tint="@color/pd_text" />
             </LinearLayout>
 
             <!-- Member card: plum, tier pill, points (real values from the code). -->
@@ -182,7 +182,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:textAppearance="@style/TextAppearance.VietTable.Display.L"
-                                android:textColor="@color/pd_yellow"
+                                android:textColor="@color/pd_yellow_text"
                                 tools:text="3.250 điểm" />
 
                             <ImageView
@@ -279,7 +279,7 @@
                         android:importantForAccessibility="no"
                         android:padding="10dp"
                         android:src="@drawable/ic_reservation"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -318,7 +318,7 @@
                         android:importantForAccessibility="no"
                         android:padding="10dp"
                         android:src="@drawable/ic_orders"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -357,7 +357,7 @@
                         android:importantForAccessibility="no"
                         android:padding="10dp"
                         android:src="@drawable/ic_star"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -413,7 +413,7 @@
                         android:importantForAccessibility="no"
                         android:padding="10dp"
                         android:src="@drawable/ic_voucher"
-                        app:tint="@color/pd_yellow" />
+                        app:tint="@color/pd_yellow_text" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -470,7 +470,7 @@
                         android:importantForAccessibility="no"
                         android:padding="10dp"
                         android:src="@drawable/ic_fingerprint"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -516,7 +516,7 @@
                         android:importantForAccessibility="no"
                         android:padding="10dp"
                         android:src="@drawable/ic_info"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:layout_width="0dp"
@@ -555,7 +555,7 @@
                         android:importantForAccessibility="no"
                         android:padding="10dp"
                         android:src="@drawable/ic_phone"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:layout_width="0dp"

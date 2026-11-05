@@ -42,7 +42,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvInvoiceBranch"
@@ -187,7 +187,7 @@
                             android:layout_weight="1"
                             android:text="Voucher"
                             android:textAppearance="@style/TextAppearance.VietTable.Body"
-                            android:textColor="@color/pd_mint"
+                            android:textColor="@color/pd_mint_text"
                             tools:text="Voucher CHAOBAN50" />
 
                         <TextView
@@ -195,7 +195,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                            android:textColor="@color/pd_mint"
+                            android:textColor="@color/pd_mint_text"
                             tools:text="-50.000đ" />
                     </LinearLayout>
 
@@ -209,7 +209,7 @@
                         android:paddingEnd="12dp"
                         android:text="Bỏ voucher"
                         android:textAppearance="@style/TextAppearance.VietTable.Label"
-                        android:textColor="@color/pd_yellow" />
+                        android:textColor="@color/pd_yellow_text" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -228,14 +228,14 @@
                         android:layout_weight="1"
                         android:text="Giảm từ điểm tích lũy"
                         android:textAppearance="@style/TextAppearance.VietTable.Body"
-                        android:textColor="@color/pd_mint" />
+                        android:textColor="@color/pd_mint_text" />
 
                     <TextView
                         android:id="@+id/tvLoyaltyDiscountAmount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_mint"
+                        android:textColor="@color/pd_mint_text"
                         tools:text="-20.000đ" />
                 </LinearLayout>
 
@@ -262,7 +262,7 @@
                             android:layout_weight="1"
                             android:text="Khuyến mãi tự động"
                             android:textAppearance="@style/TextAppearance.VietTable.Body"
-                            android:textColor="@color/pd_mint"
+                            android:textColor="@color/pd_mint_text"
                             tools:text="Khuyến mãi tự động: Giờ vàng" />
 
                         <TextView
@@ -270,7 +270,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                            android:textColor="@color/pd_mint"
+                            android:textColor="@color/pd_mint_text"
                             tools:text="-50.000đ" />
                     </LinearLayout>
 
@@ -284,7 +284,7 @@
                         android:paddingEnd="12dp"
                         android:text="Không dùng khuyến mãi"
                         android:textAppearance="@style/TextAppearance.VietTable.Label"
-                        android:textColor="@color/pd_yellow" />
+                        android:textColor="@color/pd_yellow_text" />
                 </LinearLayout>
 
                 <TextView
@@ -314,14 +314,14 @@
                         android:layout_weight="1"
                         android:text="Đã đặt cọc"
                         android:textAppearance="@style/TextAppearance.VietTable.Body"
-                        android:textColor="@color/pd_yellow" />
+                        android:textColor="@color/pd_yellow_text" />
 
                     <TextView
                         android:id="@+id/tvDepositAppliedAmount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_yellow"
+                        android:textColor="@color/pd_yellow_text"
                         tools:text="-300.000đ" />
                 </LinearLayout>
 
@@ -350,7 +350,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:textAppearance="@style/TextAppearance.VietTable.Display.L"
-                        android:textColor="@color/pd_yellow"
+                        android:textColor="@color/pd_yellow_text"
                         tools:text="610.200đ" />
                 </LinearLayout>
             </LinearLayout>
@@ -373,7 +373,7 @@
                     app:backgroundTint="@color/pd_plum"
                     app:icon="@drawable/ic_voucher"
                     app:iconGravity="textStart"
-                    app:iconTint="@color/pd_yellow"
+                    app:iconTint="@color/pd_yellow_text"
                     app:strokeWidth="0dp" />
 
                 <com.google.android.material.button.MaterialButton
@@ -388,7 +388,7 @@
                     app:backgroundTint="@color/pd_plum"
                     app:icon="@drawable/ic_loyalty"
                     app:iconGravity="textStart"
-                    app:iconTint="@color/pd_yellow"
+                    app:iconTint="@color/pd_yellow_text"
                     app:strokeWidth="0dp" />
             </LinearLayout>
 
@@ -401,7 +401,7 @@
                 android:background="@drawable/pd_note_box"
                 android:padding="14dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                android:textColor="@color/pd_yellow"
+                android:textColor="@color/pd_yellow_text"
                 android:visibility="gone" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

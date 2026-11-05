@@ -107,7 +107,7 @@ public class InvoiceFragment extends BaseFragment {
                     tvName.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
                     tvName.setText(oi.getQuantity() + "x " + oi.getFoodName());
                     androidx.core.widget.TextViewCompat.setTextAppearance(tvName, R.style.TextAppearance_VietTable_Body);
-                    tvName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.pd_cream));
+                    tvName.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), R.color.pd_text));
 
                     TextView tvPrice = new TextView(requireContext());
                     tvPrice.setText(oi.getFormattedTotalPrice());

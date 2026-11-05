@@ -37,7 +37,7 @@
                 android:layout_marginHorizontal="@dimen/pd_screen_margin"
                 android:text="BỮA ĂN CỦA BẠN"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="match_parent"

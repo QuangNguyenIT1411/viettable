@@ -42,7 +42,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -50,7 +50,7 @@
                 android:layout_marginTop="32dp"
                 android:text="ĐIỂM THƯỞNG"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -90,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                    android:textColor="@color/pd_yellow"
+                    android:textColor="@color/pd_yellow_text"
                     tools:text="≈ 32.500đ" />
             </LinearLayout>
 
@@ -108,7 +108,7 @@
                     android:layout_height="20dp"
                     android:importantForAccessibility="no"
                     android:src="@drawable/ic_info"
-                    app:tint="@color/pd_yellow" />
+                    app:tint="@color/pd_yellow_text" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -145,7 +145,7 @@
                     android:layout_marginTop="12dp"
                     android:gravity="center"
                     android:textAppearance="@style/TextAppearance.VietTable.Display.L"
-                    android:textColor="@color/pd_yellow"
+                    android:textColor="@color/pd_yellow_text"
                     tools:text="2.000 điểm" />
 
                 <LinearLayout
@@ -167,7 +167,7 @@
                         android:minHeight="48dp"
                         android:paddingHorizontal="12dp"
                         android:text="−"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         app:backgroundTint="@color/pd_surface" />
 
                     <View
@@ -180,13 +180,13 @@
                         style="@style/Widget.VietTable.Button.Primary"
                         android:layout_width="wrap_content"
                         android:layout_height="48dp"
-                        android:backgroundTint="@color/pd_cream"
+                        android:backgroundTint="@color/pd_inverse"
                         android:minWidth="76dp"
                         android:minHeight="48dp"
                         android:paddingHorizontal="12dp"
                         android:text="+"
-                        android:textColor="@color/pd_on_color"
-                        app:backgroundTint="@color/pd_cream" />
+                        android:textColor="@color/pd_on_inverse"
+                        app:backgroundTint="@color/pd_inverse" />
                 </LinearLayout>
 
                 <!-- Server's cap: points take at most N% off the bill (filled by the code; hidden until known). -->
@@ -207,7 +207,7 @@
                     android:layout_marginTop="8dp"
                     android:gravity="center"
                     android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                    android:textColor="@color/pd_mint" />
+                    android:textColor="@color/pd_mint_text" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

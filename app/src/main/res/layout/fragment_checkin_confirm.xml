@@ -233,7 +233,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
                             android:text="Có món đã đặt trước!"
-                            android:textColor="@color/pd_yellow"
+                            android:textColor="@color/pd_yellow_text"
                             android:textSize="14sp" />
 
                         <TextView
@@ -243,7 +243,7 @@
                             android:layout_marginTop="4dp"
                             android:lineSpacingExtra="2dp"
                             android:text="3 món ăn đặt trước sẽ tự động được gửi tới bộ phận Bếp sau khi quý khách xác nhận vào bàn."
-                            android:textColor="@color/pd_yellow"
+                            android:textColor="@color/pd_yellow_text"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>

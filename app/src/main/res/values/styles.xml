@@ -8,7 +8,7 @@
         <item name="lineHeight">40sp</item>
         <item name="android:letterSpacing">-0.02</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
     </style>
 
     <style name="TextAppearance.VietTable.Display.L" parent="TextAppearance.Material3.HeadlineMedium">
@@ -18,7 +18,7 @@
         <item name="lineHeight">30sp</item>
         <item name="android:letterSpacing">-0.01</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
     </style>
 
     <style name="TextAppearance.VietTable.Display.M" parent="TextAppearance.Material3.TitleLarge">
@@ -28,7 +28,7 @@
         <item name="lineHeight">23sp</item>
         <item name="android:letterSpacing">0</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
     </style>
 
     <style name="TextAppearance.VietTable.Price" parent="TextAppearance.Material3.TitleMedium">
@@ -38,7 +38,7 @@
         <item name="lineHeight">22sp</item>
         <item name="android:letterSpacing">0</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/pd_yellow</item>
+        <item name="android:textColor">@color/pd_yellow_text</item>
     </style>
 
     <style name="TextAppearance.VietTable.Label" parent="TextAppearance.Material3.LabelSmall">
@@ -66,7 +66,7 @@
         <item name="fontFamily">@font/unbounded_semibold</item>
         <item name="android:textSize">@dimen/text_h2</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
     </style>
 
     <style name="TextAppearance.VietTable.H3" parent="TextAppearance.VietTable.Display.M" />
@@ -76,7 +76,7 @@
         <item name="fontFamily">@font/bricolage_bold</item>
         <item name="android:textSize">@dimen/text_title</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
     </style>
 
     <style name="TextAppearance.VietTable.Subtitle" parent="TextAppearance.Material3.TitleSmall">
@@ -94,7 +94,7 @@
         <item name="lineHeight">22sp</item>
         <item name="android:letterSpacing">0</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
     </style>
 
     <style name="TextAppearance.VietTable.BodySmall" parent="TextAppearance.Material3.BodySmall">
@@ -138,7 +138,7 @@
     <style name="Widget.VietTable.EditText" parent="Widget.AppCompat.EditText">
         <item name="android:fontFamily">@font/bricolage</item>
         <item name="fontFamily">@font/bricolage</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
         <item name="android:textColorHint">@color/pd_dim</item>
     </style>
 
@@ -294,8 +294,8 @@
     <style name="Widget.VietTable.Button.Text" parent="Widget.Material3.Button.TextButton">
         <item name="backgroundTint">@android:color/transparent</item>
         <item name="android:backgroundTint">@android:color/transparent</item>
-        <item name="android:textColor">@color/pd_yellow</item>
-        <item name="iconTint">@color/pd_yellow</item>
+        <item name="android:textColor">@color/pd_yellow_text</item>
+        <item name="iconTint">@color/pd_yellow_text</item>
         <item name="rippleColor">@color/pd_ripple</item>
         <item name="android:textAppearance">@style/TextAppearance.VietTable.Button</item>
     </style>
@@ -344,9 +344,9 @@
     <!-- Toolbar Style -->
     <style name="Widget.VietTable.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="android:background">@color/pd_bg</item>
-        <item name="titleTextColor">@color/pd_cream</item>
+        <item name="titleTextColor">@color/pd_text</item>
         <item name="subtitleTextColor">@color/pd_muted</item>
-        <item name="navigationIconTint">@color/pd_cream</item>
+        <item name="navigationIconTint">@color/pd_text</item>
         <item name="titleTextAppearance">@style/TextAppearance.VietTable.Display.M</item>
     </style>
 
@@ -396,8 +396,8 @@
         <item name="boxStrokeWidth">1dp</item>
         <item name="boxStrokeWidthFocused">1.5dp</item>
         <item name="boxStrokeErrorColor">@color/pd_red</item>
-        <item name="errorTextColor">@color/pd_red</item>
-        <item name="errorIconTint">@color/pd_red</item>
+        <item name="errorTextColor">@color/pd_red_text</item>
+        <item name="errorIconTint">@color/pd_red_text</item>
         <item name="hintTextColor">@color/pd_yellow</item>
         <item name="android:textColorHint">@color/pd_dim</item>
         <item name="placeholderTextColor">@color/pd_dim</item>
@@ -411,7 +411,7 @@
     <style name="ThemeOverlay.VietTable.TextInput" parent="ThemeOverlay.Material3.TextInputEditText.OutlinedBox">
         <item name="colorOnSurface">@color/pd_cream</item>
         <item name="colorPrimary">@color/pd_yellow</item>
-        <item name="android:textColorPrimary">@color/pd_cream</item>
+        <item name="android:textColorPrimary">@color/pd_text</item>
     </style>
 
     <!-- Filter chips: pill; selected = cream with dark text, otherwise line border and muted text. -->
@@ -481,13 +481,13 @@
     </style>
 
     <style name="Widget.VietTable.Snackbar.Text" parent="Widget.Material3.Snackbar.TextView">
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
         <item name="android:maxLines">4</item>
         <item name="android:textAppearance">@style/TextAppearance.VietTable.M3.Body</item>
     </style>
 
     <style name="Widget.VietTable.Snackbar.Button" parent="Widget.Material3.Button.TextButton.Snackbar">
-        <item name="android:textColor">@color/pd_yellow</item>
+        <item name="android:textColor">@color/pd_yellow_text</item>
     </style>
 
     <!-- Status pill (DESIGN_PHO_DEM.md section 5): text + colour; screens tint the background per status. -->
@@ -504,20 +504,20 @@
 
     <style name="Widget.VietTable.StatusPill.Success">
         <item name="android:backgroundTint">@color/pd_mint_soft</item>
-        <item name="android:textColor">@color/pd_mint</item>
-        <item name="android:drawableTint">@color/pd_mint</item>
+        <item name="android:textColor">@color/pd_mint_text</item>
+        <item name="android:drawableTint">@color/pd_mint_text</item>
     </style>
 
     <style name="Widget.VietTable.StatusPill.Waiting">
         <item name="android:backgroundTint">@color/pd_yellow_soft</item>
-        <item name="android:textColor">@color/pd_yellow</item>
-        <item name="android:drawableTint">@color/pd_yellow</item>
+        <item name="android:textColor">@color/pd_yellow_text</item>
+        <item name="android:drawableTint">@color/pd_yellow_text</item>
     </style>
 
     <style name="Widget.VietTable.StatusPill.Error">
         <item name="android:backgroundTint">@color/pd_red_soft</item>
-        <item name="android:textColor">@color/pd_red</item>
-        <item name="android:drawableTint">@color/pd_red</item>
+        <item name="android:textColor">@color/pd_red_text</item>
+        <item name="android:drawableTint">@color/pd_red_text</item>
     </style>
 
     <style name="Widget.VietTable.StatusPill.Neutral">
@@ -590,7 +590,7 @@
 
     <style name="VietTable.Dialog.Title" parent="MaterialAlertDialog.Material3.Title.Text">
         <item name="android:textAppearance">@style/TextAppearance.VietTable.Display.M</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
     </style>
 
     <style name="VietTable.Dialog.Body" parent="MaterialAlertDialog.Material3.Body.Text">
@@ -600,7 +600,7 @@
 
     <style name="ThemeOverlay.VietTable.Dialog.Alert" parent="ThemeOverlay.AppCompat.Dialog.Alert">
         <item name="android:colorBackground">@color/pd_surface</item>
-        <item name="android:textColorPrimary">@color/pd_cream</item>
+        <item name="android:textColorPrimary">@color/pd_text</item>
         <item name="android:textColorSecondary">@color/pd_muted</item>
         <item name="colorAccent">@color/pd_yellow</item>
         <item name="colorPrimary">@color/pd_yellow</item>
@@ -669,7 +669,7 @@
         <item name="android:padding">17dp</item>
         <item name="android:scaleType">fitCenter</item>
         <item name="android:importantForAccessibility">no</item>
-        <item name="tint">@color/pd_yellow</item>
+        <item name="tint">@color/pd_yellow_text</item>
     </style>
 
     <style name="Widget.VietTable.HomeTile.Label" parent="">
@@ -684,7 +684,7 @@
         <item name="autoSizeMinTextSize">9sp</item>
         <item name="autoSizeStepGranularity">0.5sp</item>
         <item name="android:textAppearance">@style/TextAppearance.VietTable.Caption</item>
-        <item name="android:textColor">@color/pd_cream</item>
+        <item name="android:textColor">@color/pd_text</item>
         <item name="android:importantForAccessibility">no</item>
     </style>
 
@@ -722,7 +722,7 @@
         <item name="android:background">?attr/selectableItemBackground</item>
         <item name="android:textAppearance">@style/TextAppearance.VietTable.Body</item>
         <item name="android:fontFamily">@font/bricolage_semibold</item>
-        <item name="android:textColor">@color/pd_yellow</item>
+        <item name="android:textColor">@color/pd_yellow_text</item>
     </style>
 
     <style name="Widget.VietTable.HomeGrid" parent="">

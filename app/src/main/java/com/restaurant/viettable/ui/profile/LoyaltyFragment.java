@@ -67,7 +67,7 @@ public class LoyaltyFragment extends BaseFragment {
             android.widget.ImageView tick = new android.widget.ImageView(requireContext());
             tick.setImageResource(com.restaurant.viettable.R.drawable.ic_check);
             tick.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(requireContext(),
-                    com.restaurant.viettable.R.color.pd_mint));
+                    com.restaurant.viettable.R.color.pd_mint_text));
             tick.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             row.addView(tick, new android.widget.LinearLayout.LayoutParams((int) (24 * density), (int) (24 * density)));
             TextView text = new TextView(requireContext());

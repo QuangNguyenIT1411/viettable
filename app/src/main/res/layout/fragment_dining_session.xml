@@ -42,7 +42,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_home"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <View
                 android:layout_width="0dp"
@@ -85,7 +85,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.VietTable.Label"
-                        android:textColor="@color/pd_yellow"
+                        android:textColor="@color/pd_yellow_text"
                         tools:text="Chi nhánh Quận 1" />
 
                     <TextView
@@ -144,7 +144,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
                                 android:textAppearance="@style/TextAppearance.VietTable.Price"
-                                android:textColor="@color/pd_yellow"
+                                android:textColor="@color/pd_yellow_text"
                                 tools:text="272.500đ" />
                         </LinearLayout>
 
@@ -241,7 +241,7 @@
                                 android:importantForAccessibility="no"
                                 android:padding="11dp"
                                 android:src="@drawable/ic_service_staff"
-                                app:tint="@color/pd_cream" />
+                                app:tint="@color/pd_text" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -311,7 +311,7 @@
                             android:paddingHorizontal="4dp"
                             android:text="Xem tất cả"
                             android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                            android:textColor="@color/pd_yellow" />
+                            android:textColor="@color/pd_yellow_text" />
                     </LinearLayout>
 
                     <androidx.recyclerview.widget.RecyclerView
@@ -329,7 +329,7 @@
                         android:layout_height="56dp"
                         android:layout_marginTop="24dp"
                         android:text="Hủy bàn"
-                        android:textColor="@color/pd_red"
+                        android:textColor="@color/pd_red_text"
                         android:visibility="gone"
                         app:strokeColor="@color/pd_red" />
 

@@ -42,7 +42,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvDateTimeSummary"
@@ -120,7 +120,7 @@
                         android:padding="11dp"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_remove"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:id="@+id/tvAdultCount"
@@ -140,7 +140,7 @@
                         android:padding="11dp"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_add"
-                        app:tint="@color/pd_on_color" />
+                        app:tint="@color/pd_on_inverse" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -194,7 +194,7 @@
                         android:padding="11dp"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_remove"
-                        app:tint="@color/pd_cream" />
+                        app:tint="@color/pd_text" />
 
                     <TextView
                         android:id="@+id/tvChildCount"
@@ -214,7 +214,7 @@
                         android:padding="11dp"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_add"
-                        app:tint="@color/pd_on_color" />
+                        app:tint="@color/pd_on_inverse" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -236,7 +236,7 @@
                     android:layout_height="22dp"
                     android:importantForAccessibility="no"
                     android:src="@drawable/ic_warning"
-                    app:tint="@color/pd_yellow" />
+                    app:tint="@color/pd_yellow_text" />
 
                 <TextView
                     android:id="@+id/tvDepositNotice"
@@ -246,7 +246,7 @@
                     android:layout_weight="1"
                     tools:text="Từ 6 khách cần đặt cọc 50.000đ/khách: 300.000đ, chuyển khoản VietQR trong 15 phút để giữ bàn."
                     android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                    android:textColor="@color/pd_cream" />
+                    android:textColor="@color/pd_text" />
             </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

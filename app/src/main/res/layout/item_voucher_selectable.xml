@@ -61,7 +61,7 @@
                 android:layout_marginTop="6dp"
                 android:textAllCaps="true"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow"
+                android:textColor="@color/pd_yellow_text"
                 tools:text="HSD: 30/09/2026" />
 
             <!-- "Giảm 30.000đ cho hoá đơn này · Còn 2 lượt", or why it cannot be used (card greyed). -->
@@ -71,7 +71,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                android:textColor="@color/pd_mint"
+                android:textColor="@color/pd_mint_text"
                 android:visibility="gone"
                 tools:text="Giảm 30.000đ cho hoá đơn này · Còn 2 lượt"
                 tools:visibility="visible" />

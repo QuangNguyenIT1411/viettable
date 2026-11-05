@@ -81,13 +81,13 @@ public class BranchDetailFragment extends BaseFragment {
             if (hasOpeningData && branch.isOpen()) {
                 binding.tvOpenBadge.setText("Đang mở cửa");
                 binding.tvOpenBadge.setBackgroundResource(R.drawable.bg_status_badge);
-                binding.tvOpenBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
-                binding.tvOpenBadge.setTextColor(0xFF2E7D5B);
+                binding.tvOpenBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), com.restaurant.viettable.R.color.pd_mint_soft)));
+                binding.tvOpenBadge.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), com.restaurant.viettable.R.color.pd_mint_text));
             } else if (hasOpeningData) {
                 binding.tvOpenBadge.setText("Đã đóng cửa");
                 binding.tvOpenBadge.setBackgroundResource(R.drawable.bg_status_badge);
-                binding.tvOpenBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
-                binding.tvOpenBadge.setTextColor(0xFFD32F2F);
+                binding.tvOpenBadge.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(requireContext(), com.restaurant.viettable.R.color.pd_red_soft)));
+                binding.tvOpenBadge.setTextColor(androidx.core.content.ContextCompat.getColor(requireContext(), com.restaurant.viettable.R.color.pd_red_text));
             }
 
             binding.chipGroupFacilities.removeAllViews();

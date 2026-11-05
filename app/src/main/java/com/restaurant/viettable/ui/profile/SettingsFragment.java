@@ -54,6 +54,22 @@ public class SettingsFragment extends BaseFragment {
             saveSettings();
         });
 
+        com.restaurant.viettable.data.ThemeStore themeStore = com.restaurant.viettable.data.ThemeStore.getInstance(requireContext());
+        binding.tvThemeValue.setText(themeStore.get().label);
+        binding.rowTheme.setOnClickListener(v -> {
+            com.restaurant.viettable.util.ThemeChoice[] choices = com.restaurant.viettable.util.ThemeChoice.values();
+            new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Giao diện")
+                    .setSingleChoiceItems(com.restaurant.viettable.util.ThemeChoice.labels(), themeStore.get().ordinal(), (dialog, which) -> {
+                        dialog.dismiss();
+                        // Applied at once: the open screens recreate themselves in the new look.
+                        themeStore.save(choices[which]);
+                        themeStore.apply();
+                    })
+                    .setNegativeButton("Đóng", null)
+                    .show();
+        });
+
         binding.rowLanguage.setOnClickListener(v -> {
             new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Chọn ngôn ngữ")

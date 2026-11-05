@@ -75,14 +75,14 @@ public class BranchAdapter extends RecyclerView.Adapter<BranchAdapter.BranchView
             if (hasOpeningData && branch.isOpen()) {
                 binding.tvOpenStatus.setText("Đang mở cửa");
                 binding.tvOpenStatus.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
-                binding.tvOpenStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
-                binding.tvOpenStatus.setTextColor(0xFF2E7D5B);
+                binding.tvOpenStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_mint_soft)));
+                binding.tvOpenStatus.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_mint_text));
                 binding.btnSelectBranch.setEnabled(true);
             } else if (hasOpeningData) {
                 binding.tvOpenStatus.setText("Đã đóng cửa");
                 binding.tvOpenStatus.setBackgroundResource(com.restaurant.viettable.R.drawable.bg_status_badge);
-                binding.tvOpenStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
-                binding.tvOpenStatus.setTextColor(0xFFD32F2F);
+                binding.tvOpenStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_red_soft)));
+                binding.tvOpenStatus.setTextColor(androidx.core.content.ContextCompat.getColor(itemView.getContext(), com.restaurant.viettable.R.color.pd_red_text));
             }
             binding.btnSelectBranch.setEnabled(true);
 

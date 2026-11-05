@@ -98,7 +98,7 @@
                     android:padding="12dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_back"
-                    app:tint="@color/pd_cream" />
+                    app:tint="@color/pd_text" />
 
                 <ImageButton
                     android:id="@+id/btnFavorite"
@@ -112,7 +112,7 @@
                     android:padding="12dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_favorite_border"
-                    app:tint="@color/pd_red" />
+                    app:tint="@color/pd_red_text" />
             </FrameLayout>
 
             <!-- Sheet: name, rating, description, options, kitchen note. -->
@@ -157,7 +157,7 @@
                         android:layout_height="20dp"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_star"
-                        app:tint="@color/pd_yellow" />
+                        app:tint="@color/pd_yellow_text" />
 
                     <TextView
                         android:id="@+id/tvFoodRating"
@@ -203,7 +203,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
                         android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                        android:textColor="@color/pd_red"
+                        android:textColor="@color/pd_red_text"
                         tools:text="Dị ứng: nước mắm, đậu phộng." />
 
                     <TextView
@@ -294,7 +294,7 @@
                         android:inputType="text"
                         android:minHeight="48dp"
                         android:textAppearance="@style/TextAppearance.VietTable.Body"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         android:textColorHint="@color/pd_dim" />
                 </LinearLayout>
             </LinearLayout>
@@ -331,7 +331,7 @@
                 android:padding="11dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_remove"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvQuantity"
@@ -341,7 +341,7 @@
                 android:minWidth="32dp"
                 android:text="1"
                 android:textAppearance="@style/TextAppearance.VietTable.Price"
-                android:textColor="@color/pd_cream" />
+                android:textColor="@color/pd_text" />
 
             <ImageButton
                 android:id="@+id/btnPlus"
@@ -352,7 +352,7 @@
                 android:padding="11dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_add"
-                app:tint="@color/pd_on_color" />
+                app:tint="@color/pd_on_inverse" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

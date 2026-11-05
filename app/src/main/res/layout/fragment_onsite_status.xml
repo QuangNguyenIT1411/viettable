@@ -44,7 +44,7 @@
                 android:padding="13dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_close"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvOnsiteHeading"
@@ -86,7 +86,7 @@
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_copy"
                     android:visibility="gone"
-                    app:tint="@color/pd_yellow"
+                    app:tint="@color/pd_yellow_text"
                     tools:visibility="visible" />
             </LinearLayout>
 
@@ -148,7 +148,7 @@
                         android:padding="13dp"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_copy"
-                        app:tint="@color/pd_yellow" />
+                        app:tint="@color/pd_yellow_text" />
                 </LinearLayout>
 
                 <!-- QR on a white box with the scan bar running over it. -->
@@ -264,7 +264,7 @@
                         android:padding="13dp"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_copy"
-                        app:tint="@color/pd_yellow" />
+                        app:tint="@color/pd_yellow_text" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -314,7 +314,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/pd_onsite_wait_cash"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream" />
+                        android:textColor="@color/pd_text" />
 
                     <TextView
                         android:id="@+id/tvOnsiteStatusDesc"
@@ -366,7 +366,7 @@
                         android:layout_weight="1"
                         android:gravity="end"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         tools:text="Tại bàn (B4)" />
                 </LinearLayout>
 
@@ -391,7 +391,7 @@
                         android:layout_weight="1"
                         android:gravity="end"
                         android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                        android:textColor="@color/pd_cream"
+                        android:textColor="@color/pd_text"
                         tools:text="Chuyển khoản" />
                 </LinearLayout>
             </LinearLayout>

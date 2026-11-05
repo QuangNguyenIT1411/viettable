@@ -68,7 +68,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
                     android:textAppearance="@style/TextAppearance.VietTable.Price"
-                    android:textColor="@color/pd_yellow"
+                    android:textColor="@color/pd_yellow_text"
                     android:textSize="16sp"
                     tools:text="178.000đ" />
             </LinearLayout>
@@ -91,7 +91,7 @@
                 android:paddingEnd="12dp"
                 android:text="Xóa món"
                 android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                android:textColor="@color/pd_red" />
+                android:textColor="@color/pd_red_text" />
 
             <View
                 android:layout_width="0dp"
@@ -116,7 +116,7 @@
                     android:padding="11dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_remove"
-                    app:tint="@color/pd_cream" />
+                    app:tint="@color/pd_text" />
 
                 <TextView
                     android:id="@+id/tvCartQuantity"
@@ -137,7 +137,7 @@
                     android:padding="11dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_add"
-                    app:tint="@color/pd_on_color" />
+                    app:tint="@color/pd_on_inverse" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

@@ -59,9 +59,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         setContentView(binding.getRoot());
 
         insetsController = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
-        // "Phố đêm" is always dark: light system bar icons on every screen.
-        insetsController.setAppearanceLightNavigationBars(false);
-        insetsController.setAppearanceLightStatusBars(false);
+        applySystemBarIcons();
 
         ApiClient.initialize(getApplicationContext());
         ReservationReminders.initialize(getApplicationContext());
@@ -252,6 +250,15 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         super.onStop();
     }
 
+    /** Status and navigation bar icons: dark on the light page ("Phố ngày"), light on the dark one ("Phố đêm"). */
+    private void applySystemBarIcons() {
+        if (insetsController == null) return;
+        boolean night = (getResources().getConfiguration().uiMode
+                & android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        insetsController.setAppearanceLightStatusBars(!night);
+        insetsController.setAppearanceLightNavigationBars(!night);
+    }
+
     private void setupSystemBarsAndInsets() {
         // Prevent BottomNavigationView from consuming or adding bottom window insets padding to itself
         ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNav, (v, insets) -> {
@@ -436,8 +443,8 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     @Override
     public void setStatusBarLightIcons(boolean isLightIcons) {
         if (insetsController != null) {
-            // Every screen sits on the dark "Phố đêm" page now, so the status bar icons stay light whatever the screen asks.
-            insetsController.setAppearanceLightStatusBars(false);
+            // Every screen sits on the page colour, so the icons follow the look (dark icons on Sáng, light on Tối).
+            applySystemBarIcons();
         }
     }
 

@@ -91,7 +91,7 @@ public class ResDateFragment extends BaseFragment {
             final int index = i;
             LocalDate day = dayOptions.get(i);
             boolean selected = index == selectedIndex;
-            int text = ContextCompat.getColor(requireContext(), selected ? R.color.pd_on_color : R.color.pd_cream);
+            int text = ContextCompat.getColor(requireContext(), selected ? R.color.pd_on_color : R.color.pd_text);
             int sub = ContextCompat.getColor(requireContext(), selected ? R.color.pd_on_color : R.color.pd_muted);
 
             LinearLayout chip = new LinearLayout(requireContext());

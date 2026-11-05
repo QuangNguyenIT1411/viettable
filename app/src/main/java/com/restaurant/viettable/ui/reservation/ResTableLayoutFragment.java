@@ -255,7 +255,7 @@ public class ResTableLayoutFragment extends BaseFragment {
         name.setText("Bàn " + table.tableNumber);
         name.setGravity(Gravity.CENTER);
         androidx.core.widget.TextViewCompat.setTextAppearance(name, R.style.TextAppearance_VietTable_Body_Strong);
-        name.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : free ? R.color.pd_cream : R.color.pd_dim));
+        name.setTextColor(getResources().getColor(isSelected ? R.color.pd_on_color : free ? R.color.pd_text : R.color.pd_dim));
         content.addView(name);
 
         TextView detail = new TextView(requireContext());

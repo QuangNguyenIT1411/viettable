@@ -41,7 +41,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -50,7 +50,7 @@
                 android:text="@string/auth_register"
                 android:textAllCaps="true"
                 android:textAppearance="@style/TextAppearance.VietTable.Label"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -178,7 +178,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                android:textColor="@color/pd_red"
+                android:textColor="@color/pd_red_text"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
@@ -201,7 +201,7 @@
                 android:paddingHorizontal="12dp"
                 android:text="@string/auth_have_account"
                 android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                android:textColor="@color/pd_yellow" />
+                android:textColor="@color/pd_yellow_text" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

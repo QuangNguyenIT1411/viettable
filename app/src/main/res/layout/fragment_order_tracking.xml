@@ -44,7 +44,7 @@
                 android:padding="12dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_back"
-                app:tint="@color/pd_cream" />
+                app:tint="@color/pd_text" />
 
             <TextView
                 android:id="@+id/tvTrackingOrderId"
@@ -88,7 +88,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="@style/TextAppearance.VietTable.Display.XL"
-                        android:textColor="@color/pd_yellow"
+                        android:textColor="@color/pd_yellow_text"
                         android:textSize="44sp"
                         app:lineHeight="50sp"
                         tools:text="3/5" />
@@ -262,7 +262,7 @@
                         android:gravity="center_horizontal"
                         android:text="Đã gửi"
                         android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                        android:textColor="@color/pd_mint"
+                        android:textColor="@color/pd_mint_text"
                         app:layout_constraintEnd_toStartOf="@id/gStep1"
                         app:layout_constraintStart_toStartOf="@id/gStep0"
                         app:layout_constraintTop_toBottomOf="@id/ivStep1" />
@@ -334,7 +334,7 @@
                     android:paddingHorizontal="18dp"
                     android:text="Cập nhật"
                     android:textAppearance="@style/TextAppearance.VietTable.Caption"
-                    android:textColor="@color/pd_yellow" />
+                    android:textColor="@color/pd_yellow_text" />
             </LinearLayout>
 
             <TextView

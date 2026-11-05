@@ -75,7 +75,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 circle = R.drawable.pd_circle_mint; tint = R.color.pd_on_color;
             } else {
                 binding.ivNotifIcon.setImageResource(R.drawable.ic_voucher);
-                circle = R.drawable.pd_circle_plum; tint = R.color.pd_yellow;
+                circle = R.drawable.pd_circle_plum; tint = R.color.pd_yellow_text;
             }
             binding.ivNotifIcon.setBackgroundResource(circle);
             binding.ivNotifIcon.setImageTintList(androidx.core.content.ContextCompat.getColorStateList(itemView.getContext(), tint));

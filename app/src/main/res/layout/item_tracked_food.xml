@@ -54,7 +54,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
-                android:textColor="@color/pd_cream"
+                android:textColor="@color/pd_text"
                 tools:text="Bún chả Hà Nội ×2" />
 
             <TextView

@@ -37,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:textAppearance="@style/TextAppearance.VietTable.Body"
-                android:textColor="@color/pd_cream"
+                android:textColor="@color/pd_text"
                 tools:text="Giảm 10% (tối đa 50.000đ) cho hóa đơn từ 300.000đ" />
 
             <TextView

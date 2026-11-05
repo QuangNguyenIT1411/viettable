@@ -31,7 +31,7 @@ public class PdStepSegments extends View {
         super(context, attrs);
         gap = 6 * getResources().getDisplayMetrics().density;
         done.setColor(ContextCompat.getColor(context, R.color.pd_yellow));
-        current.setColor(ContextCompat.getColor(context, R.color.pd_cream));
+        current.setColor(ContextCompat.getColor(context, R.color.pd_inverse));
         todo.setColor(ContextCompat.getColor(context, R.color.pd_surface_2));
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
     }

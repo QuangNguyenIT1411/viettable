@@ -2,5 +2,5 @@
 <!-- Small status dot; tinted mint (at a table) or dim by the code. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="@color/pd_cream" />
+    <solid android:color="@color/pd_inverse" />
 </shape>
