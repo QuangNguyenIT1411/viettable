@@ -64,6 +64,7 @@ public class SettingsFragment extends BaseFragment {
                         dialog.dismiss();
                         // Applied at once: the open screens recreate themselves in the new look.
                         themeStore.save(choices[which]);
+                        if (binding != null) binding.tvThemeValue.setText(choices[which].label);
                         themeStore.apply();
                     })
                     .setNegativeButton("Đóng", null)
