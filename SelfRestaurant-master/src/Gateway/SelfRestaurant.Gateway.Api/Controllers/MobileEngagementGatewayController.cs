@@ -106,7 +106,12 @@ public sealed class MobileEngagementGatewayController : ControllerBase
     /// <summary>"Chi tiết món": average stars, count and the latest comments of a dish, from real reviews (owner 05/11).</summary>
     [AllowAnonymous]
     [HttpGet("dishes/{dishId:int}/reviews/summary")]
-    public Task<ActionResult<object>> DishReviewSummary(int dishId, CancellationToken ct) => Run(() => _customers.GetDishReviewSummaryAsync(dishId, ct));
+    public async Task<ActionResult<object>> DishReviewSummary(int dishId, CancellationToken ct)
+    {
+        // Public like the menu: not through Run(), which requires a signed-in guest.
+        try { return Ok(await _customers.GetDishReviewSummaryAsync(dishId, ct)); }
+        catch (ApiClientException ex) { return Downstream(ex); }
+    }
 
     private static int? IntProperty(JsonElement value, string name) =>
         value.ValueKind == JsonValueKind.Object && value.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i) ? i : null;

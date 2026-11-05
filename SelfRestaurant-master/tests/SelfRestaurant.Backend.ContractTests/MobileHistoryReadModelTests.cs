@@ -19,6 +19,17 @@ public sealed class MobileHistoryReadModelTests
     }
 
     [Fact]
+    public void Dish_review_summary_is_public_like_the_menu()
+    {
+        var gateway = Read("src/Gateway/SelfRestaurant.Gateway.Api/Controllers/MobileEngagementGatewayController.cs");
+        var start = gateway.IndexOf("[HttpGet(\"dishes/{dishId:int}/reviews/summary\")]", StringComparison.Ordinal);
+        Assert.True(start > 0);
+        Assert.Contains("[AllowAnonymous]", gateway[(start - 40)..start], StringComparison.Ordinal);
+        var body = gateway[start..gateway.IndexOf("private static int? IntProperty", start, StringComparison.Ordinal)];
+        Assert.DoesNotContain("Run(", body, StringComparison.Ordinal); // Run() answers 401 without a signed-in guest
+    }
+
+    [Fact]
     public void Order_history_enriches_customer_owned_orders_with_orders_owned_session_metadata()
     {
         var source = Read("src/Services/SelfRestaurant.Orders.Api/Controllers/DiningSessionsController.cs");
