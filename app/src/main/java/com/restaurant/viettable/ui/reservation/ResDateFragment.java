@@ -70,7 +70,7 @@ public class ResDateFragment extends BaseFragment {
         binding.wizardProgress.progressWizard.setProgress(20);
 
         if (draft.getBranch() != null) {
-            binding.tvBranchHeader.setText("Chi nhánh: " + draft.getBranch().getName());
+            binding.tvBranchHeader.setText(draft.getBranch().getName());
         }
 
         renderDateCards();

@@ -341,7 +341,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Nhấn vào món để xem chi tiết bếp và ước tính thời gian"
+                android:text="Nhấn vào món để xem chi tiết"
                 android:textAppearance="@style/TextAppearance.VietTable.Caption"
                 android:textColor="@color/pd_muted" />
 

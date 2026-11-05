@@ -44,7 +44,7 @@
                 android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:lineSpacingExtra="4dp"
-                android:text="Bếp trưởng đã tiếp nhận đơn của bạn và sẽ bắt đầu chế biến theo thứ tự."
+                android:text="Đơn đã tới bếp. Bạn theo dõi từng món ngay trong ứng dụng."
                 android:textColor="@color/colorTextSecondary"
                 android:textSize="14sp" />
 
@@ -122,13 +122,6 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Món ăn của bạn:"
-                            android:textColor="@color/colorTextSecondary"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
                             android:fontFamily="@font/bricolage_medium"
                             android:text="Bếp sẽ báo khi món sẵn sàng"
                             android:textColor="@color/pd_yellow_text"

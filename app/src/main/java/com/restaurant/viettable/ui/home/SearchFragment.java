@@ -16,16 +16,15 @@ import com.google.android.material.chip.Chip;
 import com.restaurant.viettable.databinding.FragmentSearchBinding;
 import com.restaurant.viettable.model.Category;
 import com.restaurant.viettable.ui.base.BaseFragment;
+import com.restaurant.viettable.util.SearchHistory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class SearchFragment extends BaseFragment {
 
     private FragmentSearchBinding binding;
-    private final List<String> recentKeywords = new ArrayList<>(Arrays.asList("Phở bò tái lăn", "Bún chả", "Lẩu riêu cua", "Trà sen"));
-    private final List<String> popularKeywords = Arrays.asList("Phở bò", "Bún chả", "Nem rán", "Chả cá", "Lẩu cua", "Cơm tấm", "Cà phê trứng");
+    private static final String PREFS = "search_history";
+    private static final String KEY_RECENT = "recent";
 
     @Nullable
     @Override
@@ -67,13 +66,12 @@ public class SearchFragment extends BaseFragment {
         });
 
         binding.btnClearHistory.setOnClickListener(v -> {
-            recentKeywords.clear();
+            saveRecent(java.util.Collections.emptyList());
             populateRecentChips();
             showToast("Đã xóa lịch sử tìm kiếm.");
         });
 
         populateRecentChips();
-        populatePopularChips();
         populateCategoryChips();
     }
 
@@ -82,15 +80,16 @@ public class SearchFragment extends BaseFragment {
             showToast("Vui lòng nhập từ khóa tìm kiếm.");
             return;
         }
-        if (!recentKeywords.contains(query)) {
-            recentKeywords.add(0, query);
-        }
+        saveRecent(SearchHistory.add(loadRecent(), query));
         navigateTo(SearchResultFragment.newInstance(query));
     }
 
     private void populateRecentChips() {
         binding.chipGroupRecent.removeAllViews();
-        for (String kw : recentKeywords) {
+        List<String> recent = loadRecent();
+        binding.layoutRecentHeader.setVisibility(recent.isEmpty() ? View.GONE : View.VISIBLE);
+        binding.chipGroupRecent.setVisibility(recent.isEmpty() ? View.GONE : View.VISIBLE);
+        for (String kw : recent) {
             Chip chip = new Chip(getContext());
             chip.setText(kw);
             chip.setOnClickListener(v -> {
@@ -101,17 +100,12 @@ public class SearchFragment extends BaseFragment {
         }
     }
 
-    private void populatePopularChips() {
-        binding.chipGroupPopular.removeAllViews();
-        for (String kw : popularKeywords) {
-            Chip chip = new Chip(getContext());
-            chip.setText(kw);
-            chip.setOnClickListener(v -> {
-                binding.etSearchQuery.setText(kw);
-                submitSearch(kw);
-            });
-            binding.chipGroupPopular.addView(chip);
-        }
+    private List<String> loadRecent() {
+        return SearchHistory.decode(requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getString(KEY_RECENT, null));
+    }
+
+    private void saveRecent(List<String> items) {
+        requireContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putString(KEY_RECENT, SearchHistory.encode(items)).apply();
     }
 
     private void populateCategoryChips() {

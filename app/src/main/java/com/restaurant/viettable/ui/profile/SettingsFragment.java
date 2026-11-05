@@ -55,6 +55,7 @@ public class SettingsFragment extends BaseFragment {
         });
 
         com.restaurant.viettable.data.ThemeStore themeStore = com.restaurant.viettable.data.ThemeStore.getInstance(requireContext());
+        binding.tvAppVersion.setText("VietTable • phiên bản " + com.restaurant.viettable.BuildConfig.VERSION_NAME);
         binding.tvThemeValue.setText(themeStore.get().label);
         binding.rowTheme.setOnClickListener(v -> {
             com.restaurant.viettable.util.ThemeChoice[] choices = com.restaurant.viettable.util.ThemeChoice.values();

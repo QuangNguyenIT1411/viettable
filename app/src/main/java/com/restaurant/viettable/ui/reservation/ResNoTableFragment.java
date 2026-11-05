@@ -8,13 +8,28 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.restaurant.viettable.databinding.FragmentResNoTableBinding;
 import com.restaurant.viettable.model.Branch;
 import com.restaurant.viettable.ui.base.BaseFragment;
 
+import java.util.ArrayList;
+import java.util.List;
+
+/** "Hết bàn?": back to the step before the table map, or another real branch. Claims nothing the server did not say. */
 public class ResNoTableFragment extends BaseFragment {
+    private static final String ARG_CHANGING = "changing";
 
     private FragmentResNoTableBinding binding;
+
+    /** changingBooking: moving an existing booking, which stays at its branch. */
+    public static ResNoTableFragment newInstance(boolean changingBooking) {
+        ResNoTableFragment fragment = new ResNoTableFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_CHANGING, changingBooking);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
     @Nullable
     @Override
@@ -29,20 +44,34 @@ public class ResNoTableFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
-
+        // This screen, then the table map: what is left on top is the step where the time was chosen.
         binding.btnSelectSuggestedTime.setOnClickListener(v -> {
-            showToast("Đã chọn khung giờ 20:00 hôm nay");
+            navigateBack();
             navigateBack();
         });
 
-        binding.btnSelectSuggestedBranch.setOnClickListener(v -> {
-            if (appStateManager.getBranches().size() > 1) {
-                Branch badinh = appStateManager.getBranches().get(1);
-                appStateManager.setSelectedBranch(badinh);
-                showToast("Đã chuyển sang chi nhánh " + badinh.getName());
-                navigateTo(new ResDateFragment());
-            }
-        });
+        List<Branch> others = new ArrayList<>();
+        Branch current = appStateManager.getSelectedBranch();
+        for (Branch branch : appStateManager.getBranches()) {
+            if (current == null || !branch.getId().equals(current.getId())) others.add(branch);
+        }
+        boolean changing = getArguments() != null && getArguments().getBoolean(ARG_CHANGING);
+        if (changing || others.isEmpty()) {
+            binding.btnSelectSuggestedBranch.setVisibility(View.GONE);
+        } else {
+            binding.btnSelectSuggestedBranch.setOnClickListener(v -> {
+                String[] names = new String[others.size()];
+                for (int i = 0; i < names.length; i++) names[i] = others.get(i).getName();
+                new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Chọn chi nhánh")
+                        .setItems(names, (dialog, which) -> {
+                            appStateManager.setSelectedBranch(others.get(which));
+                            navigateTo(new ResDateFragment());
+                        })
+                        .setNegativeButton("Đóng", null)
+                        .show();
+            });
+        }
     }
 
     @Override

@@ -63,7 +63,7 @@ public class SearchResultFragment extends BaseFragment {
 
         binding.tvSearchQueryTitle.setText("Kết quả: \"" + query + "\"");
         if (appStateManager.getSelectedBranch() != null) {
-            binding.tvBranchContext.setText("Chi nhánh: " + appStateManager.getSelectedBranch().getName());
+            binding.tvBranchContext.setText(appStateManager.getSelectedBranch().getName());
         }
 
         executeSearch();
@@ -107,9 +107,9 @@ public class SearchResultFragment extends BaseFragment {
         searchResults.clear();
         String q = query.toLowerCase().trim();
         for (FoodItem fi : appStateManager.getFoodItems()) {
-            if (fi.getName().toLowerCase().contains(q) ||
-                    fi.getDescription().toLowerCase().contains(q) ||
-                    fi.getIngredients().toLowerCase().contains(q)) {
+            if (com.restaurant.viettable.util.SearchHistory.matches(fi.getName(), q) ||
+                    com.restaurant.viettable.util.SearchHistory.matches(fi.getDescription(), q) ||
+                    com.restaurant.viettable.util.SearchHistory.matches(fi.getIngredients(), q)) {
                 searchResults.add(fi);
             }
         }

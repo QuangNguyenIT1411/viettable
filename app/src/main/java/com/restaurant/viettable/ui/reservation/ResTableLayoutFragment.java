@@ -109,7 +109,7 @@ public class ResTableLayoutFragment extends BaseFragment {
         }
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
-        binding.btnNoTableSuggestion.setOnClickListener(v -> navigateTo(new ResNoTableFragment()));
+        binding.btnNoTableSuggestion.setOnClickListener(v -> navigateTo(ResNoTableFragment.newInstance(changing != null)));
         if (changing != null) {
             binding.tvTableMapTitle.setText("Đổi đặt bàn: chọn bàn");
             binding.wizardProgress.getRoot().setVisibility(View.GONE);

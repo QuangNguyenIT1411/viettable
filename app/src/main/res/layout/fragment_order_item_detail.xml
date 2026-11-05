@@ -163,7 +163,7 @@
                             android:id="@+id/tvItemDetailOptions"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Kèm bún và thì là"
+                            tools:text="Kèm bún và thì là"
                             android:textColor="@color/colorTextPrimary"
                             android:textSize="13sp" />
                     </LinearLayout>
@@ -191,19 +191,6 @@
                             android:textSize="13sp" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginVertical="12dp"
-                        android:background="@color/colorDivider" />
-
-                    <!-- Station Info -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Phân bổ: Bếp Nóng tầng 1 • Bếp phó phụ trách"
-                        android:textColor="@color/colorTextSecondary"
-                        android:textSize="12sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -227,7 +214,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Hủy món này" />
+            android:text="Hủy món" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRemindKitchen"
@@ -236,7 +223,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:layout_weight="1.2"
-            android:text="Giục bếp làm nhanh" />
+            android:text="Giục bếp" />
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

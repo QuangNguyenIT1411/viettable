@@ -150,7 +150,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             android:lineSpacingExtra="2dp"
-                            android:text="Quý khách vui lòng ghé quầy thu ngân tại tầng 1 trước khi ra về"
+                            android:text="Quý khách vui lòng ghé quầy thu ngân trước khi ra về"
                             android:textColor="@color/colorTextSecondary"
                             android:textSize="13sp" />
                     </LinearLayout>
