@@ -10,6 +10,7 @@
     android:background="@color/pd_bg">
 
     <View
+        android:id="@+id/viewConfirmGlow"
         android:layout_width="520dp"
         android:layout_height="520dp"
         android:layout_gravity="top|center_horizontal"
@@ -34,17 +35,27 @@
             android:paddingBottom="24dp"
             android:tag="safe_all">
 
+            <!-- The badge, texts and card: replaced by the spinner or the error while the booking is being read again. -->
+            <LinearLayout
+                android:id="@+id/layoutConfirmSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
             <FrameLayout
                 android:layout_width="128dp"
                 android:layout_height="128dp">
 
                 <View
+                    android:id="@+id/viewConfirmRing"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@drawable/pd_ring_dash_mint"
                     android:importantForAccessibility="no" />
 
                 <ImageView
+                    android:id="@+id/ivConfirmIcon"
                     android:layout_width="92dp"
                     android:layout_height="92dp"
                     android:layout_gravity="center"
@@ -56,15 +67,18 @@
             </FrameLayout>
 
             <TextView
+                android:id="@+id/tvConfirmTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:accessibilityHeading="true"
+                android:accessibilityLiveRegion="polite"
                 android:gravity="center"
                 android:text="@string/res_confirm_title"
                 android:textAppearance="@style/TextAppearance.VietTable.Display.XL" />
 
             <TextView
+                android:id="@+id/tvConfirmSubtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -174,6 +188,37 @@
                     android:textColor="@color/pd_muted"
                     tools:text="Tiền cọc: Không yêu cầu" />
             </LinearLayout>
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressConfirm"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="96dp"
+                android:contentDescription="Đang tải đặt bàn"
+                android:indeterminateTint="@color/pd_yellow"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvConfirmError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="96dp"
+                android:accessibilityLiveRegion="polite"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted"
+                android:visibility="gone"
+                tools:text="Không có kết nối mạng." />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirmRetry"
+                style="@style/Widget.VietTable.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:text="Thử lại"
+                android:visibility="gone" />
 
             <View
                 android:layout_width="match_parent"
@@ -187,6 +232,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:text="Xem chi tiết đặt bàn" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNewReservation"
+                style="@style/Widget.VietTable.Button.Primary.Arrow"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Đặt bàn mới"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGoHome"
