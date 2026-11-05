@@ -35,6 +35,9 @@ public final class ReviewAdapter extends RecyclerView.Adapter<ReviewAdapter.Hold
             binding.tvReviewDetails.setText("Món ăn " + review.getFoodRating() + "/5 • Phục vụ " + review.getServiceRating() + "/5 • Không gian " + review.getSpaceRating() + "/5");
             binding.tvReviewComment.setText(commentText(review.getComment()));
             binding.tvReviewComment.setAlpha(SafeText.isBlank(review.getComment()) ? 0.55f : 1f);
+            // After 24 hours the server refuses both: the review can only be read.
+            binding.btnEditReview.setText(review.canEdit() ? "Sửa" : "Xem");
+            binding.btnDeleteReview.setVisibility(review.canEdit() ? android.view.View.VISIBLE : android.view.View.GONE);
             binding.btnEditReview.setOnClickListener(v -> listener.onEdit(review));
             binding.btnDeleteReview.setOnClickListener(v -> listener.onDelete(review));
         }
