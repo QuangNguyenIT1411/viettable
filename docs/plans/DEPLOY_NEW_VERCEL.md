@@ -1,5 +1,7 @@
 # Kế hoạch deploy lên tài khoản Vercel MỚI (Production)
 
+> **Cập nhật 05/11/2026 23:25:** deploy Production `dpl_7Nt2UL9UKZMTDocuHRmKWGKTV3Wt` (code `c3c2ead`: phí/VAT, snapshot hoá đơn, hoá đơn của tôi, đánh giá; migration `BILL_REVIEW_MIGRATION_20261105.sql` chủ dự án đã chạy trước), `[syd1]`, Ready; gọi 1 lần: `/healthz` 200 8,1 s, `/readyz` 200 1,1 s, `/` 200, `/app/cashier/` 200, `/app/chef/` 200, `/app/admin/` 200, `/branches` 200. Image `12a051d83e56` (shared 34/34 + bundle 3/3). Đã xoá `.env.local`. Bản quay lui: `dpl_BdmHSffuXEKQLvpKCCA4G9bMDHNA`.
+
 > **Cập nhật 30/10/2026 16:45:** deploy Production `dpl_4cyEEiaozzC1ymgfyvf6ixmqspCj` (code `9030be8`: nhãn tab thu ngân xuống dòng trên điện thoại; không backend, không migration), `[syd1]`, Ready; gọi 1 lần: `/healthz` 200 0,4 s, `/readyz` 200 0,9 s, `/` 200, `/app/cashier/` 200, `/app/chef/` 200, `/app/admin/` 200, `/branches` 200. Image `63a3b5b6df28` (shared 30/30 + bundle 3/3). Đã xoá `.env.local`. Bản quay lui: `dpl_6G2EtwU7y2UChgeyoNcEDcpAfRdw`.
 
 > **Cập nhật 30/10/2026 16:40:** deploy Production `dpl_6G2EtwU7y2UChgeyoNcEDcpAfRdw` (code `fdcac45`: web thu ngân chia 5 tab; không backend, không migration), `[syd1]`, Ready; gọi 1 lần: `/healthz` 200 0,9 s, `/readyz` 200 1,2 s, `/` 200, `/app/cashier/` 200, `/app/chef/` 200, `/app/admin/` 200, `/branches` 200. Image `222f01c449c5` (shared 30/30 + bundle 3/3). Đã xoá `.env.local`. Bản quay lui: `dpl_Au5pSzmrbi3dskk59tvHRTRZQX3y`.
