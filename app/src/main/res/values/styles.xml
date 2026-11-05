@@ -409,7 +409,7 @@
     </style>
 
     <style name="ThemeOverlay.VietTable.TextInput" parent="ThemeOverlay.Material3.TextInputEditText.OutlinedBox">
-        <item name="colorOnSurface">@color/pd_cream</item>
+        <item name="colorOnSurface">@color/pd_text</item>
         <item name="colorPrimary">@color/pd_yellow</item>
         <item name="android:textColorPrimary">@color/pd_text</item>
     </style>
@@ -437,7 +437,7 @@
         <item name="android:background">@color/transparent</item>
         <item name="backgroundTint">@color/transparent</item>
         <item name="tabIndicator">@drawable/pd_tab_indicator</item>
-        <item name="tabIndicatorColor">@color/pd_cream</item>
+        <item name="tabIndicatorColor">@color/pd_inverse</item>
         <item name="tabIndicatorGravity">stretch</item>
         <item name="tabIndicatorFullWidth">true</item>
         <item name="tabIndicatorAnimationMode">elastic</item>
@@ -571,7 +571,7 @@
     <style name="ThemeOverlay.VietTable.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorSurface">@color/pd_surface</item>
         <item name="colorSurfaceContainerHigh">@color/pd_surface</item>
-        <item name="colorOnSurface">@color/pd_cream</item>
+        <item name="colorOnSurface">@color/pd_text</item>
         <item name="colorOnSurfaceVariant">@color/pd_muted</item>
         <item name="colorPrimary">@color/pd_yellow</item>
         <item name="colorAccent">@color/pd_yellow</item>

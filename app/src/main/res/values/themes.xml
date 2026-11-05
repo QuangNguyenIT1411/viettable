@@ -11,19 +11,19 @@
         <item name="colorSecondary">@color/pd_yellow</item>
         <item name="colorOnSecondary">@color/pd_on_color</item>
         <item name="colorSecondaryContainer">@color/pd_surface_2</item>
-        <item name="colorOnSecondaryContainer">@color/pd_cream</item>
+        <item name="colorOnSecondaryContainer">@color/pd_text</item>
 
         <item name="colorTertiary">@color/pd_mint</item>
         <item name="colorOnTertiary">@color/pd_on_color</item>
 
         <item name="android:colorBackground">@color/pd_bg</item>
-        <item name="colorOnBackground">@color/pd_cream</item>
+        <item name="colorOnBackground">@color/pd_text</item>
         <item name="colorSurface">@color/pd_surface</item>
-        <item name="colorOnSurface">@color/pd_cream</item>
+        <item name="colorOnSurface">@color/pd_text</item>
         <item name="colorSurfaceVariant">@color/pd_surface_2</item>
         <item name="colorOnSurfaceVariant">@color/pd_muted</item>
-        <item name="colorSurfaceInverse">@color/pd_cream</item>
-        <item name="colorOnSurfaceInverse">@color/pd_on_color</item>
+        <item name="colorSurfaceInverse">@color/pd_inverse</item>
+        <item name="colorOnSurfaceInverse">@color/pd_on_inverse</item>
         <item name="colorSurfaceContainerLowest">@color/pd_bg</item>
         <item name="colorSurfaceContainerLow">@color/pd_surface</item>
         <item name="colorSurfaceContainer">@color/pd_surface</item>

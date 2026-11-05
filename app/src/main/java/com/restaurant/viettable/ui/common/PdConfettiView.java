@@ -41,7 +41,7 @@ public class PdConfettiView extends View {
                 ContextCompat.getColor(context, R.color.pd_yellow),
                 ContextCompat.getColor(context, R.color.pd_red),
                 ContextCompat.getColor(context, R.color.pd_mint),
-                ContextCompat.getColor(context, R.color.pd_cream)};
+                ContextCompat.getColor(context, R.color.pd_inverse)};
         Random random = new Random(7);
         for (int i = 0; i < COUNT; i++) {
             x[i] = random.nextFloat();
