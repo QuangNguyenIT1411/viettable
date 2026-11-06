@@ -21,7 +21,9 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ResHistoryFragment extends BaseFragment implements com.restaurant.viettable.data.AppStateManager.StateChangeListener {
+public class ResHistoryFragment extends BaseFragment implements com.restaurant.viettable.data.AppStateManager.StateChangeListener, com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "lịch sử đặt bàn"; }
+
 
     public static ResHistoryFragment newInstance() {
         return new ResHistoryFragment();

@@ -31,7 +31,9 @@ import java.util.List;
  * their name, automatic messages marked "Tin nhắn tự động". New staff replies arrive by the "supportMessage" realtime
  * event; while realtime is not connected the screen reloads every 20 s. Scrolling to the top loads older messages.
  */
-public class SupportChatFragment extends BaseFragment implements SignalRManager.SupportListener {
+public class SupportChatFragment extends BaseFragment implements SignalRManager.SupportListener, com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "và chat với nhân viên hỗ trợ"; }
+
     private static final String ARG_ID = "conversationId";
     private static final long POLL_MS = 20_000;
 

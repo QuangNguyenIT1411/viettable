@@ -26,7 +26,9 @@ import com.restaurant.viettable.ui.reservation.ResHistoryFragment;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NotificationFragment extends BaseFragment {
+public class NotificationFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "thông báo của bạn"; }
+
 
     private FragmentNotificationBinding binding;
     private final List<NotificationItem> filteredList = new ArrayList<>();

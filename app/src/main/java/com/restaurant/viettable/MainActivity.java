@@ -387,6 +387,10 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
 
     @Override
     public void navigateTo(Fragment fragment, boolean addToBackStack) {
+        // Account-only screens: a guest gets "Bạn chưa đăng nhập" + "Đăng nhập tại đây" instead of an empty screen (owner 07/11).
+        if (fragment instanceof com.restaurant.viettable.ui.base.RequiresLogin && !ApiClient.getInstance().hasSession())
+            fragment = com.restaurant.viettable.ui.auth.LoginRequiredFragment.newInstance(
+                    ((com.restaurant.viettable.ui.base.RequiresLogin) fragment).loginPurpose());
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.setCustomAnimations(
                 android.R.anim.fade_in,

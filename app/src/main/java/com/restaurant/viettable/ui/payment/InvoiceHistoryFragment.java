@@ -31,7 +31,9 @@ import java.util.List;
  * "Hoá đơn của tôi" (owner 05/11): the guest's invoices from the server, a page at a time, grouped by month; search by
  * invoice number and filters for month, branch and payment method are applied by the server, not on the phone.
  */
-public class InvoiceHistoryFragment extends BaseFragment {
+public class InvoiceHistoryFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "hoá đơn của bạn"; }
+
     private static final int PAGE = 20;
 
     private FragmentInvoiceHistoryBinding binding;

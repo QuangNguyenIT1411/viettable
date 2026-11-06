@@ -24,7 +24,9 @@ import java.time.ZoneId;
 import java.util.List;
 
 /** "Hỗ trợ của tôi" (owner 06/11): every conversation with its status (Đang chờ / Đang xử lý / Đã giải quyết) and unread count. */
-public class SupportListFragment extends BaseFragment implements SignalRManager.SupportListener {
+public class SupportListFragment extends BaseFragment implements SignalRManager.SupportListener, com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "các cuộc trò chuyện hỗ trợ"; }
+
     private FragmentSupportListBinding binding;
 
     public static SupportListFragment newInstance() { return new SupportListFragment(); }

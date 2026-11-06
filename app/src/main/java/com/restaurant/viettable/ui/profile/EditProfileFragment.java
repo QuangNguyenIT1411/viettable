@@ -16,7 +16,9 @@ import com.restaurant.viettable.network.ApiException;
 import com.restaurant.viettable.ui.base.BaseFragment;
 import com.restaurant.viettable.util.SafeText;
 
-public class EditProfileFragment extends BaseFragment {
+public class EditProfileFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "thông tin cá nhân"; }
+
 
     private FragmentEditProfileBinding binding;
 

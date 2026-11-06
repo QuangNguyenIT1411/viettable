@@ -22,7 +22,9 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CustomerVoucherFragment extends BaseFragment {
+public class CustomerVoucherFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "ưu đãi và voucher của bạn"; }
+
 
     private FragmentCustomerVoucherBinding binding;
     private VoucherCardAdapter adapter;

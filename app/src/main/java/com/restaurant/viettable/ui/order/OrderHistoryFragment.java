@@ -96,11 +96,13 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
             switchTab(R.id.nav_qr);
         });
         binding.btnRetryHistoryInvoices.setOnClickListener(v -> {
+            if (isGuest()) { navigateTo(new com.restaurant.viettable.ui.auth.LoginFragment()); return; }
             if (binding.tabLayoutOrderHistory.getSelectedTabPosition() == 1) loadSessionHistory();
             else loadInvoiceHistory();
         });
 
         renderCurrentTab();
+        if (isGuest()) return; // nothing to load without an account (owner 07/11: no "Access token" message for guests)
         MobileRepository.getInstance().loadActiveSession(new MobileRepository.Callback<DiningSession>() {
             @Override public void onSuccess(DiningSession value) { if (binding != null) renderCurrentTab(); }
             @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
@@ -108,9 +110,28 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
         // Do not fetch closed-session history while the customer is viewing the active tab.
     }
 
+    private static boolean isGuest() { return !MobileRepository.getInstance().hasSession(); }
+
+    /** History tabs for a guest: say why it is empty and offer to log in (owner 07/11). */
+    private void renderGuestHistory(String what) {
+        binding.containerActiveSession.setVisibility(View.GONE);
+        binding.layoutEmptyOngoing.setVisibility(View.GONE);
+        binding.rvPastOrders.setVisibility(View.GONE);
+        binding.layoutEmptyPast.setVisibility(View.VISIBLE);
+        binding.ivHistoryEmptyIcon.setVisibility(View.VISIBLE);
+        binding.progressHistoryInvoices.setVisibility(View.GONE);
+        binding.tvHistoryEmptyMessage.setText("Bạn chưa đăng nhập.\n"
+                + com.restaurant.viettable.ui.auth.LoginRequiredFragment.message(what));
+        binding.btnRetryHistoryInvoices.setText("Đăng nhập tại đây");
+        binding.btnRetryHistoryInvoices.setVisibility(View.VISIBLE);
+    }
+
     private void renderCurrentTab() {
         if (binding == null) return;
         int tabPos = binding.tabLayoutOrderHistory.getSelectedTabPosition();
+        if (tabPos == 1 && isGuest()) { renderGuestHistory("lịch sử phiên dùng bữa"); return; }
+        if (tabPos == 2 && isGuest()) { renderGuestHistory("hoá đơn của bạn"); return; }
+        binding.btnRetryHistoryInvoices.setText("Thử tải lại");
 
         if (tabPos == 0) {
             // "Đang diễn ra"
@@ -198,7 +219,7 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
     }
 
     private void loadSessionHistory() {
-        if (binding == null || sessionHistoryLoading) return;
+        if (binding == null || sessionHistoryLoading || isGuest()) return;
         sessionHistoryLoading = true;
         sessionHistoryError = null;
         renderCurrentTab();
@@ -218,7 +239,7 @@ public class OrderHistoryFragment extends BaseFragment implements AppStateManage
     }
 
     private void loadInvoiceHistory() {
-        if (binding == null || invoiceHistoryLoading) return;
+        if (binding == null || invoiceHistoryLoading || isGuest()) return;
         invoiceHistoryLoading = true;
         invoiceHistoryError = null;
         renderCurrentTab();

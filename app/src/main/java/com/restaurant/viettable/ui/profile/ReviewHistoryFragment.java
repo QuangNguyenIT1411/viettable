@@ -19,7 +19,8 @@ import com.restaurant.viettable.ui.common.DialogHelper;
 
 import java.util.List;
 
-public final class ReviewHistoryFragment extends BaseFragment {
+public final class ReviewHistoryFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "đánh giá của bạn"; }
     private FragmentReviewHistoryBinding binding;
     private ReviewAdapter adapter;
     private boolean loading;

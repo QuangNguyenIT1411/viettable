@@ -96,6 +96,18 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
             binding.tvProfileTierBadge.setText("HẠNG " + com.restaurant.viettable.util.StatusLabels.memberTier(user.getMembershipTier()).toUpperCase(java.util.Locale.ROOT));
             binding.tvProfilePoints.setText(String.format(Locale.GERMANY, "%,d điểm", user.getLoyaltyPoints()));
         }
+        // Guest (owner 07/11): say so instead of an empty name, no points card, and the bottom button logs in.
+        boolean guest = !MobileRepository.getInstance().hasSession();
+        if (guest) {
+            binding.tvProfileName.setText("Bạn chưa đăng nhập");
+            binding.tvProfilePhone.setText("Đăng nhập để tích điểm, xem hoá đơn và đặt bàn.");
+        }
+        binding.cardProfileLoyalty.setVisibility(guest ? View.GONE : View.VISIBLE);
+        binding.btnLogout.setText(guest ? "Đăng nhập tại đây" : "Đăng xuất tài khoản");
+        if (guest) { // yellow like every "Đăng nhập" button, not the red of "Đăng xuất"
+            binding.btnLogout.setBackgroundTintList(android.content.res.ColorStateList.valueOf(requireContext().getColor(R.color.pd_yellow)));
+            binding.btnLogout.setTextColor(requireContext().getColor(R.color.pd_on_color));
+        }
 
         // Active Dining Session Card (persistent component)
         if (appStateManager.hasActiveDiningSession()) {
@@ -173,6 +185,7 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
         });
 
         binding.btnLogout.setOnClickListener(v -> {
+            if (!MobileRepository.getInstance().hasSession()) { navigateTo(new com.restaurant.viettable.ui.auth.LoginFragment()); return; }
             String accountId = currentAccountId();
             // Like a banking app: with fingerprint on, "Đăng xuất" always keeps fingerprint login, no question.
             if (accountId != null && BiometricTokenStore.getInstance().isEnabled(accountId)) {

@@ -32,7 +32,9 @@ import java.util.List;
  * server is asked first: already confirmed → say when; not yet → remind the right content and amount, then chat.
  * Context entry points ("Cần hỗ trợ?") open this screen with the topic and item already chosen.
  */
-public class SupportStartFragment extends BaseFragment {
+public class SupportStartFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "và chat với nhân viên hỗ trợ"; }
+
     private static final String ARG_TOPIC = "topic", ARG_CONTEXT = "contextId", ARG_BRANCH = "branchId";
 
     private FragmentSupportStartBinding binding;

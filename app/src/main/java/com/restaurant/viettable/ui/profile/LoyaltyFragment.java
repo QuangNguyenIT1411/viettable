@@ -15,7 +15,9 @@ import com.restaurant.viettable.ui.base.BaseFragment;
 
 import java.util.Locale;
 
-public class LoyaltyFragment extends BaseFragment {
+public class LoyaltyFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "thẻ thành viên và điểm tích luỹ"; }
+
 
     private FragmentLoyaltyBinding binding;
 

@@ -27,7 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** "Danh sách chờ của tôi" (owner 06/11). Reading it also lets the server offer freed tables. */
-public class WaitlistFragment extends BaseFragment {
+public class WaitlistFragment extends BaseFragment implements com.restaurant.viettable.ui.base.RequiresLogin {
+    @Override public String loginPurpose() { return "danh sách chờ của bạn"; }
+
     private FragmentWaitlistBinding binding;
     private final Handler ticker = new Handler(Looper.getMainLooper());
     private final List<Runnable> tickers = new ArrayList<>();

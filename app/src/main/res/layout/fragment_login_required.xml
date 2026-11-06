@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Bạn chưa đăng nhập" (owner 07/11): instead of an empty account-only screen for a guest. -->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pd_bg"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:tag="safe_top">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/pd_circle_surface2"
+            android:contentDescription="@string/a11y_back"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_back"
+            app:tint="@color/pd_text" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/pd_screen_margin"
+            android:paddingVertical="24dp">
+
+            <ImageView
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:background="@drawable/pd_circle_surface2"
+                android:importantForAccessibility="no"
+                android:padding="26dp"
+                android:src="@drawable/ic_profile"
+                app:tint="@color/pd_yellow_text" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:accessibilityHeading="true"
+                android:gravity="center"
+                android:text="Bạn chưa đăng nhập"
+                android:textAppearance="@style/TextAppearance.VietTable.Display.M" />
+
+            <TextView
+                android:id="@+id/tvLoginRequiredMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:textColor="@color/pd_muted" />
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/pd_screen_margin"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
+        android:tag="safe_bottom">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLoginHere"
+            style="@style/Widget.VietTable.Button.Primary.Arrow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="60dp"
+            android:text="Đăng nhập tại đây" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRegisterHere"
+            style="@style/Widget.VietTable.Button.Ghost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="56dp"
+            android:text="Chưa có tài khoản? Tạo tài khoản" />
+    </LinearLayout>
+</LinearLayout>
