@@ -7,6 +7,9 @@ import java.time.LocalTime;
 public final class BookingIntent {
     public LocalDate date;
     public LocalTime time;
+    /** Hour and minute exactly as typed (before "sáng/chiều/tối"); -1 when no time was said. Not merged. */
+    public int typedHour = -1;
+    public int typedMinute;
     public String period;      // toi, chieu, trua, sang when said without an hour
     public Integer partySize;
     public String branchId;

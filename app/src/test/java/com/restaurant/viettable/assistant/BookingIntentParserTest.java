@@ -72,6 +72,21 @@ public class BookingIntentParserTest {
                 {"10 giờ sáng mai 2 người", "2026-11-21", "10:00", "2", "-"},
                 {"mai 4 người ghi chú: 2 ghế trẻ em, gần cửa sổ", "2026-11-21", "-", "4", "-"}, // the note keeps its numbers
                 {"Tối mai 7h 6 người, sinh nhật", "2026-11-21", "19:00", "6", "-"},
+                // 06/11: the part of day said is followed exactly, even outside opening hours (the assistant then says so)
+                {"8 giờ sáng mai 2 người", "2026-11-21", "08:00", "2", "-"},
+                {"8h sang mai 2 nguoi", "2026-11-21", "08:00", "2", "-"},
+                {"sáng mai 9 giờ 3 người", "2026-11-21", "09:00", "3", "-"},
+                {"mai 2 giờ chiều 4 người", "2026-11-21", "14:00", "4", "-"},
+                {"chieu mai 3h 4 nguoi", "2026-11-21", "15:00", "4", "-"},
+                {"trưa mai 12h30 2 người", "2026-11-21", "12:30", "2", "-"},
+                {"mai 11 giờ đêm 2 người", "2026-11-21", "23:00", "2", "-"},
+                {"mai 12 giờ đêm 2 người", "2026-11-21", "00:00", "2", "-"},
+                {"6h sáng mai 2 người", "2026-11-21", "06:00", "2", "-"},
+                {"cho tôi đặt bàn 7h tối mai 2 người", "2026-11-21", "19:00", "2", "-"},
+                {"cho tôi đặt bàn mai 9h sáng 2 người", "2026-11-21", "09:00", "2", "-"},
+                {"cho toi dat ban mai 7h 2 nguoi", "2026-11-21", "19:00", "2", "-"},          // "toi" here is "tôi"
+                {"dat cho toi 11h sang mai 2 nguoi", "2026-11-21", "11:00", "2", "-"},
+                {"vo chong toi mai 10h sang", "2026-11-21", "10:00", "2", "-"},
                 {"xin chào", "-", "-", "-", "-"},
                 {"dat ban", "-", "-", "-", "-"},
         });

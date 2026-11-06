@@ -765,6 +765,22 @@ public final class MobileRepository {
     }
 
     /** The reminder's buttons: response is "will_come" or "cancel" (owner 06/11). */
+    /** Booking hours from the server: {openFrom, lastSlot} and the slot length (owner 06/11: nothing hard-coded). */
+    public interface HoursCallback { void onHours(java.time.LocalTime openFrom, java.time.LocalTime lastSlot, int slotMinutes); }
+
+    public void loadBookingHours(HoursCallback callback) {
+        api().get("/api/mobile/v1/reservations/hours", false, new ApiClient.Callback() {
+            @Override public void onSuccess(Object value) {
+                try {
+                    JSONObject row = (JSONObject) value;
+                    callback.onHours(java.time.LocalTime.parse(row.getString("openFrom")), java.time.LocalTime.parse(row.getString("lastSlot")),
+                            row.optInt("slotMinutes", 30));
+                } catch (Exception ignored) { /* the server still checks the hours when booking */ }
+            }
+            @Override public void onError(ApiException error) { /* same: the server checks */ }
+        });
+    }
+
     /** "Gợi ý món" (06/11): dishes for a group and a budget, priced by the server like the bill. */
     public void suggestMenu(String branchId, int people, long budget, int vegetarians, boolean avoidSpicy,
                             Callback<com.restaurant.viettable.model.MenuSuggestion> callback) {

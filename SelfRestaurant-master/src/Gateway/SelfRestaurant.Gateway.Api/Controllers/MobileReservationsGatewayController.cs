@@ -382,6 +382,16 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         return (result.Layout, result.Available);
     }
 
+    /// <summary>Booking hours (first and last slot, restaurant time) for the booking assistant (owner 06/11).</summary>
+    [HttpGet("hours")]
+    [AllowAnonymous]
+    public ActionResult<object> Hours()
+    {
+        var openFrom = ReservationRules.ConfiguredTime(_configuration, "Reservations:OpenFrom", ReservationRules.DefaultOpenFrom);
+        var lastSlot = ReservationRules.ConfiguredTime(_configuration, "Reservations:LastSlot", ReservationRules.DefaultLastSlot);
+        return Ok(new { openFrom = openFrom.ToString("HH:mm"), lastSlot = lastSlot.ToString("HH:mm"), slotMinutes = AvailabilitySuggestions.SlotMinutes });
+    }
+
     /// <summary>
     /// "Hết bàn?" (owner 06/11): whether the chosen time still has room, the nearest other times of the same day with
     /// room, and other branches with room at that time (closest first when the guest shares a position).

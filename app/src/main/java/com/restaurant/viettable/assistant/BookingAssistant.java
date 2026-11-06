@@ -29,8 +29,26 @@ public final class BookingAssistant {
         }
     }
 
-    public static final LocalTime OPEN_FROM = LocalTime.of(10, 0);
-    public static final LocalTime LAST_SLOT = LocalTime.of(21, 30);
+    /** Booking hours from the server (GET /reservations/hours); null until loaded, then the server checks alone. */
+    private LocalTime openFrom;
+    private LocalTime lastSlot;
+    private int slotMinutes = 30;
+
+    public void setHours(LocalTime openFrom, LocalTime lastSlot, int slotMinutes) {
+        this.openFrom = openFrom;
+        this.lastSlot = lastSlot;
+        if (slotMinutes > 0) this.slotMinutes = slotMinutes;
+    }
+
+    /** The bookable time nearest to {@code t} (owner 06/11: suggested, never applied by itself). */
+    static LocalTime nearestSlot(LocalTime t, LocalTime open, LocalTime last, int slotMinutes) {
+        if (t.isBefore(open)) return open;
+        if (t.isAfter(last)) return last;
+        int fromOpen = (t.toSecondOfDay() - open.toSecondOfDay()) / 60;
+        int rounded = Math.round(fromOpen / (float) slotMinutes) * slotMinutes;
+        LocalTime slot = open.plusMinutes(rounded);
+        return slot.isAfter(last) ? last : slot;
+    }
 
     private final List<BookingIntentParser.BranchRef> branches;
     private final BookingIntent intent = new BookingIntent();
@@ -58,11 +76,17 @@ public final class BookingAssistant {
             }
         }
         BookingIntent said = BookingIntentParser.parse(text, now.toLocalDate(), branches);
+        // "sáng mai" then "8 giờ": the hour keeps the part of day said before.
+        if (said.time != null && said.period == null && intent.period != null && said.typedHour >= 0)
+            said.time = BookingIntentParser.withPeriod(said.typedHour, said.typedMinute, intent.period);
         boolean understood = said.date != null || said.time != null || said.partySize != null || said.branchId != null
                 || said.period != null || said.note != null;
         awaitingConfirmation = false;
         intent.merge(said);
         String problem = problem(now);
+        if (problem != null && problem.startsWith("!"))
+            return new Turn(problem.substring(1),
+                    Arrays.asList(outsideHoursSuggestion.format(DateTimeFormatter.ofPattern("HH:mm"))), Action.NONE);
         if (problem != null) return problem.startsWith("?") ? ask(problem.substring(1)) : new Turn(problem, null, Action.NONE);
         Turn next = nextQuestion();
         if (next != null) return understood || intent.complete() ? next
@@ -109,9 +133,14 @@ public final class BookingAssistant {
             intent.date = null;
             return "?Ngày này đã qua. Bạn muốn đặt ngày nào ạ?";
         }
-        if (intent.time != null && (intent.time.isBefore(OPEN_FROM) || intent.time.isAfter(LAST_SLOT))) {
+        if (outsideHours()) {
+            outsideHoursSuggestion = nearestSlot(intent.time, openFrom, lastSlot, slotMinutes);
+            String said = intent.time.format(DateTimeFormatter.ofPattern("HH:mm"));
             intent.time = null;
-            return "?Nhà hàng nhận đặt bàn từ 10:00 đến 21:30. Bạn chọn giờ khác nhé?";
+            return "!" + "Nhà hàng chỉ nhận đặt bàn từ " + openFrom.format(DateTimeFormatter.ofPattern("HH:mm")) + " đến "
+                    + lastSlot.format(DateTimeFormatter.ofPattern("HH:mm")) + ", nên chưa đặt được lúc " + said
+                    + ". Giờ gần nhất là " + outsideHoursSuggestion.format(DateTimeFormatter.ofPattern("HH:mm"))
+                    + ". Bạn chọn giờ này hoặc nhắn giờ khác nhé.";
         }
         if (intent.date != null && intent.time != null && intent.date.atTime(intent.time).isBefore(now.plusMinutes(15))) {
             intent.time = null;
@@ -122,6 +151,13 @@ public final class BookingAssistant {
             return "?Nhà hàng nhận đặt bàn từ 1 đến 30 người. Bạn đi mấy người ạ?";
         }
         return null;
+    }
+
+    private LocalTime outsideHoursSuggestion;
+
+    private boolean outsideHours() {
+        if (intent.time == null || openFrom == null || lastSlot == null) return false;
+        return intent.time.isBefore(openFrom) || intent.time.isAfter(lastSlot);
     }
 
     private Turn ask(String message) {
@@ -137,13 +173,25 @@ public final class BookingAssistant {
         }
         if (intent.date == null) return new Turn("Bạn muốn đặt ngày nào ạ?", Arrays.asList("Hôm nay", "Ngày mai", "Thứ 7", "Chủ nhật"), Action.NONE);
         if (intent.time == null) {
-            List<String> hours = "trua".equals(intent.period) || "sang".equals(intent.period)
-                    ? Arrays.asList("11:00", "11:30", "12:00", "12:30")
-                    : Arrays.asList("18:00", "18:30", "19:00", "19:30", "20:00");
+            List<String> hours = hoursFor(intent.period);
             return new Turn(intent.period == null ? "Bạn đến lúc mấy giờ ạ?" : "Mấy giờ ạ?", hours, Action.NONE);
         }
         if (intent.partySize == null) return new Turn("Bạn đi mấy người ạ?", Arrays.asList("2 người", "4 người", "6 người"), Action.NONE);
         return null;
+    }
+
+    /** Quick replies for "Mấy giờ ạ?" inside the part of day said and the booking hours (when known). */
+    private List<String> hoursFor(String period) {
+        LocalTime from, to;
+        if ("sang".equals(period)) { from = LocalTime.of(6, 0); to = LocalTime.of(11, 30); }
+        else if ("trua".equals(period)) { from = LocalTime.of(11, 0); to = LocalTime.of(13, 30); }
+        else if ("chieu".equals(period)) { from = LocalTime.of(14, 0); to = LocalTime.of(17, 30); }
+        else { from = LocalTime.of(18, 0); to = LocalTime.of(20, 30); }
+        if (openFrom != null && from.isBefore(openFrom)) from = openFrom;
+        if (lastSlot != null && to.isAfter(lastSlot)) to = lastSlot;
+        List<String> out = new ArrayList<>();
+        for (LocalTime t = from; !t.isAfter(to) && out.size() < 5; t = t.plusMinutes(slotMinutes)) out.add(t.format(DateTimeFormatter.ofPattern("HH:mm")));
+        return out;
     }
 
     private String branchName(String id) {

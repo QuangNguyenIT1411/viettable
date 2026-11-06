@@ -66,7 +66,7 @@ public final class BookingIntentParser {
         Matcher noteMark = NOTE_FOLDED.matcher(s);
         if (noteMark.find()) s = s.substring(0, noteMark.start()).trim();
         intent.date = date(s, today);
-        readTime(s, intent);
+        readTime(original, s, intent);
         intent.partySize = people(s);
         intent.branchId = branch(s, branches);
         return intent;
@@ -124,12 +124,54 @@ public final class BookingIntentParser {
 
     // ---------- time ----------
 
-    private static void readTime(String s, BookingIntent intent) {
-        String period = null;
-        if (has(s, "toi", "dem")) period = "toi";
-        else if (has(s, "chieu")) period = "chieu";
-        else if (has(s, "trua")) period = "trua";
-        else if (has(s, "sang")) period = "sang";
+    /** "tối" with tone marks, or (typed without marks) "toi" only where it cannot be the pronoun "tôi". */
+    private static final Pattern EVENING_PLAIN = Pattern.compile("\\b(?:buoi toi|toi (?:nay|mai|mot|qua|hom|ngay|thu|chu nhat|cn|t[2-7]))\\b");
+    /** A part of day right after the hour ("7h30 toi", "8 gio sang", "11 gio ruoi trua"): it wins over any other word. */
+    private static final Pattern PERIOD_AFTER_HOUR = Pattern.compile(
+            "\\b\\d{1,2}\\s*(?:h|g|gio|:)?\\s*(?:\\d{2})?\\s*(?:phut\\s*)?(?:ruoi\\s*)?(sang|trua|chieu|toi|dem)\\b");
+
+    /**
+     * The part of day said (owner 06/11: "sáng/trưa/chiều/tối" is followed exactly). With tone marks only the marked
+     * words count ("tôi" is never "tối"); typed without marks, "toi" counts only as "tối nay/mai…", "buổi tối" or after
+     * an hour ("7h toi").
+     */
+    static String period(String original, String s) {
+        String o = original == null ? "" : original.toLowerCase(Locale.ROOT);
+        boolean marked = o.matches("(?s).*[\\u00C0-\\u1EF9].*"); // typed with Vietnamese tone marks
+        if (marked) {
+            if (o.contains("đêm")) return "dem";
+            if (o.contains("tối")) return "toi";
+            if (o.contains("chiều")) return "chieu";
+            if (o.contains("trưa")) return "trua";
+            if (o.contains("sáng")) return "sang";
+            return null;
+        }
+        Matcher after = PERIOD_AFTER_HOUR.matcher(s);
+        if (after.find()) return after.group(1);
+        if (has(s, "dem")) return "dem";
+        if (EVENING_PLAIN.matcher(s).find()) return "toi";
+        if (has(s, "chieu")) return "chieu";
+        if (has(s, "trua")) return "trua";
+        if (has(s, "sang")) return "sang";
+        return null;
+    }
+
+    /** The clock time for an hour said with a part of day; without one, 1–9 o'clock means afternoon/evening. */
+    public static LocalTime withPeriod(int hour, int minute, String period) {
+        if (period == null) { if (hour >= 1 && hour <= 9) hour += 12; }
+        else switch (period) {
+            case "sang": break;                                   // "8 giờ sáng" is 08:00, even before opening
+            case "trua": if (hour >= 1 && hour <= 4) hour += 12; break;
+            case "chieu": if (hour >= 1 && hour <= 11) hour += 12; break;
+            case "toi": if (hour == 12) hour = 0; else if (hour >= 1 && hour <= 11) hour += 12; break;
+            case "dem": if (hour == 12) hour = 0; else if (hour >= 5 && hour <= 11) hour += 12; break;
+            default: break;
+        }
+        return LocalTime.of(hour % 24, minute);
+    }
+
+    private static void readTime(String original, String s, BookingIntent intent) {
+        String period = period(original, s);
         intent.period = period;
         Matcher m = TIME.matcher(s);
         while (m.find()) {
@@ -138,11 +180,9 @@ public final class BookingIntentParser {
             boolean half = m.group("r1") != null || m.group("r2") != null || m.group("r3") != null;
             int minute = digits != null ? Integer.parseInt(digits) : half ? 30 : 0;
             if (hour > 23 || minute > 59) continue;
-            if (hour <= 11 && ("toi".equals(period) || "chieu".equals(period))) hour += 12;
-            else if (hour <= 2 && "trua".equals(period)) hour += 12;
-            // Without "sáng", 1–9 o'clock means afternoon/evening: the restaurant opens at 10:00.
-            else if (period == null && hour >= 1 && hour <= 9) hour += 12;
-            intent.time = LocalTime.of(hour, minute);
+            intent.typedHour = hour;
+            intent.typedMinute = minute;
+            intent.time = withPeriod(hour, minute, period);
             return;
         }
     }

@@ -61,6 +61,7 @@ public class BookingAssistantFragment extends BaseFragment {
         List<BookingIntentParser.BranchRef> refs = new ArrayList<>();
         for (Branch b : appStateManager.getBranches()) refs.add(new BookingIntentParser.BranchRef(b.getId(), b.getName()));
         assistant = new BookingAssistant(refs);
+        MobileRepository.getInstance().loadBookingHours((open, last, slot) -> { if (assistant != null) assistant.setHours(open, last, slot); });
         show(assistant.greeting());
         binding.btnSend.setOnClickListener(v -> sendTyped());
         binding.etMessage.setOnEditorActionListener((v, actionId, event) -> {
