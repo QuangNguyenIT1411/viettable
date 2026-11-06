@@ -494,8 +494,34 @@ public sealed class CustomersController : ControllerBase
         return Ok(MapReservation(saved));
     }
 
+    /// <summary>The guest answered "Sẽ đến" on the reminder. Cancelling from the reminder goes through cancel?viaReminder=true.</summary>
+    [HttpPost("api/customers/reservations/{reservationId:int}/arrival-confirmation")]
+    public async Task<ActionResult<object>> ConfirmArrival(int reservationId, [FromBody] ArrivalConfirmationRequest? request,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await BeginReservationLockAsync(reservationId, cancellationToken);
+        var reservation = await _db.Reservations.Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
+            .FirstOrDefaultAsync(x => x.ReservationId == reservationId, cancellationToken);
+        if (reservation is null) return NotFound(new { message = "Không tìm thấy đặt bàn." });
+        if (request?.CustomerId is > 0 && reservation.CustomerId != request.CustomerId)
+            return NotFound(new { message = "Không tìm thấy đặt bàn." });
+        var now = DateTime.UtcNow;
+        var refusal = ArrivalRules.WhyNotConfirmable(reservation.Status, reservation.ReservedAt, reservation.ArrivalWindowMinutes, now);
+        if (refusal is not null) return Conflict(new { code = "reservation_state_conflict", message = refusal });
+        if (reservation.ArrivalConfirmation != ArrivalRules.WillCome)
+        {
+            reservation.ArrivalConfirmation = ArrivalRules.WillCome;
+            reservation.ArrivalConfirmedAtUtc = now;
+            reservation.UpdatedAtUtc = now;
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        if (transaction is not null) await transaction.CommitAsync(cancellationToken);
+        return Ok(MapReservation(reservation));
+    }
+
     [HttpPost("api/customers/reservations/{reservationId:int}/cancel")]
-    public async Task<ActionResult<object>> CancelReservation(int reservationId, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> CancelReservation(int reservationId, CancellationToken cancellationToken,
+        [FromQuery] bool viaReminder = false)
     {
         await using var transaction = await BeginReservationLockAsync(reservationId, cancellationToken);
         var reservation = await _db.Reservations
@@ -526,6 +552,11 @@ public sealed class CustomersController : ControllerBase
         reservation.Status = "Cancelled";
         reservation.CancelledAtUtc = now;
         reservation.UpdatedAtUtc = now;
+        if (viaReminder)
+        {
+            reservation.ArrivalConfirmation = ArrivalRules.Cancelled;
+            reservation.ArrivalConfirmedAtUtc = now;
+        }
 
         foreach (var item in reservation.PreOrderItems.Where(x => string.Equals(x.Status, "Pending", StringComparison.OrdinalIgnoreCase)))
         {
@@ -1246,6 +1277,8 @@ public sealed class CustomersController : ControllerBase
             statusReason = reservation.StatusReason,
             depositAmount = reservation.DepositAmount,
             depositDueAtUtc = reservation.DepositDueAtUtc,
+            arrivalConfirmation = reservation.ArrivalConfirmation,
+            arrivalConfirmedAtUtc = reservation.ArrivalConfirmedAtUtc,
             assignedTables,
             preOrderItems = items
         };
@@ -1270,6 +1303,8 @@ public sealed class CustomersController : ControllerBase
         string? Note, string? MutationKey, string? MutationHash);
 
     public sealed record ReservationDecisionRequest(int? EmployeeId, string? Reason = null);
+
+    public sealed record ArrivalConfirmationRequest(int? CustomerId);
 
     public sealed record SubmitPreOrderRequest(string MutationKey, string MutationHash);
 

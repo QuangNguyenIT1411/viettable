@@ -11,6 +11,8 @@ public final class ReservationReminderWorker extends Worker {
     static final String KEY_RESERVATION_ID = "reservationId";
     static final String KEY_OFFSET = "offsetMinutes";
     static final String KEY_TEXT = "text";
+    static final String KEY_ANSWERED = "answered";
+    static final String KEY_PAID_DEPOSIT = "paidDeposit";
 
     public ReservationReminderWorker(@NonNull Context context, @NonNull WorkerParameters params) {
         super(context, params);
@@ -22,7 +24,8 @@ public final class ReservationReminderWorker extends Worker {
         String reservationId = getInputData().getString(KEY_RESERVATION_ID);
         String text = getInputData().getString(KEY_TEXT);
         if (reservationId == null || text == null) return Result.success();
-        ReservationReminders.show(getApplicationContext(), reservationId, getInputData().getInt(KEY_OFFSET, 0), text);
+        ReservationReminders.show(getApplicationContext(), reservationId, getInputData().getInt(KEY_OFFSET, 0), text,
+                !getInputData().getBoolean(KEY_ANSWERED, false), getInputData().getBoolean(KEY_PAID_DEPOSIT, false));
         return Result.success();
     }
 }

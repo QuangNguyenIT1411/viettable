@@ -192,14 +192,39 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         catch (ApiClientException ex) { return DownstreamError(ex, "update_reservation_failed"); }
     }
 
+    /// <summary>
+    /// The two buttons on the booking reminder: "will_come" keeps the booking and tells the cashier; "cancel" cancels
+    /// it under the usual rules (a paid deposit is refunded or kept exactly as with the cancel button).
+    /// </summary>
+    [HttpPost("{reservationId:int}/arrival-confirmation")]
+    public async Task<ActionResult<ReservationDto>> ConfirmArrival(int reservationId, MobileArrivalConfirmationRequest request, CancellationToken ct)
+    {
+        var answer = request?.Response?.Trim().ToLowerInvariant();
+        if (answer == "cancel") return await CancelCore(reservationId, viaReminder: true, ct);
+        if (answer != "will_come")
+            return MobileError("validation_failed", "Câu trả lời phải là will_come hoặc cancel.", 400, new { field = "response" });
+        var owned = await GetOwned(reservationId, ct);
+        if (owned.Error is not null) return owned.Error;
+        try
+        {
+            var result = await _customers.ConfirmArrivalAsync(reservationId, CurrentCustomerId()!.Value, ct);
+            if (result is null) return MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
+            await NudgeCashierAsync(result.BranchId);
+            return Ok(result);
+        }
+        catch (ApiClientException ex) { return DownstreamError(ex, "arrival_confirmation_failed"); }
+    }
+
     [HttpPost("{reservationId:int}/cancel")]
-    public async Task<ActionResult<ReservationDto>> Cancel(int reservationId, CancellationToken ct)
+    public Task<ActionResult<ReservationDto>> Cancel(int reservationId, CancellationToken ct) => CancelCore(reservationId, viaReminder: false, ct);
+
+    private async Task<ActionResult<ReservationDto>> CancelCore(int reservationId, bool viaReminder, CancellationToken ct)
     {
         var owned = await GetOwned(reservationId, ct);
         if (owned.Error is not null) return owned.Error;
         try
         {
-            var result = await _customers.CancelReservationAsync(reservationId, ct);
+            var result = await _customers.CancelReservationAsync(reservationId, ct, viaReminder);
             if (result is null) return MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
             // The dishes ordered ahead must never reach the kitchen. Best effort: a cancelled reservation cannot
             // check in, so a missed call only leaves an unused pre-order row.

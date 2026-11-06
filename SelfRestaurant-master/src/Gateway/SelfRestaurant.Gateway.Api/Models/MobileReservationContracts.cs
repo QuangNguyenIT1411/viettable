@@ -24,6 +24,8 @@ public sealed record CreateMobileReservationRequest(int BranchId, int? TableId, 
     DateTimeOffset ReservedAt, string? Note = null, string? ContactName = null, string? ContactPhone = null);
 public sealed record UpdateMobileReservationRequest(int? TableId, int PartySize,
     DateTimeOffset ReservedAt, string? Note = null);
+/// <summary>Answer to the booking reminder: "will_come" or "cancel".</summary>
+public sealed record MobileArrivalConfirmationRequest(string? Response);
 public sealed record MobileReservationListResponse(IReadOnlyList<ReservationDto> Items, string? NextCursor);
 /// <summary>Status: NOT_REQUIRED, PENDING, EXPIRED, CANCELLED, PAID, APPLIED, REFUND_REQUIRED, REFUNDED, FORFEITED.
 /// Transfer (VietQR, content "VT DC{id}") only while PENDING.</summary>

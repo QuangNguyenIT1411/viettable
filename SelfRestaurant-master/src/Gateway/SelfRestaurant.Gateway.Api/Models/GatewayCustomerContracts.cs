@@ -105,7 +105,9 @@ public sealed record ReservationDto(
     int? StatusChangedByEmployeeId = null,
     string? StatusReason = null,
     decimal? DepositAmount = null,
-    DateTime? DepositDueAtUtc = null);
+    DateTime? DepositDueAtUtc = null,
+    string? ArrivalConfirmation = null,
+    DateTime? ArrivalConfirmedAtUtc = null);
 
 public sealed record ReservationAssignedTableDto(int TableId, bool IsPrimary);
 

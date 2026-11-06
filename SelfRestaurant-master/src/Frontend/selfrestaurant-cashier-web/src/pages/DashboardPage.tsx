@@ -1,5 +1,6 @@
 import { userMessage, cleanText } from "../../../shared/apiError";
 import { formatViDateTime } from "../../../shared/dateFormat";
+import { arrivalBadge } from "../../../shared/arrivalStatus";
 import { orderLabel } from "../../../shared/orderLabel";
 import { useEffect, useMemo, useState } from "react";
 import { CashierTopbar } from "../components/CashierTopbar";
@@ -1082,6 +1083,11 @@ export function DashboardPage({ onLogout }: Props) {
                       <span className={reservationStatusBadgeClass(reservation.status)}>
                         {reservationStatusLabels[reservation.status] ?? reservation.status}
                       </span>
+                      {(() => {
+                        const arrival = arrivalBadge(reservation.status, reservation.arrivalConfirmation);
+                        return arrival ? <span className={`soft-badge ${arrival.tone === "success" ? "success" : arrival.tone === "danger" ? "danger" : "secondary"}`}
+                          data-arrival={reservation.arrivalConfirmation ?? "None"}>{arrival.label}</span> : null;
+                      })()}
                     </div>
                     <div className="reservation-main-info">
                       <div>

@@ -92,6 +92,12 @@ public class Reservation implements Serializable {
     private String depositDueAtUtc;
     public String getDepositDueAtUtc() { return depositDueAtUtc; }
     public void setDepositDueAtUtc(String value) { depositDueAtUtc = value; }
+    /** The guest's answer to the reminder, from the server: None, WillCome, Cancelled. */
+    private String arrivalConfirmation = "None";
+    public String getArrivalConfirmation() { return arrivalConfirmation; }
+    public void setArrivalConfirmation(String value) { arrivalConfirmation = value == null || value.isEmpty() ? "None" : value; }
+    /** A deposit that was paid (not one still waiting for the transfer): cancelling may refund or keep it. */
+    public boolean hasPaidDeposit() { return depositAmount > 0 && status != Status.PENDING_DEPOSIT; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public String getReservedAt() { return reservedAt; }

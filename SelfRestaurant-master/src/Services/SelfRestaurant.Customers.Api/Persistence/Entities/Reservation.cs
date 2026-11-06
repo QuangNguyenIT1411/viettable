@@ -38,6 +38,11 @@ public sealed class Reservation
     public decimal? DepositAmount { get; set; }
     /// <summary>While "PendingDeposit": unpaid after this moment the booking is cancelled and the table freed.</summary>
     public DateTime? DepositDueAtUtc { get; set; }
+
+    /// <summary>The guest's answer to the reminder: None (no answer yet), WillCome, Cancelled. See ArrivalRules.</summary>
+    public string ArrivalConfirmation { get; set; } = "None";
+
+    public DateTime? ArrivalConfirmedAtUtc { get; set; }
     public ICollection<ReservationPreOrderItem> PreOrderItems { get; set; } = new List<ReservationPreOrderItem>();
     public ICollection<ReservationTable> ReservationTables { get; set; } = new List<ReservationTable>();
 }

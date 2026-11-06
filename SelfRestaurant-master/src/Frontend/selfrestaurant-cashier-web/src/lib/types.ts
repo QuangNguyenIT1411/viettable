@@ -211,6 +211,9 @@ export type ReservationDto = {
   statusChangedByEmployeeId?: number | null;
   /** Rejection reason, or "Tự xác nhận khi check-in". */
   statusReason?: string | null;
+  /** The guest's answer to the reminder: None, WillCome, Cancelled. */
+  arrivalConfirmation?: string | null;
+  arrivalConfirmedAtUtc?: string | null;
 };
 
 export type ReservationAssignedTableDto = {

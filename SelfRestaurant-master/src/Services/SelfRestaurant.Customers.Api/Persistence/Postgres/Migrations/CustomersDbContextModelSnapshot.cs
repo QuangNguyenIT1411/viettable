@@ -347,6 +347,17 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReservationId"));
 
+                    b.Property<string>("ArrivalConfirmation")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("None");
+
+                    b.Property<DateTime?>("ArrivalConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("ArrivalWindowMinutes")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")

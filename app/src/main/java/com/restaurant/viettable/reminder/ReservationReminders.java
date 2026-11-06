@@ -76,7 +76,8 @@ public final class ReservationReminders {
                 for (ReminderPlan.Reminder reminder : ReminderPlan.plan(r.getStatus(), reservedAt, now, offsets())) {
                     String name = TAG + "-" + r.getId() + "-" + reminder.offsetMinutes;
                     String text = ReminderPlan.message(reminder.offsetMinutes, r.getTimeSlot(), r.getBranchName(), r.getTableLabel());
-                    String signature = reminder.fireAt.toEpochMilli() + "|" + text;
+                    boolean answered = ReminderActions.isAnswered(r.getArrivalConfirmation());
+                    String signature = reminder.fireAt.toEpochMilli() + "|" + text + "|" + answered + "|" + r.hasPaidDeposit();
                     after.put(name, signature);
                     if (signature.equals(before.optString(name, null))) continue; // already scheduled as is
                     long delay = Math.max(0, Duration.between(now, reminder.fireAt).toMillis());
@@ -87,6 +88,8 @@ public final class ReservationReminders {
                                     .putString(ReservationReminderWorker.KEY_RESERVATION_ID, r.getId())
                                     .putInt(ReservationReminderWorker.KEY_OFFSET, reminder.offsetMinutes)
                                     .putString(ReservationReminderWorker.KEY_TEXT, text)
+                                    .putBoolean(ReservationReminderWorker.KEY_ANSWERED, answered)
+                                    .putBoolean(ReservationReminderWorker.KEY_PAID_DEPOSIT, r.hasPaidDeposit())
                                     .build())
                             .build();
                     work.enqueueUniqueWork(name, ExistingWorkPolicy.REPLACE, request);
@@ -127,6 +130,14 @@ public final class ReservationReminders {
     }
 
     static void show(Context context, String reservationId, int offsetMinutes, String text) {
+        show(context, reservationId, offsetMinutes, text, true, false);
+    }
+
+    /**
+     * withButtons: "Sẽ đến" / "Huỷ lịch" (owner 06/11), left out once the guest answered. With a paid deposit, "Huỷ lịch"
+     * opens the booking so the guest reads whether the deposit comes back before cancelling.
+     */
+    static void show(Context context, String reservationId, int offsetMinutes, String text, boolean withButtons, boolean paidDeposit) {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
                 Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
         NotificationManagerCompat manager = NotificationManagerCompat.from(context);
@@ -148,8 +159,37 @@ public final class ReservationReminders {
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setAutoCancel(true)
                 .setContentIntent(tap);
+        if (withButtons) {
+            builder.addAction(0, ReminderActions.LABEL_WILL_COME,
+                    ReminderActionReceiver.intent(context, reservationId, id, ReminderActions.WILL_COME));
+            builder.addAction(0, ReminderActions.LABEL_CANCEL, paidDeposit ? tap
+                    : ReminderActionReceiver.intent(context, reservationId, id, ReminderActions.CANCEL));
+        }
         try { manager.notify(id, builder.build()); }
         catch (SecurityException e) { Log.w(LOG, "Reminder not shown: permission revoked"); }
+    }
+
+    /** Replaces the reminder with the outcome of a button (no buttons any more). */
+    static void showOutcome(Context context, String reservationId, int notificationId, String text) {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
+                Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+        createChannel(context);
+        Intent open = new Intent(context, MainActivity.class)
+                .putExtra(EXTRA_RESERVATION_ID, reservationId)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent tap = PendingIntent.getActivity(context, notificationId, open,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("Nhắc lịch đặt bàn")
+                .setContentText(text)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setOnlyAlertOnce(true)
+                .setAutoCancel(true)
+                .setContentIntent(tap);
+        try { NotificationManagerCompat.from(context).notify(notificationId, builder.build()); }
+        catch (SecurityException e) { Log.w(LOG, "Reminder outcome not shown: permission revoked"); }
     }
 
     static int notificationId(String reservationId, int offsetMinutes) {

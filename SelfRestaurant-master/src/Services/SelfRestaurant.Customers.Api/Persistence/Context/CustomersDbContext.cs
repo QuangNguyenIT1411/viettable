@@ -85,6 +85,8 @@ public sealed class CustomersDbContext : DbContext
             entity.Property(e => e.StatusReason).HasMaxLength(300);
             entity.Property(e => e.DepositAmount).HasColumnType("decimal(18,2)");
             entity.Property(e => e.DepositDueAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.ArrivalConfirmation).HasMaxLength(20).IsUnicode(false).HasDefaultValue("None");
+            entity.Property(e => e.ArrivalConfirmedAtUtc).HasColumnType("datetime2");
             entity.HasMany(e => e.PreOrderItems)
                 .WithOne(e => e.Reservation)
                 .HasForeignKey(e => e.ReservationId)

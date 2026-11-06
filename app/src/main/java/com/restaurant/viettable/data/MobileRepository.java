@@ -627,6 +627,19 @@ public final class MobileRepository {
         }
     }
 
+    /** The reminder's buttons: response is "will_come" or "cancel" (owner 06/11). */
+    public void answerReminder(String reservationId, String response, Callback<Reservation> callback) {
+        JSONObject body = new JSONObject();
+        try { body.put("response", response); } catch (Exception ignored) { }
+        api().post("/api/mobile/v1/reservations/" + reservationId + "/arrival-confirmation", body, true, null,
+                new ApiClient.Callback() {
+                    @Override public void onSuccess(Object value) {
+                        Reservation updated = parseReservation((JSONObject) value); state.upsertReservation(updated); callback.onSuccess(updated);
+                    }
+                    @Override public void onError(ApiException error) { callback.onError(error); }
+                });
+    }
+
     public void cancelReservation(Reservation reservation, Callback<Reservation> callback) {
         api().post("/api/mobile/v1/reservations/" + reservation.getId() + "/cancel", new JSONObject(), true, null,
                 tableAware(new ApiClient.Callback() {
@@ -1707,6 +1720,7 @@ public final class MobileRepository {
         reservation.setStatusReason(row.isNull("statusReason") ? null : SafeText.json(row, "statusReason", null));
         reservation.setDepositAmount(row.isNull("depositAmount") ? 0 : Math.round(row.optDouble("depositAmount", 0)));
         reservation.setDepositDueAtUtc(row.isNull("depositDueAtUtc") ? null : SafeText.json(row, "depositDueAtUtc", null));
+        reservation.setArrivalConfirmation(SafeText.json(row, "arrivalConfirmation", "None"));
         return reservation;
     }
 

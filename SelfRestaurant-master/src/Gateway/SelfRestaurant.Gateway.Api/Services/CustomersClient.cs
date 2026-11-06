@@ -120,10 +120,16 @@ public sealed class CustomersClient : ApiClientBase
 
     public sealed record ReservationTableHoldDto(int ReservationId, int? CustomerId, DateTime ReservedAt);
 
-    public Task<ReservationDto?> CancelReservationAsync(int reservationId, CancellationToken cancellationToken) =>
+    public Task<ReservationDto?> CancelReservationAsync(int reservationId, CancellationToken cancellationToken, bool viaReminder = false) =>
         PostForAsync<object, ReservationDto>(
-            $"/api/customers/reservations/{reservationId}/cancel",
+            $"/api/customers/reservations/{reservationId}/cancel" + (viaReminder ? "?viaReminder=true" : ""),
             new { },
+            cancellationToken);
+
+    public Task<ReservationDto?> ConfirmArrivalAsync(int reservationId, int customerId, CancellationToken cancellationToken) =>
+        PostForAsync<object, ReservationDto>(
+            $"/api/customers/reservations/{reservationId}/arrival-confirmation",
+            new { customerId },
             cancellationToken);
 
     /// <summary>A pending booking is confirmed by its check-in; employeeId is the cashier, null for a QR check-in.</summary>
