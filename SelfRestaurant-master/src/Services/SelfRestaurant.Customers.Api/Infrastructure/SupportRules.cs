@@ -110,6 +110,16 @@ public static class SupportRules
             + $"Nhân viên sẽ trả lời bạn khi chi nhánh mở cửa lúc {when}.";
     }
 
+    /// <summary>No automatic reply while staff (or an automatic reply) spoke this recently: the chat is live (owner 07/11).</summary>
+    public static readonly TimeSpan AutoReplyQuiet = TimeSpan.FromMinutes(30);
+
+    /// <summary>
+    /// A customer message gets the automatic reply only when it starts a new wait and nobody answered in the last
+    /// <see cref="AutoReplyQuiet"/>: during a live conversation the customer is not told "ngoài giờ" again (owner 07/11).
+    /// </summary>
+    public static bool ShouldAutoReply(bool startsNewWait, DateTime? lastStaffOrAutoUtc, DateTime nowUtc) =>
+        startsNewWait && (lastStaffOrAutoUtc is null || nowUtc - lastStaffOrAutoUtc.Value >= AutoReplyQuiet);
+
     /// <summary>A customer wrote: a resolved conversation opens again; the wait starts if staff had answered.</summary>
     public static void OnCustomerMessage(SupportConversation c, DateTime nowUtc)
     {

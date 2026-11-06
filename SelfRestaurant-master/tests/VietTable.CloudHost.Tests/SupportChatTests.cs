@@ -222,7 +222,33 @@ public sealed class SupportChatTests
         await controller.Send(c.SupportConversationId, new SupportChatController.MessageRequest(10, null, null, null, "Vẫn chưa thấy", null), CancellationToken.None);
         Assert.Equal(SupportRules.Waiting, c.Status);
         Assert.Null(c.ResolvedAtUtc);
-        Assert.Equal(2, await db.SupportMessages.CountAsync(m => m.SenderType == SupportRules.Auto)); // a new wait → a new automatic reply
+        // The automatic reply of the start is under 30 minutes old: no second one (owner 07/11).
+        Assert.Equal(1, await db.SupportMessages.CountAsync(m => m.SenderType == SupportRules.Auto));
+    }
+
+    [Fact]
+    public void Automatic_reply_only_when_nobody_answered_for_30_minutes()
+    {
+        var now = new DateTime(2026, 11, 7, 1, 48, 0, DateTimeKind.Utc);
+        Assert.True(SupportRules.ShouldAutoReply(true, null, now));                       // first message
+        Assert.False(SupportRules.ShouldAutoReply(true, now.AddMinutes(-1), now));        // staff just answered: live chat
+        Assert.False(SupportRules.ShouldAutoReply(true, now.AddMinutes(-29), now));
+        Assert.True(SupportRules.ShouldAutoReply(true, now.AddMinutes(-30), now));        // quiet for 30 minutes
+        Assert.False(SupportRules.ShouldAutoReply(false, null, now));                     // the customer already waits
+    }
+
+    [Fact]
+    public async Task Customer_reply_right_after_staff_gets_no_second_automatic_message()
+    {
+        await using var db = Database();
+        var controller = new SupportChatController(db);
+        await Start(controller);
+        var c = await db.SupportConversations.SingleAsync();
+        await controller.Send(c.SupportConversationId, new SupportChatController.MessageRequest(null, 1, 5, "Lan", "Mình kiểm tra ngay", null), CancellationToken.None);
+        await controller.Send(c.SupportConversationId, new SupportChatController.MessageRequest(10, null, null, null, "Cảm ơn", null), CancellationToken.None);
+        Assert.Equal(1, await db.SupportMessages.CountAsync(m => m.SenderType == SupportRules.Auto));
+        Assert.Equal(SupportRules.InProgress, c.Status); // still handled by staff, and the customer waits again
+        Assert.NotNull(c.WaitingSinceUtc);
     }
 
     [Fact]

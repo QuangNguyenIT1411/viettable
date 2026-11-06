@@ -128,7 +128,10 @@ public sealed class SupportChatController(CustomersDbContext db) : ControllerBas
         else
         {
             c.CustomerLastReadMessageId = SupportRules.Advance(c.CustomerLastReadMessageId, message.SupportMessageId);
-            if (wasAnswered)
+            var lastAnswer = await db.SupportMessages.AsNoTracking()
+                .Where(x => x.SupportConversationId == id && (x.SenderType == SupportRules.Staff || x.SenderType == SupportRules.Auto))
+                .OrderByDescending(x => x.SupportMessageId).Select(x => (DateTime?)x.CreatedAtUtc).FirstOrDefaultAsync(ct);
+            if (SupportRules.ShouldAutoReply(wasAnswered, lastAnswer, now))
                 db.SupportMessages.Add(new SupportMessage { SupportConversationId = id, SenderType = SupportRules.Auto,
                     Body = SupportRules.AutoReply(await HoursAsync(c.BranchId, r.BranchOpeningHours, ct), now, Zone()), CreatedAtUtc = now.AddMilliseconds(1) });
         }
