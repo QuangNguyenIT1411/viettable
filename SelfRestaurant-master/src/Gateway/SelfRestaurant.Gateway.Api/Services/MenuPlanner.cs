@@ -112,6 +112,9 @@ public static class MenuPlanner
             decimal PerPerson(Dish x) => x.Price / Math.Min(Math.Max(1, x.Servings ?? 1), left);
             var choices = pool.Where(x => !used.Contains(x.DishId)).ToArray();
             if (choices.Length == 0) choices = pool.ToArray(); // fewer dishes than needed: repeat
+            // Owner 06/11: a dish for more people than are left (a hotpot for 4 when 3 remain) only when nothing fits.
+            var fitting = choices.Where(x => Math.Max(1, x.Servings ?? 1) <= left).ToArray();
+            if (fitting.Length > 0) choices = fitting;
             var dish = choices
                 .OrderBy(x => target <= 0 ? PerPerson(x) : Math.Abs(PerPerson(x) - target))
                 .ThenBy(x => x.Price).ThenBy(x => x.DishId).First();

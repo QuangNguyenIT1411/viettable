@@ -80,6 +80,31 @@ public sealed class MenuPlannerTests
     }
 
     [Fact]
+    public void Three_people_never_get_a_dish_for_four_when_single_dishes_fit()
+    {
+        // The 06/11 Samsung case: 4 people, 1 vegetarian → 3 left; it chose Bò né + a hotpot for 4.
+        var menu = new[]
+        {
+            D(1, "Bò né", 85_000, "MAIN"), D(2, "Phở bò", 75_000, "MAIN"), D(3, "Cơm bò lúc lắc", 75_000, "MAIN"),
+            D(4, "Lẩu thái", 250_000, "MAIN", servings: 4), D(5, "Đậu hũ sốt cà chua", 55_000, "MAIN", veg: true),
+        };
+        var plan = MenuPlanner.Suggest(menu, 4, 800_000, 1, false, 0, 0);
+        Assert.DoesNotContain(plan.Lines, l => l.Dish.DishId == 4);
+        Assert.Equal(3, Servings(plan, vegOnly: false));
+        Assert.Equal(1, Servings(plan, vegOnly: true));
+        foreach (var people in new[] { 1, 2, 3 })
+            Assert.DoesNotContain(MenuPlanner.Suggest(menu, people, 800_000, 0, false, 0, 0).Lines, l => l.Dish.DishId == 4);
+    }
+
+    [Fact]
+    public void A_dish_for_more_people_is_used_only_when_nothing_smaller_exists()
+    {
+        var plan = MenuPlanner.Suggest(new[] { D(4, "Lẩu thái", 250_000, "MAIN", servings: 4) }, 3, 400_000, 0, false, 0, 0);
+        Assert.Single(plan.Lines);
+        Assert.Equal(4, plan.Lines[0].Dish.DishId);
+    }
+
+    [Fact]
     public void Without_tagged_vegetarian_mains_it_says_so_instead_of_guessing()
     {
         var menu = Menu.Where(x => !x.IsVegetarian).ToArray();
