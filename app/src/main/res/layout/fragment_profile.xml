@@ -376,6 +376,45 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/rowWaitlist"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/pd_row_surface"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/pd_circle_surface2"
+                        android:importantForAccessibility="no"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/pd_text" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:text="Danh sách chờ của tôi"
+                        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/pd_dim" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/rowReviews"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

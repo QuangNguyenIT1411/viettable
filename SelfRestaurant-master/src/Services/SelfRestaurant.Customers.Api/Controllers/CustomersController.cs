@@ -109,7 +109,8 @@ public sealed class CustomersController : ControllerBase
                 && x.ReservedAt < request.ReservedAt.AddMinutes(120)
                 && x.ReservedAt.AddMinutes(120) > request.ReservedAt
                 && !ClosedReservationStatuses.Contains(x.Status)
-                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < holdNow), cancellationToken))
+                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < holdNow)
+                && !(x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc < holdNow), cancellationToken))
             return Conflict(new { code = "reservation_slot_unavailable", message = "Bàn đã được giữ trong khung giờ này." });
 
         var now = DateTime.UtcNow;
@@ -291,7 +292,8 @@ public sealed class CustomersController : ControllerBase
             .AsNoTracking()
             .Include(x => x.PreOrderItems)
                 .Include(x => x.ReservationTables)
-            .Where(x => x.CustomerId == customerId)
+            // A table held for this guest's waitlist entry shows on the waitlist screen, not as a booking.
+            .Where(x => x.CustomerId == customerId && x.Status != WaitlistRules.HoldStatus)
             .OrderByDescending(x => x.ReservedAt)
             .ThenByDescending(x => x.ReservationId)
             .ToListAsync(cancellationToken);
@@ -310,7 +312,9 @@ public sealed class CustomersController : ControllerBase
                 && x.ReservedAt < toUtc && x.ReservedAt.AddMinutes(120) > fromUtc
                 && !ClosedReservationStatuses.Contains(x.Status)
                 // An unpaid deposit past its 15 minutes frees the table at once, before any read marks it cancelled.
-                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < DateTime.UtcNow));
+                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < DateTime.UtcNow)
+                // So does a waitlist hold nobody accepted in time.
+                && !(x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc < DateTime.UtcNow));
         if (excludeReservationId is > 0) query = query.Where(x => x.ReservationId != excludeReservationId.Value);
         return Ok(await query.Select(x => x.TableId!.Value).Distinct().ToListAsync(cancellationToken));
     }
@@ -328,7 +332,8 @@ public sealed class CustomersController : ControllerBase
         var hold = await _db.Reservations.AsNoTracking()
             .Where(x => x.BranchId == branchId && x.TableId == tableId && x.ReservedAt >= fromUtc && x.ReservedAt <= toUtc
                 && (x.Status == "Pending" || x.Status == "Confirmed" || x.Status == "CheckingIn"
-                    || (x.Status == PendingDeposit && x.DepositDueAtUtc >= DateTime.UtcNow)))
+                    || (x.Status == PendingDeposit && x.DepositDueAtUtc >= DateTime.UtcNow)
+                    || (x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc >= DateTime.UtcNow)))
             .OrderBy(x => x.ReservedAt)
             .Select(x => new { x.ReservationId, x.CustomerId, x.ReservedAt })
             .FirstOrDefaultAsync(cancellationToken);
@@ -371,7 +376,8 @@ public sealed class CustomersController : ControllerBase
                 && x.ReservedAt < request.ReservedAt.AddMinutes(120)
                 && x.ReservedAt.AddMinutes(120) > request.ReservedAt
                 && !ClosedReservationStatuses.Contains(x.Status)
-                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < updateNow), cancellationToken))
+                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < updateNow)
+                && !(x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc < updateNow), cancellationToken))
             return Conflict(new { code = "reservation_slot_unavailable", message = "Bàn đã được giữ trong khung giờ này." });
 
         reservation.TableId = request.TableId;

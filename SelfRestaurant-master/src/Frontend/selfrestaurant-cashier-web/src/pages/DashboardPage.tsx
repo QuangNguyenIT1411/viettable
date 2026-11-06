@@ -8,6 +8,7 @@ import { useAppDialog } from "../components/AppDialog";
 import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { BankTransferAlertsPanel } from "../components/BankTransferAlertsPanel";
 import { DepositsPanel } from "../components/DepositsPanel";
+import { WaitlistPanel } from "../components/WaitlistPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { PendingReservationsPanel, ReservationActions } from "../components/PendingReservationsPanel";
 import { cashierApi } from "../lib/api";
@@ -51,6 +52,7 @@ const reservationStatusLabels: Record<string, string> = {
   NoShow: "Không đến",
   Completed: "Hoàn tất",
   Rejected: "Bị từ chối",
+  WaitlistHold: "Giữ cho khách chờ",
 };
 
 const reservationStatuses = [
@@ -1002,6 +1004,8 @@ export function DashboardPage({ onLogout }: Props) {
           onCheckIn={(reservation) => setCheckInTarget(reservation)}
           onCountChange={setPendingReservationCount} />
         <DepositsPanel events={staffEvents} live={realtimeLive} onCountChange={setDepositTodoCount} />
+        <WaitlistPanel events={staffEvents} live={realtimeLive}
+          tableLabel={(tableId) => reservationTableText({ tableId, assignedTables: [] } as unknown as ReservationDto, dashboard.tables)} />
       </div>
 
       <section className="panel cashier-panel-card cashier-reservation-panel">

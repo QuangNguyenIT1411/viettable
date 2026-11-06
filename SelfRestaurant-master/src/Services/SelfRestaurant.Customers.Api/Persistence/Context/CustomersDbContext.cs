@@ -13,6 +13,7 @@ public sealed class CustomersDbContext : DbContext
     public DbSet<InboxEvents> InboxEvents => Set<InboxEvents>();
     public DbSet<ReadyDishNotifications> ReadyDishNotifications => Set<ReadyDishNotifications>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
     public DbSet<ReservationPreOrderItem> ReservationPreOrderItems => Set<ReservationPreOrderItem>();
     public DbSet<ReservationTable> ReservationTables => Set<ReservationTable>();
     public DbSet<CustomerFavorite> CustomerFavorites => Set<CustomerFavorite>();
@@ -87,6 +88,7 @@ public sealed class CustomersDbContext : DbContext
             entity.Property(e => e.DepositDueAtUtc).HasColumnType("datetime2");
             entity.Property(e => e.ArrivalConfirmation).HasMaxLength(20).IsUnicode(false).HasDefaultValue("None");
             entity.Property(e => e.ArrivalConfirmedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.HoldExpiresAtUtc).HasColumnType("datetime2");
             entity.HasMany(e => e.PreOrderItems)
                 .WithOne(e => e.Reservation)
                 .HasForeignKey(e => e.ReservationId)
@@ -149,6 +151,29 @@ public sealed class CustomersDbContext : DbContext
             entity.Property(x => x.CreateIdempotencyKey).HasMaxLength(140).IsUnicode(false);
             entity.Property(x => x.RequestHash).HasMaxLength(64).IsUnicode(false);
         });
+        modelBuilder.Entity<WaitlistEntry>(entity =>
+        {
+            entity.ToTable("ReservationWaitlist");
+            entity.HasKey(e => e.WaitlistEntryId);
+            entity.HasIndex(e => new { e.BranchId, e.Status, e.CreatedAtUtc }).HasDatabaseName("IX_ReservationWaitlist_Branch_Status_Created");
+            entity.HasIndex(e => new { e.CustomerId, e.Status }).HasDatabaseName("IX_ReservationWaitlist_Customer_Status");
+            entity.Property(e => e.ContactName).HasMaxLength(200);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(30).IsUnicode(false);
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.Status).HasMaxLength(20).IsUnicode(false).HasDefaultValue("Waiting");
+            entity.Property(e => e.ClosedReason).HasMaxLength(300);
+            entity.Property(e => e.WindowStartUtc).HasColumnType("datetime2");
+            entity.Property(e => e.WindowEndUtc).HasColumnType("datetime2");
+            entity.Property(e => e.CreatedAtUtc).HasColumnType("datetime2").HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.Property(e => e.UpdatedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.OfferedReservedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.OfferedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.OfferExpiresAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.AcceptedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.ClosedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.Version).IsConcurrencyToken();
+        });
+
         modelBuilder.Entity<SupportRequest>(entity =>
         {
             entity.HasKey(x => x.SupportRequestId);

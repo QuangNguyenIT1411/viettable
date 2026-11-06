@@ -597,6 +597,79 @@ public final class MobileRepository {
      * Every table of the branch for that time and party, each with its state (reservation item 5). The server
      * releases the reservation being changed (excludeReservationId) so its own table shows as free.
      */
+    // ---- Waitlist (owner 06/11) ----
+
+    public void loadWaitlist(Callback<List<com.restaurant.viettable.model.WaitlistEntry>> callback) {
+        api().get("/api/mobile/v1/reservations/waitlist", true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONArray rows = ((JSONObject) body).optJSONArray("items");
+                List<com.restaurant.viettable.model.WaitlistEntry> items = new ArrayList<>();
+                if (rows != null) for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.optJSONObject(i);
+                    if (row != null) items.add(parseWaitlist(row));
+                }
+                callback.onSuccess(items);
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    /** windowStart/End: "HH:mm" on the draft's date. */
+    public void joinWaitlist(ReservationDraft draft, String windowStart, String windowEnd, String note,
+                             Callback<com.restaurant.viettable.model.WaitlistEntry> callback) {
+        JSONObject body = new JSONObject();
+        try {
+            body.put("branchId", Integer.parseInt(draft.getBranch().getId()))
+                    .put("windowStart", reservationInstant(draft.getDate(), windowStart))
+                    .put("windowEnd", reservationInstant(draft.getDate(), windowEnd))
+                    .put("partySize", draft.getGuestCount())
+                    .put("note", note == null ? JSONObject.NULL : note)
+                    .put("contactName", draft.getContactName().isEmpty() ? JSONObject.NULL : draft.getContactName())
+                    .put("contactPhone", draft.getContactPhone().isEmpty() ? JSONObject.NULL : draft.getContactPhone());
+        } catch (Exception e) { callback.onError(new ApiException(400, "validation_failed", "Thông tin chờ bàn không hợp lệ.", null)); return; }
+        api().post("/api/mobile/v1/reservations/waitlist", body, true, null, new ApiClient.Callback() {
+            @Override public void onSuccess(Object value) { callback.onSuccess(parseWaitlist((JSONObject) value)); }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    public void acceptWaitlist(String entryId, Callback<Reservation> callback) {
+        api().post("/api/mobile/v1/reservations/waitlist/" + entryId + "/accept", new JSONObject(), true, null,
+                tableAware(new ApiClient.Callback() {
+                    @Override public void onSuccess(Object value) {
+                        Reservation created = parseReservation((JSONObject) value); state.upsertReservation(created); callback.onSuccess(created);
+                    }
+                    @Override public void onError(ApiException error) { callback.onError(error); }
+                }));
+    }
+
+    public void cancelWaitlist(String entryId, Callback<Void> callback) {
+        api().post("/api/mobile/v1/reservations/waitlist/" + entryId + "/cancel", new JSONObject(), true, null, new ApiClient.Callback() {
+            @Override public void onSuccess(Object value) { callback.onSuccess(null); }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    private com.restaurant.viettable.model.WaitlistEntry parseWaitlist(JSONObject row) {
+        com.restaurant.viettable.model.WaitlistEntry e = new com.restaurant.viettable.model.WaitlistEntry();
+        e.id = String.valueOf(row.optInt("waitlistEntryId"));
+        e.branchId = String.valueOf(row.optInt("branchId"));
+        Branch branch = state.findBranch(e.branchId);
+        e.branchName = row.isNull("branchName") ? (branch == null ? "Chi nhánh " + e.branchId : branch.getName()) : SafeText.json(row, "branchName");
+        e.windowStartUtc = SafeText.json(row, "windowStartUtc", null);
+        e.windowEndUtc = SafeText.json(row, "windowEndUtc", null);
+        e.partySize = row.optInt("partySize");
+        e.note = row.isNull("note") ? null : SafeText.json(row, "note", null);
+        e.status = SafeText.json(row, "status", "Waiting");
+        e.position = row.optInt("position");
+        e.offeredReservationId = row.isNull("offeredReservationId") ? null : String.valueOf(row.optInt("offeredReservationId"));
+        e.offeredTableId = row.isNull("offeredTableId") ? null : String.valueOf(row.optInt("offeredTableId"));
+        e.offeredReservedAtUtc = row.isNull("offeredReservedAtUtc") ? null : SafeText.json(row, "offeredReservedAtUtc", null);
+        e.offerExpiresAtUtc = row.isNull("offerExpiresAtUtc") ? null : SafeText.json(row, "offerExpiresAtUtc", null);
+        e.closedReason = row.isNull("closedReason") ? null : SafeText.json(row, "closedReason", null);
+        return e;
+    }
+
     /** "Hết bàn?" (owner 06/11): nearest other times and other branches with room, from the server. */
     public void loadAvailabilityAlternatives(ReservationDraft draft, String excludeReservationId,
                                              Callback<com.restaurant.viettable.model.AvailabilityAlternatives> callback) {

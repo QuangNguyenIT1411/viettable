@@ -117,6 +117,12 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
     }
 
     private void takeReminderIntent(android.content.Intent intent) {
+        if (intent != null && intent.getBooleanExtra(com.restaurant.viettable.reminder.WaitlistPollWorker.EXTRA_OPEN_WAITLIST, false)) {
+            intent.removeExtra(com.restaurant.viettable.reminder.WaitlistPollWorker.EXTRA_OPEN_WAITLIST);
+            pendingWaitlist = true;
+            binding.getRoot().post(this::openPendingReservation);
+            return;
+        }
         String id = intent == null ? null : intent.getStringExtra(ReservationReminders.EXTRA_RESERVATION_ID);
         if (id == null) return;
         intent.removeExtra(ReservationReminders.EXTRA_RESERVATION_ID); // a later recreate must not open it again
@@ -125,7 +131,20 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         binding.getRoot().post(this::openPendingReservation);
     }
 
+    /** "Có bàn cho bạn" was tapped: the waitlist screen once the app is unlocked and signed in. */
+    private boolean pendingWaitlist;
+
     private void openPendingReservation() {
+        if (pendingWaitlist && !isFinishing() && !isLocked()) {
+            FragmentManager wfm = getSupportFragmentManager();
+            Fragment wtop = wfm.findFragmentById(R.id.fragment_container);
+            if (!wfm.isStateSaved() && MobileRepository.getInstance().hasSession() && wtop != null
+                    && !(wtop instanceof SplashFragment) && !(wtop instanceof WelcomeFragment) && !(wtop instanceof LoginFragment)) {
+                pendingWaitlist = false;
+                navigateTo(new com.restaurant.viettable.ui.reservation.WaitlistFragment(), true);
+            }
+            return;
+        }
         if (pendingReservationId == null || isFinishing() || isLocked()) return;
         FragmentManager fm = getSupportFragmentManager();
         if (fm.isStateSaved() || !MobileRepository.getInstance().hasSession()) return;
@@ -335,7 +354,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         }
         ft.commit();
         // Splash/login finished: a tapped reminder can now open its reservation.
-        if (pendingReservationId != null) binding.getRoot().post(this::openPendingReservation);
+        if (pendingReservationId != null || pendingWaitlist) binding.getRoot().post(this::openPendingReservation);
     }
 
     @Override

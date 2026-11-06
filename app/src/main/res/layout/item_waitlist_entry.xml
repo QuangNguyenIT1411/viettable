@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    android:background="@drawable/pd_card_surface"
+    android:orientation="vertical"
+    android:padding="18dp">
+
+    <TextView
+        android:id="@+id/tvEntryStatus"
+        style="@style/Widget.VietTable.StatusPill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/tvEntryBranch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+    <TextView
+        android:id="@+id/tvEntryWindow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="@style/TextAppearance.VietTable.Body"
+        android:textColor="@color/pd_muted" />
+
+    <TextView
+        android:id="@+id/tvEntryOffer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textAppearance="@style/TextAppearance.VietTable.Body.Strong"
+        android:textColor="@color/pd_mint_text"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/layoutEntryActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEntryCancel"
+            style="@style/Widget.VietTable.Button.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:minHeight="52dp"
+            android:text="Huỷ chờ" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEntryAccept"
+            style="@style/Widget.VietTable.Button.Primary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:minHeight="52dp"
+            android:text="Nhận bàn"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

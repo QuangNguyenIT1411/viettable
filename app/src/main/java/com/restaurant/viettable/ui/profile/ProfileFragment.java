@@ -157,6 +157,7 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
         binding.rowInvoices.setOnClickListener(v -> navigateTo(com.restaurant.viettable.ui.payment.InvoiceHistoryFragment.newInstance()));
 
         binding.rowReviews.setOnClickListener(v -> navigateTo(ReviewHistoryFragment.newInstance()));
+        binding.rowWaitlist.setOnClickListener(v -> navigateTo(new com.restaurant.viettable.ui.reservation.WaitlistFragment()));
 
         binding.rowSettings.setOnClickListener(v -> {
             navigateTo(SettingsFragment.newInstance());

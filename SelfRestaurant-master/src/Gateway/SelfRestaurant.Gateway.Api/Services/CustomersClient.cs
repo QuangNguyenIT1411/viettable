@@ -61,6 +61,30 @@ public sealed class CustomersClient : ApiClientBase
         return list ?? Array.Empty<ReservationDto>();
     }
 
+    // ---- Waitlist (owner 06/11) ----
+
+    public async Task<IReadOnlyList<WaitlistCoordinator.QueueEntry>> GetWaitlistQueueAsync(int branchId, CancellationToken ct) =>
+        await GetAsync<IReadOnlyList<WaitlistCoordinator.QueueEntry>>($"/api/internal/waitlist/queue?branchId={branchId}", ct)
+            ?? Array.Empty<WaitlistCoordinator.QueueEntry>();
+
+    public Task<JsonElement> GetMyWaitlistAsync(int customerId, CancellationToken ct) =>
+        GetAsync<JsonElement>($"/api/customers/{customerId}/waitlist", ct);
+
+    public Task<JsonElement> GetBranchWaitlistAsync(int branchId, CancellationToken ct) =>
+        GetAsync<JsonElement>($"/api/internal/waitlist?branchId={branchId}", ct);
+
+    public Task<JsonElement> JoinWaitlistAsync(object body, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>("/api/customers/waitlist", body, ct);
+
+    public Task<JsonElement> OfferWaitlistAsync(int entryId, int tableId, DateTime reservedAtUtc, int holdMinutes, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/waitlist/{entryId}/offer", new { tableId, reservedAtUtc, holdMinutes }, ct);
+
+    public Task<JsonElement> AcceptWaitlistAsync(int entryId, object body, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/customers/waitlist/{entryId}/accept", body, ct);
+
+    public Task<JsonElement> CancelWaitlistAsync(int entryId, int customerId, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/customers/waitlist/{entryId}/cancel", new { customerId }, ct);
+
     public async Task<IReadOnlyList<int>> GetOccupiedTableIdsAsync(int branchId, DateTime fromUtc, DateTime toUtc,
         int? excludeReservationId, CancellationToken cancellationToken)
     {

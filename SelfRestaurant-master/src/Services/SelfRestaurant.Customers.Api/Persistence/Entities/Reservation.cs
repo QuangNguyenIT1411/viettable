@@ -43,6 +43,9 @@ public sealed class Reservation
     public string ArrivalConfirmation { get; set; } = "None";
 
     public DateTime? ArrivalConfirmedAtUtc { get; set; }
+
+    /// <summary>Status WaitlistHold only: the table is held for a waiting guest until this moment.</summary>
+    public DateTime? HoldExpiresAtUtc { get; set; }
     public ICollection<ReservationPreOrderItem> PreOrderItems { get; set; } = new List<ReservationPreOrderItem>();
     public ICollection<ReservationTable> ReservationTables { get; set; } = new List<ReservationTable>();
 }

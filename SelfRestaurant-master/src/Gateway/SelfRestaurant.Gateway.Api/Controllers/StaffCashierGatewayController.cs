@@ -265,6 +265,20 @@ public sealed class StaffCashierGatewayController : ControllerBase
     public Task<ActionResult<ReservationDto>> MarkReservationNoShow(int reservationId, [FromServices] CustomerInboxNotifier inbox,
         CancellationToken ct) => DecideReservation(reservationId, "no-show", null, inbox, ct);
 
+    /// <summary>"Danh sách chờ" of the cashier's branch (owner 06/11); reading it also offers freed tables.</summary>
+    [HttpGet("/api/cashier/waitlist")]
+    public async Task<ActionResult<object>> GetWaitlist([FromServices] WaitlistCoordinator waitlist, CancellationToken ct)
+    {
+        var staff = RequireCashier();
+        if (staff is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản thu ngân.", 401);
+        try
+        {
+            await waitlist.ProcessBranchQuietlyAsync(staff.BranchId, ct);
+            return Ok(new { items = await _customersClient.GetBranchWaitlistAsync(staff.BranchId, ct), offerMinutes = waitlist.OfferMinutes });
+        }
+        catch (ApiClientException ex) { return Error(ex.Code ?? "get_waitlist_failed", ex.Message, ex.StatusCode); }
+    }
+
     /// <summary>Deposits of the cashier's branch with their bookings (newest first).</summary>
     [HttpGet("/api/cashier/deposits")]
     public async Task<ActionResult<IReadOnlyList<object>>> GetDeposits([FromServices] ReservationDepositCoordinator deposits, CancellationToken ct)
@@ -308,7 +322,11 @@ public sealed class StaffCashierGatewayController : ControllerBase
                 catch (Exception ex) { _logger.LogWarning("Pre-order cancel skipped for reservation {ReservationId} ({ErrorType}).", reservationId, ex.GetType().Name); }
             // Rejected → refund by hand; no-show → deposit kept (docs/DEPOSIT_PLAN.md).
             if (decision is "reject" or "no-show")
+            {
                 await HttpContext.RequestServices.GetRequiredService<ReservationDepositCoordinator>().SyncQuietlyAsync(updated, ct);
+                // The freed table may be the one a waiting guest needs (owner 06/11).
+                await HttpContext.RequestServices.GetRequiredService<WaitlistCoordinator>().ProcessBranchQuietlyAsync(updated.BranchId, ct);
+            }
             if (!string.Equals(current.Status, updated.Status, StringComparison.OrdinalIgnoreCase))
                 await inbox.ReservationChangedAsync(updated.CustomerId, updated.ReservationId, updated.Status, ct);
             return Ok(updated);

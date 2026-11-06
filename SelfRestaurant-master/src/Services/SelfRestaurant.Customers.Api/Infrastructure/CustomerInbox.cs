@@ -35,6 +35,9 @@ public static class CustomerInbox
     public const string TierUp = "loyalty.tier-up.v1";
     /// <summary>A promotion started running (category "offer" = the app's "Ưu đãi" tab).</summary>
     public const string PromotionCreated = "promotion.created.v1";
+    /// <summary>Waitlist (owner 06/11): a table is held for the guest; the hold ran out.</summary>
+    public const string WaitlistOffered = "waitlist.offered.v1";
+    public const string WaitlistExpired = "waitlist.expired.v1";
 
     private static readonly Dictionary<string, string> Titles = new(StringComparer.Ordinal)
     {
@@ -59,6 +62,8 @@ public static class CustomerInbox
         [PointsEarned] = "Cộng điểm thưởng",
         [TierUp] = "Lên hạng thành viên",
         [PromotionCreated] = "Ưu đãi mới",
+        [WaitlistOffered] = "Có bàn cho bạn",
+        [WaitlistExpired] = "Hết thời gian giữ bàn",
     };
 
     /// <summary>Events that may happen more than once for the same item (a reservation can be changed again).</summary>
@@ -71,7 +76,7 @@ public static class CustomerInbox
     /// <summary>App tab: reservation, order (kitchen and service requests), payment, offer (points, tiers, promotions).</summary>
     public static string Category(string eventName) => eventName.Split('.')[0] switch
     {
-        "reservation" => "reservation",
+        "reservation" or "waitlist" => "reservation",
         "order" or "service" => "order",
         "billing" => "payment",
         "loyalty" or "promotion" => "offer",
@@ -175,7 +180,7 @@ public static class CustomerInbox
         _ => ("MEMBER", "Thành viên"),
     };
 
-    private static TimeZoneInfo RestaurantTimeZone { get; } = FindZone();
+    public static TimeZoneInfo RestaurantTimeZone { get; } = FindZone();
 
     private static TimeZoneInfo FindZone()
     {

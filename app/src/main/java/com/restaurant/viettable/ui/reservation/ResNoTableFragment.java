@@ -104,7 +104,7 @@ public class ResNoTableFragment extends BaseFragment {
         if (branches) for (AvailabilityOption option : value.branches) binding.layoutBranchOptions.addView(optionButton(option));
         if (value.available) showState("Khung giờ này vẫn còn bàn. Quay lại sơ đồ để chọn bàn.");
         else if (value.times.isEmpty() && (!branches)) showState("Chưa còn chỗ phù hợp trong ngày này. Bạn có thể chọn ngày khác hoặc vào danh sách chờ.");
-        binding.btnJoinWaitlist.setVisibility(View.GONE); // the waitlist arrives with the next change
+        binding.btnJoinWaitlist.setVisibility(changing == null && !value.available ? View.VISIBLE : View.GONE);
     }
 
     private MaterialButton optionButton(AvailabilityOption option) {
@@ -143,7 +143,7 @@ public class ResNoTableFragment extends BaseFragment {
     }
 
     private void openWaitlist() {
-        // filled in by the waitlist change
+        navigateTo(WaitlistJoinFragment.newInstance(draft));
     }
 
     private void showState(String text) {

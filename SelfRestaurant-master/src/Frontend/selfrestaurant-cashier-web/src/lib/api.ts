@@ -1,3 +1,4 @@
+import type { WaitlistItem } from "../../../shared/waitlistStatus";
 import { apiFailureMessage, parseBody } from "../../../shared/apiError";
 import type {
   ApiError,
@@ -97,6 +98,7 @@ export const cashierApi = {
     `/api/gateway/staff/cashier/onsite-payments/${id}/confirm`, { method: "POST", body: "{}" }),
   cancelOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
     `/api/gateway/staff/cashier/onsite-payments/${id}/cancel`, { method: "POST", body: "{}" }),
+  getWaitlist: (signal?: AbortSignal) => request<{ items: WaitlistItem[]; offerMinutes: number }>("/api/cashier/waitlist", { signal }),
   getDeposits: (signal?: AbortSignal) => request<DepositListItem[]>("/api/cashier/deposits", { signal }),
   markDepositRefunded: (depositId: number) =>
     request<DepositDto>(`/api/cashier/deposits/${depositId}/refunded`, { method: "POST", body: "{}" }),

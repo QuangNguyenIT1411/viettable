@@ -110,6 +110,7 @@ public final class ReservationReminders {
         if (app == null) return;
         try {
             WorkManager.getInstance(app).cancelAllWorkByTag(TAG);
+            WaitlistPollWorker.stop(app);
             app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(KEY_SCHEDULED).apply();
             NotificationManagerCompat.from(app).cancelAll();
         } catch (Exception e) {

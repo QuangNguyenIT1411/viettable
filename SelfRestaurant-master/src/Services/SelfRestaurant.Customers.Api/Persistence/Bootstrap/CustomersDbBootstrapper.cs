@@ -340,6 +340,38 @@ public static class CustomersDbBootstrapper
                            IF COL_LENGTH('dbo.Reservations', 'ArrivalConfirmedAtUtc') IS NULL
                                ALTER TABLE dbo.Reservations ADD ArrivalConfirmedAtUtc DATETIME2 NULL;
 
+                           IF COL_LENGTH('dbo.Reservations', 'HoldExpiresAtUtc') IS NULL
+                               ALTER TABLE dbo.Reservations ADD HoldExpiresAtUtc DATETIME2 NULL;
+
+                           IF OBJECT_ID(N'dbo.ReservationWaitlist', N'U') IS NULL
+                           BEGIN
+                               CREATE TABLE dbo.ReservationWaitlist (
+                                   WaitlistEntryId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ReservationWaitlist PRIMARY KEY,
+                                   CustomerId INT NOT NULL,
+                                   ContactName NVARCHAR(200) NOT NULL,
+                                   PhoneNumber VARCHAR(30) NOT NULL,
+                                   BranchId INT NOT NULL,
+                                   WindowStartUtc DATETIME2 NOT NULL,
+                                   WindowEndUtc DATETIME2 NOT NULL,
+                                   PartySize INT NOT NULL,
+                                   Note NVARCHAR(500) NULL,
+                                   Status VARCHAR(20) NOT NULL CONSTRAINT DF_ReservationWaitlist_Status DEFAULT 'Waiting',
+                                   CreatedAtUtc DATETIME2 NOT NULL CONSTRAINT DF_ReservationWaitlist_Created DEFAULT SYSUTCDATETIME(),
+                                   UpdatedAtUtc DATETIME2 NULL,
+                                   OfferedReservationId INT NULL,
+                                   OfferedTableId INT NULL,
+                                   OfferedReservedAtUtc DATETIME2 NULL,
+                                   OfferedAtUtc DATETIME2 NULL,
+                                   OfferExpiresAtUtc DATETIME2 NULL,
+                                   AcceptedAtUtc DATETIME2 NULL,
+                                   ClosedAtUtc DATETIME2 NULL,
+                                   ClosedReason NVARCHAR(300) NULL,
+                                   Version INT NOT NULL CONSTRAINT DF_ReservationWaitlist_Version DEFAULT 0
+                               );
+                               CREATE INDEX IX_ReservationWaitlist_Branch_Status_Created ON dbo.ReservationWaitlist(BranchId, Status, CreatedAtUtc);
+                               CREATE INDEX IX_ReservationWaitlist_Customer_Status ON dbo.ReservationWaitlist(CustomerId, Status);
+                           END
+
                            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.Reservations') AND name = N'IX_Reservations_Branch_ReservedAt_Status')
                            BEGIN
                                CREATE INDEX IX_Reservations_Branch_ReservedAt_Status ON dbo.Reservations(BranchId, ReservedAt, Status);

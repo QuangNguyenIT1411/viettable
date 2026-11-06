@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Danh sách chờ của tôi" (owner 06/11): place in the queue, the held table with its deadline, cancel. -->
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pd_bg">
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never"
+            android:tag="safe_top">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/pd_screen_margin"
+                android:paddingTop="12dp"
+                android:paddingBottom="40dp"
+                android:tag="safe_bottom">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/pd_circle_surface2"
+                    android:contentDescription="@string/a11y_back"
+                    android:padding="12dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/pd_text" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="ĐẶT BÀN"
+                    android:textAppearance="@style/TextAppearance.VietTable.Label"
+                    android:textColor="@color/pd_yellow_text" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:accessibilityHeading="true"
+                    android:text="Danh sách chờ của tôi"
+                    android:textAppearance="@style/TextAppearance.VietTable.Display.L" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReloadWaitlist"
+                    style="@style/Widget.VietTable.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:minHeight="48dp"
+                    android:text="Tải lại" />
+
+                <TextView
+                    android:id="@+id/tvWaitlistState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body"
+                    android:textColor="@color/pd_muted"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/layoutWaitlistItems"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+</FrameLayout>

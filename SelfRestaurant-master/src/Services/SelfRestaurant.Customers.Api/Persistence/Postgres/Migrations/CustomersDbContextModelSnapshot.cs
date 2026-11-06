@@ -410,6 +410,9 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                         .IsUnicode(false)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<DateTime?>("HoldExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("IdempotencyKey")
                         .HasMaxLength(100)
                         .IsUnicode(false)
@@ -665,6 +668,100 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                         .IsUnique();
 
                     b.ToTable("SupportRequests", "customers");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.WaitlistEntry", b =>
+                {
+                    b.Property<int>("WaitlistEntryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WaitlistEntryId"));
+
+                    b.Property<DateTime?>("AcceptedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ClosedReason")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("OfferExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("OfferedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("OfferedReservationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("OfferedReservedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("OfferedTableId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PartySize")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Waiting");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("WindowEndUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("WindowStartUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("WaitlistEntryId");
+
+                    b.HasIndex("CustomerId", "Status")
+                        .HasDatabaseName("IX_ReservationWaitlist_Customer_Status");
+
+                    b.HasIndex("BranchId", "Status", "CreatedAtUtc")
+                        .HasDatabaseName("IX_ReservationWaitlist_Branch_Status_Created");
+
+                    b.ToTable("ReservationWaitlist", "customers");
                 });
 
             modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.CustomerReviewDishRating", b =>

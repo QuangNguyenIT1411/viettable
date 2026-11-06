@@ -232,6 +232,8 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             // Paid deposit: refund by hand when cancelled 2 hours ahead, kept when later; an unpaid one just closes.
             await _deposits.SyncQuietlyAsync(result, ct);
             await _inbox.PushAsync(CurrentCustomerId(), ct);
+            // The freed table may be the one a waiting guest needs (owner 06/11).
+            await HttpContext.RequestServices.GetRequiredService<WaitlistCoordinator>().ProcessBranchQuietlyAsync(result.BranchId, ct);
             await NudgeCashierAsync(result.BranchId);
             return Ok(result);
         }
@@ -332,13 +334,9 @@ public sealed class MobileReservationsGatewayController : ControllerBase
     private async Task<(BranchTablesResponse? Layout, IReadOnlyList<BranchTableDto> Available)> FindAvailableTables(
         int branchId, DateTimeOffset at, int partySize, int? excludeReservationId, CancellationToken ct)
     {
-        var layout = await _catalog.GetBranchTablesAsync(branchId, ct);
-        if (layout is null) return (null, Array.Empty<BranchTableDto>());
-        var occupied = (await _customers.GetOccupiedTableIdsAsync(branchId, at.UtcDateTime,
-            at.AddHours(2).UtcDateTime, excludeReservationId, ct)).ToHashSet();
-        var now = DateTimeOffset.UtcNow;
-        return (layout, layout.Tables.Where(x => ReservationRules.TableBookableAt(x, at, now)
-            && x.NumberOfSeats >= partySize && !occupied.Contains(x.TableId)).ToArray());
+        var result = await HttpContext.RequestServices.GetRequiredService<TableAvailability>()
+            .FindAsync(branchId, at, partySize, excludeReservationId, ct);
+        return (result.Layout, result.Available);
     }
 
     /// <summary>
