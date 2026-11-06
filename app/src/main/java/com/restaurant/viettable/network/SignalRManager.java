@@ -50,6 +50,14 @@ public final class SignalRManager {
     /** "notificationCreated" carries no data; the inbox is re-read. */
     public static final class NotificationCreatedEvent { }
 
+    /** Staff replied, read or resolved a support conversation (owner 06/11). */
+    public static final class SupportMessageEvent { public Integer conversationId; }
+
+    public interface SupportListener { void onSupportChanged(int conversationId); }
+    private final java.util.concurrent.CopyOnWriteArrayList<SupportListener> supportListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    public void addSupportListener(SupportListener l) { if (l != null && !supportListeners.contains(l)) supportListeners.add(l); }
+    public void removeSupportListener(SupportListener l) { supportListeners.remove(l); }
+
     /** The restaurant confirmed, rejected or closed one of the user's bookings. */
     public static final class ReservationChangedEvent {
         public Integer reservationId;
@@ -153,6 +161,10 @@ public final class SignalRManager {
         current.on("notificationCreated", event -> main.post(() -> { if (acceptsEvents(current)) scheduleInboxRefresh(0); }),
                 NotificationCreatedEvent.class);
         // The list refresh updates the history and detail screens (they listen to the app state).
+        current.on("supportMessage", event -> main.post(() -> {
+            if (!acceptsEvents(current) || event == null || event.conversationId == null) return;
+            for (SupportListener l : supportListeners) l.onSupportChanged(event.conversationId);
+        }), SupportMessageEvent.class);
         current.on("reservationChanged", event -> main.post(() -> {
             if (!acceptsEvents(current) || event == null) return;
             if (!deduplicator.shouldProcess("reservation:" + event.reservationId + ":" + event.status, System.currentTimeMillis())) return;

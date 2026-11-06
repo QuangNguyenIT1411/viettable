@@ -80,6 +80,7 @@ public class InvoiceFragment extends BaseFragment {
         super.onViewCreated(view, savedInstanceState);
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
+        binding.btnNeedHelp.setOnClickListener(v -> navigateTo(com.restaurant.viettable.ui.profile.SupportStartFragment.forContext("BILL_WRONG", 0, 0)));
 
         DiningSession session = appStateManager.getActiveDiningSession();
         Invoice serverQuote = MobileRepository.getInstance().currentCheckoutInvoice();

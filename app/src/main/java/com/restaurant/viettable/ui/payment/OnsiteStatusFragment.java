@@ -79,6 +79,8 @@ public class OnsiteStatusFragment extends BaseFragment implements com.restaurant
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        binding.btnNeedHelp.setOnClickListener(v -> navigateTo(com.restaurant.viettable.ui.profile.SupportStartFragment.forContext("BILL_TRANSFER",
+                payment == null ? 0 : payment.getPaymentId(), 0)));
 
         if (invoice != null) {
             binding.tvOnsiteLocation.setText(location + " (" + invoice.getTableLabel() + ")");

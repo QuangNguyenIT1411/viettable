@@ -406,6 +406,17 @@
                 android:text="Lưu ảnh mã QR"
                 android:visibility="gone"
                 tools:visibility="visible" />
+            <!-- "Cần hỗ trợ?" (owner 06/11): opens the support chat with this item already attached. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNeedHelp"
+                style="@style/Widget.VietTable.Button.Ghost"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="52dp"
+                android:text="Cần hỗ trợ? Nhắn nhân viên"
+                app:icon="@drawable/ic_service_staff"
+                app:iconGravity="textStart" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

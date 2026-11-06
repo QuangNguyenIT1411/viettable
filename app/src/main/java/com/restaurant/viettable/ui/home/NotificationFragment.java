@@ -59,7 +59,10 @@ public class NotificationFragment extends BaseFragment {
                     @Override public void onError(ApiException error) { if (binding != null) showToast(apiError(error)); }
                 });
             }
-            if (item.getType() == NotificationItem.Type.RESERVATION) {
+            if ("support.reply.v1".equals(item.getEventName())) {
+                // Staff answered in the support chat: open "Hỗ trợ của tôi" (owner 06/11).
+                navigateTo(com.restaurant.viettable.ui.profile.SupportListFragment.newInstance());
+            } else if (item.getType() == NotificationItem.Type.RESERVATION) {
                 openReservation(item.getRefId());
             } else if (item.getType() == NotificationItem.Type.ORDER) {
                 navigateTo(new CurrentOrdersFragment());

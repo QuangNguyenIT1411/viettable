@@ -59,6 +59,8 @@ public class ResDetailFragment extends BaseFragment implements AppStateManager.S
         super.onViewCreated(view, savedInstanceState);
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
+        binding.btnNeedHelp.setOnClickListener(v -> { if (reservation != null) navigateTo(com.restaurant.viettable.ui.profile.SupportStartFragment.forContext("BOOKING_CHANGE",
+                supportId(reservation.getId()), supportId(reservation.getBranchId()))); });
 
         if (reservation == null) {
             showToast("Không tìm thấy thông tin đặt bàn.");
@@ -176,5 +178,9 @@ public class ResDetailFragment extends BaseFragment implements AppStateManager.S
         appStateManager.removeListener(this);
         super.onDestroyView();
         binding = null;
+    }
+
+    private static int supportId(String id) {
+        try { return id == null ? 0 : Integer.parseInt(id.trim()); } catch (NumberFormatException e) { return 0; }
     }
 }

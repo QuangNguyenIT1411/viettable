@@ -2128,6 +2128,69 @@ public final class MobileRepository {
         return new ApiException(0, "client_json_error", "Không thể tạo dữ liệu gửi lên máy chủ.", null);
     }
 
+    // ---- Chat với nhân viên hỗ trợ (owner 06/11): all data from /api/mobile/v1/support/chat ----
+    private static final String SUPPORT = "/api/mobile/v1/support/chat";
+
+    private <T> ApiClient.Callback supportCallback(Callback<T> callback, java.util.function.Function<JSONObject, T> parse) {
+        return new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                try { finishSuccess(callback, parse.apply(body instanceof JSONObject ? (JSONObject) body : new JSONObject())); }
+                catch (RuntimeException e) { finishError(callback, jsonError()); }
+            }
+            @Override public void onError(ApiException error) { finishError(callback, error); }
+        };
+    }
+
+    public void loadSupportTopics(Callback<List<com.restaurant.viettable.model.SupportChat.Topic>> callback) {
+        api().get(SUPPORT + "/topics", true, supportCallback(callback,
+                o -> com.restaurant.viettable.model.SupportChat.items(o, com.restaurant.viettable.model.SupportChat.Topic::parse)));
+    }
+
+    public void loadSupportOptions(String topic, Callback<List<com.restaurant.viettable.model.SupportChat.Option>> callback) {
+        api().get(SUPPORT + "/options?topic=" + encode(topic), true, supportCallback(callback,
+                o -> com.restaurant.viettable.model.SupportChat.items(o, com.restaurant.viettable.model.SupportChat.Option::parse)));
+    }
+
+    public void checkSupportPayment(String topic, int contextId, Callback<com.restaurant.viettable.model.SupportChat.Check> callback) {
+        api().get(SUPPORT + "/check?topic=" + encode(topic) + "&contextId=" + contextId, true,
+                supportCallback(callback, com.restaurant.viettable.model.SupportChat.Check::parse));
+    }
+
+    public void loadMySupport(Callback<List<com.restaurant.viettable.model.SupportChat.Conversation>> callback) {
+        api().get(SUPPORT + "/conversations", true, supportCallback(callback,
+                o -> com.restaurant.viettable.model.SupportChat.items(o, com.restaurant.viettable.model.SupportChat.Conversation::parse)));
+    }
+
+    public void startSupport(int branchId, String topic, Integer contextId, String message, Callback<com.restaurant.viettable.model.SupportChat.Detail> callback) {
+        try {
+            JSONObject body = new JSONObject().put("branchId", branchId).put("topic", topic).put("message", message);
+            if (contextId != null && contextId > 0) body.put("contextId", contextId);
+            api().post(SUPPORT + "/conversations", body, true, java.util.UUID.randomUUID().toString(),
+                    supportCallback(callback, com.restaurant.viettable.model.SupportChat.Detail::parse));
+        } catch (JSONException e) { finishError(callback, jsonError()); }
+    }
+
+    /** One page of a conversation; beforeId &gt; 0 loads the messages older than it. */
+    public void loadSupportConversation(int id, long beforeId, Callback<com.restaurant.viettable.model.SupportChat.Detail> callback) {
+        api().get(SUPPORT + "/conversations/" + id + (beforeId > 0 ? "?beforeId=" + beforeId : ""), true,
+                supportCallback(callback, com.restaurant.viettable.model.SupportChat.Detail::parse));
+    }
+
+    public void sendSupportMessage(int id, String text, Callback<Void> callback) {
+        try {
+            api().post(SUPPORT + "/conversations/" + id + "/messages", new JSONObject().put("body", text), true,
+                    java.util.UUID.randomUUID().toString(), supportCallback(callback, o -> null));
+        } catch (JSONException e) { finishError(callback, jsonError()); }
+    }
+
+    public void markSupportRead(int id, long lastMessageId) {
+        if (id <= 0 || lastMessageId <= 0) return;
+        try {
+            api().post(SUPPORT + "/conversations/" + id + "/read", new JSONObject().put("lastMessageId", lastMessageId), true, null,
+                    supportCallback(null, o -> null));
+        } catch (JSONException ignored) { }
+    }
+
     private static <T> void finishSuccess(Callback<T> callback, T value) { if (callback != null) callback.onSuccess(value); }
     private static void finishError(Callback<?> callback, ApiException error) { if (callback != null) callback.onError(error); }
 }

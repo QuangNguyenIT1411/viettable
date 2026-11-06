@@ -76,6 +76,8 @@ public class ResDepositFragment extends BaseFragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (reservation == null) { showToast("Không tìm thấy thông tin đặt bàn."); navigateBack(); return; }
+        binding.btnNeedHelp.setOnClickListener(v -> navigateTo(com.restaurant.viettable.ui.profile.SupportStartFragment.forContext("DEPOSIT_TRANSFER",
+                supportId(reservation.getId()), supportId(reservation.getBranchId()))));
         qrShown = false;
         finished = false;
         // Back never returns to the last booking step (it would book a second table): the booking stays in history
@@ -265,5 +267,9 @@ public class ResDepositFragment extends BaseFragment {
         stopLoops();
         super.onDestroyView();
         binding = null;
+    }
+
+    private static int supportId(String id) {
+        try { return id == null ? 0 : Integer.parseInt(id.trim()); } catch (NumberFormatException e) { return 0; }
     }
 }

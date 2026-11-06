@@ -41,6 +41,7 @@ public class SupportFragment extends BaseFragment {
 
         binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
         binding.btnRetryFaq.setOnClickListener(v -> loadFaqs());
+        binding.cardLiveChat.setOnClickListener(v -> navigateTo(SupportStartFragment.newInstance()));
         loadFaqs();
 
         binding.btnSendFeedback.setOnClickListener(v -> {

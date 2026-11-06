@@ -67,6 +67,7 @@ public class InvoiceHistoryDetailFragment extends BaseFragment {
         binding.btnBack.setOnClickListener(v -> navigateBack());
         binding.btnRetryInvoiceDetail.setOnClickListener(v -> load());
         binding.btnExportInvoice.setOnClickListener(v -> exportPdf());
+        binding.btnNeedHelp.setOnClickListener(v -> navigateTo(com.restaurant.viettable.ui.profile.SupportStartFragment.forContext("BILL_WRONG", invoiceId, 0)));
         binding.btnInvoiceReview.setOnClickListener(v -> openReview());
         load();
     }

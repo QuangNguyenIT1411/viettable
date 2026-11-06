@@ -163,6 +163,7 @@ public class ProfileFragment extends BaseFragment implements AppStateManager.Sta
             navigateTo(SettingsFragment.newInstance());
         });
 
+        binding.rowMySupport.setOnClickListener(v -> navigateTo(SupportListFragment.newInstance()));
         binding.rowSupport.setOnClickListener(v -> {
             navigateTo(SupportFragment.newInstance());
         });
