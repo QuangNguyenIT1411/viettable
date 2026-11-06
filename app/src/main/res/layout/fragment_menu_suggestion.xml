@@ -194,6 +194,14 @@
                     android:textAppearance="@style/TextAppearance.VietTable.Price" />
 
                 <TextView
+                    android:id="@+id/tvTotalNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tổng dự kiến, chưa gồm khuyến mãi/voucher/điểm"
+                    android:textAppearance="@style/TextAppearance.VietTable.BodySmall"
+                    android:textColor="@color/pd_muted" />
+
+                <TextView
                     android:id="@+id/tvBudgetLine"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

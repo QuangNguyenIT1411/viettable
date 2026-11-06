@@ -111,6 +111,7 @@ public class MenuSuggestionFragment extends BaseFragment {
         if (t.vat > 0) b.append("\nVAT ").append(percent(t.vatPercent)).append(": ").append(MenuSuggestion.money(t.vat));
         binding.tvTotalsBreakdown.setText(b.toString());
         binding.tvTotal.setText((suggestion.feasible ? "Tổng dự kiến " : "Tối thiểu khoảng ") + MenuSuggestion.money(t.total));
+        binding.tvTotalNote.setText(MenuSuggestion.TOTAL_NOTE);
         binding.tvBudgetLine.setText(suggestion.budgetLine() + " " + MenuSuggestion.money(suggestion.budget));
         binding.tvBudgetLine.setTextColor(getResources().getColor(suggestion.overBudget() ? R.color.pd_red_text : R.color.pd_mint_text, null));
         binding.btnAddAll.setText("Thêm tất cả vào giỏ (" + suggestion.dishCount() + " món)");

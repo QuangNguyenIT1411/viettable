@@ -47,6 +47,9 @@ public final class MenuSuggestion {
         }
     }
 
+    /** Shown right under every suggested total (owner 06/11). */
+    public static final String TOTAL_NOTE = "Tổng dự kiến, chưa gồm khuyến mãi/voucher/điểm";
+
     public final boolean feasible;
     public final List<Line> lines;
     public final Totals totals;

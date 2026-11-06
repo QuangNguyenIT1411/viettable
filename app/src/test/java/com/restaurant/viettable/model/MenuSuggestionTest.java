@@ -77,6 +77,11 @@ public class MenuSuggestionTest {
     }
 
     @Test
+    public void the_total_says_it_is_before_discounts() {
+        assertEquals("Tổng dự kiến, chưa gồm khuyến mãi/voucher/điểm", MenuSuggestion.TOTAL_NOTE);
+    }
+
+    @Test
     public void course_labels() {
         assertEquals("Món chính", MenuSuggestion.courseLabel("MAIN"));
         assertEquals("Đồ uống", MenuSuggestion.courseLabel("drink"));
