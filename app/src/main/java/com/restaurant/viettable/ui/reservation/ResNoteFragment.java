@@ -71,8 +71,15 @@ public class ResNoteFragment extends BaseFragment {
         binding.wizardProgress.progressWizard.setProgress(100);
 
         if (draft.getBranch() != null) {
-            binding.tvResSummaryHeader.setText(draft.getBranch().getName() + " • " +
-                    com.restaurant.viettable.data.MobileRepository.getInstance().tableLabel(draft.getBranch().getId(), draft.getTableId()));
+            com.restaurant.viettable.data.MobileRepository repo = com.restaurant.viettable.data.MobileRepository.getInstance();
+            String tableText = repo.tableLabel(draft.getBranch().getId(), draft.getTableId());
+            if (draft.getGroupTableIds().size() > 1) { // pushed-together tables: "Bàn 16 + 17"
+                java.util.List<String> labels = new java.util.ArrayList<>();
+                for (String id : draft.getGroupTableIds()) labels.add(repo.tableLabel(draft.getBranch().getId(), id));
+                String group = com.restaurant.viettable.data.TableNumberDirectory.groupLabel(labels);
+                if (group != null) tableText = group;
+            }
+            binding.tvResSummaryHeader.setText(draft.getBranch().getName() + " • " + tableText);
         }
         binding.tvResSummaryDetails.setText(draft.getTimeSlot() + ", " + DisplayFormatters.date(draft.getDate()) + " • " + draft.getGuestCount() + " khách");
 

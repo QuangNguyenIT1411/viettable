@@ -53,6 +53,7 @@ const reservationStatusLabels: Record<string, string> = {
   Completed: "Hoàn tất",
   Rejected: "Bị từ chối",
   WaitlistHold: "Giữ cho khách chờ",
+  PendingDeposit: "Chờ đặt cọc",
 };
 
 const reservationStatuses = [
@@ -1072,7 +1073,9 @@ export function DashboardPage({ onLogout }: Props) {
                 const itemCount = reservation.preOrderItems?.filter((item) => item.status !== "Cancelled").length ?? 0;
                 const tableIds = getReservationTableIds(reservation);
                 const primaryAssignedTable = reservation.assignedTables?.find((assignedTable) => assignedTable.isPrimary)?.tableId ?? reservation.tableId ?? tableIds[0];
-                const tableText = tableIds.length > 0
+                const tableText = tableIds.length > 1
+                  ? `${reservationTableText(reservation, dashboard.tables)} (ghép bàn)`
+                  : tableIds.length > 0
                   ? tableIds
                       .map((tableId) => {
                         const table = dashboard.tables.find((candidate) => candidate.tableId === tableId);
@@ -1116,7 +1119,7 @@ export function DashboardPage({ onLogout }: Props) {
                     <div className="reservation-meta-row">
                       <span><i className="bi bi-shop me-1" />{dashboard.staff.branchName}</span>
                       <span><i className="bi bi-table me-1" />{tableText}</span>
-                      {reservation.partySize > 4 ? <span className="soft-badge warning"><i className="bi bi-people me-1" />Cần sắp xếp/ghép bàn</span> : null}
+                      {reservation.partySize > 4 && tableIds.length <= 1 ? <span className="soft-badge warning"><i className="bi bi-people me-1" />Cần sắp xếp/ghép bàn</span> : null}
                     </div>
                     {reservation.note ? <p className="reservation-note">Ghi chú: {reservation.note}</p> : null}
                     {reservation.statusReason ? <p className="reservation-note" data-status-reason>
