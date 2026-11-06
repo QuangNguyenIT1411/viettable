@@ -11,6 +11,11 @@ public partial class Branches
 
     public string? Location { get; set; }
 
+    /// <summary>WGS84, both set or both null (owner 06/11: "Chỉ đường"). Admin enters them.</summary>
+    public decimal? Latitude { get; set; }
+
+    public decimal? Longitude { get; set; }
+
     public string? Image { get; set; }
 
     public string? ManagerName { get; set; }

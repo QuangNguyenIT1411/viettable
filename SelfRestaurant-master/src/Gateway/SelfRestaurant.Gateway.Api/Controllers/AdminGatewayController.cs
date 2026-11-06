@@ -169,6 +169,18 @@ public sealed class AdminGatewayController : ControllerBase
         catch (ApiClientException ex) { return HandleApiClientException("save_branch_charges_failed", ex); }
     }
 
+    // ---- Branch address and map position (owner 06/11): the app's "Chỉ đường" uses them. ----
+
+    public sealed record AdminBranchLocationRequest(string? Address, decimal? Latitude, decimal? Longitude);
+
+    [HttpPut("branch-locations/{branchId:int}")]
+    public async Task<ActionResult<object>> SaveBranchLocation(int branchId, AdminBranchLocationRequest request, CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _catalogClient.SaveBranchLocationAsync(branchId, request, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("save_branch_location_failed", ex); }
+    }
+
     // ---- Reviews (owner 05/11): list, reply (the guest sees it), hide with a reason, averages. ----
 
     [HttpGet("reviews")]

@@ -120,6 +120,14 @@ public class ResDetailFragment extends BaseFragment implements AppStateManager.S
         }
 
         binding.btnScanQrCheckin.setOnClickListener(v -> navigateTo(new QrScanFragment()));
+        // "Chỉ đường" to the booked branch, only when the admin entered its position (owner 06/11).
+        com.restaurant.viettable.model.Branch bookedBranch = appStateManager.findBranch(reservation.getBranchId());
+        boolean canGuide = bookedBranch != null && bookedBranch.hasCoordinates();
+        binding.btnDirections.setVisibility(canGuide ? View.VISIBLE : View.GONE);
+        if (canGuide) binding.btnDirections.setOnClickListener(v -> {
+            if (!com.restaurant.viettable.util.Directions.open(requireContext(), bookedBranch.getLatitude(), bookedBranch.getLongitude(), bookedBranch.getName()))
+                showToast("Máy chưa có ứng dụng bản đồ.");
+        });
         binding.btnChangeRes.setOnClickListener(v -> navigateTo(ResChangeFragment.newInstance(reservation)));
         binding.btnCancelRes.setOnClickListener(v -> navigateTo(ResCancelFragment.newInstance(reservation)));
 

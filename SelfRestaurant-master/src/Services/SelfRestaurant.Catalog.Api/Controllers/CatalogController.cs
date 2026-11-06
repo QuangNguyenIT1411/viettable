@@ -42,6 +42,8 @@ public sealed class CatalogController : ControllerBase
                 name = x.Name,
                 location = x.Location,
                 image = x.Image,
+                latitude = x.Latitude,
+                longitude = x.Longitude,
             })
             .ToListAsync(cancellationToken);
 

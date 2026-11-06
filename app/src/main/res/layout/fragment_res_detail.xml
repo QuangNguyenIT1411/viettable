@@ -243,6 +243,16 @@
                     android:layout_height="60dp"
                     android:layout_marginTop="16dp"
                     android:text="Quét mã QR tại bàn này" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDirections"
+                    style="@style/Widget.VietTable.Button.Outlined"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:minHeight="56dp"
+                    android:text="Chỉ đường"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <LinearLayout

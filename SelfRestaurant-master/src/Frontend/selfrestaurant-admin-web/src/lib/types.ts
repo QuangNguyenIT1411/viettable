@@ -14,7 +14,7 @@ export type StaffSessionUserDto = {
 };
 
 export type StaffSessionDto = { authenticated: boolean; staff?: StaffSessionUserDto | null; loginPath?: string | null };
-export type BranchDto = { branchId: number; name: string; location?: string | null };
+export type BranchDto = { branchId: number; name: string; location?: string | null; image?: string | null; latitude?: number | null; longitude?: number | null };
 export type CategoryDto = { categoryId: number; name: string; description?: string | null; displayOrder: number; isActive: boolean };
 export type TableStatusDto = { statusId: number; statusCode: string; statusName: string };
 export type EmployeeRoleDto = { roleId: number; roleCode: string; roleName: string };

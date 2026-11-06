@@ -62,6 +62,8 @@ public class Branch implements Serializable {
     public int getReviewCount() { return reviewCount; }
     public double getLatitude() { return latitude; }
     public double getLongitude() { return longitude; }
+    /** True when the admin entered a map position; the app never guesses one from the address. */
+    public boolean hasCoordinates() { return com.restaurant.viettable.util.Directions.isValid(latitude, longitude); }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public int getImageResId() { return imageResId; }

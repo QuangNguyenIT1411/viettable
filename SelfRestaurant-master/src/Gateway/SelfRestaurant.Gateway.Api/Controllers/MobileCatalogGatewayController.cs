@@ -30,7 +30,7 @@ public sealed class MobileCatalogGatewayController : ControllerBase
         var active = tables.Tables.Where(x => x.NumberOfSeats > 0).ToArray();
         return Ok(new MobileBranchDetailResponse(branch.BranchId, branch.Name, branch.Location,
             active.Length, active.Length == 0 ? 0 : active.Min(x => x.NumberOfSeats),
-            active.Length == 0 ? 0 : active.Max(x => x.NumberOfSeats), branch.Image));
+            active.Length == 0 ? 0 : active.Max(x => x.NumberOfSeats), branch.Image, branch.Latitude, branch.Longitude));
     }
 
     [HttpGet("branches/nearby")]
@@ -38,9 +38,12 @@ public sealed class MobileCatalogGatewayController : ControllerBase
         [FromQuery] double? latitude, [FromQuery] double? longitude, CancellationToken ct)
     {
         var branches = await _catalog.GetBranchesAsync(ct) ?? Array.Empty<BranchDto>();
-        // Current source data stores postal addresses but no coordinates. Keep distance nullable
-        // instead of fabricating geometry; coordinates can be added without breaking v1.
-        return Ok(branches.Select(x => new MobileNearbyBranchResponse(x.BranchId, x.Name, x.Location, null, x.Image)).ToArray());
+        // Distance only when both the guest's position and the branch's admin-entered coordinates exist (never guessed).
+        return Ok(branches
+            .Select(x => new MobileNearbyBranchResponse(x.BranchId, x.Name, x.Location,
+                SelfRestaurant.Gateway.Api.Services.GeoDistance.Km(latitude, longitude, x.Latitude, x.Longitude), x.Image))
+            .OrderBy(x => x.DistanceKm ?? double.MaxValue).ThenBy(x => x.Name, StringComparer.Create(new System.Globalization.CultureInfo("vi-VN"), true))
+            .ToArray());
     }
 
     [HttpGet("branches/{branchId:int}/areas")]

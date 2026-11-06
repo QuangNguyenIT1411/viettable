@@ -1,3 +1,4 @@
+import type { BranchDto } from "./types";
 import { apiFailureMessage, parseBody } from "../../../shared/apiError";
 import type { AdminCategoriesScreenDto, AdminCustomerDto, AdminCustomersScreenDto, AdminDishesScreenDto, AdminEmployeeDto, AdminEmployeeHistoryResponse, AdminEmployeesScreenDto, AdminIngredientBatchDto, AdminIngredientDto, AdminIngredientsScreenDto, AdminRelatedIngredientDishDto, AdminReportsScreenDto, AdminSettingsDto, AdminTablesScreenDto, ApiError, StaffSessionDto, AdminDishIngredientsDto, AdminDishIngredientLineDto, AdminDashboardDto, AdminUnitsScreenDto, AdminUnitDto, CreateIngredientBatchRequest, IngredientStockMovementDto, InventoryBatchDto, InventoryMovementDto, InventoryStockInRequest, InventoryStockOutRequest, InventorySummaryDto, Paged, UpdateIngredientBatchRequest, AdminCustomerOrderHistoryItemDto } from "./types";
 
@@ -88,6 +89,8 @@ export type AdminVoucherRequest = {
 };
 
 export const adminApi = {
+  saveBranchLocation: (branchId: number, body: { address: string | null; latitude: number | null; longitude: number | null }) =>
+    request<BranchDto>(`/api/gateway/admin/branch-locations/${branchId}`, { method: "PUT", body: JSON.stringify(body) }),
   getBranchCharges: () => request<BranchChargesDto>("/api/gateway/admin/branch-charges"),
   saveBranchCharges: (branchId: number, body: { serviceFeePercent: number; vatPercent: number }) =>
     request<BranchChargeDto>(`/api/gateway/admin/branch-charges/${branchId}`, { method: "PUT", body: JSON.stringify(body) }),

@@ -11,6 +11,9 @@ public sealed class CatalogClient : ApiClientBase
     public Task<IReadOnlyList<BranchDto>?> GetBranchesAsync(CancellationToken cancellationToken) =>
         GetAsync<IReadOnlyList<BranchDto>>("/api/branches", cancellationToken);
 
+    public Task<object?> SaveBranchLocationAsync(int branchId, object body, CancellationToken cancellationToken) =>
+        PutForAsync<object, object>($"/api/admin/branches/{branchId}/location", body, cancellationToken);
+
     public Task<BranchTablesResponse?> GetBranchTablesAsync(int branchId, CancellationToken cancellationToken) =>
         GetAsync<BranchTablesResponse>($"/api/branches/{branchId}/tables", cancellationToken);
 

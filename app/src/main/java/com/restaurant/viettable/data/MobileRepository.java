@@ -304,9 +304,12 @@ public final class MobileRepository {
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.optJSONObject(i);
                     if (row == null) continue;
+                    // Coordinates only when the admin entered them (owner 06/11); 0/0 = none.
+                    double latitude = row.isNull("latitude") ? 0 : row.optDouble("latitude", 0);
+                    double longitude = row.isNull("longitude") ? 0 : row.optDouble("longitude", 0);
                     Branch branch = new Branch(String.valueOf(row.optInt("branchId")), SafeText.json(row, "name"),
                             SafeText.json(row, "location"), "", "", 0, true, "", new ArrayList<>(),
-                            0, 0, 0, 0);
+                            0, 0, latitude, longitude);
                     branch.setImageUrl(api().absoluteUrl(SafeText.json(row, "image", "")));
                     branches.add(branch);
                 }

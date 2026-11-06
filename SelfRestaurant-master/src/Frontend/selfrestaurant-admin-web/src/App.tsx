@@ -19,6 +19,7 @@ import { UnitsModulePage } from "./pages/units/UnitsModulePage";
 import { PromotionsModulePage } from "./pages/promotions/PromotionsModulePage";
 import { VouchersModulePage } from "./pages/vouchers/VouchersModulePage";
 import { BranchChargesPage } from "./pages/charges/BranchChargesPage";
+import { BranchLocationsPage } from "./pages/branches/BranchLocationsPage";
 import { ReviewsModulePage } from "./pages/reviews/ReviewsModulePage";
 function resolveRoleLanding(roleCode?: string | null) {
   const normalized = roleCode?.trim().toUpperCase();
@@ -126,6 +127,7 @@ export default function App() {
         <Route path="/Admin/Promotions/Edit/:promotionId" element={<PromotionsModulePage mode="edit" onLogout={logout} />} />
         <Route path="/Admin/Vouchers/Index" element={<VouchersModulePage mode="index" onLogout={logout} />} />
         <Route path="/Admin/Charges/Index" element={<BranchChargesPage onLogout={logout} />} />
+        <Route path="/Admin/BranchLocations/Index" element={<BranchLocationsPage onLogout={logout} />} />
         <Route path="/Admin/Reviews/Index" element={<ReviewsModulePage onLogout={logout} />} />
         <Route path="/Admin/Vouchers/Create" element={<VouchersModulePage mode="create" onLogout={logout} />} />
         <Route path="/Admin/Vouchers/Edit/:voucherId" element={<VouchersModulePage mode="edit" onLogout={logout} />} />

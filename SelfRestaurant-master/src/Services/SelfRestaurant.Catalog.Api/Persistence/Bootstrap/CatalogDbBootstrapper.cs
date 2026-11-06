@@ -50,6 +50,7 @@ public static class CatalogDbBootstrapper
 
         await WaitForDatabaseAsync(db, logger, cancellationToken);
         await EnsureBranchImagesAsync(db, cancellationToken);
+        await EnsureBookingV2SchemaAsync(db, cancellationToken);
         await EnsureBusinessAuditTableAsync(db, cancellationToken);
         await EnsureTableNumberSchemaAsync(db, cancellationToken);
         await EnsureUnitsSchemaAsync(db, cancellationToken);
@@ -61,6 +62,18 @@ public static class CatalogDbBootstrapper
         await EnsureRecommendationMenuDataAsync(db, cancellationToken);
         await EnsureDishImagePathsAsync(db, cancellationToken);
         await EnsureIngredientIssueMethodSchemaAsync(db, cancellationToken);
+    }
+
+    // 06/11 booking upgrade (SQL Server). PostgreSQL gets the same through EF migrations.
+    private static async Task EnsureBookingV2SchemaAsync(CatalogDbContext db, CancellationToken cancellationToken)
+    {
+        const string sql = """
+            IF COL_LENGTH(N'dbo.Branches', N'Latitude') IS NULL
+                ALTER TABLE dbo.Branches ADD Latitude DECIMAL(9,6) NULL;
+            IF COL_LENGTH(N'dbo.Branches', N'Longitude') IS NULL
+                ALTER TABLE dbo.Branches ADD Longitude DECIMAL(9,6) NULL;
+            """;
+        await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
     }
 
     // Demo branch imagery is assigned only to known empty rows. A custom/admin path wins.

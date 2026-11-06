@@ -110,7 +110,13 @@ public class BranchDetailFragment extends BaseFragment {
                 switchTab(R.id.nav_home);
             });
 
-            binding.btnViewOnMap.setVisibility(View.GONE);
+            // "Chỉ đường" only with the admin-entered position (owner 06/11).
+            binding.btnViewOnMap.setText("Chỉ đường");
+            binding.btnViewOnMap.setVisibility(branch.hasCoordinates() ? View.VISIBLE : View.GONE);
+            binding.btnViewOnMap.setOnClickListener(v -> {
+                if (!com.restaurant.viettable.util.Directions.open(requireContext(), branch.getLatitude(), branch.getLongitude(), branch.getName()))
+                    showToast("Máy chưa có ứng dụng bản đồ.");
+            });
         }
     }
 
