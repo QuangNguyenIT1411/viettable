@@ -44,12 +44,21 @@ public abstract class BaseFragment extends Fragment {
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
             Insets navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            if (liftBottomAboveKeyboard()) {
+                // Edge-to-edge ignores adjustResize: lift the "safe_bottom" bar (the input) above the keyboard.
+                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                navigationBars = Insets.of(navigationBars.left, navigationBars.top, navigationBars.right,
+                        Math.max(navigationBars.bottom, ime.bottom));
+            }
 
             onApplyInsets(root, statusBars, navigationBars);
             return insets;
         });
         ViewCompat.requestApplyInsets(root);
     }
+
+    /** Screens whose bottom bar holds a text box (a chat) return true so the keyboard never covers it. */
+    protected boolean liftBottomAboveKeyboard() { return false; }
 
     private int[] getOrCreateInitialPadding(View view) {
         int[] initial = (int[]) view.getTag(R.id.tag_initial_padding);

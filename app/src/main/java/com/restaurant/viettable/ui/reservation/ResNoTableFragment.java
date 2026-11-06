@@ -103,7 +103,9 @@ public class ResNoTableFragment extends BaseFragment {
         binding.tvBranchHeading.setVisibility(branches ? View.VISIBLE : View.GONE);
         binding.tvBranchHeading.setText("CHI NHÁNH KHÁC LÚC " + draft.getTimeSlot());
         if (branches) for (AvailabilityOption option : value.branches) binding.layoutBranchOptions.addView(optionButton(option));
-        if (value.available) showState("Khung giờ này vẫn còn bàn. Quay lại sơ đồ để chọn bàn.");
+        // Opened from "Hết bàn?" while the time still has room: the title must not say it is full.
+        binding.tvNoTableTitle.setText(value.available ? "Khung giờ này vẫn còn bàn" : getString(com.restaurant.viettable.R.string.res_no_table_title));
+        if (value.available) showState("Bạn có thể quay lại sơ đồ để chọn bàn, hoặc chọn giờ / chi nhánh khác dưới đây.");
         else if (value.times.isEmpty() && (!branches)) showState("Chưa còn chỗ phù hợp trong ngày này. Bạn có thể chọn ngày khác hoặc vào danh sách chờ.");
         binding.btnJoinWaitlist.setVisibility(changing == null && !value.available ? View.VISIBLE : View.GONE);
     }

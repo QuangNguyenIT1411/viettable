@@ -70,6 +70,9 @@ public class BookingAssistantFragment extends BaseFragment {
         });
     }
 
+    @Override
+    protected boolean liftBottomAboveKeyboard() { return true; }
+
     private void sendTyped() {
         CharSequence text = binding.etMessage.getText();
         if (text == null || text.toString().trim().isEmpty()) return;
