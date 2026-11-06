@@ -597,6 +597,39 @@ public final class MobileRepository {
      * Every table of the branch for that time and party, each with its state (reservation item 5). The server
      * releases the reservation being changed (excludeReservationId) so its own table shows as free.
      */
+    /** "Hết bàn?" (owner 06/11): nearest other times and other branches with room, from the server. */
+    public void loadAvailabilityAlternatives(ReservationDraft draft, String excludeReservationId,
+                                             Callback<com.restaurant.viettable.model.AvailabilityAlternatives> callback) {
+        if (draft == null || draft.getBranch() == null) { callback.onError(new ApiException(400, "validation_failed", "Chưa chọn chi nhánh.", null)); return; }
+        String path = "/api/mobile/v1/reservations/availability?branchId=" + draft.getBranch().getId()
+                + "&reservedAt=" + encode(reservationInstant(draft)) + "&partySize=" + draft.getGuestCount()
+                + (excludeReservationId == null || excludeReservationId.isEmpty() ? "" : "&excludeReservationId=" + excludeReservationId);
+        api().get(path, true, new ApiClient.Callback() {
+            @Override public void onSuccess(Object body) {
+                JSONObject row = (JSONObject) body;
+                List<com.restaurant.viettable.model.AvailabilityOption> times = new ArrayList<>();
+                JSONArray timeRows = row.optJSONArray("timeSuggestions");
+                if (timeRows != null) for (int i = 0; i < timeRows.length(); i++) {
+                    JSONObject x = timeRows.optJSONObject(i);
+                    if (x == null || x.isNull("localTime")) continue;
+                    times.add(new com.restaurant.viettable.model.AvailabilityOption(null, null,
+                            SafeText.json(x, "localDate"), SafeText.json(x, "localTime"), x.optInt("availableTableCount"), null));
+                }
+                List<com.restaurant.viettable.model.AvailabilityOption> branches = new ArrayList<>();
+                JSONArray branchRows = row.optJSONArray("branchSuggestions");
+                if (branchRows != null) for (int i = 0; i < branchRows.length(); i++) {
+                    JSONObject x = branchRows.optJSONObject(i);
+                    if (x == null) continue;
+                    branches.add(new com.restaurant.viettable.model.AvailabilityOption(String.valueOf(x.optInt("branchId")),
+                            SafeText.json(x, "name"), SafeText.json(x, "localDate"), SafeText.json(x, "localTime"),
+                            x.optInt("availableTableCount"), x.isNull("distanceKm") ? null : x.optDouble("distanceKm")));
+                }
+                callback.onSuccess(new com.restaurant.viettable.model.AvailabilityAlternatives(row.optBoolean("available"), times, branches));
+            }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void loadTableMap(ReservationDraft draft, String excludeReservationId, Callback<List<com.restaurant.viettable.model.TableMapItem>> callback) {
         try {
             if (draft.getBranch() == null) throw new IllegalArgumentException("missing branch");

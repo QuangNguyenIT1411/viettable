@@ -17,7 +17,14 @@ public sealed record MobileAvailabilityResponse(int BranchId, DateTimeOffset Res
 /// INACTIVE with its Vietnamese label. Never says who booked it.
 /// </summary>
 public sealed record MobileTableMapItem(int TableId, int TableNumber, int NumberOfSeats, string Status, string StatusLabel);
-public sealed record MobileAvailabilitySuggestion(DateTimeOffset ReservedAt, int AvailableTableCount);
+public sealed record MobileAvailabilitySuggestion(DateTimeOffset ReservedAt, int AvailableTableCount,
+    string? LocalTime = null, string? LocalDate = null);
+/// <summary>Another branch with room at the asked time; DistanceKm only when the guest shared a position and the
+/// branch has admin-entered coordinates.</summary>
+public sealed record MobileBranchSuggestion(int BranchId, string Name, string? Location, double? DistanceKm,
+    int AvailableTableCount, DateTimeOffset ReservedAt, string LocalTime, string LocalDate);
+public sealed record MobileAlternativesResponse(bool Available, int AvailableTableCount,
+    IReadOnlyList<MobileAvailabilitySuggestion> TimeSuggestions, IReadOnlyList<MobileBranchSuggestion> BranchSuggestions);
 public sealed record MobileQrContextResponse(int TableId, int BranchId, int TableNumber);
 
 public sealed record CreateMobileReservationRequest(int BranchId, int? TableId, int PartySize,

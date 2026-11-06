@@ -135,6 +135,9 @@ public class ResNoteFragment extends BaseFragment {
                     if ("contact_phone_invalid".equals(error.getCode()) || "contact_phone_required".equals(error.getCode())) {
                         binding.tilContactPhone.setError(apiError(error));
                         binding.etContactPhone.requestFocus();
+                    } else if ("reservation_slot_unavailable".equals(error.getCode())) {
+                        // Full at this time: the alternatives screen, filled from this booking (owner 06/11).
+                        navigateTo(ResNoTableFragment.newInstance(draft, null, null));
                     } else if ("table_taken".equals(error.getCode())) {
                         // Another guest got this table first: back to the map, which reloads and clears the choice.
                         showLongToast(apiError(error));

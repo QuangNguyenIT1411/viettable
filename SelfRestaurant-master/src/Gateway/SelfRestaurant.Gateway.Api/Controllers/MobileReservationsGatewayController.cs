@@ -80,8 +80,7 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         // The guest picked this table on the map but someone else got it first (or it just became unusable).
         if (table is null && request.TableId is > 0) return TableTaken(available.Layout, request.TableId.Value);
         if (table is null)
-            return MobileError("reservation_slot_unavailable", "Khung giờ đã hết bàn phù hợp.", 409,
-                new { suggestions = await BuildSuggestions(request.BranchId, request.ReservedAt, request.PartySize, null, ct) });
+            return await NoTableError(request.BranchId, request.ReservedAt, request.PartySize, null, null, null, ct);
 
         var profile = await _identity.GetMobileProfileAsync(ct);
         if (profile is null) return MobileError("customer_not_found", "Không tìm thấy hồ sơ khách hàng.", 404);
@@ -172,8 +171,8 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var table = (request.TableId is > 0 ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value) : null)
             ?? available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
         if (table is null)
-            return MobileError("reservation_slot_unavailable", "Khung giờ đã hết bàn phù hợp.", 409,
-                new { suggestions = await BuildSuggestions(owned.Reservation.BranchId, request.ReservedAt, request.PartySize, reservationId, ct) });
+            return await NoTableError(owned.Reservation.BranchId, request.ReservedAt, request.PartySize, reservationId, null, null, ct,
+                includeOtherBranches: false);
         var hash = Hash(new { TableId = table.TableId, request.PartySize, ReservedAt = request.ReservedAt.UtcDateTime, Note = request.Note?.Trim() });
         try
         {
@@ -342,19 +341,82 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             && x.NumberOfSeats >= partySize && !occupied.Contains(x.TableId)).ToArray());
     }
 
+    /// <summary>
+    /// "Hết bàn?" (owner 06/11): whether the chosen time still has room, the nearest other times of the same day with
+    /// room, and other branches with room at that time (closest first when the guest shares a position).
+    /// </summary>
+    [HttpGet("availability")]
+    public async Task<ActionResult<MobileAlternativesResponse>> Availability([FromQuery] int branchId, [FromQuery] DateTimeOffset reservedAt,
+        [FromQuery] int partySize, [FromQuery] double? latitude, [FromQuery] double? longitude,
+        [FromQuery] int? excludeReservationId, CancellationToken ct)
+    {
+        if (CurrentCustomerId() is null) return MobileError("invalid_actor", "Access token không hợp lệ.", 401);
+        if (branchId <= 0) return MobileError("validation_failed", "Chi nhánh không hợp lệ.", 400, new { field = "branchId" });
+        var validation = ValidateSchedule(partySize, reservedAt);
+        if (validation is not null) return validation;
+        if (excludeReservationId is > 0)
+        {
+            var owned = await GetOwned(excludeReservationId.Value, ct);
+            if (owned.Error is not null) return owned.Error;
+        }
+        var here = await FindAvailableTables(branchId, reservedAt, partySize, excludeReservationId, ct);
+        if (here.Layout is null) return MobileError("branch_not_found", "Không tìm thấy chi nhánh.", 404);
+        var times = await BuildSuggestions(branchId, reservedAt, partySize, excludeReservationId, ct);
+        var branches = excludeReservationId is > 0
+            ? Array.Empty<MobileBranchSuggestion>()
+            : await BuildBranchSuggestions(branchId, reservedAt, partySize, latitude, longitude, ct);
+        return Ok(new MobileAlternativesResponse(here.Available.Count > 0, here.Available.Count, times, branches));
+    }
+
+    private async Task<ObjectResult> NoTableError(int branchId, DateTimeOffset at, int partySize, int? excludeReservationId,
+        double? latitude, double? longitude, CancellationToken ct, bool includeOtherBranches = true)
+    {
+        var times = await BuildSuggestions(branchId, at, partySize, excludeReservationId, ct);
+        var branches = includeOtherBranches
+            ? await BuildBranchSuggestions(branchId, at, partySize, latitude, longitude, ct)
+            : Array.Empty<MobileBranchSuggestion>();
+        return MobileError("reservation_slot_unavailable", "Khung giờ đã hết bàn phù hợp.", 409,
+            new { suggestions = times, branchSuggestions = branches });
+    }
+
     private async Task<IReadOnlyList<MobileAvailabilitySuggestion>> BuildSuggestions(
         int branchId, DateTimeOffset at, int partySize, int? excludeReservationId, CancellationToken ct)
     {
+        var openFrom = ReservationRules.ConfiguredTime(_configuration, "Reservations:OpenFrom", ReservationRules.DefaultOpenFrom);
+        var lastSlot = ReservationRules.ConfiguredTime(_configuration, "Reservations:LastSlot", ReservationRules.DefaultLastSlot);
+        var candidates = AvailabilitySuggestions.CandidateTimes(at, openFrom, lastSlot, DateTimeOffset.UtcNow, ReservationRules.RestaurantTimeZone);
         var suggestions = new List<MobileAvailabilitySuggestion>();
-        foreach (var offset in new[] { -60, -30, 30, 60 })
+        foreach (var candidate in candidates.Take(AvailabilitySuggestions.MaxTimeChecks))
         {
-            var candidate = at.AddMinutes(offset);
-            if (candidate <= DateTimeOffset.UtcNow.AddMinutes(-5)) continue;
             var result = await FindAvailableTables(branchId, candidate, partySize, excludeReservationId, ct);
-            if (result.Available.Count > 0) suggestions.Add(new MobileAvailabilitySuggestion(candidate, result.Available.Count));
+            if (result.Available.Count > 0)
+                suggestions.Add(new MobileAvailabilitySuggestion(candidate, result.Available.Count,
+                    ReservationRules.LocalClock(candidate.UtcDateTime), LocalDate(candidate)));
+            if (suggestions.Count >= AvailabilitySuggestions.MaxTimeSuggestions) break;
         }
-        return suggestions;
+        return suggestions.OrderBy(x => x.ReservedAt).ToArray();
     }
+
+    private async Task<IReadOnlyList<MobileBranchSuggestion>> BuildBranchSuggestions(int branchId, DateTimeOffset at, int partySize,
+        double? latitude, double? longitude, CancellationToken ct)
+    {
+        var branches = (await _catalog.GetBranchesAsync(ct) ?? Array.Empty<BranchDto>()).Where(x => x.BranchId != branchId).ToArray();
+        var options = new List<AvailabilitySuggestions.BranchOption>();
+        foreach (var branch in branches)
+        {
+            var result = await FindAvailableTables(branch.BranchId, at, partySize, null, ct);
+            if (result.Layout is null || result.Available.Count == 0) continue;
+            options.Add(new AvailabilitySuggestions.BranchOption(branch.BranchId, branch.Name, branch.Location,
+                GeoDistance.Km(latitude, longitude, branch.Latitude, branch.Longitude), result.Available.Count));
+        }
+        return AvailabilitySuggestions.OrderBranches(options)
+            .Select(x => new MobileBranchSuggestion(x.BranchId, x.Name, x.Location, x.DistanceKm, x.AvailableTableCount, at,
+                ReservationRules.LocalClock(at.UtcDateTime), LocalDate(at)))
+            .ToArray();
+    }
+
+    private static string LocalDate(DateTimeOffset at) =>
+        TimeZoneInfo.ConvertTime(at, ReservationRules.RestaurantTimeZone).ToString("yyyy-MM-dd");
 
     private async Task<(ReservationDto? Reservation, ObjectResult? Error)> GetOwned(int reservationId, CancellationToken ct)
     {

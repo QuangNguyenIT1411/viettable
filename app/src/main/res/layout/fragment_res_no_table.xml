@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- "Hết bàn?": says what the guest can do next and shows only real branches. No time, table count or distance is
-     claimed here because the server gives none for this screen (owner 05/11: never show invented data). -->
+<!-- "Hết bàn?" (owner 06/11): the server's nearest other times and other branches with room; a tap fills the booking
+     with that choice and opens the table map. Nothing here is invented: counts and distances come from the server. -->
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -43,30 +43,78 @@
                 android:textAppearance="@style/TextAppearance.VietTable.Display.L" />
 
             <TextView
+                android:id="@+id/tvNoTableContext"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Bạn có thể thử một giờ khác hoặc một chi nhánh khác."
                 android:textAppearance="@style/TextAppearance.VietTable.Body"
                 android:textColor="@color/pd_muted" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSelectSuggestedTime"
-                style="@style/Widget.VietTable.Button.Primary"
+            <ProgressBar
+                android:id="@+id/progressSuggestions"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:indeterminateTint="@color/pd_yellow" />
+
+            <TextView
+                android:id="@+id/tvSuggestionState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Body"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvTimeHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:minHeight="56dp"
-                android:text="Chọn giờ khác" />
+                android:text="GIỜ KHÁC CÙNG NGÀY"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow_text"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layoutTimeOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tvBranchHeading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:textAppearance="@style/TextAppearance.VietTable.Label"
+                android:textColor="@color/pd_yellow_text"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layoutBranchOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSelectSuggestedBranch"
+                android:id="@+id/btnSelectSuggestedTime"
                 style="@style/Widget.VietTable.Button.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:minHeight="56dp"
+                android:text="Tự chọn ngày, giờ khác" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnJoinWaitlist"
+                style="@style/Widget.VietTable.Button.Primary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:minHeight="56dp"
-                android:text="Chọn chi nhánh khác" />
+                android:text="Vào danh sách chờ"
+                android:visibility="gone" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </FrameLayout>

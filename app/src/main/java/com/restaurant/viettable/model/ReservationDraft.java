@@ -58,4 +58,17 @@ public class ReservationDraft implements Serializable {
 
     public boolean isNeedsDeposit() { return needsDeposit; }
     public void setNeedsDeposit(boolean needsDeposit) { this.needsDeposit = needsDeposit; }
+
+    /** A separate draft with the same answers (an alternative time/branch must not change the screen behind). */
+    public ReservationDraft copy() {
+        try {
+            java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+            try (java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(bytes)) { out.writeObject(this); }
+            try (java.io.ObjectInputStream in = new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(bytes.toByteArray()))) {
+                return (ReservationDraft) in.readObject();
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("ReservationDraft must stay serializable", e);
+        }
+    }
 }
