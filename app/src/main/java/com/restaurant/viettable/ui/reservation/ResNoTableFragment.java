@@ -94,6 +94,7 @@ public class ResNoTableFragment extends BaseFragment {
 
     private void show(AvailabilityAlternatives value) {
         binding.progressSuggestions.setVisibility(View.GONE);
+        binding.tvSuggestionState.setVisibility(View.GONE); // an older error must not stay above fresh suggestions
         binding.layoutTimeOptions.removeAllViews();
         binding.layoutBranchOptions.removeAllViews();
         binding.tvTimeHeading.setVisibility(value.times.isEmpty() ? View.GONE : View.VISIBLE);

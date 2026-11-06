@@ -150,7 +150,7 @@ public class BookingAssistantFragment extends BaseFragment {
         TextView view = new TextView(requireContext());
         view.setText(text);
         view.setTextAppearance(R.style.TextAppearance_VietTable_Body);
-        view.setTextColor(requireContext().getColor(mine ? R.color.pd_on_color : R.color.pd_text));
+        view.setTextColor(requireContext().getColor(mine ? R.color.pd_on_inverse : R.color.pd_text)); // pd_chip_selected is the inverse colour in both themes
         view.setBackgroundResource(mine ? R.drawable.pd_chip_selected : R.drawable.pd_card_surface);
         int pad = dp(14);
         view.setPadding(pad, dp(10), pad, dp(10));
