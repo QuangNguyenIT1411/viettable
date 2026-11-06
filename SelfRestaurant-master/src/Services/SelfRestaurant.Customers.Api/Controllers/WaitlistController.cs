@@ -269,15 +269,21 @@ public sealed class WaitlistController : ControllerBase
                 || (x.Status == WaitlistRules.Waiting && x.WindowEndUtc <= limit))
             .ToListAsync(ct);
         if (stale.Count == 0) return;
+        var branchIds = stale.Select(x => x.BranchId).Distinct().ToArray();
+        var waitingElsewhere = await _db.WaitlistEntries.AsNoTracking()
+            .Where(x => branchIds.Contains(x.BranchId) && x.Status == WaitlistRules.Waiting).ToListAsync(ct);
         foreach (var entry in stale)
         {
             if (WaitlistRules.OfferExpired(entry, now))
             {
                 await ReleaseHoldAsync(entry, "Hết thời gian giữ bàn cho danh sách chờ", now, ct);
+                var next = WaitlistRules.HasNextGuest(entry, waitingElsewhere, now);
                 entry.Status = WaitlistRules.Expired;
-                entry.ClosedReason = "Hết thời gian xác nhận";
+                entry.ClosedReason = next ? WaitlistRules.LapsedToNextGuest : WaitlistRules.LapsedReleased;
                 await CustomerInbox.AddAsync(_db, entry.CustomerId, CustomerInbox.WaitlistExpired, entry.WaitlistEntryId,
-                    "Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp. Mở Danh sách chờ của tôi để xếp lại hàng chờ.", 0, ct);
+                    (next ? "Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp."
+                          : "Bạn chưa xác nhận kịp nên bàn đã được nhả.")
+                    + " Mở Danh sách chờ của tôi để xếp lại hàng chờ.", 0, ct);
             }
             else
             {

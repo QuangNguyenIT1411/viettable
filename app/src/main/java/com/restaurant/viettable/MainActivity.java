@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
                         if (lapsed.isEmpty()) return;
                         com.restaurant.viettable.model.WaitlistEntry e = lapsed.get(0);
                         boolean rejoin = com.restaurant.viettable.util.WaitlistText.canRejoin(e, entries, java.time.Instant.now());
-                        String text = com.restaurant.viettable.util.WaitlistText.LAPSED_DETAIL + " ("
+                        String text = com.restaurant.viettable.util.WaitlistText.lapsedDetail(e) + " ("
                                 + e.branchName + ", " + com.restaurant.viettable.util.WaitlistText.window(e.windowStartUtc, e.windowEndUtc,
                                 java.time.ZoneId.systemDefault()) + ", " + e.partySize + " khách)"
                                 + (rejoin ? "\n\nBạn có muốn xếp lại hàng chờ không?" : "");

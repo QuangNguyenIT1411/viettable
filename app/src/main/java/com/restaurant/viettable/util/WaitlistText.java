@@ -32,7 +32,29 @@ public final class WaitlistText {
     }
 
     /** Why a lapsed offer is over, for the card and the dialog when the app opens. */
-    public static final String LAPSED_DETAIL = "Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp.";
+    public static final String LAPSED_DETAIL = "Bạn chưa xác nhận kịp nên lời mời đã hết hạn.";
+
+    /**
+     * Why a lapsed offer is over (owner 06/11): "mời cho khách kế tiếp" only when the server says someone else was
+     * waiting for that time ({@code closedReason}); otherwise the table was simply released.
+     */
+    public static String lapsedDetail(WaitlistEntry entry) {
+        String reason = entry == null || entry.closedReason == null ? "" : entry.closedReason.toLowerCase(Locale.ROOT);
+        if (reason.contains("khách kế tiếp")) return "Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp.";
+        if (reason.contains("nhả")) return "Bạn chưa xác nhận kịp nên bàn đã được nhả.";
+        return LAPSED_DETAIL;
+    }
+
+    /** Offer notifications this phone showed whose offer is over (taken, skipped, lapsed, closed): remove them. */
+    public static List<String> offersToClear(List<WaitlistEntry> all, Set<String> notifiedKeys) {
+        List<String> out = new ArrayList<>();
+        if (all == null || notifiedKeys == null) return out;
+        for (WaitlistEntry e : all) {
+            if (e == null || e.isOffered()) continue;
+            for (String key : notifiedKeys) if (key.startsWith(e.id + ":")) { out.add(e.id); break; }
+        }
+        return out;
+    }
 
     /**
      * "Xếp lại hàng chờ" (owner 06/11): only for an offer that lapsed, while the window is still more than 15 minutes

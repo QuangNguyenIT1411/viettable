@@ -86,7 +86,7 @@ public class WaitlistFragment extends BaseFragment {
             row.btnEntryCancel.setText(entry.isOffered() ? "Bỏ qua" : "Huỷ chờ");
             if ("Expired".equals(entry.status)) {
                 row.tvEntryOffer.setVisibility(View.VISIBLE);
-                row.tvEntryOffer.setText(WaitlistText.LAPSED_DETAIL
+                row.tvEntryOffer.setText(WaitlistText.lapsedDetail(entry)
                         + (rejoin ? " Bạn có thể xếp lại hàng chờ (đứng sau những người đang chờ)." : ""));
                 row.tvEntryOffer.setTextColor(requireContext().getColor(com.restaurant.viettable.R.color.pd_red_text));
             }
@@ -122,6 +122,7 @@ public class WaitlistFragment extends BaseFragment {
     private void accept(WaitlistEntry entry) {
         MobileRepository.getInstance().acceptWaitlist(entry.id, new MobileRepository.Callback<Reservation>() {
             @Override public void onSuccess(Reservation value) {
+                clearOfferNotification(entry); // taken: the "Có bàn cho bạn" notification goes away
                 if (binding == null) return;
                 if (value.getStatus() == Reservation.Status.PENDING_DEPOSIT) navigateTo(ResDepositFragment.newInstance(value));
                 else navigateTo(ResDetailFragment.newInstance(value));
@@ -132,6 +133,10 @@ public class WaitlistFragment extends BaseFragment {
                 load();
             }
         });
+    }
+
+    private void clearOfferNotification(WaitlistEntry entry) {
+        if (getContext() != null) WaitlistPollWorker.clearOffer(requireContext().getApplicationContext(), entry.id);
     }
 
     private void rejoin(WaitlistEntry entry) {
@@ -147,7 +152,7 @@ public class WaitlistFragment extends BaseFragment {
 
     private void cancel(WaitlistEntry entry) {
         MobileRepository.getInstance().cancelWaitlist(entry.id, new MobileRepository.Callback<Void>() {
-            @Override public void onSuccess(Void value) { if (binding != null) load(); }
+            @Override public void onSuccess(Void value) { clearOfferNotification(entry); if (binding != null) load(); }
             @Override public void onError(ApiException error) { if (binding != null) { showToast(apiError(error)); load(); } }
         });
     }

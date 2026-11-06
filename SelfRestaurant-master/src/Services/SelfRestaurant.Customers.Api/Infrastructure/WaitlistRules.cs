@@ -44,7 +44,7 @@ public static class WaitlistRules
     /// <summary>Null when the guest may accept now; otherwise why not.</summary>
     public static string? WhyNotAcceptable(WaitlistEntry entry, DateTime nowUtc) => entry.Status switch
     {
-        Offered when OfferExpired(entry, nowUtc) => "Đã hết thời gian giữ bàn. Bàn đã được mời cho khách kế tiếp.",
+        Offered when OfferExpired(entry, nowUtc) => "Đã hết thời gian giữ bàn.",
         Offered => null,
         Accepted => "Bạn đã nhận bàn này rồi.",
         Waiting => "Chưa có bàn cho bạn. Chúng tôi sẽ báo khi có.",
@@ -62,6 +62,21 @@ public static class WaitlistRules
         if (entry.Status != Expired)
             return entry.Status is Waiting or Offered ? "Bạn vẫn đang trong danh sách chờ." : "Chỉ xếp lại được khi lời mời đã hết hạn.";
         return WhyNotJoinable(entry.WindowStartUtc, entry.WindowEndUtc, entry.PartySize, activeEntries, nowUtc);
+    }
+
+    public const string LapsedToNextGuest = "Hết thời gian xác nhận, bàn đã mời khách kế tiếp";
+    public const string LapsedReleased = "Hết thời gian xác nhận, bàn đã được nhả";
+
+    /// <summary>
+    /// Whether someone else is still waiting for the time of a lapsed offer (same branch, window covering that time),
+    /// so the guest is told "mời cho khách kế tiếp" only when it is true; otherwise the table is simply released.
+    /// </summary>
+    public static bool HasNextGuest(WaitlistEntry lapsed, IEnumerable<WaitlistEntry> others, DateTime nowUtc)
+    {
+        var at = lapsed.OfferedReservedAtUtc;
+        if (at is null) return false;
+        return others.Any(x => x.WaitlistEntryId != lapsed.WaitlistEntryId && x.Status == Waiting && x.BranchId == lapsed.BranchId
+            && !WindowOver(x, nowUtc) && x.WindowStartUtc <= at && x.WindowEndUtc >= at);
     }
 
     /// <summary>1-based place among guests still waiting at the same branch on the same restaurant day, by sign-up.</summary>

@@ -225,6 +225,31 @@ public sealed class WaitlistTests
         Assert.IsType<NotFoundObjectResult>(other.Result);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_lapsed_offer_says_next_guest_only_when_someone_else_waits(bool someoneElseWaits)
+    {
+        await using var db = Database();
+        db.WaitlistEntries.Add(Entry(1, 10, DateTime.UtcNow.AddMinutes(-30)));
+        if (someoneElseWaits) db.WaitlistEntries.Add(Entry(2, 11, DateTime.UtcNow.AddMinutes(-20)));
+        await db.SaveChangesAsync();
+        var controller = new WaitlistController(db);
+        await controller.Offer(1, new WaitlistController.OfferRequest(8, DateTime.UtcNow.AddHours(3).AddMinutes(30), 20), CancellationToken.None);
+        var entry = await db.WaitlistEntries.SingleAsync(x => x.WaitlistEntryId == 1);
+        entry.OfferExpiresAtUtc = DateTime.UtcNow.AddMinutes(-1);
+        (await db.Reservations.SingleAsync()).HoldExpiresAtUtc = entry.OfferExpiresAtUtc;
+        await db.SaveChangesAsync();
+
+        await controller.Mine(10, CancellationToken.None);
+        var closed = await db.WaitlistEntries.AsNoTracking().SingleAsync(x => x.WaitlistEntryId == 1);
+        Assert.Equal(WaitlistRules.Expired, closed.Status);
+        Assert.Equal(someoneElseWaits ? WaitlistRules.LapsedToNextGuest : WaitlistRules.LapsedReleased, closed.ClosedReason);
+        var note = await db.ReadyDishNotifications.AsNoTracking().FirstAsync(x => x.EventName == CustomerInbox.WaitlistExpired);
+        Assert.Equal(someoneElseWaits, note.Message.Contains("khách kế tiếp"));
+        if (!someoneElseWaits) Assert.Contains("bàn đã được nhả", note.Message);
+    }
+
     [Fact]
     public void Rejoin_only_after_a_lapsed_offer_and_while_the_window_is_ahead()
     {

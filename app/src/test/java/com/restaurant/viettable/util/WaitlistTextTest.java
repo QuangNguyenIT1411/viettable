@@ -98,4 +98,27 @@ public class WaitlistTextTest {
         assertEquals("5", WaitlistText.lapsedToTell(all, new java.util.HashSet<>(), now).get(0).id);
         assertTrue(WaitlistText.lapsedToTell(all, new java.util.HashSet<>(Arrays.asList("5")), now).isEmpty());
     }
+
+    @Test
+    public void lapsedTextSaysNextGuestOnlyWhenTheServerSaysSo() {
+        WaitlistEntry e = entry("5", "Expired", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        e.closedReason = "Hết thời gian xác nhận, bàn đã mời khách kế tiếp";
+        assertEquals("Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp.", WaitlistText.lapsedDetail(e));
+        e.closedReason = "Hết thời gian xác nhận, bàn đã được nhả";
+        assertEquals("Bạn chưa xác nhận kịp nên bàn đã được nhả.", WaitlistText.lapsedDetail(e));
+        e.closedReason = "Hết thời gian xác nhận"; // entries closed before 06/11
+        assertEquals("Bạn chưa xác nhận kịp nên lời mời đã hết hạn.", WaitlistText.lapsedDetail(e));
+    }
+
+    @Test
+    public void offerNotificationsAreClearedOnceTheOfferIsOver() {
+        WaitlistEntry offered = entry("1", "Offered", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        WaitlistEntry accepted = entry("2", "Accepted", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        WaitlistEntry skipped = entry("3", "Cancelled", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        WaitlistEntry lapsed = entry("4", "Expired", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        WaitlistEntry neverShown = entry("5", "Cancelled", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        java.util.Set<String> notified = new java.util.HashSet<>(Arrays.asList("1:80", "2:81", "3:82", "4:83"));
+        assertEquals(Arrays.asList("2", "3", "4"),
+                WaitlistText.offersToClear(Arrays.asList(offered, accepted, skipped, lapsed, neverShown), notified));
+    }
 }

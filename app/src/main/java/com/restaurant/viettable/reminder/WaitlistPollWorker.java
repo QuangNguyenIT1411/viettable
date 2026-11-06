@@ -47,6 +47,14 @@ public final class WaitlistPollWorker extends Worker {
     private static final String KEY_NOTIFIED = "notified";
     private static final String KEY_TOLD_LAPSED = "told_lapsed";
     private static final String KEY_WATCH = "watch";
+    private static final String KEY_LAPSE_NOTIFIED = "lapse_notified";
+
+    private static int notificationId(String entryId) { return ("waitlist" + entryId).hashCode(); }
+
+    /** Removes the "Có bàn cho bạn" notification of this entry (taken, skipped or over). */
+    public static void clearOffer(Context context, String entryId) {
+        try { NotificationManagerCompat.from(context).cancel(notificationId(entryId)); } catch (RuntimeException ignored) { }
+    }
 
     public WaitlistPollWorker(@NonNull Context context, @NonNull WorkerParameters params) { super(context, params); }
 
@@ -88,9 +96,13 @@ public final class WaitlistPollWorker extends Worker {
         Set<String> notified = new HashSet<>(prefs.getStringSet(KEY_NOTIFIED, new HashSet<>()));
         boolean active = false;
         Set<String> toldLapsed = new HashSet<>(prefs.getStringSet(KEY_TOLD_LAPSED, new HashSet<>()));
+        Set<String> lapseNotified = new HashSet<>(prefs.getStringSet(KEY_LAPSE_NOTIFIED, new HashSet<>()));
+        // Owner 06/11: an offer that is over (taken, skipped, lapsed) no longer shows "Có bàn cho bạn".
+        // (a lapsed offer already turned into its "Lời mời đã hết hạn" notice keeps that notice)
+        for (String id : WaitlistText.offersToClear(entries, notified)) if (!lapseNotified.contains(id)) clearOffer(context, id);
         for (WaitlistEntry e : WaitlistText.lapsedToTell(entries, toldLapsed, java.time.Instant.now())) {
-            // Only offers this phone announced: tell that they lapsed (the app shows it again when opened).
-            if (notified.contains(e.id + ":" + e.offeredReservationId)) showLapsed(context, e);
+            // Only offers this phone announced, once: tell that they lapsed (the app shows it again when opened).
+            if (notified.contains(e.id + ":" + e.offeredReservationId) && lapseNotified.add(e.id)) showLapsed(context, e);
         }
         for (WaitlistEntry e : entries) {
             if (e.isActive()) active = true;
@@ -100,7 +112,7 @@ public final class WaitlistPollWorker extends Worker {
                 notified.add(key);
             }
         }
-        prefs.edit().putStringSet(KEY_NOTIFIED, notified).putBoolean(KEY_WATCH, active || prefs.getBoolean(KEY_WATCH, false)).apply();
+        prefs.edit().putStringSet(KEY_NOTIFIED, notified).putStringSet(KEY_LAPSE_NOTIFIED, lapseNotified).putBoolean(KEY_WATCH, active || prefs.getBoolean(KEY_WATCH, false)).apply();
         if (active) ensureScheduled(context); else WorkManager.getInstance(context).cancelUniqueWork(WORK);
     }
 
@@ -125,7 +137,7 @@ public final class WaitlistPollWorker extends Worker {
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
                 Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
         ReservationReminders.initialize(context);
-        String text = WaitlistText.LAPSED_DETAIL + " Mở app để xếp lại hàng chờ.";
+        String text = WaitlistText.lapsedDetail(e) + " Mở app để xếp lại hàng chờ.";
         Intent open = new Intent(context, MainActivity.class).putExtra(EXTRA_OPEN_WAITLIST, true)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent tap = PendingIntent.getActivity(context, ("waitlist" + e.id).hashCode(), open,
