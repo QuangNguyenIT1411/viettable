@@ -38,6 +38,8 @@ public static class CustomerInbox
     /// <summary>Waitlist (owner 06/11): a table is held for the guest; the hold ran out.</summary>
     public const string WaitlistOffered = "waitlist.offered.v1";
     public const string WaitlistExpired = "waitlist.expired.v1";
+    /// <summary>Staff answered in the support chat (owner 06/11); refId = the message id.</summary>
+    public const string SupportReply = "support.reply.v1";
 
     private static readonly Dictionary<string, string> Titles = new(StringComparer.Ordinal)
     {
@@ -64,6 +66,7 @@ public static class CustomerInbox
         [PromotionCreated] = "Ưu đãi mới",
         [WaitlistOffered] = "Có bàn cho bạn",
         [WaitlistExpired] = "Lời mời đã hết hạn",
+        [SupportReply] = "Nhân viên hỗ trợ đã trả lời",
     };
 
     /// <summary>Events that may happen more than once for the same item (a reservation can be changed again).</summary>
@@ -77,6 +80,7 @@ public static class CustomerInbox
     public static string Category(string eventName) => eventName.Split('.')[0] switch
     {
         "reservation" or "waitlist" => "reservation",
+        "support" => "order",
         "order" or "service" => "order",
         "billing" => "payment",
         "loyalty" or "promotion" => "offer",

@@ -87,6 +87,34 @@ public sealed class CustomersClient : ApiClientBase
     public Task<JsonElement> RejoinWaitlistAsync(int entryId, int customerId, CancellationToken ct) =>
         PostForAsync<object, JsonElement>($"/api/customers/waitlist/{entryId}/rejoin", new { customerId }, ct);
 
+    // ---- support chat (owner 06/11) ----
+    public Task<JsonElement> StartSupportAsync(object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>("/api/internal/support/conversations", request, ct);
+    public async Task<JsonElement> GetMySupportAsync(int customerId, CancellationToken ct) =>
+        await GetAsync<JsonElement>($"/api/internal/support/customers/{customerId}/conversations", ct);
+    public async Task<JsonElement> GetBranchSupportAsync(int branchId, bool includeResolved, CancellationToken ct) =>
+        await GetAsync<JsonElement>($"/api/internal/support/branches/{branchId}/conversations?includeResolved={(includeResolved ? "true" : "false")}", ct);
+    public async Task<JsonElement> GetSupportAsync(int id, int? customerId, int? staffBranchId, long? beforeId, CancellationToken ct) =>
+        await GetAsync<JsonElement>($"/api/internal/support/conversations/{id}?customerId={customerId}&staffBranchId={staffBranchId}&beforeId={beforeId}", ct);
+    public Task<JsonElement> SendSupportAsync(int id, object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/support/conversations/{id}/messages", request, ct);
+    public Task<JsonElement> ReadSupportAsync(int id, object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/support/conversations/{id}/read", request, ct);
+    public Task<JsonElement> ResolveSupportAsync(int id, object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>($"/api/internal/support/conversations/{id}/resolve", request, ct);
+    public async Task<JsonElement> GetSupportQuickRepliesAsync(int? branchId, bool includeInactive, CancellationToken ct) =>
+        await GetAsync<JsonElement>($"/api/internal/support/quick-replies?branchId={branchId}&includeInactive={(includeInactive ? "true" : "false")}", ct);
+    public Task<JsonElement> CreateSupportQuickReplyAsync(object request, CancellationToken ct) =>
+        PostForAsync<object, JsonElement>("/api/internal/support/quick-replies", request, ct);
+    public Task<JsonElement> UpdateSupportQuickReplyAsync(int id, object request, CancellationToken ct) =>
+        PutForAsync<object, JsonElement>($"/api/internal/support/quick-replies/{id}", request, ct);
+    public Task DeleteSupportQuickReplyAsync(int id, int branchId, CancellationToken ct) =>
+        DeleteAsync($"/api/internal/support/quick-replies/{id}?branchId={branchId}", ct);
+    public async Task<JsonElement> GetSupportHoursAsync(int branchId, CancellationToken ct) =>
+        await GetAsync<JsonElement>($"/api/internal/support/hours/{branchId}", ct);
+    public Task<JsonElement> SaveSupportHoursAsync(int branchId, object request, CancellationToken ct) =>
+        PutForAsync<object, JsonElement>($"/api/internal/support/hours/{branchId}", request, ct);
+
     public Task<JsonElement> CancelWaitlistAsync(int entryId, int customerId, CancellationToken ct) =>
         PostForAsync<object, JsonElement>($"/api/customers/waitlist/{entryId}/cancel", new { customerId }, ct);
 

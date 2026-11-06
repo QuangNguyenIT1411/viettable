@@ -372,6 +372,73 @@ public static class CustomersDbBootstrapper
                                CREATE INDEX IX_ReservationWaitlist_Customer_Status ON dbo.ReservationWaitlist(CustomerId, Status);
                            END
 
+                           IF OBJECT_ID(N'dbo.SupportConversations', N'U') IS NULL
+                           BEGIN
+                               CREATE TABLE dbo.SupportConversations (
+                                   SupportConversationId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SupportConversations PRIMARY KEY,
+                                   CustomerId INT NOT NULL,
+                                   CustomerNameSnapshot NVARCHAR(200) NOT NULL,
+                                   BranchId INT NOT NULL,
+                                   Topic VARCHAR(30) NOT NULL,
+                                   ContextType VARCHAR(20) NOT NULL CONSTRAINT DF_SupportConversations_ContextType DEFAULT 'NONE',
+                                   ContextId INT NULL,
+                                   ContextLabel NVARCHAR(300) NULL,
+                                   Status VARCHAR(20) NOT NULL CONSTRAINT DF_SupportConversations_Status DEFAULT 'Waiting',
+                                   WaitingSinceUtc DATETIME2 NULL,
+                                   LastMessageAtUtc DATETIME2 NOT NULL,
+                                   CustomerLastReadMessageId BIGINT NOT NULL CONSTRAINT DF_SupportConversations_CustRead DEFAULT 0,
+                                   StaffLastReadMessageId BIGINT NOT NULL CONSTRAINT DF_SupportConversations_StaffRead DEFAULT 0,
+                                   ResolvedAtUtc DATETIME2 NULL,
+                                   ResolvedByEmployeeId INT NULL,
+                                   ResolvedByName NVARCHAR(200) NULL,
+                                   CreatedAtUtc DATETIME2 NOT NULL,
+                                   UpdatedAtUtc DATETIME2 NOT NULL,
+                                   Version INT NOT NULL CONSTRAINT DF_SupportConversations_Version DEFAULT 0
+                               );
+                               CREATE INDEX IX_SupportConversations_Branch_Status_Waiting ON dbo.SupportConversations(BranchId, Status, WaitingSinceUtc);
+                               CREATE INDEX IX_SupportConversations_Customer_Last ON dbo.SupportConversations(CustomerId, LastMessageAtUtc);
+                           END
+
+                           IF OBJECT_ID(N'dbo.SupportMessages', N'U') IS NULL
+                           BEGIN
+                               CREATE TABLE dbo.SupportMessages (
+                                   SupportMessageId BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SupportMessages PRIMARY KEY,
+                                   SupportConversationId INT NOT NULL,
+                                   SenderType VARCHAR(20) NOT NULL,
+                                   SenderEmployeeId INT NULL,
+                                   SenderName NVARCHAR(200) NULL,
+                                   Body NVARCHAR(1000) NOT NULL,
+                                   CreatedAtUtc DATETIME2 NOT NULL
+                               );
+                               CREATE INDEX IX_SupportMessages_Conversation_Id ON dbo.SupportMessages(SupportConversationId, SupportMessageId);
+                           END
+
+                           IF OBJECT_ID(N'dbo.SupportQuickReplies', N'U') IS NULL
+                           BEGIN
+                               CREATE TABLE dbo.SupportQuickReplies (
+                                   SupportQuickReplyId INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SupportQuickReplies PRIMARY KEY,
+                                   BranchId INT NULL,
+                                   Title NVARCHAR(100) NOT NULL,
+                                   Body NVARCHAR(1000) NOT NULL,
+                                   SortOrder INT NOT NULL,
+                                   IsActive BIT NOT NULL,
+                                   CreatedAtUtc DATETIME2 NOT NULL,
+                                   UpdatedAtUtc DATETIME2 NOT NULL
+                               );
+                               CREATE INDEX IX_SupportQuickReplies_Branch ON dbo.SupportQuickReplies(BranchId, IsActive, SortOrder);
+                           END
+
+                           IF OBJECT_ID(N'dbo.SupportBranchHours', N'U') IS NULL
+                           BEGIN
+                               CREATE TABLE dbo.SupportBranchHours (
+                                   BranchId INT NOT NULL CONSTRAINT PK_SupportBranchHours PRIMARY KEY,
+                                   OpenFrom VARCHAR(5) NOT NULL,
+                                   OpenTo VARCHAR(5) NOT NULL,
+                                   UpdatedAtUtc DATETIME2 NOT NULL,
+                                   UpdatedByName NVARCHAR(200) NULL
+                               );
+                           END
+
                            IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'dbo.Reservations') AND name = N'IX_Reservations_Branch_ReservedAt_Status')
                            BEGIN
                                CREATE INDEX IX_Reservations_Branch_ReservedAt_Status ON dbo.Reservations(BranchId, ReservedAt, Status);

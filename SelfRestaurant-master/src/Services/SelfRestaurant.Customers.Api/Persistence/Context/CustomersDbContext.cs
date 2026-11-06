@@ -20,6 +20,10 @@ public sealed class CustomersDbContext : DbContext
     public DbSet<CustomerReview> CustomerReviews => Set<CustomerReview>();
     public DbSet<CustomerReviewDishRating> CustomerReviewDishRatings => Set<CustomerReviewDishRating>();
     public DbSet<SupportRequest> SupportRequests => Set<SupportRequest>();
+    public DbSet<SupportConversation> SupportConversations => Set<SupportConversation>();
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+    public DbSet<SupportQuickReply> SupportQuickReplies => Set<SupportQuickReply>();
+    public DbSet<SupportBranchHours> SupportBranchHours => Set<SupportBranchHours>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -172,6 +176,59 @@ public sealed class CustomersDbContext : DbContext
             entity.Property(e => e.AcceptedAtUtc).HasColumnType("datetime2");
             entity.Property(e => e.ClosedAtUtc).HasColumnType("datetime2");
             entity.Property(e => e.Version).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<SupportConversation>(entity =>
+        {
+            entity.ToTable("SupportConversations");
+            entity.HasKey(e => e.SupportConversationId);
+            entity.HasIndex(e => new { e.BranchId, e.Status, e.WaitingSinceUtc }).HasDatabaseName("IX_SupportConversations_Branch_Status_Waiting");
+            entity.HasIndex(e => new { e.CustomerId, e.LastMessageAtUtc }).HasDatabaseName("IX_SupportConversations_Customer_Last");
+            entity.Property(e => e.CustomerNameSnapshot).HasMaxLength(200);
+            entity.Property(e => e.Topic).HasMaxLength(30).IsUnicode(false);
+            entity.Property(e => e.ContextType).HasMaxLength(20).IsUnicode(false).HasDefaultValue("NONE");
+            entity.Property(e => e.ContextLabel).HasMaxLength(300);
+            entity.Property(e => e.Status).HasMaxLength(20).IsUnicode(false).HasDefaultValue("Waiting");
+            entity.Property(e => e.ResolvedByName).HasMaxLength(200);
+            entity.Property(e => e.WaitingSinceUtc).HasColumnType("datetime2");
+            entity.Property(e => e.LastMessageAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.ResolvedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.CreatedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.UpdatedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.Version).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<SupportMessage>(entity =>
+        {
+            entity.ToTable("SupportMessages");
+            entity.HasKey(e => e.SupportMessageId);
+            entity.HasIndex(e => new { e.SupportConversationId, e.SupportMessageId }).HasDatabaseName("IX_SupportMessages_Conversation_Id");
+            entity.Property(e => e.SenderType).HasMaxLength(20).IsUnicode(false);
+            entity.Property(e => e.SenderName).HasMaxLength(200);
+            entity.Property(e => e.Body).HasMaxLength(1000);
+            entity.Property(e => e.CreatedAtUtc).HasColumnType("datetime2");
+        });
+
+        modelBuilder.Entity<SupportQuickReply>(entity =>
+        {
+            entity.ToTable("SupportQuickReplies");
+            entity.HasKey(e => e.SupportQuickReplyId);
+            entity.HasIndex(e => new { e.BranchId, e.IsActive, e.SortOrder }).HasDatabaseName("IX_SupportQuickReplies_Branch");
+            entity.Property(e => e.Title).HasMaxLength(100);
+            entity.Property(e => e.Body).HasMaxLength(1000);
+            entity.Property(e => e.CreatedAtUtc).HasColumnType("datetime2");
+            entity.Property(e => e.UpdatedAtUtc).HasColumnType("datetime2");
+        });
+
+        modelBuilder.Entity<SupportBranchHours>(entity =>
+        {
+            entity.ToTable("SupportBranchHours");
+            entity.HasKey(e => e.BranchId);
+            entity.Property(e => e.BranchId).ValueGeneratedNever();
+            entity.Property(e => e.OpenFrom).HasMaxLength(5).IsUnicode(false);
+            entity.Property(e => e.OpenTo).HasMaxLength(5).IsUnicode(false);
+            entity.Property(e => e.UpdatedByName).HasMaxLength(200);
+            entity.Property(e => e.UpdatedAtUtc).HasColumnType("datetime2");
         });
 
         modelBuilder.Entity<SupportRequest>(entity =>

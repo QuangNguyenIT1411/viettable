@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace SelfRestaurant.Gateway.Api.Models;
 
 public sealed record BranchDto(int BranchId, string Name, string? Location, string? Image = null,
-    decimal? Latitude = null, decimal? Longitude = null);
+    decimal? Latitude = null, decimal? Longitude = null, string? OpeningHours = null);
 
 public sealed record BranchTablesResponse(string BranchName, IReadOnlyList<BranchTableDto> Tables);
 

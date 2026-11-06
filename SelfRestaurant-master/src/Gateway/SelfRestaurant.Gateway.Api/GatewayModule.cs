@@ -209,6 +209,7 @@ builder.Services.Configure<SelfRestaurant.Deposits.DepositOptions>(builder.Confi
 builder.Services.AddScoped<ReservationDepositCoordinator>();
 builder.Services.AddScoped<TableAvailability>();
 builder.Services.AddScoped<WaitlistCoordinator>();
+builder.Services.AddScoped<SupportChatContext>();
 builder.Services.AddScoped<PromotionAnnouncer>();
 
 configureServices?.Invoke(builder);

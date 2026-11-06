@@ -591,6 +591,207 @@ namespace SelfRestaurant.Customers.Api.Persistence.Postgres.Migrations
                     b.ToTable("ReservationTables", "customers");
                 });
 
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.SupportBranchHours", b =>
+                {
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OpenFrom")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<string>("OpenTo")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("BranchId");
+
+                    b.ToTable("SupportBranchHours", "customers");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.SupportConversation", b =>
+                {
+                    b.Property<int>("SupportConversationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SupportConversationId"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ContextId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ContextLabel")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("ContextType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("NONE");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("CustomerLastReadMessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CustomerNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("LastMessageAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ResolvedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ResolvedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("StaffLastReadMessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Waiting");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("WaitingSinceUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SupportConversationId");
+
+                    b.HasIndex("CustomerId", "LastMessageAtUtc")
+                        .HasDatabaseName("IX_SupportConversations_Customer_Last");
+
+                    b.HasIndex("BranchId", "Status", "WaitingSinceUtc")
+                        .HasDatabaseName("IX_SupportConversations_Branch_Status_Waiting");
+
+                    b.ToTable("SupportConversations", "customers");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.SupportMessage", b =>
+                {
+                    b.Property<long>("SupportMessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("SupportMessageId"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("SenderEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SenderName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SenderType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("SupportConversationId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("SupportMessageId");
+
+                    b.HasIndex("SupportConversationId", "SupportMessageId")
+                        .HasDatabaseName("IX_SupportMessages_Conversation_Id");
+
+                    b.ToTable("SupportMessages", "customers");
+                });
+
+            modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.SupportQuickReply", b =>
+                {
+                    b.Property<int>("SupportQuickReplyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SupportQuickReplyId"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SupportQuickReplyId");
+
+                    b.HasIndex("BranchId", "IsActive", "SortOrder")
+                        .HasDatabaseName("IX_SupportQuickReplies_Branch");
+
+                    b.ToTable("SupportQuickReplies", "customers");
+                });
+
             modelBuilder.Entity("SelfRestaurant.Customers.Api.Persistence.Entities.SupportRequest", b =>
                 {
                     b.Property<int>("SupportRequestId")

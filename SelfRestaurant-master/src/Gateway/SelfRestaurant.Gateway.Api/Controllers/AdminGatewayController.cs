@@ -181,6 +181,70 @@ public sealed class AdminGatewayController : ControllerBase
         catch (ApiClientException ex) { return HandleApiClientException("save_branch_location_failed", ex); }
     }
 
+    // ---- Support chat (owner 06/11): ready answers and support hours of the admin's branch. ----
+
+    public sealed record AdminQuickReplyRequest(string? Title, string? Body, int SortOrder = 0, bool IsActive = true);
+    public sealed record AdminSupportHoursRequest(string? OpenFrom, string? OpenTo);
+
+    [HttpGet("support/quick-replies")]
+    public async Task<ActionResult<object>> GetSupportQuickReplies(CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _customersClient.GetSupportQuickRepliesAsync(admin.BranchId, true, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("support_quick_replies_failed", ex); }
+    }
+
+    [HttpPost("support/quick-replies")]
+    public async Task<ActionResult<object>> CreateSupportQuickReply(AdminQuickReplyRequest request, CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _customersClient.CreateSupportQuickReplyAsync(new { branchId = admin.BranchId, request.Title, request.Body, request.SortOrder, request.IsActive }, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("support_quick_reply_failed", ex); }
+    }
+
+    [HttpPut("support/quick-replies/{id:int}")]
+    public async Task<ActionResult<object>> UpdateSupportQuickReply(int id, AdminQuickReplyRequest request, CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _customersClient.UpdateSupportQuickReplyAsync(id, new { branchId = admin.BranchId, request.Title, request.Body, request.SortOrder, request.IsActive }, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("support_quick_reply_failed", ex); }
+    }
+
+    [HttpDelete("support/quick-replies/{id:int}")]
+    public async Task<ActionResult<object>> DeleteSupportQuickReply(int id, CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { await _customersClient.DeleteSupportQuickReplyAsync(id, admin.BranchId, ct); return Ok(new { deleted = id }); }
+        catch (ApiClientException ex) { return HandleApiClientException("support_quick_reply_failed", ex); }
+    }
+
+    [HttpGet("support/hours")]
+    public async Task<ActionResult<object>> GetSupportHours(CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try
+        {
+            var hours = await _customersClient.GetSupportHoursAsync(admin.BranchId, ct);
+            var branch = (await _catalogClient.GetBranchesAsync(ct) ?? Array.Empty<BranchDto>()).FirstOrDefault(b => b.BranchId == admin.BranchId);
+            return Ok(new { hours, branchName = branch?.Name, branchOpeningHours = branch?.OpeningHours });
+        }
+        catch (ApiClientException ex) { return HandleApiClientException("support_hours_failed", ex); }
+    }
+
+    [HttpPut("support/hours")]
+    public async Task<ActionResult<object>> SaveSupportHours(AdminSupportHoursRequest request, CancellationToken ct)
+    {
+        var admin = RequireAdmin();
+        if (admin is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _customersClient.SaveSupportHoursAsync(admin.BranchId, new { request.OpenFrom, request.OpenTo, updatedByName = admin.Name }, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("support_hours_failed", ex); }
+    }
+
     // ---- Areas and pushed-together tables (owner 06/11): large parties get "Bàn 5 + 6". ----
 
     public sealed record AdminTableGroupingRequest(string? Area, IReadOnlyList<int>? LinkedTableIds);

@@ -44,6 +44,7 @@ public sealed class CatalogController : ControllerBase
                 image = x.Image,
                 latitude = x.Latitude,
                 longitude = x.Longitude,
+                openingHours = x.OpeningHours,
             })
             .ToListAsync(cancellationToken);
 

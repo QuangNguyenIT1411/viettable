@@ -195,7 +195,7 @@ public sealed record PrivateGroupEvent(string EventId, string GroupReference, st
     public bool IsValid() => Guid.TryParseExact(EventId, "N", out _) && GroupReference is { Length: 24 }
         && GroupReference.All(x => char.IsAsciiHexDigit(x))
         && Method is "orderUpdated" or "serviceRequestUpdated" or "orderReady" or "cashierDashboardChanged" or "orderReceived" or "paymentUpdated" or "staffBranchChanged"
-            or "notificationCreated" or "reservationChanged"
+            or "notificationCreated" or "reservationChanged" or "supportMessage"
         && Arguments is { Length: <= 8 };
 }
 

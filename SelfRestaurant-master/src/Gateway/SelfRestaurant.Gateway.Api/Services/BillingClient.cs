@@ -207,6 +207,10 @@ public sealed class BillingClient : ApiClientBase
         PostForAsync<object, JsonElement>($"/api/internal/promotions/{promotionId}/announced", new { }, ct);
 
     // ---- Reservation deposits (docs/DEPOSIT_PLAN.md) ----
+    /// <summary>The customer's bank-transfer payments of the last 14 days with their real status (support chat).</summary>
+    public async Task<JsonElement> GetSupportTransfersAsync(int customerId, CancellationToken ct) =>
+        await GetAsync<JsonElement>($"/api/internal/support/customers/{customerId}/transfers", ct);
+
     public Task<JsonElement> CreateDepositAsync(object request, CancellationToken ct) =>
         PostForAsync<object, JsonElement>("/api/internal/deposits", request, ct);
 
