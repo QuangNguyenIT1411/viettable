@@ -87,6 +87,20 @@ public final class SupportText {
         return out;
     }
 
+    /** The prefilled message may be replaced while it is empty or still exactly the last sentence the app put there. */
+    public static boolean replacePrefill(String current, String lastSuggested) {
+        String now = current == null ? "" : current.trim();
+        return now.isEmpty() || now.equals(lastSuggested == null ? "" : lastSuggested.trim());
+    }
+
+    /** What a screen reader says for a bubble; automatic messages already start with "Tin nhắn tự động:". */
+    public static String spoken(SupportChat.Message m, String meta) {
+        String body = m.body == null ? "" : m.body.trim();
+        String head = m.automatic() ? body : sender(m) + ": " + body;
+        if (!head.endsWith(".") && !head.endsWith("?") && !head.endsWith("!")) head += ".";
+        return meta == null || meta.isEmpty() ? head : head + " " + meta;
+    }
+
     public static int totalUnread(List<SupportChat.Conversation> rows) {
         int n = 0;
         if (rows != null) for (SupportChat.Conversation c : rows) n += Math.max(0, c.unread);

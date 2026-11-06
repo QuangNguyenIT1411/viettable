@@ -81,8 +81,25 @@ public abstract class BaseFragment extends Fragment {
         if (focused == null) return;
         android.graphics.Rect r = new android.graphics.Rect();
         focused.getDrawingRect(r);
-        r.bottom += (int) (16 * screen.getResources().getDisplayMetrics().density); // a little room under the box
+        int room = (int) (16 * screen.getResources().getDisplayMetrics().density); // a little room under the box
+        r.bottom += room;
         focused.requestRectangleOnScreen(r, false);
+        // A bottom bar drawn over the scroll area (e.g. "Lưu thay đổi" on Thông tin cá nhân) still covers the box:
+        // scroll on by what it covers (owner 07/11, Samsung).
+        focused.post(() -> {
+            View bar = screen.findViewWithTag("safe_bottom");
+            if (bar == null || bar.getVisibility() != View.VISIBLE || !focused.isAttachedToWindow()) return;
+            int[] at = new int[2];
+            focused.getLocationInWindow(at);
+            int boxBottom = at[1] + focused.getHeight() + room;
+            bar.getLocationInWindow(at);
+            int covered = boxBottom - at[1];
+            if (covered <= 0) return;
+            for (android.view.ViewParent p = focused.getParent(); p instanceof View; p = p.getParent()) {
+                if (p instanceof android.widget.ScrollView) { ((android.widget.ScrollView) p).smoothScrollBy(0, covered); return; }
+                if (p instanceof androidx.core.widget.NestedScrollView) { ((androidx.core.widget.NestedScrollView) p).smoothScrollBy(0, covered); return; }
+            }
+        });
     }
 
     /** Screens whose bottom bar holds a text box (a chat) return true so the keyboard never covers it. */

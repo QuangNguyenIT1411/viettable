@@ -45,6 +45,7 @@ public class SupportStartFragment extends BaseFragment implements com.restaurant
     private SupportChat.Check check;
     private int branchId;
     private boolean busy;
+    private String lastSuggested = "";
     private int loads;
 
     public static SupportStartFragment newInstance() { return new SupportStartFragment(); }
@@ -209,8 +210,10 @@ public class SupportStartFragment extends BaseFragment implements com.restaurant
 
     private void showMessageBox(String suggested) {
         binding.layoutMessage.setVisibility(View.VISIBLE);
-        CharSequence current = binding.etMessage.getText();
-        if (suggested != null && !suggested.isEmpty() && (current == null || current.length() == 0)) binding.etMessage.setText(suggested);
+        // The prefilled sentence follows the topic/item until the customer types their own (owner 07/11, Samsung).
+        String current = binding.etMessage.getText() == null ? "" : binding.etMessage.getText().toString();
+        if (SupportText.replacePrefill(current, lastSuggested)) binding.etMessage.setText(suggested == null ? "" : suggested);
+        lastSuggested = suggested == null ? "" : suggested;
         updateStart();
         binding.scroll.post(() -> { if (binding != null) binding.scroll.smoothScrollTo(0, binding.layoutMessage.getBottom()); });
     }

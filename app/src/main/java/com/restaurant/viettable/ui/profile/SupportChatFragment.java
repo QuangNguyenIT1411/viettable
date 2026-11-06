@@ -243,7 +243,7 @@ public class SupportChatFragment extends BaseFragment implements SignalRManager.
         String delivery = SupportText.delivery(m, conversation);
         if (!delivery.isEmpty()) meta = meta.isEmpty() ? delivery : meta + " · " + delivery;
         if (!meta.isEmpty()) box.addView(caption(meta, side));
-        box.setContentDescription(SupportText.sender(m) + ": " + m.body + ". " + meta);
+        box.setContentDescription(SupportText.spoken(m, meta));
         return box;
     }
 
