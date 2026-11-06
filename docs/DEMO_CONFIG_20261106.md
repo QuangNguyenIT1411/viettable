@@ -1,4 +1,22 @@
-# Đề xuất cấu hình demo (06/11/2026) — CHƯA NHẬP
+# Cấu hình demo (06/11/2026) — ĐÃ CHỐT, ĐÃ NHẬP (trừ toạ độ Gò Vấp, Bình Thạnh)
+
+> **Chốt 06/11/2026 (chủ dự án duyệt) và đã nhập qua giao diện Admin Production lúc 20:1x** (tài khoản admin chủ dự án
+> đăng nhập sẵn; không chạy SQL). Quyết định của chủ dự án so với đề xuất bên dưới:
+> - Bỏ dấu chay: Gỏi cuốn (ID 9), Cải thìa xào dầu hào (ID 53) — **đã nhập**.
+> - Cay: ID 32 Không, ID 34 Không, ID 26 Có — **đã nhập**.
+> - Khẩu phần: ID 48 = 4, ID 49 = 4, ID 37 = 3 — **đã nhập**.
+> - Trà đá (ID 15): giữ 10.000đ, mô tả đổi thành "Trà đá giải khát" (bỏ "miễn phí") — **đã nhập**.
+> - Thêm 2 món chính chay cho cả 3 chi nhánh, không ảnh (ảnh mặc định của app), mô tả "Món chính chay.":
+>   **ID 58 "Đậu hũ sốt cà chua" 55.000đ** và **ID 59 "Cơm chiên chay" 50.000đ** — danh mục Món chính, đơn vị Phần,
+>   Chay Có, Cay Không, Khẩu phần 1 — **đã nhập**, có trên thực đơn cả 3 chi nhánh (API `/branches/{1,2,3}/menu`).
+> - Khu vực + ghép bàn Quận 1: đúng bảng mục 2 — **đã nhập** (20 bàn, tên khu "Khu A - Cửa sổ", "Khu B - Sảnh giữa",
+>   "Khu C - Sảnh trong", "Khu D - Bàn nhóm"; dùng dấu "-" thay "–").
+> - Toạ độ: Quận 1 = 10.7743, 106.7036 — **đã nhập**. Gò Vấp = 10.8345, 106.6660; Bình Thạnh = 10.8015, 106.7108 —
+>   **CHƯA nhập**: tài khoản admin đang dùng chỉ quản lý chi nhánh Quận 1 (trang "Vị trí chi nhánh" chỉ liệt kê Quận 1), cần
+>   admin của 2 chi nhánh kia.
+> Kiểm tra sau khi nhập (API công khai): 44/54 món có loại (10 món "gọi thêm" để trống), mọi món khớp bảng dưới + quyết định trên.
+
+## Đề xuất ban đầu (giữ để đối chiếu)
 
 Trạng thái: **chỉ là đề xuất**. Chưa ghi gì vào DB. Chủ dự án duyệt (sửa trực tiếp trong file này nếu muốn), rồi Claude nhập
 qua trang/API admin (không chạy SQL).
