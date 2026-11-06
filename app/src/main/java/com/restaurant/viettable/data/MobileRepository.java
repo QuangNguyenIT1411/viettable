@@ -286,6 +286,23 @@ public final class MobileRepository {
     }
 
     public void loadBranches(Callback<List<Branch>> callback) {
+        // G15 (owner 07/11, app only): the list kept on the phone shows at once; the server's list (a cold start can
+        // take ~7 s) refreshes it in the background and the screens follow the app state.
+        Object cached = publicCatalog.read("branches");
+        if (cached instanceof JSONArray && ((JSONArray) cached).length() > 0) {
+            List<Branch> fromPhone = applyBranches((JSONArray) cached);
+            finishSuccess(callback, fromPhone);
+            if (branchesLoading) return;
+            branchesLoading = true;
+            api().get("/api/mobile/v1/branches", false, new ApiClient.Callback() {
+                @Override public void onSuccess(Object body) {
+                    publicCatalog.write("branches", body);
+                    finishBranchRequests(applyBranches((JSONArray) body), null);
+                }
+                @Override public void onError(ApiException error) { finishBranchRequests(null, error); }
+            });
+            return;
+        }
         branchRequests.add(callback);
         if (branchesLoading) return;
         branchesLoading = true;
