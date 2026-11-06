@@ -10,8 +10,9 @@ test("the address remembers the open tab; unknown or empty opens the counter", (
   assert.equal(tabFromHash(undefined), "quay");
 });
 
-test("five tabs, the counter first", () => {
-  assert.deepEqual(CASHIER_TABS.map((t) => t.key), ["quay", "cho-thu-tien", "dat-ban", "phuc-vu", "chuyen-khoan"]);
+test("six tabs, the counter first, support last", () => {
+  assert.deepEqual(CASHIER_TABS.map((t) => t.key), ["quay", "cho-thu-tien", "dat-ban", "phuc-vu", "chuyen-khoan", "ho-tro"]);
+  assert.equal(tabFromHash("#ho-tro"), "ho-tro");
 });
 
 test("a waiting count is read as a whole phrase, not a bare number", () => {

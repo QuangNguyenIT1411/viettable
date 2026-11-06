@@ -1,4 +1,4 @@
-export type CashierTabKey = "quay" | "cho-thu-tien" | "dat-ban" | "phuc-vu" | "chuyen-khoan";
+export type CashierTabKey = "quay" | "cho-thu-tien" | "dat-ban" | "phuc-vu" | "chuyen-khoan" | "ho-tro";
 
 export type CashierTabDef = {
   key: CashierTabKey;
@@ -14,6 +14,8 @@ export const CASHIER_TABS: readonly CashierTabDef[] = [
   { key: "dat-ban", label: "Đặt bàn", icon: "bi-calendar-check", countNoun: "việc đặt bàn cần xử lý" },
   { key: "phuc-vu", label: "Gọi phục vụ", icon: "bi-bell", countNoun: "yêu cầu phục vụ" },
   { key: "chuyen-khoan", label: "Chuyển khoản", icon: "bi-bank", countNoun: "khoản chuyển cần xử lý" },
+  // Owner 06/11: support chat with customers of this branch; the count is unread customer messages.
+  { key: "ho-tro", label: "Hỗ trợ", icon: "bi-chat-dots", countNoun: "tin nhắn hỗ trợ chưa đọc" },
 ];
 
 /** "#cho-thu-tien" → that tab; anything unknown or empty → the counter. */

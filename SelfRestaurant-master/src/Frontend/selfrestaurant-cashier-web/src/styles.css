@@ -345,7 +345,7 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--space-2
 
 /* Work areas as big tab buttons (owner 30/10): one area on screen at a time, waiting work counted on its button. */
 .cashier-tabs {
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-2);
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-2);
   padding: var(--space-2); background: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
 }
@@ -386,3 +386,34 @@ hr { border: 0; border-top: 1px solid var(--color-border); margin: var(--space-2
 }
 @media (prefers-reduced-motion: reduce) { .cashier-tab { transition: none; } }
 @media print { .cashier-tabs { display: none; } }
+
+/* Support chat tab (owner 06/11). */
+.support-header-actions { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.support-layout { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.support-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); max-height: 70vh; overflow: auto; }
+.support-item { width: 100%; display: grid; gap: 4px; text-align: left; padding: var(--space-3); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); background: var(--color-surface); color: inherit; cursor: pointer; }
+.support-item.selected { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent); }
+.support-item-top { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+.support-unread { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--color-danger, #c0392b); color: #fff;
+  font-size: var(--text-sm); display: inline-flex; align-items: center; justify-content: center; }
+.support-topic { font-size: var(--text-sm); font-weight: 600; }
+.support-preview { font-size: var(--text-sm); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.support-item-meta { display: flex; gap: var(--space-2); align-items: center; font-size: var(--text-sm); }
+.support-thread { display: grid; gap: var(--space-3); min-width: 0; }
+.support-thread-head { display: flex; justify-content: space-between; gap: var(--space-3); align-items: flex-start; flex-wrap: wrap; }
+.support-context { padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface-2, var(--color-surface)); border: 1px dashed var(--color-border); display: grid; gap: 4px; }
+.support-messages { display: grid; gap: var(--space-2); max-height: 50vh; overflow: auto; padding: var(--space-2); }
+.support-older { justify-self: center; }
+.support-bubble { max-width: 78%; padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+.support-bubble.customer { justify-self: start; background: var(--color-surface); }
+.support-bubble.staff { justify-self: end; background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface)); }
+.support-bubble.auto { justify-self: center; background: transparent; border-style: dashed; color: var(--color-muted); font-size: var(--text-sm); }
+.support-bubble-who { font-size: var(--text-xs, 0.75rem); font-weight: 600; color: var(--color-muted); }
+.support-bubble-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.support-bubble-time { font-size: var(--text-xs, 0.75rem); color: var(--color-muted); }
+.support-quick { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.support-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); align-items: end; }
+.support-compose textarea { width: 100%; resize: vertical; }
+.support-empty { padding: var(--space-4); }
+@media (max-width: 900px) { .support-layout { grid-template-columns: 1fr; } .support-list { max-height: 40vh; } }

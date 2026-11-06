@@ -9,6 +9,7 @@ import { OnsitePaymentsPanel } from "../components/OnsitePaymentsPanel";
 import { BankTransferAlertsPanel } from "../components/BankTransferAlertsPanel";
 import { DepositsPanel } from "../components/DepositsPanel";
 import { WaitlistPanel } from "../components/WaitlistPanel";
+import { SupportPanel } from "../components/SupportPanel";
 import { ServiceRequestsPanel } from "../components/ServiceRequestsPanel";
 import { PendingReservationsPanel, ReservationActions } from "../components/PendingReservationsPanel";
 import { cashierApi } from "../lib/api";
@@ -165,6 +166,7 @@ export function DashboardPage({ onLogout }: Props) {
   const [depositTodoCount, setDepositTodoCount] = useState(0);
   const [serviceRequestCount, setServiceRequestCount] = useState(0);
   const [transferAlertCount, setTransferAlertCount] = useState(0);
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState<CashierTabKey>(() => tabFromHash(window.location.hash));
   const tabCounts: Record<CashierTabKey, number> = {
     "quay": 0,
@@ -172,6 +174,7 @@ export function DashboardPage({ onLogout }: Props) {
     "dat-ban": pendingReservationCount + depositTodoCount,
     "phuc-vu": serviceRequestCount,
     "chuyen-khoan": transferAlertCount,
+    "ho-tro": supportUnreadCount,
   };
   function openTab(key: CashierTabKey) {
     setActiveTab(key);
@@ -987,6 +990,11 @@ export function DashboardPage({ onLogout }: Props) {
 
       <div role="tabpanel" id="cashier-panel-phuc-vu" aria-labelledby="cashier-tab-phuc-vu" hidden={activeTab !== "phuc-vu"}>
         <ServiceRequestsPanel tables={dashboard.tables} events={staffEvents} live={realtimeLive} onCountChange={setServiceRequestCount} />
+      </div>
+
+      <div role="tabpanel" id="cashier-panel-ho-tro" aria-labelledby="cashier-tab-ho-tro" hidden={activeTab !== "ho-tro"}>
+        <SupportPanel events={staffEvents} live={realtimeLive} onUnreadChange={setSupportUnreadCount}
+          onOpenTab={(hash) => openTab(tabFromHash(hash))} />
       </div>
 
       <div role="tabpanel" id="cashier-panel-chuyen-khoan" aria-labelledby="cashier-tab-chuyen-khoan" hidden={activeTab !== "chuyen-khoan"}>

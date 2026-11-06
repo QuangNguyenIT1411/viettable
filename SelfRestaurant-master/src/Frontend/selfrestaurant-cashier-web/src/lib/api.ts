@@ -88,6 +88,19 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
   return payload as T;
 }
 
+export type SupportMessage = { supportMessageId: number; senderType: "CUSTOMER" | "STAFF" | "AUTO"; senderName?: string | null; body: string; createdAtUtc: string };
+export type SupportConversation = {
+  supportConversationId: number; customerId: number; customerName: string; branchId: number; topic: string; topicLabel: string;
+  contextType: string; contextId?: number | null; contextLabel?: string | null; status: string; waitingSinceUtc?: string | null;
+  lastMessageAtUtc: string; unread: number; lastMessage?: SupportMessage | null; customerLastReadMessageId: number;
+  staffLastReadMessageId: number; resolvedAtUtc?: string | null; resolvedByName?: string | null; createdAtUtc: string;
+};
+export type SupportDetail = {
+  conversation: SupportConversation; messages: SupportMessage[]; hasOlder: boolean;
+  context?: { type: string; id: number; label: string; status: string; actionLabel?: string | null; actionTab?: string | null } | null;
+};
+export type SupportQuickReply = { supportQuickReplyId: number; title: string; body: string };
+
 export const cashierApi = {
   getOrderTransferQr: (orderId: number, amount: number, signal?: AbortSignal) =>
     request<TransferQrDto>(`/api/gateway/staff/cashier/transfer-qr?orderId=${orderId}&amount=${Math.round(amount)}`, { signal }),
@@ -98,6 +111,19 @@ export const cashierApi = {
     `/api/gateway/staff/cashier/onsite-payments/${id}/confirm`, { method: "POST", body: "{}" }),
   cancelOnsitePayment: (id: number) => request<{ paymentId: number; status: string }>(
     `/api/gateway/staff/cashier/onsite-payments/${id}/cancel`, { method: "POST", body: "{}" }),
+  // Support chat (owner 06/11): the branch's conversations with customers.
+  getSupportConversations: (includeResolved: boolean, signal?: AbortSignal) =>
+    request<{ items: SupportConversation[] }>(`/api/cashier/support/conversations?includeResolved=${includeResolved}`, { signal }),
+  getSupportConversation: (id: number, beforeId?: number, signal?: AbortSignal) =>
+    request<SupportDetail>(`/api/cashier/support/conversations/${id}${beforeId ? `?beforeId=${beforeId}` : ""}`, { signal }),
+  replySupport: (id: number, body: string) =>
+    request<{ conversation: SupportConversation; message: SupportMessage }>(`/api/cashier/support/conversations/${id}/messages`, { method: "POST", body: JSON.stringify({ body }) }),
+  readSupport: (id: number, lastMessageId: number) =>
+    request<SupportConversation>(`/api/cashier/support/conversations/${id}/read`, { method: "POST", body: JSON.stringify({ lastMessageId }) }),
+  resolveSupport: (id: number) =>
+    request<SupportConversation>(`/api/cashier/support/conversations/${id}/resolve`, { method: "POST", body: "{}" }),
+  getSupportQuickReplies: (signal?: AbortSignal) =>
+    request<{ items: SupportQuickReply[] }>("/api/cashier/support/quick-replies", { signal }),
   getWaitlist: (signal?: AbortSignal) => request<{ items: WaitlistItem[]; offerMinutes: number }>("/api/cashier/waitlist", { signal }),
   getDeposits: (signal?: AbortSignal) => request<DepositListItem[]>("/api/cashier/deposits", { signal }),
   markDepositRefunded: (depositId: number) =>

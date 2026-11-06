@@ -59,6 +59,7 @@ export type AdminPromotionRequest = {
 };
 
 /** Service fee / VAT of one branch (owner 05/11/2026); 0 = off. */
+export type SupportQuickReplyDto = { supportQuickReplyId: number; branchId?: number | null; title: string; body: string; sortOrder: number; isActive: boolean };
 export type DishAttributesDto = { dishId: number; name: string; price: number; categoryId: number; course?: string | null;
   isSpicy?: boolean | null; servings?: number | null; isVegetarian?: boolean | null };
 export type BranchChargeDto = { branchId: number; serviceFeePercent: number; vatPercent: number; updatedAtUtc: string; updatedByName?: string | null };
@@ -92,6 +93,15 @@ export type AdminVoucherRequest = {
 };
 
 export const adminApi = {
+  getSupportHours: () => request<{ hours: { openFrom?: string | null; openTo?: string | null } | null; branchName?: string | null; branchOpeningHours?: string | null }>("/api/gateway/admin/support/hours"),
+  saveSupportHours: (openFrom: string, openTo: string) =>
+    request<{ openFrom?: string | null; openTo?: string | null }>("/api/gateway/admin/support/hours", { method: "PUT", body: JSON.stringify({ openFrom, openTo }) }),
+  getSupportQuickReplies: () => request<{ items: SupportQuickReplyDto[] }>("/api/gateway/admin/support/quick-replies"),
+  createSupportQuickReply: (body: { title: string; body: string; sortOrder: number; isActive: boolean }) =>
+    request<SupportQuickReplyDto>("/api/gateway/admin/support/quick-replies", { method: "POST", body: JSON.stringify(body) }),
+  updateSupportQuickReply: (id: number, body: { title: string; body: string; sortOrder: number; isActive: boolean }) =>
+    request<SupportQuickReplyDto>(`/api/gateway/admin/support/quick-replies/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteSupportQuickReply: (id: number) => request<unknown>(`/api/gateway/admin/support/quick-replies/${id}`, { method: "DELETE" }),
   getDishAttributes: () => request<DishAttributesDto[]>("/api/gateway/admin/dish-attributes"),
   saveDishAttributes: (dishId: number, body: { course: string | null; isSpicy: boolean | null; servings: number | null; isVegetarian: boolean }) =>
     request<unknown>(`/api/gateway/admin/dishes/${dishId}/attributes`, { method: "PUT", body: JSON.stringify(body) }),

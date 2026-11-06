@@ -33,6 +33,7 @@ const navSections = [
       { label: "Vị trí chi nhánh", icon: "bi-geo-alt-fill", path: "/Admin/BranchLocations/Index", match: "/admin/branchlocations" },
       { label: "Khu vực & ghép bàn", icon: "bi-grid-3x3-gap-fill", path: "/Admin/TableGrouping/Index", match: "/admin/tablegrouping" },
       { label: "Thuộc tính món", icon: "bi-tags-fill", path: "/Admin/DishAttributes/Index", match: "/admin/dishattributes" },
+      { label: "Hỗ trợ khách", icon: "bi-chat-dots-fill", path: "/Admin/Support/Index", match: "/admin/support" },
       { label: "Đánh giá", icon: "bi-star-fill", path: "/Admin/Reviews/Index", match: "/admin/reviews" },
     ],
   },
