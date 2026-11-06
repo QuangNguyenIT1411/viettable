@@ -66,9 +66,11 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         com.restaurant.viettable.network.BiometricTokenStore.initialize(getApplicationContext());
         com.restaurant.viettable.util.ImageLoader.getInstance().initialize(getApplicationContext());
         com.restaurant.viettable.data.GreetingNameStore.getInstance().initialize(getApplicationContext());
+        com.restaurant.viettable.data.NotificationInboxStore.getInstance().initialize(getApplicationContext());
         ApiClient.getInstance().setSessionInvalidatedListener(this::showExpiredSession);
         SignalRManager.getInstance().initialize();
         appStateManager = AppStateManager.getInstance();
+        com.restaurant.viettable.data.MobileRepository.getInstance().restoreNotificationsFromDevice();
         appStateManager.initializeBranchSelection(getApplicationContext(),
                 MobileRepository.getInstance().hasSession() ? BiometricTokenStore.getInstance().sessionAccount() : null);
         appStateManager.setLoggedIn(MobileRepository.getInstance().hasSession());

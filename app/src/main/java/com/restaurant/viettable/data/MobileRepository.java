@@ -387,6 +387,10 @@ public final class MobileRepository {
                     }
                 }
                 boolean applied = state.replaceBranchCatalog(branchId, categories, foods);
+                // Owner 07/11: warm the menu photos now so "Xem tất cả" / Thực đơn open with them already there.
+                List<String> photos = new ArrayList<>();
+                for (FoodItem food : foods) if (food.getImageUrl() != null) photos.add(food.getImageUrl());
+                com.restaurant.viettable.util.ImageLoader.getInstance().prefetch(photos);
                 android.util.Log.i("CatalogPerf", "map branch=" + branchId + " categories=" + categories.size()
                         + " dishes=" + foods.size() + " applied=" + applied + " mapMs="
                         + (android.os.SystemClock.elapsedRealtime() - startedAt));
@@ -502,20 +506,8 @@ public final class MobileRepository {
         api().get("/api/mobile/v1/notifications?limit=100", true, new ApiClient.Callback() {
             @Override public void onSuccess(Object body) {
                 JSONArray rows = ((JSONObject) body).optJSONArray("items");
-                List<NotificationItem> values = new ArrayList<>();
-                if (rows != null) for (int i = 0; i < rows.length(); i++) {
-                    JSONObject row = rows.optJSONObject(i);
-                    String type = SafeText.json(row, "type");
-                    String title = SafeText.json(row, "title", "");
-                    NotificationItem item = new NotificationItem(String.valueOf(row.optLong("notificationId")),
-                            NotificationRules.typeOf(SafeText.json(row, "category", null), type),
-                            SafeText.isBlank(title) ? StatusLabels.notificationTitle(type) : title,
-                            StatusLabels.notificationMessage(SafeText.json(row, "message"), row.optLong("orderId")),
-                            SafeText.json(row, "createdAtUtc"), row.optBoolean("isRead"));
-                    item.setRefId(row.optLong("refId"));
-                    item.setEventName(type);
-                    values.add(item);
-                }
+                List<NotificationItem> values = parseNotificationRows(rows);
+                NotificationInboxStore.getInstance().remember(BiometricTokenStore.getInstance().sessionAccount(), rows);
                 state.replaceNotifications(values);
                 callback.onSuccess(values);
             }
@@ -1825,10 +1817,37 @@ public final class MobileRepository {
         } catch (JSONException e) { callback.onError(jsonError()); }
     }
 
+    /** Cold start: show the inbox kept on this phone for the signed-in account until the fresh one arrives (owner 07/11). */
+    public void restoreNotificationsFromDevice() {
+        if (!api().hasSession() || !state.getNotifications().isEmpty()) return;
+        JSONArray rows = NotificationInboxStore.getInstance().rowsFor(BiometricTokenStore.getInstance().sessionAccount());
+        if (rows != null) state.replaceNotifications(parseNotificationRows(rows));
+    }
+
+    static List<NotificationItem> parseNotificationRows(JSONArray rows) {
+        List<NotificationItem> values = new ArrayList<>();
+        if (rows != null) for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.optJSONObject(i);
+            if (row == null) continue;
+            String type = SafeText.json(row, "type");
+            String title = SafeText.json(row, "title", "");
+            NotificationItem item = new NotificationItem(String.valueOf(row.optLong("notificationId")),
+                    NotificationRules.typeOf(SafeText.json(row, "category", null), type),
+                    SafeText.isBlank(title) ? StatusLabels.notificationTitle(type) : title,
+                    StatusLabels.notificationMessage(SafeText.json(row, "message"), row.optLong("orderId")),
+                    SafeText.json(row, "createdAtUtc"), row.optBoolean("isRead"));
+            item.setRefId(row.optLong("refId"));
+            item.setEventName(type);
+            values.add(item);
+        }
+        return values;
+    }
+
     public void clearLocalSession() {
         com.restaurant.viettable.reminder.ReservationReminders.clearAll();
         BiometricTokenStore.getInstance().forgetSession();
         GreetingNameStore.getInstance().clear();
+        NotificationInboxStore.getInstance().clear();
         state.useBranchScope(null);
         SignalRManager.getInstance().stopAndClear();
         api().clearSession();

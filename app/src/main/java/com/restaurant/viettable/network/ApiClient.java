@@ -186,7 +186,8 @@ public final class ApiClient {
         connection.setRequestProperty("Accept", "application/json");
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
         connection.setRequestProperty("X-Correlation-Id", "android-" + UUID.randomUUID());
-        boolean catalogTiming = "GET".equals(method) && path.matches("/api/mobile/v1/branches(?:/[0-9]+/menu)?");
+        boolean catalogTiming = "GET".equals(method)
+                && path.matches("/api/mobile/v1/(?:branches(?:/[0-9]+/menu)?|notifications(?:\\?.*)?)");
         long requestStarted = android.os.SystemClock.elapsedRealtime();
         if (authenticated) {
             if (!token.isEmpty()) connection.setRequestProperty("Authorization", "Bearer " + token);
