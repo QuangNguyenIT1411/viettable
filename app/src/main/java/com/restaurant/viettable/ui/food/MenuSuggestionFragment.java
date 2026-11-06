@@ -55,6 +55,14 @@ public class MenuSuggestionFragment extends BaseFragment {
 
     private void ask() {
         if (busy) return;
+        // The keyboard must not stay over the results (found on the Samsung, 06/11).
+        View focused = requireActivity().getCurrentFocus();
+        if (focused != null) {
+            focused.clearFocus();
+            android.view.inputmethod.InputMethodManager ime = (android.view.inputmethod.InputMethodManager)
+                    requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+            if (ime != null) ime.hideSoftInputFromWindow(focused.getWindowToken(), 0);
+        }
         if (branchId == null) { status("Chưa chọn chi nhánh. Quay lại Thực đơn để chọn chi nhánh."); return; }
         int people = number(binding.etPeople.getText());
         int vegetarians = number(binding.etVegetarians.getText());

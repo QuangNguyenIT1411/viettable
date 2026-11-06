@@ -172,6 +172,8 @@ public class ResTableLayoutFragment extends BaseFragment {
         if (combinationChosen && combination != null) text = "Đang chọn: " + combination.label + " (" + combination.seats + " người, ghép bàn)";
         else if (selected != null) text = "Đang chọn: Bàn " + selected.tableNumber + " (" + selected.seats + " người)";
         else if (!loaded) text = "Đang tải sơ đồ bàn…";
+        else if (TableMapRules.availableCount(tables) == 0 && combination != null)
+            text = "Không còn bàn đơn đủ chỗ. Bấm \"" + combination.buttonText() + "\" ở trên để ghép bàn.";
         else if (TableMapRules.availableCount(tables) == 0) text = "Khung giờ này chưa còn bàn phù hợp. Bấm \"Hết bàn?\" để xem gợi ý.";
         else text = "Chạm vào một bàn trống để chọn";
         binding.tvSelectedTableBanner.setText(notice == null ? text : notice + "\n" + text);
