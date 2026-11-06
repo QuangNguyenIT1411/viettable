@@ -56,6 +56,18 @@
                     android:layout_weight="1" />
 
                 <TextView
+                    android:id="@+id/btnAssistantShortcut"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/pd_chip_idle"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:paddingHorizontal="18dp"
+                    android:text="Trợ lý"
+                    android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
+                <TextView
                     android:id="@+id/btnHistoryShortcut"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

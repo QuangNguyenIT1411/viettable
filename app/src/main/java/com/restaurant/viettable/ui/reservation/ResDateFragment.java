@@ -63,6 +63,7 @@ public class ResDateFragment extends BaseFragment {
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
         binding.btnHistoryShortcut.setOnClickListener(v -> navigateTo(new ResHistoryFragment()));
+        binding.btnAssistantShortcut.setOnClickListener(v -> navigateTo(new BookingAssistantFragment()));
 
         // Wizard progress
         binding.wizardProgress.tvWizardStepName.setText(getString(R.string.res_wizard_step1));
