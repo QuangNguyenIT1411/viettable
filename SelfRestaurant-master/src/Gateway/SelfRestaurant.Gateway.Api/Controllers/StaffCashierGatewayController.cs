@@ -364,6 +364,11 @@ public sealed class StaffCashierGatewayController : ControllerBase
             {
                 selectedTableIds.Add(request.TableId.Value);
             }
+            // A booked group of pushed-together tables (owner 06/11) is seated together unless the cashier picks others.
+            if (selectedTableIds.Count == 0 && previousState.AssignedTables is { Count: > 1 } bookedGroup)
+            {
+                selectedTableIds.AddRange(bookedGroup.OrderByDescending(x => x.IsPrimary).Select(x => x.TableId).Distinct());
+            }
             if (selectedTableIds.Count == 0 && previousState.TableId is > 0)
             {
                 selectedTableIds.Add(previousState.TableId.Value);

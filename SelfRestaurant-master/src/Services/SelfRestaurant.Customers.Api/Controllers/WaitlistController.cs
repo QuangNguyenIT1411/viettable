@@ -24,7 +24,7 @@ public sealed class WaitlistController : ControllerBase
 
     public sealed record CustomerRequest(int CustomerId);
 
-    public sealed record OfferRequest(int TableId, DateTime ReservedAtUtc, int HoldMinutes);
+    public sealed record OfferRequest(int TableId, DateTime ReservedAtUtc, int HoldMinutes, IReadOnlyList<int>? AdditionalTableIds = null);
 
     public sealed record AcceptRequest(int CustomerId, string? InitialStatus = null, decimal? DepositAmount = null, DateTime? DepositDueAtUtc = null);
 
@@ -118,9 +118,11 @@ public sealed class WaitlistController : ControllerBase
         var now = DateTime.UtcNow;
         await using var transaction = _db.Database.IsRelational()
             ? await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct) : null;
+        var group = ReservationOccupancy.Group(request.TableId, request.AdditionalTableIds);
         if (_db.Database.IsRelational())
-            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, $"reservation-table:{entry.BranchId}:{request.TableId}", ct);
-        if (await TableTakenAsync(entry.BranchId, request.TableId, reservedAt, now, ct))
+            foreach (var groupTableId in group.OrderBy(x => x))
+                await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, $"reservation-table:{entry.BranchId}:{groupTableId}", ct);
+        if (await ReservationOccupancy.AnyTakenAsync(_db, entry.BranchId, group, reservedAt, null, now, ct))
             return Conflict(new { code = "reservation_slot_unavailable", message = "Bàn đã được giữ trong khung giờ này." });
         var hold = new Reservation
         {
@@ -130,6 +132,7 @@ public sealed class WaitlistController : ControllerBase
             ArrivalWindowMinutes = 30, Status = WaitlistRules.HoldStatus, Note = entry.Note, CreatedAtUtc = now,
             HoldExpiresAtUtc = now.AddMinutes(holdMinutes)
         };
+        if (group.Count > 1) ReservationOccupancy.SetGroup(hold, group, now);
         _db.Reservations.Add(hold);
         try
         {
@@ -263,20 +266,6 @@ public sealed class WaitlistController : ControllerBase
         hold.CancelledAtUtc = now;
         hold.StatusReason = reason;
         hold.UpdatedAtUtc = now;
-    }
-
-    private async Task<bool> TableTakenAsync(int branchId, int tableId, DateTime reservedAt, DateTime now, CancellationToken ct)
-    {
-        var closed = new[] { "Cancelled", "NoShow", "CheckedIn", "Completed", "Rejected" };
-        var from = reservedAt.AddMinutes(-120);
-        var to = reservedAt.AddMinutes(120);
-        var reservations = await _db.Reservations.AsNoTracking()
-            .Where(x => x.BranchId == branchId && x.ReservedAt > from && x.ReservedAt < to && !closed.Contains(x.Status))
-            .Select(x => new { x.TableId, x.Status, x.DepositDueAtUtc, x.HoldExpiresAtUtc, Tables = x.ReservationTables.Select(t => t.TableId).ToList() })
-            .ToListAsync(ct);
-        return reservations.Any(x => (x.TableId == tableId || x.Tables.Contains(tableId))
-            && !(x.Status == CustomersController.PendingDeposit && x.DepositDueAtUtc < now)
-            && !(x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc < now));
     }
 
     private async Task<string> NextCodeAsync(DateTime reservedAt, CancellationToken ct)

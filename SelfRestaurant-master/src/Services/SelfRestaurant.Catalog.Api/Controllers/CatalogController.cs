@@ -61,7 +61,7 @@ public sealed class CatalogController : ControllerBase
             return NotFound();
         }
 
-        var tables = await _db.DiningTables
+        var rows = await _db.DiningTables
             .AsNoTracking()
             .Where(x => x.BranchID == branchId && (x.IsActive ?? true))
             .Include(x => x.Status)
@@ -77,8 +77,19 @@ public sealed class CatalogController : ControllerBase
                 statusCode = x.Status.StatusCode,
                 statusName = x.Status.StatusName,
                 isAvailable = x.Status.StatusCode == "AVAILABLE",
+                area = x.Area,
             })
             .ToListAsync(cancellationToken);
+        // Tables that can be pushed together (owner 06/11); both directions are stored.
+        var ids = rows.Select(x => x.tableId).ToArray();
+        var links = await _db.DiningTableLinks.AsNoTracking()
+            .Where(x => ids.Contains(x.TableId) && ids.Contains(x.LinkedTableId)).ToListAsync(cancellationToken);
+        var tables = rows.Select(x => new
+        {
+            x.tableId, x.branchId, x.displayTableNumber, x.numberOfSeats, x.qrCode, x.statusCode, x.statusName, x.isAvailable,
+            x.area,
+            linkedTableIds = links.Where(l => l.TableId == x.tableId).Select(l => l.LinkedTableId).OrderBy(id => id).ToArray(),
+        }).ToList();
 
         return Ok(new
         {

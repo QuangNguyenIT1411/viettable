@@ -31,6 +31,7 @@ const navSections = [
       { label: "Voucher", icon: "bi-ticket-perforated-fill", path: "/Admin/Vouchers/Index", match: "/admin/vouchers" },
       { label: "Phí & VAT", icon: "bi-percent", path: "/Admin/Charges/Index", match: "/admin/charges" },
       { label: "Vị trí chi nhánh", icon: "bi-geo-alt-fill", path: "/Admin/BranchLocations/Index", match: "/admin/branchlocations" },
+      { label: "Khu vực & ghép bàn", icon: "bi-grid-3x3-gap-fill", path: "/Admin/TableGrouping/Index", match: "/admin/tablegrouping" },
       { label: "Đánh giá", icon: "bi-star-fill", path: "/Admin/Reviews/Index", match: "/admin/reviews" },
     ],
   },

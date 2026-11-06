@@ -72,13 +72,38 @@ public sealed class MobileReservationsGatewayController : ControllerBase
 
         var validation = ValidateSchedule(request.PartySize, request.ReservedAt);
         if (validation is not null) return validation;
-        var available = await FindAvailableTables(request.BranchId, request.ReservedAt, request.PartySize, null, ct);
+        var seatingResult = await FindSeating(request.BranchId, request.ReservedAt, request.PartySize, null, ct);
+        var available = (seatingResult.Layout, seatingResult.Available);
         if (available.Layout is null) return MobileError("branch_not_found", "Không tìm thấy chi nhánh.", 404);
-        var table = request.TableId is > 0
-            ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value)
-            : available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
-        // The guest picked this table on the map but someone else got it first (or it just became unusable).
-        if (table is null && request.TableId is > 0) return TableTaken(available.Layout, request.TableId.Value);
+        var chosenGroup = (request.TableIds ?? Array.Empty<int>()).Where(x => x > 0).Distinct().ToArray();
+        BranchTableDto? table;
+        IReadOnlyList<int> others = Array.Empty<int>();
+        if (chosenGroup.Length >= 2)
+        {
+            // A group the guest took on the map (owner 06/11): still free, same area, joined, enough seats.
+            var group = chosenGroup.Select(id => seatingResult.Free?.FirstOrDefault(x => x.TableId == id)).ToArray();
+            if (group.Any(x => x is null)) return TableTaken(available.Layout, chosenGroup.First(id => group[Array.IndexOf(chosenGroup, id)] is null));
+            if (!TableCombiner.IsValidGroup(group!, request.PartySize))
+                return MobileError("table_group_invalid", "Các bàn này không ghép được cho số khách đã chọn. Vui lòng chọn lại trên sơ đồ.", 409);
+            var ordered = group!.OrderBy(x => x!.DisplayTableNumber).ToArray();
+            table = ordered[0];
+            others = ordered.Skip(1).Select(x => x!.TableId).ToArray();
+        }
+        else
+        {
+            table = request.TableId is > 0
+                ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value)
+                : available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
+            // The guest picked this table on the map but someone else got it first (or it just became unusable).
+            if (table is null && request.TableId is > 0) return TableTaken(available.Layout, request.TableId.Value);
+            // No single table seats the party: the best group of pushed-together tables (owner 06/11).
+            if (table is null && seatingResult.Combination is { Count: > 1 } best)
+            {
+                var ordered = best.OrderBy(x => x.DisplayTableNumber).ToArray();
+                table = ordered[0];
+                others = ordered.Skip(1).Select(x => x.TableId).ToArray();
+            }
+        }
         if (table is null)
             return await NoTableError(request.BranchId, request.ReservedAt, request.PartySize, null, null, null, ct);
 
@@ -90,7 +115,9 @@ public sealed class MobileReservationsGatewayController : ControllerBase
                 "Vui lòng nhập số điện thoại liên hệ (số trong hồ sơ của bạn chưa hợp lệ).", 422, new { field = "contactPhone" });
         var contactName = string.IsNullOrWhiteSpace(request.ContactName) ? profile.Name : request.ContactName.Trim();
         if (contactName.Length > 100) contactName = contactName[..100];
-        var hash = Hash(new { request.BranchId, TableId = table.TableId, request.PartySize, ReservedAt = request.ReservedAt.UtcDateTime, Note = request.Note?.Trim() });
+        var hash = others.Count == 0
+            ? Hash(new { request.BranchId, TableId = table.TableId, request.PartySize, ReservedAt = request.ReservedAt.UtcDateTime, Note = request.Note?.Trim() })
+            : Hash(new { request.BranchId, TableId = table.TableId, Others = others, request.PartySize, ReservedAt = request.ReservedAt.UtcDateTime, Note = request.Note?.Trim() });
         // From the threshold on (feature flag on), the booking waits for its deposit; unpaid after 15 minutes it is
         // cancelled and the table freed (docs/DEPOSIT_PLAN.md).
         var depositAmount = _deposits.RequiredAmount(request.PartySize);
@@ -102,7 +129,8 @@ public sealed class MobileReservationsGatewayController : ControllerBase
                 request.ReservedAt.UtcDateTime, request.Note, scopedKey, hash,
                 depositAmount > 0 ? SelfRestaurant.Deposits.DepositRules.ReservationPendingDeposit : null,
                 depositAmount > 0 ? depositAmount : null,
-                depositAmount > 0 ? SelfRestaurant.Deposits.DepositRules.DueAt(DateTime.UtcNow, _deposits.Options) : null), ct);
+                depositAmount > 0 ? SelfRestaurant.Deposits.DepositRules.DueAt(DateTime.UtcNow, _deposits.Options) : null,
+                others.Count > 0 ? others : null), ct);
             if (created is null) return MobileError("create_reservation_failed", "Không thể tạo đặt bàn.", 502);
             // Best effort: a missed Billing row is created by the app's first deposit read.
             try { await _deposits.EnsureCreatedAsync(created, ct); }
@@ -170,6 +198,18 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             return TableTaken(available.Layout, requested.TableId);
         var table = (request.TableId is > 0 ? available.Available.FirstOrDefault(x => x.TableId == request.TableId.Value) : null)
             ?? available.Available.OrderBy(x => x.NumberOfSeats).ThenBy(x => x.TableId).FirstOrDefault();
+        IReadOnlyList<int> updateOthers = Array.Empty<int>();
+        if (table is null)
+        {
+            // A larger party may still fit on pushed-together tables (owner 06/11).
+            var seatingResult = await FindSeating(owned.Reservation.BranchId, request.ReservedAt, request.PartySize, reservationId, ct);
+            if (seatingResult.Combination is { Count: > 1 } best)
+            {
+                var ordered = best.OrderBy(x => x.DisplayTableNumber).ToArray();
+                table = ordered[0];
+                updateOthers = ordered.Skip(1).Select(x => x.TableId).ToArray();
+            }
+        }
         if (table is null)
             return await NoTableError(owned.Reservation.BranchId, request.ReservedAt, request.PartySize, reservationId, null, null, ct,
                 includeOtherBranches: false);
@@ -178,7 +218,7 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         {
             var updated = await _customers.UpdateReservationAsync(reservationId,
                 new UpdateReservationInternalRequest(table.TableId, request.PartySize, request.ReservedAt.UtcDateTime,
-                    request.Note, $"c{CurrentCustomerId()}:update:{key.Value}", hash), ct);
+                    request.Note, $"c{CurrentCustomerId()}:update:{key.Value}", hash, updateOthers.Count > 0 ? updateOthers : null), ct);
             if (updated is null) return MobileError("reservation_not_found", "Không tìm thấy đặt bàn.", 404);
             await _inbox.PushAsync(CurrentCustomerId(), ct);
             await NudgeCashierAsync(updated.BranchId);
@@ -331,6 +371,9 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         catch (ApiClientException ex) { return DownstreamError(ex, "submit_preorder_failed"); }
     }
 
+    private Task<TableAvailability.Result> FindSeating(int branchId, DateTimeOffset at, int partySize, int? excludeReservationId, CancellationToken ct) =>
+        HttpContext.RequestServices.GetRequiredService<TableAvailability>().FindAsync(branchId, at, partySize, excludeReservationId, ct);
+
     private async Task<(BranchTablesResponse? Layout, IReadOnlyList<BranchTableDto> Available)> FindAvailableTables(
         int branchId, DateTimeOffset at, int partySize, int? excludeReservationId, CancellationToken ct)
     {
@@ -357,13 +400,13 @@ public sealed class MobileReservationsGatewayController : ControllerBase
             var owned = await GetOwned(excludeReservationId.Value, ct);
             if (owned.Error is not null) return owned.Error;
         }
-        var here = await FindAvailableTables(branchId, reservedAt, partySize, excludeReservationId, ct);
+        var here = await FindSeating(branchId, reservedAt, partySize, excludeReservationId, ct);
         if (here.Layout is null) return MobileError("branch_not_found", "Không tìm thấy chi nhánh.", 404);
         var times = await BuildSuggestions(branchId, reservedAt, partySize, excludeReservationId, ct);
         var branches = excludeReservationId is > 0
             ? Array.Empty<MobileBranchSuggestion>()
             : await BuildBranchSuggestions(branchId, reservedAt, partySize, latitude, longitude, ct);
-        return Ok(new MobileAlternativesResponse(here.Available.Count > 0, here.Available.Count, times, branches));
+        return Ok(new MobileAlternativesResponse(here.OptionCount > 0, here.OptionCount, times, branches));
     }
 
     private async Task<ObjectResult> NoTableError(int branchId, DateTimeOffset at, int partySize, int? excludeReservationId,
@@ -386,9 +429,9 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var suggestions = new List<MobileAvailabilitySuggestion>();
         foreach (var candidate in candidates.Take(AvailabilitySuggestions.MaxTimeChecks))
         {
-            var result = await FindAvailableTables(branchId, candidate, partySize, excludeReservationId, ct);
-            if (result.Available.Count > 0)
-                suggestions.Add(new MobileAvailabilitySuggestion(candidate, result.Available.Count,
+            var result = await FindSeating(branchId, candidate, partySize, excludeReservationId, ct);
+            if (result.OptionCount > 0)
+                suggestions.Add(new MobileAvailabilitySuggestion(candidate, result.OptionCount,
                     ReservationRules.LocalClock(candidate.UtcDateTime), LocalDate(candidate)));
             if (suggestions.Count >= AvailabilitySuggestions.MaxTimeSuggestions) break;
         }
@@ -402,10 +445,10 @@ public sealed class MobileReservationsGatewayController : ControllerBase
         var options = new List<AvailabilitySuggestions.BranchOption>();
         foreach (var branch in branches)
         {
-            var result = await FindAvailableTables(branch.BranchId, at, partySize, null, ct);
-            if (result.Layout is null || result.Available.Count == 0) continue;
+            var result = await FindSeating(branch.BranchId, at, partySize, null, ct);
+            if (result.Layout is null || result.OptionCount == 0) continue;
             options.Add(new AvailabilitySuggestions.BranchOption(branch.BranchId, branch.Name, branch.Location,
-                GeoDistance.Km(latitude, longitude, branch.Latitude, branch.Longitude), result.Available.Count));
+                GeoDistance.Km(latitude, longitude, branch.Latitude, branch.Longitude), result.OptionCount));
         }
         return AvailabilitySuggestions.OrderBranches(options)
             .Select(x => new MobileBranchSuggestion(x.BranchId, x.Name, x.Location, x.DistanceKm, x.AvailableTableCount, at,

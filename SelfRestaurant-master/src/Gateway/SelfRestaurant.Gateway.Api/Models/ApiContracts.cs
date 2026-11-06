@@ -15,7 +15,9 @@ public sealed record BranchTableDto(
     string? QrCode,
     string? StatusCode,
     string StatusName,
-    bool IsAvailable);
+    bool IsAvailable,
+    string? Area = null,
+    IReadOnlyList<int>? LinkedTableIds = null);
 
 public sealed record MenuResponse(int BranchId, string BranchName, IReadOnlyList<MenuCategoryDto> Categories);
 

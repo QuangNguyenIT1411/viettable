@@ -45,6 +45,10 @@ public class ReservationDraft implements Serializable {
     public void setAreaName(String areaName) { this.areaName = areaName; }
 
     public String getTableId() { return tableId; }
+    /** Pushed-together tables chosen on the map (owner 06/11); empty for a single table. */
+    private java.util.List<String> groupTableIds = new java.util.ArrayList<>();
+    public java.util.List<String> getGroupTableIds() { return groupTableIds == null ? new java.util.ArrayList<>() : groupTableIds; }
+    public void setGroupTableIds(java.util.List<String> ids) { groupTableIds = ids == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(ids); }
     public void setTableId(String tableId) { this.tableId = tableId; }
 
     public String getNote() { return note; }

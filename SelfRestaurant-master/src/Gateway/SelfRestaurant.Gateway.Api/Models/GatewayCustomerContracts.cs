@@ -64,7 +64,8 @@ public sealed record CreateReservationApiRequest(
     string? RequestHash = null,
     string? InitialStatus = null,
     decimal? DepositAmount = null,
-    DateTime? DepositDueAtUtc = null);
+    DateTime? DepositDueAtUtc = null,
+    IReadOnlyList<int>? AdditionalTableIds = null);
 
 public sealed record ReplaceReservationPreOrderItemsApiRequest(
     IReadOnlyList<ReservationPreOrderItemRequest>? Items);
@@ -125,7 +126,7 @@ public sealed record ReservationPreOrderItemDto(
     DateTime? ConvertedAtUtc);
 
 public sealed record UpdateReservationInternalRequest(int? TableId, int PartySize, DateTime ReservedAt,
-    string? Note, string? MutationKey, string? MutationHash);
+    string? Note, string? MutationKey, string? MutationHash, IReadOnlyList<int>? AdditionalTableIds = null);
 public sealed record SubmitPreOrderInternalRequest(string MutationKey, string MutationHash);
 
 public sealed record CheckInReservationRequest(

@@ -76,8 +76,10 @@ public sealed class CustomersClient : ApiClientBase
     public Task<JsonElement> JoinWaitlistAsync(object body, CancellationToken ct) =>
         PostForAsync<object, JsonElement>("/api/customers/waitlist", body, ct);
 
-    public Task<JsonElement> OfferWaitlistAsync(int entryId, int tableId, DateTime reservedAtUtc, int holdMinutes, CancellationToken ct) =>
-        PostForAsync<object, JsonElement>($"/api/internal/waitlist/{entryId}/offer", new { tableId, reservedAtUtc, holdMinutes }, ct);
+    public Task<JsonElement> OfferWaitlistAsync(int entryId, int tableId, DateTime reservedAtUtc, int holdMinutes, CancellationToken ct,
+        IReadOnlyList<int>? additionalTableIds = null) =>
+        PostForAsync<object, JsonElement>($"/api/internal/waitlist/{entryId}/offer",
+            new { tableId, reservedAtUtc, holdMinutes, additionalTableIds }, ct);
 
     public Task<JsonElement> AcceptWaitlistAsync(int entryId, object body, CancellationToken ct) =>
         PostForAsync<object, JsonElement>($"/api/customers/waitlist/{entryId}/accept", body, ct);

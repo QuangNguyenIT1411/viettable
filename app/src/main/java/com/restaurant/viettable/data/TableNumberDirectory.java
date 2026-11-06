@@ -20,4 +20,17 @@ public final class TableNumberDirectory {
     }
 
     public void clear() { branches.clear(); }
+
+    /** "Bàn 5 + 6" from "Bàn 5", "Bàn 6"; null when a number is unknown (the caller keeps its single label). */
+    public static String groupLabel(java.util.List<String> labels) {
+        if (labels == null || labels.size() < 2) return null;
+        StringBuilder text = new StringBuilder("Bàn ");
+        for (int i = 0; i < labels.size(); i++) {
+            String label = labels.get(i);
+            if (label == null || !label.startsWith("Bàn ")) return null;
+            if (i > 0) text.append(" + ");
+            text.append(label.substring(4));
+        }
+        return text.toString();
+    }
 }

@@ -546,6 +546,11 @@ public final class MobileRepository {
             if (!draft.getContactPhone().isEmpty()) body.put("contactPhone", draft.getContactPhone());
             int selectedTable = Integer.parseInt(draft.getTableId());
             body.put("tableId", selectedTable > 0 ? selectedTable : JSONObject.NULL);
+            if (draft.getGroupTableIds().size() > 1) {
+                JSONArray group = new JSONArray();
+                for (String id : draft.getGroupTableIds()) group.put(Integer.parseInt(id));
+                body.put("tableIds", group);
+            }
             api().post("/api/mobile/v1/reservations", body, true, key("reservation"), tableAware(new ApiClient.Callback() {
                 @Override public void onSuccess(Object value) {
                     Reservation reservation = parseReservation((JSONObject) value);
@@ -597,6 +602,11 @@ public final class MobileRepository {
      * Every table of the branch for that time and party, each with its state (reservation item 5). The server
      * releases the reservation being changed (excludeReservationId) so its own table shows as free.
      */
+    private com.restaurant.viettable.model.TableCombination lastTableCombination;
+
+    /** The group proposed by the last table-map read, or null. */
+    public com.restaurant.viettable.model.TableCombination tableCombination() { return lastTableCombination; }
+
     // ---- Waitlist (owner 06/11) ----
 
     public void loadWaitlist(Callback<List<com.restaurant.viettable.model.WaitlistEntry>> callback) {
@@ -726,6 +736,16 @@ public final class MobileRepository {
                                 row.optInt("tableNumber"), row.optInt("numberOfSeats"),
                                 fullMap ? SafeText.json(row, "status", "INACTIVE") : com.restaurant.viettable.model.TableMapItem.AVAILABLE,
                                 fullMap ? SafeText.json(row, "statusLabel", "") : "Trống"));
+                    }
+                    // No single table seats the party: the server's pushed-together tables (owner 06/11).
+                    JSONObject combo = response.optJSONObject("combination");
+                    lastTableCombination = null;
+                    if (combo != null && combo.optJSONArray("tableIds") != null) {
+                        List<String> ids = new ArrayList<>();
+                        JSONArray idRows = combo.optJSONArray("tableIds");
+                        for (int i = 0; i < idRows.length(); i++) ids.add(String.valueOf(idRows.optInt(i)));
+                        if (ids.size() > 1) lastTableCombination = new com.restaurant.viettable.model.TableCombination(ids,
+                                SafeText.json(combo, "label", ""), combo.optInt("seats"));
                     }
                     callback.onSuccess(values);
                 }
@@ -1825,6 +1845,16 @@ public final class MobileRepository {
                 new ArrayList<>(), 0, reservationStatus(SafeText.json(row, "status")), row.optJSONArray("preOrderItems") != null && row.optJSONArray("preOrderItems").length() > 0,
                 SafeText.json(row, "customerName"), SafeText.json(row, "phoneNumber"));
         reservation.setTableLabel(tableLabel(branchId, reservation.getTableId()));
+        // Pushed-together tables (owner 06/11): "Bàn 5 + 6".
+        if (assignedTables != null && assignedTables.length() > 1) {
+            List<String> labels = new ArrayList<>();
+            for (int i = 0; i < assignedTables.length(); i++) {
+                JSONObject assigned = assignedTables.optJSONObject(i);
+                if (assigned != null) labels.add(tableLabel(branchId, String.valueOf(assigned.optInt("tableId"))));
+            }
+            String group = com.restaurant.viettable.data.TableNumberDirectory.groupLabel(labels);
+            if (group != null) reservation.setTableLabel(group);
+        }
         reservation.setReservedAt(reserved);
         reservation.setStatusReason(row.isNull("statusReason") ? null : SafeText.json(row, "statusReason", null));
         reservation.setDepositAmount(row.isNull("depositAmount") ? 0 : Math.round(row.optDouble("depositAmount", 0)));

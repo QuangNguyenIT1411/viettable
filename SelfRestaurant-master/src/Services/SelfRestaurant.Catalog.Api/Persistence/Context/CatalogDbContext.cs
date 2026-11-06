@@ -15,6 +15,7 @@ public sealed class CatalogDbContext : DbContext
     public DbSet<Categories> Categories => Set<Categories>();
     public DbSet<CategoryDish> CategoryDish => Set<CategoryDish>();
     public DbSet<DiningTables> DiningTables => Set<DiningTables>();
+    public DbSet<DiningTableLink> DiningTableLinks => Set<DiningTableLink>();
     public DbSet<DishIngredients> DishIngredients => Set<DishIngredients>();
     public DbSet<Dishes> Dishes => Set<Dishes>();
     public DbSet<IngredientBatches> IngredientBatches => Set<IngredientBatches>();
@@ -125,6 +126,13 @@ public sealed class CatalogDbContext : DbContext
                 .HasForeignKey(e => e.MenuCategoryID);
         });
 
+        modelBuilder.Entity<DiningTableLink>(entity =>
+        {
+            entity.ToTable("DiningTableLinks");
+            entity.HasKey(e => new { e.TableId, e.LinkedTableId });
+            entity.HasIndex(e => e.LinkedTableId).HasDatabaseName("IX_DiningTableLinks_Linked");
+        });
+
         modelBuilder.Entity<DiningTables>(entity =>
         {
             entity.HasKey(e => e.TableID);
@@ -137,6 +145,7 @@ public sealed class CatalogDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.QRCode).HasMaxLength(100);
+            entity.Property(e => e.Area).HasMaxLength(50);
             entity.Property(e => e.TableNumber).HasDefaultValue(0);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
             entity.Ignore(e => e.Orders);

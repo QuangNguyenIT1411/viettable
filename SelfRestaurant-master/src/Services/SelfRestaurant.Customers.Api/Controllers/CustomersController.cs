@@ -85,8 +85,10 @@ public sealed class CustomersController : ControllerBase
         await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         // Two guests confirming the same table at once (map, item 5): the second waits here, then sees the first
         // booking and gets 409. Without it SQL Server picked a deadlock victim and the guest saw a 500.
-        if (request.TableId is > 0 && _db.Database.IsRelational())
-            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, TableLock(request.BranchId, request.TableId.Value), cancellationToken);
+        var group = ReservationOccupancy.Group(request.TableId, request.AdditionalTableIds);
+        if (_db.Database.IsRelational())
+            foreach (var groupTableId in group.OrderBy(x => x)) // same order everywhere: no deadlock between two groups
+                await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, TableLock(request.BranchId, groupTableId), cancellationToken);
 
         if (idempotencyKey is not null)
         {
@@ -104,13 +106,7 @@ public sealed class CustomersController : ControllerBase
         }
 
         var holdNow = DateTime.UtcNow;
-        if (request.TableId is > 0 && await _db.Reservations.AnyAsync(x =>
-                x.BranchId == request.BranchId && x.TableId == request.TableId
-                && x.ReservedAt < request.ReservedAt.AddMinutes(120)
-                && x.ReservedAt.AddMinutes(120) > request.ReservedAt
-                && !ClosedReservationStatuses.Contains(x.Status)
-                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < holdNow)
-                && !(x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc < holdNow), cancellationToken))
+        if (await ReservationOccupancy.AnyTakenAsync(_db, request.BranchId, group, request.ReservedAt, null, holdNow, cancellationToken))
             return Conflict(new { code = "reservation_slot_unavailable", message = "Bàn đã được giữ trong khung giờ này." });
 
         var now = DateTime.UtcNow;
@@ -134,6 +130,8 @@ public sealed class CustomersController : ControllerBase
             IdempotencyKey = idempotencyKey,
             RequestHash = NormalizeOptional(request.RequestHash, 64)
         };
+        // Pushed-together tables (owner 06/11): every table of the group is held, the first one is the main table.
+        if (group.Count > 1) ReservationOccupancy.SetGroup(reservation, group, now);
 
         _db.Reservations.Add(reservation);
         try
@@ -307,16 +305,9 @@ public sealed class CustomersController : ControllerBase
         [FromQuery] int? excludeReservationId, CancellationToken cancellationToken)
     {
         if (branchId <= 0 || fromUtc >= toUtc) return BadRequest(new { code = "validation_failed", message = "Khoảng thời gian không hợp lệ." });
-        var query = _db.Reservations.AsNoTracking()
-            .Where(x => x.BranchId == branchId && x.TableId != null
-                && x.ReservedAt < toUtc && x.ReservedAt.AddMinutes(120) > fromUtc
-                && !ClosedReservationStatuses.Contains(x.Status)
-                // An unpaid deposit past its 15 minutes frees the table at once, before any read marks it cancelled.
-                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < DateTime.UtcNow)
-                // So does a waitlist hold nobody accepted in time.
-                && !(x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc < DateTime.UtcNow));
-        if (excludeReservationId is > 0) query = query.Where(x => x.ReservationId != excludeReservationId.Value);
-        return Ok(await query.Select(x => x.TableId!.Value).Distinct().ToListAsync(cancellationToken));
+        // An unpaid deposit past its 15 minutes, or a waitlist hold nobody accepted, frees its tables at once; a group
+        // booking holds all its pushed-together tables (ReservationOccupancy).
+        return Ok(await ReservationOccupancy.HeldTableIdsAsync(_db, branchId, fromUtc, toUtc, excludeReservationId, DateTime.UtcNow, cancellationToken));
     }
 
     /// <summary>
@@ -330,7 +321,8 @@ public sealed class CustomersController : ControllerBase
         if (branchId <= 0 || tableId <= 0 || fromUtc >= toUtc)
             return BadRequest(new { code = "validation_failed", message = "Khoảng thời gian không hợp lệ." });
         var hold = await _db.Reservations.AsNoTracking()
-            .Where(x => x.BranchId == branchId && x.TableId == tableId && x.ReservedAt >= fromUtc && x.ReservedAt <= toUtc
+            .Where(x => x.BranchId == branchId && (x.TableId == tableId || x.ReservationTables.Any(t => t.TableId == tableId))
+                && x.ReservedAt >= fromUtc && x.ReservedAt <= toUtc
                 && (x.Status == "Pending" || x.Status == "Confirmed" || x.Status == "CheckingIn"
                     || (x.Status == PendingDeposit && x.DepositDueAtUtc >= DateTime.UtcNow)
                     || (x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc >= DateTime.UtcNow)))
@@ -349,10 +341,12 @@ public sealed class CustomersController : ControllerBase
         if (_db.Database.IsRelational())
             await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, ReservationLock(reservationId), cancellationToken);
         // Then the target table (always reservation → table, so a change and a new booking cannot deadlock).
-        if (request.TableId is > 0 && _db.Database.IsRelational())
+        var updateGroup = ReservationOccupancy.Group(request.TableId, request.AdditionalTableIds);
+        if (updateGroup.Count > 0 && _db.Database.IsRelational())
         {
             var branchId = await _db.Reservations.Where(x => x.ReservationId == reservationId).Select(x => x.BranchId).FirstOrDefaultAsync(cancellationToken);
-            await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, TableLock(branchId, request.TableId.Value), cancellationToken);
+            foreach (var groupTableId in updateGroup.OrderBy(x => x))
+                await SelfRestaurant.CloudCompatibility.TransactionLocks.AcquireAsync(_db, TableLock(branchId, groupTableId), cancellationToken);
         }
         var reservation = await _db.Reservations.Include(x => x.PreOrderItems).Include(x => x.ReservationTables)
             .FirstOrDefaultAsync(x => x.ReservationId == reservationId, cancellationToken);
@@ -371,13 +365,7 @@ public sealed class CustomersController : ControllerBase
         if (request.PartySize is < 1 or > 30 || request.ReservedAt.ToUniversalTime() < DateTime.UtcNow.AddMinutes(-5))
             return BadRequest(new { code = "validation_failed", message = "Số khách hoặc thời gian đặt bàn không hợp lệ." });
         var updateNow = DateTime.UtcNow;
-        if (request.TableId is > 0 && await _db.Reservations.AnyAsync(x => x.ReservationId != reservationId
-                && x.BranchId == reservation.BranchId && x.TableId == request.TableId
-                && x.ReservedAt < request.ReservedAt.AddMinutes(120)
-                && x.ReservedAt.AddMinutes(120) > request.ReservedAt
-                && !ClosedReservationStatuses.Contains(x.Status)
-                && !(x.Status == PendingDeposit && x.DepositDueAtUtc < updateNow)
-                && !(x.Status == WaitlistRules.HoldStatus && x.HoldExpiresAtUtc < updateNow), cancellationToken))
+        if (await ReservationOccupancy.AnyTakenAsync(_db, reservation.BranchId, updateGroup, request.ReservedAt, reservationId, updateNow, cancellationToken))
             return Conflict(new { code = "reservation_slot_unavailable", message = "Bàn đã được giữ trong khung giờ này." });
 
         reservation.TableId = request.TableId;
@@ -389,9 +377,7 @@ public sealed class CustomersController : ControllerBase
         reservation.LastMutationKey = NormalizeOptional(request.MutationKey, 140);
         reservation.LastMutationHash = NormalizeOptional(request.MutationHash, 64);
         reservation.UpdatedAtUtc = DateTime.UtcNow;
-        reservation.ReservationTables.Clear();
-        if (request.TableId is > 0)
-            reservation.ReservationTables.Add(new ReservationTable { TableId = request.TableId.Value, IsPrimary = true, CreatedAtUtc = DateTime.UtcNow });
+        ReservationOccupancy.SetGroup(reservation, updateGroup, DateTime.UtcNow);
         await CustomerInbox.AddReservationAsync(_db, CustomerInbox.ReservationUpdated, reservation, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -1049,6 +1035,8 @@ public sealed class CustomersController : ControllerBase
     private static void SyncReservationTables(Reservation reservation, CheckInReservationRequest? request)
     {
         var selectedTableIds = NormalizeTableIds(request?.TableIds);
+        if (selectedTableIds.Count == 0 && request?.TableId is not > 0 && reservation.ReservationTables.Count > 1)
+            return; // a booked group of pushed-together tables stays as it is
         if (selectedTableIds.Count == 0)
         {
             var fallbackTableId = request?.TableId is > 0 ? request.TableId.Value : reservation.TableId;
@@ -1303,10 +1291,11 @@ public sealed class CustomersController : ControllerBase
         string? RequestHash = null,
         string? InitialStatus = null,
         decimal? DepositAmount = null,
-        DateTime? DepositDueAtUtc = null);
+        DateTime? DepositDueAtUtc = null,
+        IReadOnlyList<int>? AdditionalTableIds = null);
 
     public sealed record UpdateReservationRequest(int? TableId, int PartySize, DateTime ReservedAt,
-        string? Note, string? MutationKey, string? MutationHash);
+        string? Note, string? MutationKey, string? MutationHash, IReadOnlyList<int>? AdditionalTableIds = null);
 
     public sealed record ReservationDecisionRequest(int? EmployeeId, string? Reason = null);
 

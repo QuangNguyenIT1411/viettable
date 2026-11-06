@@ -93,7 +93,10 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
         if (table.Error is not null) return table.Error;
         if (table.Table!.BranchId != reservation.BranchId)
             return Error("branch_mismatch", "QR thuộc chi nhánh khác với đặt bàn.", 409);
-        var mismatch = reservation.TableId is > 0 && reservation.TableId != table.Table.TableId;
+        var groupTableIds = (reservation.AssignedTables ?? Array.Empty<ReservationAssignedTableDto>()).Select(x => x.TableId).Distinct().ToArray();
+        var bookedGroup = groupTableIds.Length > 1;
+        var mismatch = reservation.TableId is > 0 && reservation.TableId != table.Table.TableId
+            && !(bookedGroup && groupTableIds.Contains(table.Table.TableId));
         if (mismatch && !request.ConfirmTableMismatch)
             return Error("table_mismatch_confirmation_required", "QR không trùng bàn đã đặt. Gửi lại với xác nhận rõ.", 409,
                 new { scannedTableId = table.Table.TableId, reservedTableId = reservation.TableId, confirmationRequired = true });
@@ -108,9 +111,15 @@ public sealed class MobileCheckInsGatewayController : ControllerBase
             var session = await _orders.CreateDiningSessionAsync(new DiningSessionCreateRequest(actor.Value,
                 table.Table.BranchId, table.Table.TableId, reservation.ReservationId, scopedKey, hash), ct);
             if (session is null) return Error("check_in_failed", "Không thể tạo phiên phục vụ.", 502);
+            var sessionTables = bookedGroup && !mismatch
+                ? new[] { table.Table.TableId }.Concat(groupTableIds.Where(x => x != table.Table.TableId)).ToArray()
+                : new[] { table.Table.TableId };
             await _customers.CompleteReservationCheckInAsync(reservation.ReservationId,
                 new CheckInReservationRequest(session.ConvertedOrderId, session.SessionCode, null,
-                    DateTime.UtcNow, table.Table.TableId, new[] { table.Table.TableId }), ct);
+                    DateTime.UtcNow, table.Table.TableId, sessionTables), ct);
+            if (sessionTables.Length > 1 && !string.IsNullOrWhiteSpace(session.SessionCode))
+                // Every pushed-together table belongs to this meal: occupied, and paid together (owner 06/11).
+                await _orders.LinkDiningSessionTablesAsync(session.SessionCode, table.Table.TableId, sessionTables, ct);
             await _orders.OccupyTableAsync(table.Table.TableId, ct);
             await inbox.PushAsync(actor, ct); // Customers wrote "Đã nhận bàn"
             return Ok(session);

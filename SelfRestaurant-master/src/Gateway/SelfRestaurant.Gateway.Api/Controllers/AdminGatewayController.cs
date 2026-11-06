@@ -181,6 +181,26 @@ public sealed class AdminGatewayController : ControllerBase
         catch (ApiClientException ex) { return HandleApiClientException("save_branch_location_failed", ex); }
     }
 
+    // ---- Areas and pushed-together tables (owner 06/11): large parties get "Bàn 5 + 6". ----
+
+    public sealed record AdminTableGroupingRequest(string? Area, IReadOnlyList<int>? LinkedTableIds);
+
+    [HttpGet("branches/{branchId:int}/table-grouping")]
+    public async Task<ActionResult<object>> GetTableGrouping(int branchId, CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _catalogClient.GetTableGroupingAsync(branchId, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_table_grouping_failed", ex); }
+    }
+
+    [HttpPut("tables/{tableId:int}/grouping")]
+    public async Task<ActionResult<object>> SaveTableGrouping(int tableId, AdminTableGroupingRequest request, CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _catalogClient.SaveTableGroupingAsync(tableId, request, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("save_table_grouping_failed", ex); }
+    }
+
     // ---- Reviews (owner 05/11): list, reply (the guest sees it), hide with a reason, averages. ----
 
     [HttpGet("reviews")]

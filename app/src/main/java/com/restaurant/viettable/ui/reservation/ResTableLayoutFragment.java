@@ -47,6 +47,9 @@ public class ResTableLayoutFragment extends BaseFragment {
     private String changeNote;
     private final List<TableMapItem> tables = new ArrayList<>();
     private String selectedTableId;
+    /** Pushed-together tables offered by the server and chosen by the guest (owner 06/11). */
+    private com.restaurant.viettable.model.TableCombination combination;
+    private boolean combinationChosen;
     private boolean loaded;
     private boolean saving;
 
@@ -139,6 +142,16 @@ public class ResTableLayoutFragment extends BaseFragment {
                         tables.clear();
                         tables.addAll(value);
                         selectedTableId = TableMapRules.keepSelection(selectedTableId, tables);
+                        combination = MobileRepository.getInstance().tableCombination();
+                        if (combination == null) combinationChosen = false;
+                        binding.btnUseCombination.setVisibility(combination == null ? View.GONE : View.VISIBLE);
+                        if (combination != null) binding.btnUseCombination.setText(combination.buttonText());
+                        binding.btnUseCombination.setOnClickListener(v -> {
+                            combinationChosen = true;
+                            selectedTableId = null;
+                            updateBanner(null);
+                            render();
+                        });
                         loaded = true;
                         binding.progressTableMap.setVisibility(View.GONE);
                         updateBanner(notice);
@@ -156,12 +169,13 @@ public class ResTableLayoutFragment extends BaseFragment {
     private void updateBanner(@Nullable String notice) {
         TableMapItem selected = selected();
         String text;
-        if (selected != null) text = "Đang chọn: Bàn " + selected.tableNumber + " (" + selected.seats + " người)";
+        if (combinationChosen && combination != null) text = "Đang chọn: " + combination.label + " (" + combination.seats + " người, ghép bàn)";
+        else if (selected != null) text = "Đang chọn: Bàn " + selected.tableNumber + " (" + selected.seats + " người)";
         else if (!loaded) text = "Đang tải sơ đồ bàn…";
         else if (TableMapRules.availableCount(tables) == 0) text = "Khung giờ này chưa còn bàn phù hợp. Bấm \"Hết bàn?\" để xem gợi ý.";
         else text = "Chạm vào một bàn trống để chọn";
         binding.tvSelectedTableBanner.setText(notice == null ? text : notice + "\n" + text);
-        binding.btnContinue.setEnabled(selected != null && !saving);
+        binding.btnContinue.setEnabled((selected != null || (combinationChosen && combination != null)) && !saving);
     }
 
     @Nullable
@@ -172,17 +186,33 @@ public class ResTableLayoutFragment extends BaseFragment {
     }
 
     private void onContinue() {
+        if (combinationChosen && combination != null) {
+            if (changing == null) {
+                draft.setTableId(combination.tableIds.get(0));
+                draft.setGroupTableIds(combination.tableIds);
+                navigateTo(ResNoteFragment.newInstance(draft));
+                return;
+            }
+            // Moving a booking: with no table named the server seats the party on the best group again.
+            saveChange("");
+            return;
+        }
         TableMapItem selected = selected();
         if (selected == null || !selected.selectable()) { showToast("Vui lòng chọn một bàn còn trống."); return; }
         if (changing == null) {
             draft.setTableId(selected.tableId);
+            draft.setGroupTableIds(null);
             navigateTo(ResNoteFragment.newInstance(draft));
             return;
         }
+        saveChange(selected.tableId);
+    }
+
+    private void saveChange(String tableId) {
         saving = true;
         updateBanner(null);
         MobileRepository.getInstance().updateReservation(changing, draft.getDate(), draft.getTimeSlot(), draft.getGuestCount(),
-                changeNote, selected.tableId, new MobileRepository.Callback<Reservation>() {
+                changeNote, tableId, new MobileRepository.Callback<Reservation>() {
                     @Override public void onSuccess(Reservation value) {
                         saving = false;
                         if (binding == null) return;
@@ -227,7 +257,8 @@ public class ResTableLayoutFragment extends BaseFragment {
     }
 
     private View card(TableMapItem table, int size, int margin) {
-        boolean isSelected = table.tableId.equals(selectedTableId);
+        boolean isSelected = table.tableId.equals(selectedTableId)
+                || (combinationChosen && combination != null && combination.contains(table.tableId));
         boolean booked = TableMapItem.BOOKED.equals(table.status);
         boolean free = table.selectable();
 
@@ -276,6 +307,7 @@ public class ResTableLayoutFragment extends BaseFragment {
             String reason = TableMapRules.reason(table, draft.getGuestCount());
             if (reason != null) { showToast(reason); return; }
             selectedTableId = table.tableId;
+            combinationChosen = false;
             updateBanner(null);
             render();
         });

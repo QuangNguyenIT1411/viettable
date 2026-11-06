@@ -134,8 +134,17 @@ public sealed class MobileCatalogGatewayController : ControllerBase
                 return new MobileTableMapItem(x.TableId, x.DisplayTableNumber, x.NumberOfSeats, state.Status, state.Label);
             })
             .ToArray();
+        MobileTableCombination? combination = null;
+        if (suitable.Length == 0)
+        {
+            var free = layout.Tables.Where(x => ReservationRules.TableBookableAt(x, at, now) && !occupied.Contains(x.TableId)).ToArray();
+            var group = TableCombiner.Find(free, partySize);
+            if (group is not null)
+                combination = new MobileTableCombination(group.OrderBy(x => x.DisplayTableNumber).Select(x => x.TableId).ToArray(),
+                    TableCombiner.Label(group), group.Sum(x => x.NumberOfSeats), group[0].Area);
+        }
         return new MobileAvailabilityResponse(branchId, at, partySize, duration,
-            suitable.Select(x => MapTable(x, true)).ToArray(), suggestions, map);
+            suitable.Select(x => MapTable(x, true)).ToArray(), suggestions, map, combination);
     }
 
     private static MobileTableResponse MapTable(BranchTableDto table, bool reservationAvailable) =>

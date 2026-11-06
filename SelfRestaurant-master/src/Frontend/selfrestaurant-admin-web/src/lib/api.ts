@@ -1,3 +1,4 @@
+import type { GroupingRow } from "../../../shared/tableGrouping";
 import type { BranchDto } from "./types";
 import { apiFailureMessage, parseBody } from "../../../shared/apiError";
 import type { AdminCategoriesScreenDto, AdminCustomerDto, AdminCustomersScreenDto, AdminDishesScreenDto, AdminEmployeeDto, AdminEmployeeHistoryResponse, AdminEmployeesScreenDto, AdminIngredientBatchDto, AdminIngredientDto, AdminIngredientsScreenDto, AdminRelatedIngredientDishDto, AdminReportsScreenDto, AdminSettingsDto, AdminTablesScreenDto, ApiError, StaffSessionDto, AdminDishIngredientsDto, AdminDishIngredientLineDto, AdminDashboardDto, AdminUnitsScreenDto, AdminUnitDto, CreateIngredientBatchRequest, IngredientStockMovementDto, InventoryBatchDto, InventoryMovementDto, InventoryStockInRequest, InventoryStockOutRequest, InventorySummaryDto, Paged, UpdateIngredientBatchRequest, AdminCustomerOrderHistoryItemDto } from "./types";
@@ -89,6 +90,9 @@ export type AdminVoucherRequest = {
 };
 
 export const adminApi = {
+  getTableGrouping: (branchId: number) => request<GroupingRow[]>(`/api/gateway/admin/branches/${branchId}/table-grouping`),
+  saveTableGrouping: (tableId: number, body: { area: string | null; linkedTableIds: number[] }) =>
+    request<unknown>(`/api/gateway/admin/tables/${tableId}/grouping`, { method: "PUT", body: JSON.stringify(body) }),
   saveBranchLocation: (branchId: number, body: { address: string | null; latitude: number | null; longitude: number | null }) =>
     request<BranchDto>(`/api/gateway/admin/branch-locations/${branchId}`, { method: "PUT", body: JSON.stringify(body) }),
   getBranchCharges: () => request<BranchChargesDto>("/api/gateway/admin/branch-charges"),

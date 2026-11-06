@@ -72,6 +72,17 @@ public static class CatalogDbBootstrapper
                 ALTER TABLE dbo.Branches ADD Latitude DECIMAL(9,6) NULL;
             IF COL_LENGTH(N'dbo.Branches', N'Longitude') IS NULL
                 ALTER TABLE dbo.Branches ADD Longitude DECIMAL(9,6) NULL;
+            IF COL_LENGTH(N'dbo.DiningTables', N'Area') IS NULL
+                ALTER TABLE dbo.DiningTables ADD Area NVARCHAR(50) NULL;
+            IF OBJECT_ID(N'dbo.DiningTableLinks', N'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.DiningTableLinks (
+                    TableId INT NOT NULL,
+                    LinkedTableId INT NOT NULL,
+                    CONSTRAINT PK_DiningTableLinks PRIMARY KEY (TableId, LinkedTableId)
+                );
+                CREATE INDEX IX_DiningTableLinks_Linked ON dbo.DiningTableLinks(LinkedTableId);
+            END
             """;
         await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
     }

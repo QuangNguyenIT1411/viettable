@@ -155,6 +155,16 @@
                     android:textColor="@color/pd_muted" />
             </com.google.android.material.chip.ChipGroup>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUseCombination"
+                style="@style/Widget.VietTable.Button.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/pd_screen_margin"
+                android:layout_marginTop="16dp"
+                android:minHeight="56dp"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/tvSelectedTableBanner"
                 android:layout_width="match_parent"

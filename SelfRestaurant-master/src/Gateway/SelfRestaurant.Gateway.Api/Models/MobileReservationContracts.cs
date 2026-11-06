@@ -11,7 +11,10 @@ public sealed record MobileTableResponse(int TableId, int TableNumber, int Numbe
 public sealed record MobileAvailabilityResponse(int BranchId, DateTimeOffset ReservedAt, int PartySize,
     int DurationMinutes, IReadOnlyList<MobileTableResponse> AvailableTables,
     IReadOnlyList<MobileAvailabilitySuggestion> Suggestions,
-    IReadOnlyList<MobileTableMapItem>? Tables = null);
+    IReadOnlyList<MobileTableMapItem>? Tables = null,
+    MobileTableCombination? Combination = null);
+/// <summary>No single table seats the party, these pushed-together tables do (owner 06/11): "Bàn 5 + 6".</summary>
+public sealed record MobileTableCombination(IReadOnlyList<int> TableIds, string Label, int Seats, string? Area);
 /// <summary>
 /// One table of the branch on the booking map (reservation item 5): Status AVAILABLE, BOOKED, TOO_SMALL, IN_USE or
 /// INACTIVE with its Vietnamese label. Never says who booked it.
@@ -27,8 +30,10 @@ public sealed record MobileAlternativesResponse(bool Available, int AvailableTab
     IReadOnlyList<MobileAvailabilitySuggestion> TimeSuggestions, IReadOnlyList<MobileBranchSuggestion> BranchSuggestions);
 public sealed record MobileQrContextResponse(int TableId, int BranchId, int TableNumber);
 
+/// <summary>TableIds: a group of pushed-together tables the guest took from the map (owner 06/11); else TableId.</summary>
 public sealed record CreateMobileReservationRequest(int BranchId, int? TableId, int PartySize,
-    DateTimeOffset ReservedAt, string? Note = null, string? ContactName = null, string? ContactPhone = null);
+    DateTimeOffset ReservedAt, string? Note = null, string? ContactName = null, string? ContactPhone = null,
+    IReadOnlyList<int>? TableIds = null);
 public sealed record UpdateMobileReservationRequest(int? TableId, int PartySize,
     DateTimeOffset ReservedAt, string? Note = null);
 /// <summary>Answer to the booking reminder: "will_come" or "cancel".</summary>

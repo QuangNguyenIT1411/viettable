@@ -122,7 +122,9 @@ function summarizePreOrderItems(reservation: ReservationDto) {
 function reservationTableText(reservation: ReservationDto, tables: { tableId: number; number: string }[]) {
   const ids = getReservationTableIds(reservation);
   if (ids.length === 0) return "Chưa gán bàn";
-  return ids.map((tableId) => tables.find((table) => table.tableId === tableId)?.number ?? `Bàn #${tableId}`).join(", ");
+  const labels = ids.map((tableId) => tables.find((table) => table.tableId === tableId)?.number ?? `Bàn #${tableId}`);
+  // Pushed-together tables (owner 06/11): "Bàn 5 + 6".
+  return labels.length > 1 ? `Bàn ${labels.map(label => label.replace(/^Bàn\s*/i, "")).join(" + ")}` : labels.join(", ");
 }
 
 function getReservationTableIds(reservation: ReservationDto) {

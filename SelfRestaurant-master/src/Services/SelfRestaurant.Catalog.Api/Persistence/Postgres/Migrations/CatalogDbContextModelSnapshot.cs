@@ -312,6 +312,22 @@ namespace SelfRestaurant.Catalog.Api.Persistence.Postgres.Migrations
                     b.ToTable("CategoryDish", "catalog");
                 });
 
+            modelBuilder.Entity("SelfRestaurant.Catalog.Api.Persistence.Entities.DiningTableLink", b =>
+                {
+                    b.Property<int>("TableId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LinkedTableId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TableId", "LinkedTableId");
+
+                    b.HasIndex("LinkedTableId")
+                        .HasDatabaseName("IX_DiningTableLinks_Linked");
+
+                    b.ToTable("DiningTableLinks", "catalog");
+                });
+
             modelBuilder.Entity("SelfRestaurant.Catalog.Api.Persistence.Entities.DiningTables", b =>
                 {
                     b.Property<int>("TableID")
@@ -319,6 +335,10 @@ namespace SelfRestaurant.Catalog.Api.Persistence.Postgres.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TableID"));
+
+                    b.Property<string>("Area")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("BranchID")
                         .HasColumnType("integer");

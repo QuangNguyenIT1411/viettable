@@ -25,6 +25,9 @@ public partial class DiningTables
 
     public int StatusID { get; set; }
 
+    /// <summary>Zone of the floor ("Tầng 1", "Sân vườn"); only tables of the same area are put together (owner 06/11).</summary>
+    public string? Area { get; set; }
+
     public virtual Branches Branch { get; set; } = null!;
 
     public virtual ICollection<Orders> Orders { get; set; } = new List<Orders>();

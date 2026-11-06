@@ -48,11 +48,12 @@ public sealed class WaitlistCoordinator(CustomersClient customers, CatalogClient
             foreach (var slot in slots.Take(MaxSlotsPerGuest))
             {
                 var found = await tables.FindAsync(layout, branchId, slot, guest.PartySize, null, ct);
-                var table = TableAvailability.Best(found.Available);
-                if (table is null) continue;
+                var seating = TableAvailability.Seating(found); // a single table, or pushed-together ones
+                if (seating is null) continue;
                 try
                 {
-                    await customers.OfferWaitlistAsync(guest.WaitlistEntryId, table.TableId, slot.UtcDateTime, OfferMinutes, ct);
+                    await customers.OfferWaitlistAsync(guest.WaitlistEntryId, seating.Value.TableId, slot.UtcDateTime, OfferMinutes, ct,
+                        seating.Value.Others);
                     offered++;
                     await inbox.PushAsync(guest.CustomerId, ct);
                     break;
