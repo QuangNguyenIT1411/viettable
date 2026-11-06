@@ -51,6 +51,7 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
 
         binding.btnBack.setOnClickListener(v -> navigateBack());
         binding.btnSearchMenu.setOnClickListener(v -> navigateTo(new SearchFragment()));
+        binding.btnMenuSuggestion.setOnClickListener(v -> navigateTo(new MenuSuggestionFragment()));
         binding.tvMenuBranch.setOnClickListener(v -> navigateTo(new ChangeBranchFragment()));
         binding.btnRetryMenuCatalog.setOnClickListener(v -> {
             if (appStateManager.getSelectedBranch() == null) navigateTo(new ChangeBranchFragment());

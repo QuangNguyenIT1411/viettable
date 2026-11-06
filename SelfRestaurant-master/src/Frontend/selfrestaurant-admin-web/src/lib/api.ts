@@ -59,6 +59,8 @@ export type AdminPromotionRequest = {
 };
 
 /** Service fee / VAT of one branch (owner 05/11/2026); 0 = off. */
+export type DishAttributesDto = { dishId: number; name: string; price: number; categoryId: number; course?: string | null;
+  isSpicy?: boolean | null; servings?: number | null; isVegetarian?: boolean | null };
 export type BranchChargeDto = { branchId: number; serviceFeePercent: number; vatPercent: number; updatedAtUtc: string; updatedByName?: string | null };
 export type BranchChargesDto = { items: BranchChargeDto[]; maxServiceFeePercent: number; maxVatPercent: number };
 
@@ -90,6 +92,9 @@ export type AdminVoucherRequest = {
 };
 
 export const adminApi = {
+  getDishAttributes: () => request<DishAttributesDto[]>("/api/gateway/admin/dish-attributes"),
+  saveDishAttributes: (dishId: number, body: { course: string | null; isSpicy: boolean | null; servings: number | null; isVegetarian: boolean }) =>
+    request<unknown>(`/api/gateway/admin/dishes/${dishId}/attributes`, { method: "PUT", body: JSON.stringify(body) }),
   getTableGrouping: (branchId: number) => request<GroupingRow[]>(`/api/gateway/admin/branches/${branchId}/table-grouping`),
   saveTableGrouping: (tableId: number, body: { area: string | null; linkedTableIds: number[] }) =>
     request<unknown>(`/api/gateway/admin/tables/${tableId}/grouping`, { method: "PUT", body: JSON.stringify(body) }),

@@ -128,6 +128,7 @@ public sealed class CatalogController : ControllerBase
                 description = x.Description, price = x.Price, image = x.Image, unit = x.Unit,
                 isVegetarian = x.IsVegetarian ?? false, isDailySpecial = x.IsDailySpecial ?? false,
                 available = x.Available ?? true,
+                course = x.Course, isSpicy = x.IsSpicy, servings = x.Servings,
                 ingredients = x.DishIngredients.Select(i => new {
                     name = i.Ingredient.Name, quantity = i.QuantityPerDish, unit = i.Ingredient.Unit
                 }).ToList()
@@ -136,7 +137,7 @@ public sealed class CatalogController : ControllerBase
         {
             var dishes = allDishes.Where(x => x.categoryId == category.CategoryID)
                 .Select(x => new { x.dishId, x.name, x.description, x.price, x.image, x.unit,
-                    x.isVegetarian, x.isDailySpecial, x.available, x.ingredients }).ToList();
+                    x.isVegetarian, x.isDailySpecial, x.available, x.course, x.isSpicy, x.servings, x.ingredients }).ToList();
 
             if (dishes.Count > 0)
             {

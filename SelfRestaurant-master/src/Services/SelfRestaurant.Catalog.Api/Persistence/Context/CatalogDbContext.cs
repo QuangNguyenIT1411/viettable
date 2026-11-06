@@ -178,6 +178,7 @@ public sealed class CatalogDbContext : DbContext
             entity.HasIndex(e => e.CategoryID).HasDatabaseName("idx_dishes_category");
             entity.HasIndex(e => e.IsActive).HasDatabaseName("idx_dishes_active");
             entity.HasIndex(e => e.Available).HasDatabaseName("idx_dishes_available");
+            entity.Property(e => e.Course).HasMaxLength(20).IsUnicode(false);
             entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Description).HasMaxLength(1000);
             entity.Property(e => e.Image).HasMaxLength(500);

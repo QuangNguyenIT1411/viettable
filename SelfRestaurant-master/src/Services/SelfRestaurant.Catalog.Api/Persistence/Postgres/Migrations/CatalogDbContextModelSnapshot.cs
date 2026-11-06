@@ -436,6 +436,11 @@ namespace SelfRestaurant.Catalog.Api.Persistence.Postgres.Migrations
                     b.Property<int>("CategoryID")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Course")
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<DateTime?>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -457,6 +462,9 @@ namespace SelfRestaurant.Catalog.Api.Persistence.Postgres.Migrations
                     b.Property<bool?>("IsDailySpecial")
                         .HasColumnType("boolean");
 
+                    b.Property<bool?>("IsSpicy")
+                        .HasColumnType("boolean");
+
                     b.Property<bool?>("IsVegetarian")
                         .HasColumnType("boolean");
 
@@ -467,6 +475,9 @@ namespace SelfRestaurant.Catalog.Api.Persistence.Postgres.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int?>("Servings")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Unit")
                         .HasMaxLength(50)

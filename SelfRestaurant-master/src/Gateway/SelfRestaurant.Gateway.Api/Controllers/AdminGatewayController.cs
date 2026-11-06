@@ -201,6 +201,26 @@ public sealed class AdminGatewayController : ControllerBase
         catch (ApiClientException ex) { return HandleApiClientException("save_table_grouping_failed", ex); }
     }
 
+    // ---- Dish attributes for "Gợi ý món" (owner 06/11): kind, spicy, servings, vegetarian. ----
+
+    public sealed record AdminDishAttributesRequest(string? Course, bool? IsSpicy, int? Servings, bool? IsVegetarian);
+
+    [HttpGet("dish-attributes")]
+    public async Task<ActionResult<object>> GetDishAttributes(CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _catalogClient.GetDishAttributesAsync(ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("get_dish_attributes_failed", ex); }
+    }
+
+    [HttpPut("dishes/{dishId:int}/attributes")]
+    public async Task<ActionResult<object>> SaveDishAttributes(int dishId, AdminDishAttributesRequest request, CancellationToken ct)
+    {
+        if (RequireAdmin() is null) return Error("unauthorized", "Bạn cần đăng nhập bằng tài khoản quản trị.", 401);
+        try { return Ok(await _catalogClient.SaveDishAttributesAsync(dishId, request, ct)); }
+        catch (ApiClientException ex) { return HandleApiClientException("save_dish_attributes_failed", ex); }
+    }
+
     // ---- Reviews (owner 05/11): list, reply (the guest sees it), hide with a reason, averages. ----
 
     [HttpGet("reviews")]

@@ -72,6 +72,12 @@ public static class CatalogDbBootstrapper
                 ALTER TABLE dbo.Branches ADD Latitude DECIMAL(9,6) NULL;
             IF COL_LENGTH(N'dbo.Branches', N'Longitude') IS NULL
                 ALTER TABLE dbo.Branches ADD Longitude DECIMAL(9,6) NULL;
+            IF COL_LENGTH(N'dbo.Dishes', N'Course') IS NULL
+                ALTER TABLE dbo.Dishes ADD Course VARCHAR(20) NULL;
+            IF COL_LENGTH(N'dbo.Dishes', N'IsSpicy') IS NULL
+                ALTER TABLE dbo.Dishes ADD IsSpicy BIT NULL;
+            IF COL_LENGTH(N'dbo.Dishes', N'Servings') IS NULL
+                ALTER TABLE dbo.Dishes ADD Servings INT NULL;
             IF COL_LENGTH(N'dbo.DiningTables', N'Area') IS NULL
                 ALTER TABLE dbo.DiningTables ADD Area NVARCHAR(50) NULL;
             IF OBJECT_ID(N'dbo.DiningTableLinks', N'U') IS NULL

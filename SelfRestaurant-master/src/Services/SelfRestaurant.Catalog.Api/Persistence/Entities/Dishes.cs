@@ -23,6 +23,15 @@ public partial class Dishes
 
     public bool? IsDailySpecial { get; set; }
 
+    /// <summary>Kind of dish for "Gợi ý món" (owner 06/11): MAIN, STARTER, SOUP, SIDE, DESSERT, DRINK; null = not tagged.</summary>
+    public string? Course { get; set; }
+
+    /// <summary>Spicy or not; null = not tagged (never guessed).</summary>
+    public bool? IsSpicy { get; set; }
+
+    /// <summary>How many people one order feeds (a hotpot: 4); null = not tagged.</summary>
+    public int? Servings { get; set; }
+
     public bool? IsActive { get; set; }
 
     public DateTime? CreatedAt { get; set; }

@@ -49,6 +49,18 @@
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
+            <TextView
+                android:id="@+id/btnMenuSuggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/pd_chip_idle"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:paddingHorizontal="16dp"
+                android:text="Gợi ý món"
+                android:textAppearance="@style/TextAppearance.VietTable.Body.Strong" />
+
             <ImageButton
                 android:id="@+id/btnSearchMenu"
                 android:layout_width="48dp"

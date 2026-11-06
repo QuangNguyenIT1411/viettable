@@ -144,6 +144,10 @@ public sealed class BillingClient : ApiClientBase
     }
 
     // ---- Service fee / VAT per branch (owner 05/11) ----
+    /// <summary>A basket's total before discounts at a branch, with its service fee and VAT (owner 06/11).</summary>
+    public async Task<JsonElement> EstimateAsync(int branchId, decimal subtotal, CancellationToken ct) =>
+        await PostForAsync<object, JsonElement>("/api/internal/checkout/estimate", new { branchId, subtotal }, ct);
+
     public Task<JsonElement> GetBranchChargesAsync(CancellationToken ct) =>
         GetRequiredAsync("/api/internal/branch-charges", "branch_charges_unavailable", ct);
     public async Task<JsonElement> SaveBranchChargesAsync(int branchId, object request, CancellationToken ct) =>

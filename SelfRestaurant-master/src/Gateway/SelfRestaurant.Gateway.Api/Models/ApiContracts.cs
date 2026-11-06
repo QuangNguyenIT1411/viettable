@@ -33,7 +33,10 @@ public sealed record MenuDishDto(
     bool IsVegetarian,
     bool IsDailySpecial,
     bool Available,
-    IReadOnlyList<MenuDishIngredientDto>? Ingredients = null);
+    IReadOnlyList<MenuDishIngredientDto>? Ingredients = null,
+    string? Course = null,
+    bool? IsSpicy = null,
+    int? Servings = null);
 
 public sealed record MenuDishIngredientDto(
     string Name,

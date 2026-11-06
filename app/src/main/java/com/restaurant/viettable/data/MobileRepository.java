@@ -757,6 +757,29 @@ public final class MobileRepository {
     }
 
     /** The reminder's buttons: response is "will_come" or "cancel" (owner 06/11). */
+    /** "Gợi ý món" (06/11): dishes for a group and a budget, priced by the server like the bill. */
+    public void suggestMenu(String branchId, int people, long budget, int vegetarians, boolean avoidSpicy,
+                            Callback<com.restaurant.viettable.model.MenuSuggestion> callback) {
+        JSONObject body = new JSONObject();
+        try {
+            body.put("branchId", Integer.parseInt(branchId)).put("people", people).put("budget", budget)
+                    .put("vegetarians", vegetarians).put("avoidSpicy", avoidSpicy);
+        } catch (Exception e) { callback.onError(new ApiException(400, "validation_failed", "Chưa chọn chi nhánh.", null)); return; }
+        api().post("/api/mobile/v1/menu/suggestions", body, false, null, new ApiClient.Callback() {
+            @Override public void onSuccess(Object value) { callback.onSuccess(com.restaurant.viettable.model.MenuSuggestion.parse((JSONObject) value)); }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
+    /** New server total after the guest swapped a dish. */
+    public void estimateMenu(String branchId, com.restaurant.viettable.model.MenuSuggestion suggestion,
+                             Callback<com.restaurant.viettable.model.MenuSuggestion.Totals> callback) {
+        api().post("/api/mobile/v1/menu/estimate", suggestion.estimateBody(branchId), false, null, new ApiClient.Callback() {
+            @Override public void onSuccess(Object value) { callback.onSuccess(com.restaurant.viettable.model.MenuSuggestion.Totals.parse((JSONObject) value)); }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void answerReminder(String reservationId, String response, Callback<Reservation> callback) {
         JSONObject body = new JSONObject();
         try { body.put("response", response); } catch (Exception ignored) { }

@@ -11,6 +11,12 @@ public sealed class CatalogClient : ApiClientBase
     public Task<IReadOnlyList<BranchDto>?> GetBranchesAsync(CancellationToken cancellationToken) =>
         GetAsync<IReadOnlyList<BranchDto>>("/api/branches", cancellationToken);
 
+    public Task<System.Text.Json.JsonElement> GetDishAttributesAsync(CancellationToken cancellationToken) =>
+        GetAsync<System.Text.Json.JsonElement>("/api/admin/dish-attributes", cancellationToken);
+
+    public Task<object?> SaveDishAttributesAsync(int dishId, object body, CancellationToken cancellationToken) =>
+        PutForAsync<object, object>($"/api/admin/dishes/{dishId}/attributes", body, cancellationToken);
+
     public Task<System.Text.Json.JsonElement> GetTableGroupingAsync(int branchId, CancellationToken cancellationToken) =>
         GetAsync<System.Text.Json.JsonElement>($"/api/admin/branches/{branchId}/table-grouping", cancellationToken);
 
