@@ -202,6 +202,41 @@ public sealed class WaitlistController : ControllerBase
         return Ok(new { entry = await MapAsync(entry, ct), reservationId = hold.ReservationId });
     }
 
+    /// <summary>
+    /// "Xếp lại hàng chờ" (owner 06/11): a new place at the end of the queue for the same branch, window and party after
+    /// an offer lapsed. Asking twice gives the same new place.
+    /// </summary>
+    [HttpPost("api/customers/waitlist/{entryId:int}/rejoin")]
+    public async Task<ActionResult<object>> Rejoin(int entryId, [FromBody] CustomerRequest? request, CancellationToken ct)
+    {
+        if (request is null || request.CustomerId <= 0) return BadRequest(new { code = "validation_failed", message = "Thiếu khách hàng." });
+        var now = DateTime.UtcNow;
+        await CloseStaleAsync(x => x.CustomerId == request.CustomerId, now, ct);
+        var entry = await _db.WaitlistEntries.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.WaitlistEntryId == entryId && x.CustomerId == request.CustomerId, ct);
+        if (entry is null) return NotFound(new { code = "waitlist_not_found", message = "Không tìm thấy lượt chờ." });
+        var again = await _db.WaitlistEntries.AsNoTracking()
+            .Where(x => x.CustomerId == request.CustomerId && x.BranchId == entry.BranchId && x.PartySize == entry.PartySize
+                && x.WindowStartUtc == entry.WindowStartUtc && x.WindowEndUtc == entry.WindowEndUtc
+                && x.WaitlistEntryId != entry.WaitlistEntryId && x.CreatedAtUtc > entry.CreatedAtUtc
+                && (x.Status == WaitlistRules.Waiting || x.Status == WaitlistRules.Offered))
+            .OrderByDescending(x => x.CreatedAtUtc).FirstOrDefaultAsync(ct);
+        if (again is not null) return Ok(await MapAsync(again, ct)); // already back in the queue
+        var active = await _db.WaitlistEntries.CountAsync(x => x.CustomerId == request.CustomerId
+            && (x.Status == WaitlistRules.Waiting || x.Status == WaitlistRules.Offered), ct);
+        var refusal = WaitlistRules.WhyNotRejoinable(entry, active, now);
+        if (refusal is not null) return Conflict(new { code = "waitlist_not_allowed", message = refusal });
+        var fresh = new WaitlistEntry
+        {
+            CustomerId = entry.CustomerId, ContactName = entry.ContactName, PhoneNumber = entry.PhoneNumber,
+            BranchId = entry.BranchId, WindowStartUtc = entry.WindowStartUtc, WindowEndUtc = entry.WindowEndUtc,
+            PartySize = entry.PartySize, Note = entry.Note, Status = WaitlistRules.Waiting, CreatedAtUtc = now
+        };
+        _db.WaitlistEntries.Add(fresh);
+        await _db.SaveChangesAsync(ct);
+        return Ok(await MapAsync(fresh, ct));
+    }
+
     /// <summary>The guest stops waiting; a held table is released at once for the next guest.</summary>
     [HttpPost("api/customers/waitlist/{entryId:int}/cancel")]
     public async Task<ActionResult<object>> Cancel(int entryId, [FromBody] CustomerRequest? request, CancellationToken ct)
@@ -242,7 +277,7 @@ public sealed class WaitlistController : ControllerBase
                 entry.Status = WaitlistRules.Expired;
                 entry.ClosedReason = "Hết thời gian xác nhận";
                 await CustomerInbox.AddAsync(_db, entry.CustomerId, CustomerInbox.WaitlistExpired, entry.WaitlistEntryId,
-                    "Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp. Bạn có thể đăng ký chờ lại.", 0, ct);
+                    "Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp. Mở Danh sách chờ của tôi để xếp lại hàng chờ.", 0, ct);
             }
             else
             {

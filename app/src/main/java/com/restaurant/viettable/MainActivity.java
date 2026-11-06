@@ -243,6 +243,50 @@ public class MainActivity extends AppCompatActivity implements NavigationCoordin
         if (pendingExpiredSession) showExpiredSession();
         else if (pendingReset != null) resetTo(pendingReset);
         openPendingReservation();
+        checkLapsedWaitlistOffers();
+    }
+
+    private long lastLapseCheck;
+
+    /** "Lời mời đã hết hạn" (owner 06/11): when the app opens, say clearly that an offer lapsed and offer to rejoin. */
+    private void checkLapsedWaitlistOffers() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (now - lastLapseCheck < 60_000 || !com.restaurant.viettable.data.MobileRepository.getInstance().hasSession()
+                || !com.restaurant.viettable.reminder.WaitlistPollWorker.watching(this)) return;
+        lastLapseCheck = now;
+        com.restaurant.viettable.data.MobileRepository.getInstance().loadWaitlist(
+                new com.restaurant.viettable.data.MobileRepository.Callback<java.util.List<com.restaurant.viettable.model.WaitlistEntry>>() {
+                    @Override public void onSuccess(java.util.List<com.restaurant.viettable.model.WaitlistEntry> entries) {
+                        if (isFinishing() || isDestroyed()) return;
+                        java.util.List<com.restaurant.viettable.model.WaitlistEntry> lapsed =
+                                com.restaurant.viettable.reminder.WaitlistPollWorker.takeLapsed(MainActivity.this, entries);
+                        if (lapsed.isEmpty()) return;
+                        com.restaurant.viettable.model.WaitlistEntry e = lapsed.get(0);
+                        boolean rejoin = com.restaurant.viettable.util.WaitlistText.canRejoin(e, entries, java.time.Instant.now());
+                        String text = com.restaurant.viettable.util.WaitlistText.LAPSED_DETAIL + " ("
+                                + e.branchName + ", " + com.restaurant.viettable.util.WaitlistText.window(e.windowStartUtc, e.windowEndUtc,
+                                java.time.ZoneId.systemDefault()) + ", " + e.partySize + " khách)"
+                                + (rejoin ? "\n\nBạn có muốn xếp lại hàng chờ không?" : "");
+                        com.restaurant.viettable.ui.common.DialogHelper.showConfirmDialog(MainActivity.this, "Lời mời đã hết hạn", text,
+                                rejoin ? "Xếp lại hàng chờ" : "Xem danh sách chờ",
+                                (d, w) -> {
+                                    if (!rejoin) { navigateTo(new com.restaurant.viettable.ui.reservation.WaitlistFragment(), true); return; }
+                                    com.restaurant.viettable.data.MobileRepository.getInstance().rejoinWaitlist(e.id,
+                                            new com.restaurant.viettable.data.MobileRepository.Callback<com.restaurant.viettable.model.WaitlistEntry>() {
+                                                @Override public void onSuccess(com.restaurant.viettable.model.WaitlistEntry value) {
+                                                    if (isFinishing()) return;
+                                                    com.restaurant.viettable.reminder.WaitlistPollWorker.ensureScheduled(MainActivity.this);
+                                                    navigateTo(new com.restaurant.viettable.ui.reservation.WaitlistFragment(), true);
+                                                }
+                                                @Override public void onError(com.restaurant.viettable.network.ApiException error) {
+                                                    if (isFinishing()) return;
+                                                    android.widget.Toast.makeText(MainActivity.this, error.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                                                }
+                                            });
+                                }, "Để sau", null);
+                    }
+                    @Override public void onError(com.restaurant.viettable.network.ApiException error) { lastLapseCheck = 0; }
+                });
     }
 
     private boolean pendingExpiredSession;

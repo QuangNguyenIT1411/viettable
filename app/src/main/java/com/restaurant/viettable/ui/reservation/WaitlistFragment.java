@@ -78,9 +78,18 @@ public class WaitlistFragment extends BaseFragment {
             row.tvEntryBranch.setText(entry.branchName);
             row.tvEntryWindow.setText(WaitlistText.window(entry.windowStartUtc, entry.windowEndUtc, zone) + " · " + entry.partySize + " khách"
                     + (entry.closedReason == null || entry.isActive() ? "" : " · " + entry.closedReason));
-            row.layoutEntryActions.setVisibility(entry.isActive() ? View.VISIBLE : View.GONE);
-            row.btnEntryAccept.setVisibility(entry.isOffered() ? View.VISIBLE : View.GONE);
+            boolean rejoin = WaitlistText.canRejoin(entry, entries, Instant.now());
+            row.layoutEntryActions.setVisibility(entry.isActive() || rejoin ? View.VISIBLE : View.GONE);
+            row.btnEntryAccept.setVisibility(entry.isOffered() || rejoin ? View.VISIBLE : View.GONE);
+            row.btnEntryAccept.setText(rejoin ? "Xếp lại hàng chờ" : "Nhận bàn");
+            row.btnEntryCancel.setVisibility(entry.isActive() ? View.VISIBLE : View.GONE);
             row.btnEntryCancel.setText(entry.isOffered() ? "Bỏ qua" : "Huỷ chờ");
+            if ("Expired".equals(entry.status)) {
+                row.tvEntryOffer.setVisibility(View.VISIBLE);
+                row.tvEntryOffer.setText(WaitlistText.LAPSED_DETAIL
+                        + (rejoin ? " Bạn có thể xếp lại hàng chờ (đứng sau những người đang chờ)." : ""));
+                row.tvEntryOffer.setTextColor(requireContext().getColor(com.restaurant.viettable.R.color.pd_red_text));
+            }
             if (entry.isOffered()) {
                 row.tvEntryOffer.setVisibility(View.VISIBLE);
                 Runnable tick = new Runnable() {
@@ -88,14 +97,20 @@ public class WaitlistFragment extends BaseFragment {
                         if (binding == null) return;
                         String left = WaitlistText.countdown(entry.offerExpiresAtUtc, Instant.now());
                         row.tvEntryOffer.setText("Bàn lúc " + WaitlistText.clock(entry.offeredReservedAtUtc, zone) + " · " + left);
-                        if ("hết giờ".equals(left)) { row.btnEntryAccept.setEnabled(false); return; }
+                        if ("hết giờ".equals(left)) {
+                            row.btnEntryAccept.setEnabled(false);
+                            row.tvEntryStatus.setText("Lời mời đã hết hạn");
+                            row.tvEntryOffer.setText(WaitlistText.LAPSED_DETAIL);
+                            ticker.postDelayed(() -> { if (binding != null) load(); }, 3000); // the server closes it on read
+                            return;
+                        }
                         ticker.postDelayed(this, 1000);
                     }
                 };
                 tickers.add(tick);
                 tick.run();
             }
-            row.btnEntryAccept.setOnClickListener(v -> accept(entry));
+            row.btnEntryAccept.setOnClickListener(v -> { if (rejoin) rejoin(entry); else accept(entry); });
             row.btnEntryCancel.setOnClickListener(v -> DialogHelper.showDestructiveDialog(requireContext(),
                     entry.isOffered() ? "Bỏ qua bàn này?" : "Huỷ chờ?",
                     entry.isOffered() ? "Bàn sẽ được mời cho khách kế tiếp." : "Bạn sẽ không được báo khi có bàn.",
@@ -116,6 +131,17 @@ public class WaitlistFragment extends BaseFragment {
                 showToast(apiError(error));
                 load();
             }
+        });
+    }
+
+    private void rejoin(WaitlistEntry entry) {
+        MobileRepository.getInstance().rejoinWaitlist(entry.id, new MobileRepository.Callback<WaitlistEntry>() {
+            @Override public void onSuccess(WaitlistEntry value) {
+                if (binding == null) return;
+                showToast(value.isOffered() ? "Có bàn cho bạn ngay!" : "Đã xếp lại hàng chờ" + (value.position > 0 ? ", vị trí thứ " + value.position : "") + ".");
+                load();
+            }
+            @Override public void onError(ApiException error) { if (binding != null) { showToast(apiError(error)); load(); } }
         });
     }
 

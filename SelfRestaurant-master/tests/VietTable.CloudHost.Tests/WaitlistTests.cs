@@ -183,6 +183,59 @@ public sealed class WaitlistTests
         Assert.IsType<ConflictObjectResult>(late.Result);
     }
 
+    [Theory]
+    [InlineData(null, false, 20)]
+    [InlineData(null, true, 10)]
+    [InlineData("", false, 20)]
+    [InlineData("15", false, 15)]
+    [InlineData("15", true, 15)]
+    [InlineData("0", true, 10)]
+    [InlineData("90", false, 20)]
+    [InlineData("abc", false, 20)]
+    public void Hold_minutes_are_20_without_push_10_with_fcm_and_configurable(string? configured, bool fcm, int minutes)
+    {
+        Assert.Equal(minutes, WaitlistCoordinator.ResolveOfferMinutes(configured, fcm));
+    }
+
+    [Fact]
+    public async Task After_an_offer_lapses_the_guest_can_rejoin_at_the_end_of_the_queue_once()
+    {
+        await using var db = Database();
+        db.WaitlistEntries.Add(Entry(1, 10, DateTime.UtcNow.AddMinutes(-30)));
+        db.WaitlistEntries.Add(Entry(2, 11, DateTime.UtcNow.AddMinutes(-20)));
+        await db.SaveChangesAsync();
+        var controller = new WaitlistController(db);
+        await controller.Offer(1, new WaitlistController.OfferRequest(8, DateTime.UtcNow.AddHours(3), 20), CancellationToken.None);
+        var stale = await db.WaitlistEntries.SingleAsync(x => x.WaitlistEntryId == 1);
+        stale.OfferExpiresAtUtc = DateTime.UtcNow.AddMinutes(-1);
+        (await db.Reservations.SingleAsync()).HoldExpiresAtUtc = stale.OfferExpiresAtUtc;
+        await db.SaveChangesAsync();
+
+        var first = await controller.Rejoin(1, new WaitlistController.CustomerRequest(10), CancellationToken.None);
+        Assert.IsType<OkObjectResult>(first.Result);
+        Assert.Equal(WaitlistRules.Expired, (await db.WaitlistEntries.AsNoTracking().SingleAsync(x => x.WaitlistEntryId == 1)).Status);
+        var again = await db.WaitlistEntries.AsNoTracking().Where(x => x.CustomerId == 10 && x.Status == WaitlistRules.Waiting).ToListAsync();
+        Assert.Single(again);
+        var queue = WaitlistRules.Queue(await db.WaitlistEntries.AsNoTracking().ToListAsync(), DateTime.UtcNow);
+        Assert.Equal(new[] { 2, again[0].WaitlistEntryId }, queue.Select(x => x.WaitlistEntryId).ToArray()); // behind guest 2
+
+        await controller.Rejoin(1, new WaitlistController.CustomerRequest(10), CancellationToken.None); // a second tap
+        Assert.Single(await db.WaitlistEntries.Where(x => x.CustomerId == 10 && x.Status == WaitlistRules.Waiting).ToListAsync());
+        var other = await controller.Rejoin(1, new WaitlistController.CustomerRequest(11), CancellationToken.None);
+        Assert.IsType<NotFoundObjectResult>(other.Result);
+    }
+
+    [Fact]
+    public void Rejoin_only_after_a_lapsed_offer_and_while_the_window_is_ahead()
+    {
+        var now = DateTime.UtcNow;
+        Assert.Null(WaitlistRules.WhyNotRejoinable(Entry(1, 10, now, status: WaitlistRules.Expired), 0, now));
+        Assert.Equal("Bạn vẫn đang trong danh sách chờ.", WaitlistRules.WhyNotRejoinable(Entry(1, 10, now), 0, now));
+        Assert.NotNull(WaitlistRules.WhyNotRejoinable(Entry(1, 10, now, status: WaitlistRules.Cancelled), 0, now));
+        Assert.NotNull(WaitlistRules.WhyNotRejoinable(Entry(1, 10, now, status: WaitlistRules.Expired, start: now.AddHours(-3)), 0, now));
+        Assert.NotNull(WaitlistRules.WhyNotRejoinable(Entry(1, 10, now, status: WaitlistRules.Expired), WaitlistRules.MaxActivePerCustomer, now));
+    }
+
     [Fact]
     public async Task Cancelling_an_offer_releases_the_held_table()
     {

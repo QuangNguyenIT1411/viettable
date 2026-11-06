@@ -100,6 +100,25 @@ public sealed class MobileWaitlistGatewayController(CustomersClient customers, C
         catch (ApiClientException ex) { return Downstream(ex, "accept_waitlist_failed"); }
     }
 
+    /// <summary>"Xếp lại hàng chờ" after an offer lapsed: a new place at the end of the queue, same window.</summary>
+    [HttpPost("{entryId:int}/rejoin")]
+    public async Task<ActionResult<object>> Rejoin(int entryId, CancellationToken ct)
+    {
+        var actor = CurrentCustomerId();
+        if (actor is null) return Error("invalid_actor", "Access token không hợp lệ.", 401);
+        try
+        {
+            var entry = await customers.RejoinWaitlistAsync(entryId, actor.Value, ct);
+            var branchId = entry.GetProperty("branchId").GetInt32();
+            if (await waitlist.ProcessBranchQuietlyAsync(branchId, ct) > 0) await NudgeCashier(branchId);
+            var id = entry.GetProperty("waitlistEntryId").GetInt32();
+            var mine = await customers.GetMyWaitlistAsync(actor.Value, ct);
+            var fresh = mine.EnumerateArray().FirstOrDefault(x => x.GetProperty("waitlistEntryId").GetInt32() == id);
+            return Ok(fresh.ValueKind == JsonValueKind.Undefined ? entry : fresh);
+        }
+        catch (ApiClientException ex) { return Downstream(ex, "rejoin_waitlist_failed"); }
+    }
+
     [HttpPost("{entryId:int}/cancel")]
     public async Task<ActionResult<object>> Cancel(int entryId, CancellationToken ct)
     {

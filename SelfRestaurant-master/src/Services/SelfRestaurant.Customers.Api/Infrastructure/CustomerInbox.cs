@@ -63,7 +63,7 @@ public static class CustomerInbox
         [TierUp] = "Lên hạng thành viên",
         [PromotionCreated] = "Ưu đãi mới",
         [WaitlistOffered] = "Có bàn cho bạn",
-        [WaitlistExpired] = "Hết thời gian giữ bàn",
+        [WaitlistExpired] = "Lời mời đã hết hạn",
     };
 
     /// <summary>Events that may happen more than once for the same item (a reservation can be changed again).</summary>

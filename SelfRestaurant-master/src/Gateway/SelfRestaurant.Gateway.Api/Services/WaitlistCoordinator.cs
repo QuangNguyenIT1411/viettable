@@ -15,8 +15,16 @@ public sealed class WaitlistCoordinator(CustomersClient customers, CatalogClient
     public const int MaxGuestsPerRun = 10;
     public const int MaxSlotsPerGuest = 8;
 
-    public int OfferMinutes => int.TryParse(configuration["Waitlist:OfferMinutes"], out var m) && m is >= 1 and <= 60
-        ? m : 10;
+    /// <summary>Without push (FCM) the app only checks every 15 minutes, so the guest gets longer to answer (owner 06/11).</summary>
+    public const int DefaultOfferMinutes = 20;
+    public const int FcmOfferMinutes = 10;
+
+    public int OfferMinutes => ResolveOfferMinutes(configuration["Waitlist:OfferMinutes"],
+        bool.TryParse(configuration["Fcm:Enabled"], out var fcm) && fcm);
+
+    /// <summary>"Waitlist:OfferMinutes" (1-60) wins; otherwise 10 minutes with FCM on, 20 without.</summary>
+    public static int ResolveOfferMinutes(string? configured, bool fcmEnabled) =>
+        int.TryParse(configured, out var m) && m is >= 1 and <= 60 ? m : fcmEnabled ? FcmOfferMinutes : DefaultOfferMinutes;
 
     public sealed record QueueEntry(int WaitlistEntryId, int CustomerId, int BranchId, int PartySize,
         DateTime WindowStartUtc, DateTime WindowEndUtc, DateTime CreatedAtUtc);

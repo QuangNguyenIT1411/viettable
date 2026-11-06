@@ -1,6 +1,7 @@
 package com.restaurant.viettable.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -26,7 +27,7 @@ public class WaitlistTextTest {
         e.status = "Offered";
         assertEquals("Có bàn cho bạn", WaitlistText.status(e));
         e.status = "Expired";
-        assertEquals("Hết thời gian giữ bàn", WaitlistText.status(e));
+        assertEquals("Lời mời đã hết hạn", WaitlistText.status(e));
     }
 
     @Test
@@ -65,5 +66,36 @@ public class WaitlistTextTest {
         assertTrue(WaitlistWindow.problem("20:00", "18:00").contains("sau"));
         assertTrue(WaitlistWindow.problem("10:00", "17:00").contains("6"));
         assertTrue(WaitlistWindow.problem(null, "17:00").contains("Chọn"));
+    }
+
+    private static WaitlistEntry entry(String id, String status, String start, String end) {
+        WaitlistEntry e = new WaitlistEntry();
+        e.id = id; e.status = status; e.branchId = "1"; e.partySize = 6; e.windowStartUtc = start; e.windowEndUtc = end;
+        return e;
+    }
+
+    @Test
+    public void rejoinOnlyAfterALapsedOfferWhileTheWindowIsAheadAndNotAlreadyBack() {
+        Instant now = Instant.parse("2026-11-20T10:00:00Z");
+        WaitlistEntry lapsed = entry("5", "Expired", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        assertTrue(WaitlistText.canRejoin(lapsed, Arrays.asList(lapsed), now));
+        WaitlistEntry back = entry("6", "Waiting", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        assertFalse(WaitlistText.canRejoin(lapsed, Arrays.asList(lapsed, back), now));
+        assertFalse(WaitlistText.canRejoin(lapsed, Arrays.asList(lapsed), Instant.parse("2026-11-20T12:50:00Z"))); // window nearly over
+        assertFalse(WaitlistText.canRejoin(entry("7", "Cancelled", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z"), null, now));
+    }
+
+    @Test
+    public void lapsedOffersAreToldOnceAndOnlyRecentOnes() {
+        Instant now = Instant.parse("2026-11-20T10:00:00Z");
+        WaitlistEntry recent = entry("5", "Expired", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        recent.offerExpiresAtUtc = "2026-11-20T09:50:00Z";
+        WaitlistEntry old = entry("4", "Expired", "2026-11-18T11:00:00Z", "2026-11-18T13:00:00Z");
+        old.offerExpiresAtUtc = "2026-11-18T11:20:00Z";
+        WaitlistEntry waiting = entry("6", "Waiting", "2026-11-20T11:00:00Z", "2026-11-20T13:00:00Z");
+        List<WaitlistEntry> all = Arrays.asList(recent, old, waiting);
+        assertEquals(1, WaitlistText.lapsedToTell(all, new java.util.HashSet<>(), now).size());
+        assertEquals("5", WaitlistText.lapsedToTell(all, new java.util.HashSet<>(), now).get(0).id);
+        assertTrue(WaitlistText.lapsedToTell(all, new java.util.HashSet<>(Arrays.asList("5")), now).isEmpty());
     }
 }

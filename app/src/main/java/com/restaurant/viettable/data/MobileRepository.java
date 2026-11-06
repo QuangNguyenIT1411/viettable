@@ -653,6 +653,14 @@ public final class MobileRepository {
                 }));
     }
 
+    /** "Xếp lại hàng chờ" after an offer lapsed: a new place at the end of the queue, same window. */
+    public void rejoinWaitlist(String entryId, Callback<com.restaurant.viettable.model.WaitlistEntry> callback) {
+        api().post("/api/mobile/v1/reservations/waitlist/" + entryId + "/rejoin", new JSONObject(), true, null, new ApiClient.Callback() {
+            @Override public void onSuccess(Object value) { callback.onSuccess(parseWaitlist((JSONObject) value)); }
+            @Override public void onError(ApiException error) { callback.onError(error); }
+        });
+    }
+
     public void cancelWaitlist(String entryId, Callback<Void> callback) {
         api().post("/api/mobile/v1/reservations/waitlist/" + entryId + "/cancel", new JSONObject(), true, null, new ApiClient.Callback() {
             @Override public void onSuccess(Object value) { callback.onSuccess(null); }

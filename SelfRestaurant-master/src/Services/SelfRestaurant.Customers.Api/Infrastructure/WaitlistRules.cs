@@ -15,7 +15,7 @@ public static class WaitlistRules
     /// <summary>The held booking's status; it occupies the table until <see cref="Reservation.HoldExpiresAtUtc"/>.</summary>
     public const string HoldStatus = "WaitlistHold";
 
-    public const int DefaultOfferMinutes = 10;
+    public const int DefaultOfferMinutes = 20; // the Gateway sends the minutes: 20 without push, 10 with FCM
     public const int MaxActivePerCustomer = 3;
     public const int MaxWindowHours = 6;
 
@@ -52,6 +52,17 @@ public static class WaitlistRules
         Cancelled => "Bạn đã huỷ chờ.",
         _ => "Lượt chờ đã kết thúc."
     };
+
+    /// <summary>
+    /// "Xếp lại hàng chờ" after an offer lapsed (owner 06/11): same branch, window and party, at the end of the queue.
+    /// Null when allowed; otherwise the message for the guest.
+    /// </summary>
+    public static string? WhyNotRejoinable(WaitlistEntry entry, int activeEntries, DateTime nowUtc)
+    {
+        if (entry.Status != Expired)
+            return entry.Status is Waiting or Offered ? "Bạn vẫn đang trong danh sách chờ." : "Chỉ xếp lại được khi lời mời đã hết hạn.";
+        return WhyNotJoinable(entry.WindowStartUtc, entry.WindowEndUtc, entry.PartySize, activeEntries, nowUtc);
+    }
 
     /// <summary>1-based place among guests still waiting at the same branch on the same restaurant day, by sign-up.</summary>
     public static int Position(WaitlistEntry entry, IEnumerable<WaitlistEntry> branchEntries, TimeZoneInfo zone)

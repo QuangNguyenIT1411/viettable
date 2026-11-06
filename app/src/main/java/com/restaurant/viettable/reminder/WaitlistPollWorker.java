@@ -45,6 +45,8 @@ public final class WaitlistPollWorker extends Worker {
     static final String WORK = "waitlist-poll";
     private static final String PREFS = "waitlist_poll";
     private static final String KEY_NOTIFIED = "notified";
+    private static final String KEY_TOLD_LAPSED = "told_lapsed";
+    private static final String KEY_WATCH = "watch";
 
     public WaitlistPollWorker(@NonNull Context context, @NonNull WorkerParameters params) { super(context, params); }
 
@@ -85,6 +87,11 @@ public final class WaitlistPollWorker extends Worker {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         Set<String> notified = new HashSet<>(prefs.getStringSet(KEY_NOTIFIED, new HashSet<>()));
         boolean active = false;
+        Set<String> toldLapsed = new HashSet<>(prefs.getStringSet(KEY_TOLD_LAPSED, new HashSet<>()));
+        for (WaitlistEntry e : WaitlistText.lapsedToTell(entries, toldLapsed, java.time.Instant.now())) {
+            // Only offers this phone announced: tell that they lapsed (the app shows it again when opened).
+            if (notified.contains(e.id + ":" + e.offeredReservationId)) showLapsed(context, e);
+        }
         for (WaitlistEntry e : entries) {
             if (e.isActive()) active = true;
             String key = e.id + ":" + e.offeredReservationId;
@@ -93,8 +100,45 @@ public final class WaitlistPollWorker extends Worker {
                 notified.add(key);
             }
         }
-        prefs.edit().putStringSet(KEY_NOTIFIED, notified).apply();
+        prefs.edit().putStringSet(KEY_NOTIFIED, notified).putBoolean(KEY_WATCH, active || prefs.getBoolean(KEY_WATCH, false)).apply();
         if (active) ensureScheduled(context); else WorkManager.getInstance(context).cancelUniqueWork(WORK);
+    }
+
+    /** True while the guest has (or just had) a waitlist entry: the app then checks for lapsed offers when opened. */
+    public static boolean watching(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_WATCH, false);
+    }
+
+    /** Lapsed offers not yet shown in the app; marks them shown. Stops watching when nothing is left to follow. */
+    public static List<WaitlistEntry> takeLapsed(Context context, List<WaitlistEntry> entries) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        Set<String> told = new HashSet<>(prefs.getStringSet(KEY_TOLD_LAPSED, new HashSet<>()));
+        List<WaitlistEntry> lapsed = WaitlistText.lapsedToTell(entries, told, java.time.Instant.now());
+        boolean active = false;
+        for (WaitlistEntry e : entries) if (e.isActive()) active = true;
+        for (WaitlistEntry e : lapsed) told.add(e.id);
+        prefs.edit().putStringSet(KEY_TOLD_LAPSED, told).putBoolean(KEY_WATCH, active).apply();
+        return lapsed;
+    }
+
+    private static void showLapsed(Context context, WaitlistEntry e) {
+        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context,
+                Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+        ReservationReminders.initialize(context);
+        String text = WaitlistText.LAPSED_DETAIL + " Mở app để xếp lại hàng chờ.";
+        Intent open = new Intent(context, MainActivity.class).putExtra(EXTRA_OPEN_WAITLIST, true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent tap = PendingIntent.getActivity(context, ("waitlist" + e.id).hashCode(), open,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ReservationReminders.CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("Lời mời đã hết hạn")
+                .setContentText(text)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .setAutoCancel(true)
+                .setContentIntent(tap);
+        try { NotificationManagerCompat.from(context).notify(("waitlist" + e.id).hashCode(), builder.build()); }
+        catch (SecurityException ignored) { }
     }
 
     private static void show(Context context, WaitlistEntry e) {

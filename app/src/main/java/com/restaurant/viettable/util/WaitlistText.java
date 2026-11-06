@@ -6,7 +6,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /** What the waitlist screens say (owner 06/11). Pure; unit tested. */
 public final class WaitlistText {
@@ -21,12 +24,46 @@ public final class WaitlistText {
             case "Waiting": return entry.position > 0 ? "Đang chờ · vị trí thứ " + entry.position : "Đang chờ";
             case "Offered": return "Có bàn cho bạn";
             case "Accepted": return "Đã nhận bàn";
-            case "Expired": return "Hết thời gian giữ bàn";
+            case "Expired": return "Lời mời đã hết hạn";
             case "Cancelled": return "Đã huỷ chờ";
             case "Closed": return "Đã hết khoảng giờ chờ";
             default: return entry.status;
         }
     }
+
+    /** Why a lapsed offer is over, for the card and the dialog when the app opens. */
+    public static final String LAPSED_DETAIL = "Bạn chưa xác nhận kịp nên bàn đã được mời cho khách kế tiếp.";
+
+    /**
+     * "Xếp lại hàng chờ" (owner 06/11): only for an offer that lapsed, while the window is still more than 15 minutes
+     * ahead and the guest is not already back in the queue for the same branch, window and party.
+     */
+    public static boolean canRejoin(WaitlistEntry entry, List<WaitlistEntry> all, Instant now) {
+        if (entry == null || !"Expired".equals(entry.status)) return false;
+        Instant end = DisplayFormatters.instant(entry.windowEndUtc);
+        if (end == null || !end.isAfter(now.plusSeconds(15 * 60))) return false;
+        if (all != null) for (WaitlistEntry other : all) {
+            if (other == entry || other == null || !other.isActive()) continue;
+            if (eq(other.branchId, entry.branchId) && eq(other.windowStartUtc, entry.windowStartUtc)
+                    && eq(other.windowEndUtc, entry.windowEndUtc) && other.partySize == entry.partySize) return false;
+        }
+        return true;
+    }
+
+    /** Lapsed offers of the last day the guest has not been told about yet (the app shows them once on open). */
+    public static List<WaitlistEntry> lapsedToTell(List<WaitlistEntry> all, Set<String> told, Instant now) {
+        List<WaitlistEntry> out = new ArrayList<>();
+        if (all == null) return out;
+        for (WaitlistEntry e : all) {
+            if (e == null || !"Expired".equals(e.status) || (told != null && told.contains(e.id))) continue;
+            Instant lapsed = DisplayFormatters.instant(e.offerExpiresAtUtc);
+            if (lapsed != null && lapsed.isBefore(now.minusSeconds(24 * 3600))) continue;
+            out.add(e);
+        }
+        return out;
+    }
+
+    private static boolean eq(String a, String b) { return a == null ? b == null : a.equals(b); }
 
     /** "18:00–20:00, 20/11" in the phone's time zone. */
     public static String window(String startUtc, String endUtc, ZoneId zone) {
