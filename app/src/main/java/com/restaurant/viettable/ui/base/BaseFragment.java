@@ -44,17 +44,45 @@ public abstract class BaseFragment extends Fragment {
         ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
             Insets statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars());
             Insets navigationBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
             if (liftBottomAboveKeyboard()) {
                 // Edge-to-edge ignores adjustResize: lift the "safe_bottom" bar (the input) above the keyboard.
-                Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
                 navigationBars = Insets.of(navigationBars.left, navigationBars.top, navigationBars.right,
                         Math.max(navigationBars.bottom, ime.bottom));
+            } else {
+                // Every other screen (owner 07/11: the keyboard covered the password box of "Đăng ký"): edge-to-edge
+                // ignores adjustResize, so pad the screen by the part of the keyboard that overlaps it. Scroll views
+                // shrink and keep the focused box in view; the bottom bar sits on the keyboard.
+                int overlap = keyboardOverlap(v, ime.bottom);
+                int[] p = getOrCreateInitialPadding(v);
+                v.setPadding(p[0], p[1], p[2], p[3] + overlap);
+                if (overlap > 0) navigationBars = Insets.of(navigationBars.left, navigationBars.top, navigationBars.right, 0);
+                if (overlap > 0) v.post(() -> revealFocused(v));
             }
 
             onApplyInsets(root, statusBars, navigationBars);
             return insets;
         });
         ViewCompat.requestApplyInsets(root);
+    }
+
+    /** How much of the keyboard covers this screen (the part below the screen, e.g. the bottom menu, is not counted). */
+    static int keyboardOverlap(View screen, int keyboardHeight) {
+        if (keyboardHeight <= 0 || screen.getHeight() == 0) return 0;
+        int[] at = new int[2];
+        screen.getLocationInWindow(at);
+        int below = screen.getRootView().getHeight() - (at[1] + screen.getHeight());
+        return Math.max(0, keyboardHeight - Math.max(0, below));
+    }
+
+    /** After the screen shrinks, scroll the box being typed in back into view. */
+    private static void revealFocused(View screen) {
+        View focused = screen.findFocus();
+        if (focused == null) return;
+        android.graphics.Rect r = new android.graphics.Rect();
+        focused.getDrawingRect(r);
+        r.bottom += (int) (16 * screen.getResources().getDisplayMetrics().density); // a little room under the box
+        focused.requestRectangleOnScreen(r, false);
     }
 
     /** Screens whose bottom bar holds a text box (a chat) return true so the keyboard never covers it. */
