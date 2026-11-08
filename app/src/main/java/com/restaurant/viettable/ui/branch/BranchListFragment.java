@@ -138,13 +138,9 @@ public class BranchListFragment extends BaseFragment {
 
     private void filterBranches(String query) {
         displayedBranches.clear();
-        String normalizedQuery = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        // Without tone marks too ("Quan 1" → "Chi nhánh Quận 1"), like the dish search (owner 09/11).
         for (Branch b : appStateManager.getBranches()) {
-            String name = b.getName() == null ? "" : b.getName().toLowerCase(Locale.ROOT);
-            String address = b.getAddress() == null ? "" : b.getAddress().toLowerCase(Locale.ROOT);
-            if (name.contains(normalizedQuery) || address.contains(normalizedQuery)) {
-                displayedBranches.add(b);
-            }
+            if (com.restaurant.viettable.util.BranchSearch.matches(b.getName(), b.getAddress(), query)) displayedBranches.add(b);
         }
         adapter.notifyDataSetChanged();
         if (binding != null) renderBranchState(displayedBranches.isEmpty(), false, null);
