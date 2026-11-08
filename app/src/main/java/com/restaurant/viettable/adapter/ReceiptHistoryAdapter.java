@@ -87,7 +87,7 @@ public class ReceiptHistoryAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         TextView title = new TextView(parent.getContext());
         TextViewCompat.setTextAppearance(title, R.style.TextAppearance_VietTable_Display_M);
         title.setGravity(Gravity.START);
-        title.setAccessibilityHeading(true);
+        androidx.core.view.ViewCompat.setAccessibilityHeading(title, true); // View#setAccessibilityHeading is API 28, minSdk 24 (owner 08/11)
         RecyclerView.LayoutParams lp = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.topMargin = dp(parent, 18);
         lp.bottomMargin = dp(parent, 10);
