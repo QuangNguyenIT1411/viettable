@@ -41,7 +41,9 @@ public final class BookingIntentParser {
     private static final Pattern DAY_ONLY = Pattern.compile("\\bngay (\\d{1,2})\\b(?!\\s*[/\\-.:])");
     private static final Pattern WEEKDAY_NUMBER = Pattern.compile("\\b(?:thu|t)\\s*([2-7])\\b");
     /** "7 giờ", "19h", "19h30", "7g30", "19:30", "7 giờ rưỡi", "7 rưỡi". A bare number is a party size or a date. */
-    private static final Pattern TIME = Pattern.compile("(?<![\\d/.\\-])(?<h>\\d{1,2})\\s*(?:(?:h|g)(?<m1>\\d{2})?(?:\\s+(?<r1>ruoi))?|:(?<m2>\\d{2})|gio(?:\\s+(?<m3>\\d{2})(?:\\s*phut)?(?!\\s*(?:nguoi|khach|ng\\b))|\\s+(?<r2>ruoi))?|\\s+(?<r3>ruoi))(?![a-z\\d])");
+    // Numbered groups (owner 08/11): named groups and Matcher.group(String) need API 26, minSdk is 24.
+    // 1 hour, 2 minutes after h/g, 3 "ruoi" after h/g, 4 minutes after ":", 5 minutes after "gio", 6 "ruoi" after "gio", 7 "ruoi".
+    private static final Pattern TIME = Pattern.compile("(?<![\\d/.\\-])(\\d{1,2})\\s*(?:(?:h|g)(\\d{2})?(?:\\s+(ruoi))?|:(\\d{2})|gio(?:\\s+(\\d{2})(?:\\s*phut)?(?!\\s*(?:nguoi|khach|ng\\b))|\\s+(ruoi))?|\\s+(ruoi))(?![a-z\\d])");
     private static final Pattern PEOPLE_DIGITS = Pattern.compile("(?<![\\d:/])(\\d{1,2})\\s*(?:nguoi|nguo|ngoui|ng|khach|suat|pax|tre|be)(?![a-z])");
     private static final Pattern PEOPLE_GROUP = Pattern.compile("\\b(?:nhom|doan|cho|ban)\\s+(\\d{1,2})\\b(?!\\s*(?:gio\\b|h\\b|g\\b|:|/|nguoi|khach))");
     private static final Pattern PEOPLE_WORDS = Pattern.compile("\\b((?:muoi|mot|hai|ba|bon|tu|nam|sau|bay|tam|chin)(?: (?:mot|hai|ba|bon|tu|lam|nam|sau|bay|tam|chin))?) (?:nguoi|khach|be|tre)\\b");
@@ -175,9 +177,9 @@ public final class BookingIntentParser {
         intent.period = period;
         Matcher m = TIME.matcher(s);
         while (m.find()) {
-            int hour = Integer.parseInt(m.group("h"));
-            String digits = m.group("m1") != null ? m.group("m1") : m.group("m2") != null ? m.group("m2") : m.group("m3");
-            boolean half = m.group("r1") != null || m.group("r2") != null || m.group("r3") != null;
+            int hour = Integer.parseInt(m.group(1));
+            String digits = m.group(2) != null ? m.group(2) : m.group(4) != null ? m.group(4) : m.group(5);
+            boolean half = m.group(3) != null || m.group(6) != null || m.group(7) != null;
             int minute = digits != null ? Integer.parseInt(digits) : half ? 30 : 0;
             if (hour > 23 || minute > 59) continue;
             intent.typedHour = hour;
