@@ -42,6 +42,13 @@ public class SupportFragment extends BaseFragment {
         binding.toolbar.setNavigationOnClickListener(v -> navigateBack());
         binding.btnRetryFaq.setOnClickListener(v -> loadFaqs());
         binding.cardLiveChat.setOnClickListener(v -> navigateTo(SupportStartFragment.newInstance()));
+        // Owner 08/11 (Android 7 check): the contact row was hidden with the made-up hotline, so "Chat CSKH" was
+        // invisible. Show the row with the chat card only; the hotline card stays hidden (no real number).
+        binding.layoutContactChannels.setVisibility(View.VISIBLE);
+        binding.cardCallHotline.setVisibility(View.GONE);
+        android.view.ViewGroup.MarginLayoutParams chatMargins = (android.view.ViewGroup.MarginLayoutParams) binding.cardLiveChat.getLayoutParams();
+        chatMargins.setMarginStart(0);
+        binding.cardLiveChat.setLayoutParams(chatMargins);
         loadFaqs();
 
         binding.btnSendFeedback.setOnClickListener(v -> {
