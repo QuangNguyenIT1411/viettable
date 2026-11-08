@@ -182,25 +182,31 @@ public final class MobileRepository {
         } catch (JSONException e) { callback.onError(jsonError()); }
     }
 
+    /**
+     * "Quên mật khẩu" (owner 08/11): any 2xx answer means the request was taken. On Production the server never
+     * returns the code (it is e-mailed), so the answer's message is passed on and the app asks for the code.
+     */
     public void forgotPassword(String identity, Callback<String> callback) {
         try {
             JSONObject body = new JSONObject().put("usernameOrEmailOrPhone", identity);
             api().post("/api/mobile/v1/auth/forgot-password", body, false, null, new ApiClient.Callback() {
                 @Override public void onSuccess(Object value) {
-                    String token = SafeText.json(((JSONObject) value), "resetToken", "");
-                    if (token.isEmpty()) callback.onError(new ApiException(0, "reset_token_delivery_required", "Hãy kiểm tra kênh nhận mã đặt lại mật khẩu.", null));
-                    else callback.onSuccess(token);
+                    callback.onSuccess(com.restaurant.viettable.util.PasswordResetRules.message(
+                            value instanceof JSONObject ? (JSONObject) value : null));
                 }
                 @Override public void onError(ApiException error) { callback.onError(error); }
             });
         } catch (JSONException e) { callback.onError(jsonError()); }
     }
 
-    public void resetPassword(String token, String password, Callback<Void> callback) {
+    /** The 6-digit code the customer received + the new password, for the account they typed. */
+    public void resetPasswordWithCode(String identity, String code, String password, Callback<Void> callback) {
         try {
-            JSONObject body = new JSONObject().put("token", token).put("newPassword", password).put("confirmPassword", password);
+            JSONObject body = new JSONObject().put("usernameOrEmailOrPhone", identity)
+                    .put("code", com.restaurant.viettable.util.PasswordResetRules.digits(code))
+                    .put("newPassword", password).put("confirmPassword", password);
             api().post("/api/mobile/v1/auth/reset-password", body, false, null, new ApiClient.Callback() {
-                @Override public void onSuccess(Object body) { callback.onSuccess(null); }
+                @Override public void onSuccess(Object value) { callback.onSuccess(null); }
                 @Override public void onError(ApiException error) { callback.onError(error); }
             });
         } catch (JSONException e) { callback.onError(jsonError()); }

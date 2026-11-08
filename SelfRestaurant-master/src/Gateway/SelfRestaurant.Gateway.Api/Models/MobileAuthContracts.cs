@@ -7,7 +7,8 @@ public sealed record MobileRegisterRequest(string Name, string Username, string 
     string Email, string? Gender = null, DateOnly? DateOfBirth = null, string? Address = null);
 public sealed record MobileForgotPasswordRequest(string UsernameOrEmailOrPhone);
 public sealed record MobileForgotPasswordResponse(string Message, string? ResetToken, DateTime? ExpiresAtUtc);
-public sealed record MobileResetPasswordRequest(string Token, string NewPassword, string? ConfirmPassword = null);
+public sealed record MobileResetPasswordRequest(string? Token, string NewPassword, string? ConfirmPassword = null,
+    string? UsernameOrEmailOrPhone = null, string? Code = null);
 public sealed record MobileChangePasswordRequest(string CurrentPassword, string NewPassword, string? ConfirmPassword = null);
 public sealed record MobileChangePasswordInternalRequest(int CustomerId, string CurrentPassword, string NewPassword);
 public sealed record MobileCustomerDto(int CustomerId, string Username, string Name, string PhoneNumber, string? Email, int LoyaltyPoints);

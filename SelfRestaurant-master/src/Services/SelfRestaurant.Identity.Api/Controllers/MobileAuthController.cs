@@ -214,42 +214,78 @@ public sealed class MobileAuthController : ControllerBase
     [HttpPost("forgot-password")]
     public async Task<ActionResult<MobileForgotPasswordResponse>> ForgotPassword(MobileForgotPasswordRequest request, CancellationToken ct)
     {
-        const string genericMessage = "Nếu tài khoản tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi đến email đã đăng ký.";
+        // Same answer whether or not the account exists (nobody learns which e-mails/phones are registered).
+        const string genericMessage = "Nếu tài khoản tồn tại, mã xác nhận gồm 6 số đã được gửi tới email đã đăng ký. Mã có hiệu lực 15 phút.";
         if (string.IsNullOrWhiteSpace(request.UsernameOrEmailOrPhone))
-            return Error("validation_failed", "Vui lòng nhập tài khoản hoặc email.", 400);
-        var key = request.UsernameOrEmailOrPhone.Trim();
-        var customer = await _db.Customers.AsNoTracking().FirstOrDefaultAsync(x => (x.IsActive ?? false)
-            && (x.Username == key || x.Email == key || x.PhoneNumber == key), ct);
+            return Error("validation_failed", "Vui lòng nhập email hoặc số điện thoại.", 400);
+        var customer = await FindByIdentityAsync(request.UsernameOrEmailOrPhone, ct);
         if (customer is null) return Ok(new MobileForgotPasswordResponse(genericMessage, null, null));
 
-        var rawToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
-        var expires = DateTime.UtcNow.AddMinutes(30);
+        // Owner 08/11: a 6-digit code the customer types in the app (the old 64-character link token could not be typed).
+        var code = PasswordResetCodes.NewCode();
+        var expires = DateTime.UtcNow.Add(PasswordResetCodes.Lifetime);
         _db.PasswordResetTokens.Add(new PasswordResetTokens
         {
-            CustomerID = customer.CustomerID, Token = rawToken, CreatedAt = DateTime.UtcNow,
+            CustomerID = customer.CustomerID, Token = PasswordResetCodes.Stored(customer.CustomerID, code), CreatedAt = DateTime.UtcNow,
             ExpiryDate = expires, IsUsed = false,
         });
         await _db.SaveChangesAsync(ct);
+        PasswordResetCodes.Clear(customer.CustomerID);
         if (!string.IsNullOrWhiteSpace(customer.Email))
         {
-            var baseUrl = (_configuration["PasswordReset:PublicBaseUrl"] ?? "http://localhost:5100").TrimEnd('/');
-            var link = $"{baseUrl}/Customer/ResetPassword?token={Uri.EscapeDataString(rawToken)}";
-            _ = await _emailSender.TrySendAsync(customer.Email, customer.Name, rawToken, link, ct);
+            var sent = await _emailSender.TrySendAsync(customer.Email, customer.Name, code, null, ct);
+            if (!sent) _logger.LogWarning("Password reset code e-mail not sent (SMTP off or failed). customerId={CustomerId}", customer.CustomerID);
         }
+        else _logger.LogWarning("Password reset code requested for a customer without e-mail. customerId={CustomerId}", customer.CustomerID);
         return Ok(new MobileForgotPasswordResponse(genericMessage,
-            _environment.IsDevelopment() ? rawToken : null,
+            _environment.IsDevelopment() ? code : null,
             _environment.IsDevelopment() ? expires : null));
     }
 
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(MobileResetPasswordRequest request, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.NewPassword))
-            return Error("validation_failed", "Vui lòng nhập đầy đủ thông tin.", 400);
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+            return Error("validation_failed", "Vui lòng nhập mật khẩu mới.", 400);
         if (request.NewPassword.Trim().Length < 6)
             return Error("invalid_password", "Mật khẩu phải có ít nhất 6 ký tự.", 400);
-        var reset = await _db.PasswordResetTokens.Include(x => x.Customer)
-            .FirstOrDefaultAsync(x => x.Token == request.Token.Trim(), ct);
+
+        PasswordResetTokens? reset;
+        if (!string.IsNullOrWhiteSpace(request.Code))
+        {
+            // App: account + 6-digit code.
+            const string wrong = "Mã xác nhận không đúng hoặc đã hết hạn.";
+            if (string.IsNullOrWhiteSpace(request.UsernameOrEmailOrPhone))
+                return Error("validation_failed", "Vui lòng nhập email hoặc số điện thoại.", 400);
+            var customer = await FindByIdentityAsync(request.UsernameOrEmailOrPhone, ct);
+            if (customer is null) return Error("invalid_reset_code", wrong, 400);
+            var now = DateTime.UtcNow;
+            reset = await _db.PasswordResetTokens.Include(x => x.Customer)
+                .Where(x => x.CustomerID == customer.CustomerID && !x.IsUsed && x.ExpiryDate > now && x.Token.StartsWith(PasswordResetCodes.Prefix))
+                .OrderByDescending(x => x.TokenID).FirstOrDefaultAsync(ct);
+            if (reset is null) return Error("invalid_reset_code", wrong, 400);
+            if (!PasswordResetCodes.Matches(reset.Token, customer.CustomerID, request.Code))
+            {
+                var tries = PasswordResetCodes.RegisterFailure(customer.CustomerID);
+                if (tries >= PasswordResetCodes.MaxAttempts)
+                {
+                    reset.IsUsed = true; // spent: a new code must be asked for
+                    await _db.SaveChangesAsync(ct);
+                    PasswordResetCodes.Clear(customer.CustomerID);
+                    return Error("reset_code_locked", "Bạn đã nhập sai quá 5 lần. Vui lòng bấm \"Gửi lại\" để nhận mã mới.", 400);
+                }
+                return Error("invalid_reset_code", $"Mã xác nhận không đúng. Bạn còn {PasswordResetCodes.MaxAttempts - tries} lần thử.", 400);
+            }
+            PasswordResetCodes.Clear(customer.CustomerID);
+        }
+        else
+        {
+            // Older link flow (token in the e-mailed link). A code hash is never accepted as a link token.
+            if (string.IsNullOrWhiteSpace(request.Token) || request.Token.Trim().StartsWith(PasswordResetCodes.Prefix, StringComparison.Ordinal))
+                return Error("validation_failed", "Vui lòng nhập mã xác nhận.", 400);
+            reset = await _db.PasswordResetTokens.Include(x => x.Customer)
+                .FirstOrDefaultAsync(x => x.Token == request.Token.Trim(), ct);
+        }
         if (reset is null || reset.IsUsed || reset.ExpiryDate <= DateTime.UtcNow || !(reset.Customer.IsActive ?? false))
             return Error("invalid_reset_token", "Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.", 400);
         reset.IsUsed = true;
@@ -259,6 +295,13 @@ public sealed class MobileAuthController : ControllerBase
         await RevokeCustomerTokensAsync(reset.CustomerID, "password_reset", ct);
         await _db.SaveChangesAsync(ct);
         return Ok(new { success = true, message = "Đặt lại mật khẩu thành công." });
+    }
+
+    private Task<Customers?> FindByIdentityAsync(string identity, CancellationToken ct)
+    {
+        var key = identity.Trim();
+        return _db.Customers.AsNoTracking().FirstOrDefaultAsync(x => (x.IsActive ?? false)
+            && (x.Username == key || x.Email == key || x.PhoneNumber == key), ct);
     }
 
     [HttpPost("change-password")]
@@ -319,9 +362,12 @@ public sealed class MobileAuthController : ControllerBase
     private async Task RevokeCustomerTokensAsync(int customerId, string reason, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
-        await _db.MobileRefreshTokens.Where(x => x.CustomerId == customerId && x.RevokedAtUtc == null)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.RevokedAtUtc, now)
-                .SetProperty(x => x.RevokedReason, reason), ct);
+        // Tracked update (saved with the caller's SaveChanges): same result, and testable in memory.
+        foreach (var token in await _db.MobileRefreshTokens.Where(x => x.CustomerId == customerId && x.RevokedAtUtc == null).ToListAsync(ct))
+        {
+            token.RevokedAtUtc = now;
+            token.RevokedReason = reason;
+        }
     }
 
     private ObjectResult Error(string code, string message, int status) => StatusCode(status, new { code, message });
@@ -333,7 +379,7 @@ public sealed class MobileAuthController : ControllerBase
         string Email, string? Gender = null, DateOnly? DateOfBirth = null, string? Address = null);
     public sealed record MobileForgotPasswordRequest(string UsernameOrEmailOrPhone);
     public sealed record MobileForgotPasswordResponse(string Message, string? ResetToken, DateTime? ExpiresAtUtc);
-    public sealed record MobileResetPasswordRequest(string Token, string NewPassword);
+    public sealed record MobileResetPasswordRequest(string? Token, string NewPassword, string? UsernameOrEmailOrPhone = null, string? Code = null);
     public sealed record MobileChangePasswordRequest(int CustomerId, string CurrentPassword, string NewPassword);
     public sealed record MobileCustomer(int CustomerId, string Username, string Name, string PhoneNumber, string? Email, int LoyaltyPoints);
     public sealed record MobileTokenResponse(bool Success, string TokenType, string AccessToken, DateTime AccessTokenExpiresAtUtc,
