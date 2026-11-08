@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SelfRestaurant.Catalog.Api.Infrastructure.Inventory;
+using SelfRestaurant.Catalog.Api.Infrastructure;
 using SelfRestaurant.Catalog.Api.Persistence;
 using SelfRestaurant.Catalog.Api.Persistence.Entities;
 using System.Data;
@@ -400,18 +401,15 @@ public sealed class AdminCatalogController : ControllerBase
             return NotFound(new { message = "Không tìm thấy món ăn." });
         }
 
-        var todayMenu = await EnsureTodayMenuAsync(branchId, cancellationToken);
+        // Owner 08/11: the same "on the menu" as the app's menu API (MenuVisibility), not "has a row in the branch's
+        // dated menu": dishes added later had no such row, and the UTC date differs from Vietnam's before 07:00.
+        // The branch's latest menu row, when there is one, is kept in step; none is created here.
         var menuLink = await _db.CategoryDish
             .Include(cd => cd.MenuCategory)
-            .ThenInclude(mc => mc.Category)
-            .FirstOrDefaultAsync(cd =>
-                cd.DishID == dishId &&
-                cd.MenuCategory.MenuID == todayMenu.MenuID,
-                cancellationToken);
-        if (menuLink is null)
-        {
-            return BadRequest(new { message = "Món không thuộc thực đơn chi nhánh hôm nay." });
-        }
+            .Where(cd => cd.DishID == dishId && cd.MenuCategory.Menu.BranchID == branchId && (cd.MenuCategory.Menu.IsActive ?? true))
+            .OrderByDescending(cd => cd.MenuCategory.Menu.Date)
+            .ThenByDescending(cd => cd.MenuCategory.MenuID)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (request.Available)
         {
@@ -420,14 +418,9 @@ public sealed class AdminCatalogController : ControllerBase
                 return BadRequest(new { message = "Món ăn đang bị vô hiệu, Admin cần kích hoạt lại trước khi bán." });
             }
 
-            if (!(dish.Category?.IsActive ?? true) || !(menuLink.MenuCategory.Category.IsActive ?? true))
+            if (!MenuVisibility.IsOnMenu(dish))
             {
                 return BadRequest(new { message = "Danh mục của món đang bị vô hiệu, Admin cần kích hoạt danh mục trước khi bán." });
-            }
-
-            if (!(menuLink.MenuCategory.IsActive ?? true))
-            {
-                return BadRequest(new { message = "Danh mục trong thực đơn hôm nay đang bị vô hiệu." });
             }
 
             var recipeRows = await _db.DishIngredients
@@ -479,8 +472,11 @@ public sealed class AdminCatalogController : ControllerBase
 
         dish.Available = request.Available;
         dish.UpdatedAt = DateTime.Now;
-        menuLink.IsAvailable = request.Available;
-        menuLink.UpdatedAt = DateTime.Now;
+        if (menuLink is not null)
+        {
+            menuLink.IsAvailable = request.Available;
+            menuLink.UpdatedAt = DateTime.Now;
+        }
 
         _auditLogger.Add(
             actionType: request.Available ? "DISH_SELLING_RESUMED_BY_CHEF" : "DISH_SELLING_PAUSED_BY_CHEF",
@@ -492,8 +488,8 @@ public sealed class AdminCatalogController : ControllerBase
             afterState: new
             {
                 branchId,
-                menuId = todayMenu.MenuID,
-                categoryDishId = menuLink.CategoryDishID,
+                menuId = menuLink?.MenuCategory.MenuID,
+                categoryDishId = menuLink?.CategoryDishID,
                 available = request.Available,
                 dishName = dish.Name
             });

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SelfRestaurant.Catalog.Api.Infrastructure.Inventory;
+using SelfRestaurant.Catalog.Api.Infrastructure;
 using SelfRestaurant.Catalog.Api.Persistence;
 using SelfRestaurant.Catalog.Api.Persistence.Entities;
 using System.Data;
@@ -121,8 +122,10 @@ public sealed class CatalogController : ControllerBase
         var allCategoryObjects = new List<object>();
         var categoryIds = allCategories.Select(x => x.CategoryID).ToArray();
         // One projected Catalog-owned read, not one remote DB round trip per category.
+        // Same definition as the kitchen's pause/resume (owner 08/11): MenuVisibility.OnMenu.
         var allDishes = await _db.Dishes.AsNoTracking()
-            .Where(x => categoryIds.Contains(x.CategoryID) && (x.IsActive ?? true))
+            .Where(MenuVisibility.OnMenu)
+            .Where(x => categoryIds.Contains(x.CategoryID))
             .OrderBy(x => x.Name)
             .Select(x => new {
                 categoryId = x.CategoryID, dishId = x.DishID, name = x.Name,

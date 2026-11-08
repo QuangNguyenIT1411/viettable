@@ -107,8 +107,13 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
         updateCartBottomBar();
 
         renderMenu();
-        loadMenu();
+        // Owner 08/11: a dish the kitchen paused shows as sold out as soon as the menu opens, so the menu is always
+        // fetched again in the background (the dishes already on screen stay while it loads).
+        backgroundRefresh = !appStateManager.getFoodItems().isEmpty();
+        loadMenu(true);
     }
+
+    private boolean backgroundRefresh;
 
     private void loadMenu() {
         loadMenu(false);
@@ -118,6 +123,7 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
         if (binding != null && appStateManager.getSelectedBranch() != null) {
             MobileRepository.getInstance().loadMenu(appStateManager.getSelectedBranch().getId(), retry, new MobileRepository.Callback<Void>() {
                 @Override public void onSuccess(Void value) {
+                    backgroundRefresh = false;
                     if (binding == null) return;
                     renderMenu();
                     if (MobileRepository.getInstance().hasSession()) {
@@ -127,7 +133,12 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
                         });
                     }
                 }
-                @Override public void onError(ApiException error) { if (binding != null) renderMenu(); }
+                @Override public void onError(ApiException error) {
+                    if (binding == null) return;
+                    if (backgroundRefresh && !appStateManager.getFoodItems().isEmpty()) showToast("Chưa cập nhật được thực đơn mới nhất.");
+                    renderMenu();
+                    backgroundRefresh = false;
+                }
             });
         }
     }
@@ -150,7 +161,7 @@ public class MenuFragment extends BaseFragment implements AppStateManager.StateC
         String error = appStateManager.getCatalogError();
         boolean empty = appStateManager.getFoodItems().isEmpty();
         // A failed load replaces the dish grid; a reload keeps the dishes already shown.
-        ListState.Mode mode = ListState.of(!empty, loading, error);
+        ListState.Mode mode = ListState.of(!empty, loading, backgroundRefresh && !empty ? null : error);
         binding.layoutMenuState.setVisibility(mode == ListState.Mode.CONTENT ? View.GONE : View.VISIBLE);
         binding.progressMenuCatalog.setVisibility(mode == ListState.Mode.LOADING ? View.VISIBLE : View.GONE);
         binding.tvMenuCatalogState.setText(loading ? getString(R.string.catalog_loading) : error != null ? error
